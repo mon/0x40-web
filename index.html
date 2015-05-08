@@ -1,0 +1,405 @@
+﻿<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en" >
+    <!-- 
+    TODO:
+    Clean up the damn code
+    Do the damn thesis and team project
+    Loading screen
+    Volume controls
+    Prettier ui
+    Song shuffle
+    Image shuffle
+    Image pause
+    Fine tune blur
+    
+    -->
+    <head>
+        <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+        <title>0x40</title>
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
+        <link rel="stylesheet" href="style.css">
+        <svg version="1.1" xmlns="http://www.w3.org/2000/svg" height="0">
+          <filter id="blur">
+              <feGaussianBlur stdDeviation="0 0">
+                <animate attributeName="stdDeviation" attributeType="XML" 
+                    begin="indefinite" end="indefinite" dur="0.1s" 
+                    fill="freeze" from="0 60" to="0 0"/>
+                <animate attributeName="stdDeviation" attributeType="XML" 
+                    begin="indefinite" end="indefinite" dur="0.1s" 
+                    fill="freeze" from="60 0" to="0 0"/>
+              </feGaussianBlur>
+          </filter>
+        </svg>
+        <!-- Won't work in the CSS without referencing index.html, yay -->
+        <style type='text/css'>
+            #waifu {
+                filter: url(#blur);
+                -webkit-filter: url(#blur);
+            }
+        </style>
+        <script type="text/javascript" src="0x40.js"></script>
+        <script type="text/javascript">
+            var leftToLoad = waifus.length;
+            var snip = 0;
+            var initialLoad = true;
+            var shortBlackout = false;
+            
+            // Milliseconds!
+            var animationLoopTime = 50;
+            // Seconds!
+            var animationLookAhead = 0.2;
+            
+            var waifuIndex = 0;
+            
+            var tmpSong = {};
+
+            //--------------
+            // Audio Object
+            //--------------
+            var audio = {
+                buffer: {},
+                proceed: true,
+                songs: rgSongs,
+                current_song: null,
+                current_index: 0,
+                beat_pointer: 0,
+            }
+         
+            audio.play = function() {
+                if(audio.current_song && audio.current_song._playing) {
+                    return;
+                }
+                document.getElementById("songname").innerHTML = audio.songs[audio.current_index].name
+                document.getElementById("blackout").style.display = "none";
+                // stop() destroys the old, must recreate
+                var newSong = audio.context.createBufferSource()
+                audio.current_song = newSong;
+                
+                newSong.buffer = audio.buffer[audio.current_index];
+                newSong.loop = true;
+                newSong.loopStart = audio.buffer[audio.current_index]._loopStart;
+                newSong.loopEnd = audio.buffer[audio.current_index].duration;
+                newSong._loopLength = audio.buffer[audio.current_index]._loopLength;
+                newSong.connect(audio.context.destination);
+                
+                var songInfo = audio.songs[audio.current_index];
+                newSong._build = songInfo.buildUpRhythm || "";
+                newSong._beats = newSong._build + songInfo.rhythm;
+                audio.beat_pointer =  -newSong._build.length;
+                
+                newSong._loopWidth = newSong._loopLength / songInfo.rhythm.length;
+                newSong._buildWidth = newSong._build ? newSong.loopStart / newSong._build.length : 0;
+                newSong._beatWidth = newSong._buildWidth;
+                
+                document.getElementById("beets").innerHTML = wrapBeats(0, 100);
+                document.getElementById("timer").innerHTML = "T=0x0000"
+
+                newSong.start(0);
+                // offset to after the build
+                newSong._startTime = audio.context.currentTime + newSong.loopStart;
+                newSong._playing = true;
+            }
+         
+            audio.stop = function() {
+                if (audio.current_song && audio.current_song._playing) {
+                    audio.current_song.stop();
+                    audio.current_song._playing = false;
+                    audio.current_song._startTime = 0;
+                }
+            }
+            
+            audio.next = function() {
+                audio.current_index++;
+                audio.current_index %= audio.songs.length;
+                audio.playIndex(audio.current_index);
+            }
+            
+            audio.prev = function() {
+                if(audio.current_index-- <= 0) {
+                    audio.current_index = audio.songs.length - 1;
+                }
+                audio.playIndex(audio.current_index);
+            }
+            
+            audio.playIndex = function(index) {
+                audio.current_index = index;
+                if(audio.buffer[index]) {
+                    audio.stop();
+                    audio.play();
+                } else {
+                    loadSong(index);
+                }
+            }
+            
+            // In seconds, relative to the loop start
+            function currentTime() {
+                var cur = audio.current_song;
+                var time = audio.context.currentTime - cur._startTime;
+                return time;// < 0 ? time : time % cur._loopLength;
+            }
+            
+            function wrapBeats(start, length) {
+                var ret = '';
+                for(var i=start; i < start+length; i++) {
+                    ret += getBeat(i);
+                }
+                return ret;
+            }
+            
+            function loopBeat(index) {
+                return index % 
+                    (audio.current_song._beats.length-audio.current_song._build.length);
+            }
+            
+            function getBeat(index) {
+                var cur = audio.current_song;
+                if(index < 0) {
+                    return cur._beats.charAt(index + cur._build.length);
+                } else {
+                    return cur._beats.charAt(loopBeat(index) + cur._build.length);
+                }
+            }
+            
+            function timerLoop() {
+                // 60fps-ish
+                setTimeout(timerLoop, 16);
+                if(!audio.current_song || !audio.current_song._playing) {
+                    return;
+                }
+                var now = currentTime();
+                if(now < 0)
+                    return;
+                now %= audio.current_song._loopLength;
+                now = parseInt(now * 1000);
+                document.getElementById("timer").innerHTML = "T=0x" + pad(now.toString(16).toUpperCase(), 4);
+            }
+            
+            function animationLoop() {
+                setTimeout(animationLoop, animationLoopTime);
+                var cur = audio.current_song;
+                if(!cur || !cur._playing)
+                    return;
+                var now = currentTime();
+                var future = now + animationLookAhead;
+                if(audio.beat_pointer >=0)
+                    cur._beatWidth = cur._loopWidth;
+                for(var beatTime = audio.beat_pointer * cur._beatWidth; beatTime < future;
+                        beatTime = ++audio.beat_pointer * cur._beatWidth) {
+                    var beat = getBeat(audio.beat_pointer);
+                    var timeout = (beatTime - now)*1000;
+                    // Either lagging behind or first note
+                    if(timeout < 0)
+                        timeout = 0;
+                    setTimeout(
+                        handleBeat, timeout,
+                        beat, audio.beat_pointer, RequestNextColor(), nCurrentColor, cur);
+                }
+            }
+            
+            function handleBeat(beat, bp, c, cc, current) {
+                // we have changed song since we were scheduled
+                if(current != audio.current_song)
+                    return;
+                document.getElementById("beets").innerHTML = wrapBeats(bp+1, 100);
+                // I probably shouldn't have so much on one line
+                document.getElementById("beatCount").innerHTML = "B=0x" + pad(bp < 0 ? 0: loopBeat(bp).toString(16).toUpperCase(), 4);
+                if(beat != '.') {
+                    var waifuDiv = document.getElementById("waifu");
+                    
+                    if(beat == '|') {
+                        shortBlackout = true;
+                        document.getElementById("blackout").style.display = "block";
+                        return;
+                    }
+                    if(beat == '+') {
+                        document.getElementById("blackout").style.display = "block";
+                        return;
+                    } else {
+                        document.getElementById("blackout").style.display = "none";
+                    }
+                    if(beat != '*' && beat != 'X' && beat != 'O') {
+                        document.getElementById("waifuColour").style.backgroundColor = c;
+                        document.getElementById("colourName").innerHTML = colors[cc];
+                    }
+                    if(beat != ':' && beat != 'O' && beat != 'X') {
+                        var waifu = waifus[waifuIndex++%waifus.length];
+                        waifuDiv.style.backgroundImage = 'url("images/' + waifu.file + '")';
+                        document.getElementById("waifuName").innerHTML = waifu.name;
+                    }
+                    if(beat.toLowerCase() == 'o') {
+                        $("#blur animate").get(1).beginElement();
+                    }
+                    if(beat.toLowerCase() == 'x') {
+                        $("#blur animate").get(0).beginElement();
+                    }
+                }
+                if(shortBlackout) {
+                    document.getElementById("blackout").style.display = "none";
+                    shortBlackout = false;
+                }
+            }
+            
+            function loadSong(index) {
+                leftToLoad++;
+                tmpSong[0] = tmpSong[1] = null;
+                if(audio.songs[index].buildUp) {
+                    leftToLoad++;
+                    loadAudio(audio.songs[index].buildUp, index, 0);
+                }
+                loadAudio(audio.songs[index].file, index, 1);
+            }
+            
+            function loadAudio(filename, index, tmpArray) {
+                var req = new XMLHttpRequest();
+                req.open('GET', filename, true);
+                req.responseType = 'arraybuffer';
+                req.onload = function() {
+                    audio.context.decodeAudioData(
+                        req.response,
+                        function(buffer) {
+                            tmpSong[tmpArray] = trimSilence(buffer);
+                            if(!--leftToLoad) {
+                                onLoaded(index);
+                            }
+                        },
+                        function() {
+                            console.log('Error decoding audio "' + filename + '".');
+                        }
+                    );
+                };
+                req.send();
+            }
+            
+                        
+            function onLoaded(index) {
+                var buf;
+                if(initialLoad) {
+                    document.getElementById('waifu').className = "loaded";
+                    initialLoad = false;
+                }
+                // is there a buildup?
+                if(tmpSong[0]) {
+                    buf = concatenateAudioBuffers(tmpSong[0],tmpSong[1]);
+                } else {
+                    buf = tmpSong[1];
+                }
+                buf._loopStart = tmpSong[0] ? tmpSong[0].duration : 0;
+                buf._loopLength = buf.duration - buf._loopStart;
+                
+                audio.buffer[index] = buf;
+                
+                audio.playIndex(index);
+            }
+         
+            //-----------------------------
+            // Check Web Audio API Support
+            //-----------------------------
+            try {
+                // More info at http://caniuse.com/#feat=audio-api
+                window.AudioContext = window.AudioContext || window.webkitAudioContext;
+                audio.context = new window.AudioContext();
+            } catch(e) {
+                audio.proceed = false;
+                alert('Web Audio API not supported in this browser.');
+            }
+            
+            // preloads, don't update leftToLoad as that's up top
+            for(var waifu in waifus) {
+                o = document.createElement('img');
+                o.src = "images/" + waifus[waifu].file;
+                o.onload = function() {if(!--leftToLoad) onLoaded(0);};
+            }
+         
+            if (audio.proceed) {
+                audio.playIndex(0);
+                animationLoop();
+                timerLoop();
+            }
+            
+            // because MP3 is bad
+            function trimSilence(buffer) {
+                // how much silence we have
+                var minSilence = buffer.length;
+                var maxSilence = 0;
+                for(var i=0; i<buffer.numberOfChannels; i++) {
+                    var tmp = buffer.getChannelData(i);
+                    for(var j=0; j < tmp.length; j++) {
+                        // end of silence
+                        if(tmp[j] != 0) {
+                            if(j < minSilence) {
+                                minSilence = j;
+                            }
+                            break;
+                        }
+                    }
+                    // because just padding 1 end isn't enough for this codec
+                    for(var j=tmp.length-1; j >= 0 ; j--) {
+                        if(tmp[j] != 0) {
+                            if(j > maxSilence) {
+                                maxSilence = j;
+                            }
+                            break;
+                        }
+                    }
+                }
+                // 1152 = one frame, makes the sync better because ID3 tags
+                // take up that space or some garbage
+                var ret = audio.context.createBuffer(buffer.numberOfChannels, maxSilence-minSilence-1152, buffer.sampleRate);
+                for(var i=0; i<buffer.numberOfChannels; i++) {
+                    var oldBuf = buffer.getChannelData(i);
+                    var newBuf = ret.getChannelData(i);
+                    for(var j=0; j<ret.length; j++) {
+                        newBuf[j] = oldBuf[minSilence + j + 1152];
+                    }
+                }
+                
+                return ret;
+            }
+            
+            function concatenateAudioBuffers(buffer1, buffer2) {
+                if (!buffer1 || !buffer2) {
+                    console.log("no buffers!");
+                    return null;
+                }
+
+                if (buffer1.numberOfChannels != buffer2.numberOfChannels) {
+                    console.log("number of channels is not the same!");
+                    return null;
+                }
+
+                if (buffer1.sampleRate != buffer2.sampleRate) {
+                    console.log("sample rates don't match!");
+                    return null;
+                }
+
+                var tmp = audio.context.createBuffer(buffer1.numberOfChannels, buffer1.length + buffer2.length, buffer1.sampleRate);
+
+                for (var i=0; i<tmp.numberOfChannels; i++) {
+                    var data = tmp.getChannelData(i);
+                    data.set(buffer1.getChannelData(i));
+                    data.set(buffer2.getChannelData(i),buffer1.length);
+                }
+                return tmp;
+            };
+        </script>
+    </head>
+    <body>
+        <div id="blackout"></div>
+        
+        <div id="waifu"></div>
+        <div id="waifuColour"></div>
+        
+        <div id="controls">
+            <a href="#" onclick="void(audio.stop());">stop</a>
+            <a href="#" onclick="void(audio.play());">play</a>
+            <a href="#" onclick="void(audio.prev());">prev</a>
+            <a href="#" onclick="void(audio.next());">next</a>
+            <div id="songname"></div>
+            <div id="beets"></div>
+            <div id="waifuName"></div>
+            <div id="colourName"></div>
+            <div id="beatCount"></div>
+            <div id="timer"></div>
+        </div>
+    </body>
+</html>
