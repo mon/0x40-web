@@ -2,16 +2,20 @@
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en" >
     <!-- 
     TODO:
-    Clean up the damn code
-    Do the damn thesis and team project
-    Loading screen
-    Volume controls
-    Prettier ui
-    Song shuffle
-    Image shuffle
-    Image pause
-    Fine tune blur
-    
+        Clean up the damn code
+            if you're not mon, don't read any further, it's pretty bad JS
+        
+        Loading screen
+        Volume controls
+        Prettier ui
+        Song shuffle
+        Image pause
+        Fine tune blur
+        Keyboard shortcuts
+        Different colour palettes
+        External respacks
+        Change short blackout to beat length / 1.7
+        Blur into blackout? iunno
     -->
     <head>
         <meta http-equiv="content-type" content="text/html; charset=utf-8" />
@@ -19,14 +23,14 @@
         <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
         <link rel="stylesheet" href="style.css">
         <svg version="1.1" xmlns="http://www.w3.org/2000/svg" height="0">
-          <filter id="blur">
+          <filter id="blur" filterRes="1">
               <feGaussianBlur stdDeviation="0 0">
                 <animate attributeName="stdDeviation" attributeType="XML" 
                     begin="indefinite" end="indefinite" dur="0.1s" 
-                    fill="freeze" from="0 60" to="0 0"/>
+                    fill="freeze" from="0 70" to="0 0"/>
                 <animate attributeName="stdDeviation" attributeType="XML" 
                     begin="indefinite" end="indefinite" dur="0.1s" 
-                    fill="freeze" from="60 0" to="0 0"/>
+                    fill="freeze" from="70 0" to="0 0"/>
               </feGaussianBlur>
           </filter>
         </svg>
@@ -39,8 +43,10 @@
         </style>
         <script type="text/javascript" src="0x40.js"></script>
         <script type="text/javascript">
+            //debug
+            var noAutoPlay = false;
+            
             var leftToLoad = waifus.length;
-            var snip = 0;
             var initialLoad = true;
             var shortBlackout = false;
             
@@ -48,8 +54,6 @@
             var animationLoopTime = 50;
             // Seconds!
             var animationLookAhead = 0.2;
-            
-            var waifuIndex = 0;
             
             var tmpSong = {};
 
@@ -204,8 +208,6 @@
                 // I probably shouldn't have so much on one line
                 document.getElementById("beatCount").innerHTML = "B=0x" + pad(bp < 0 ? 0: loopBeat(bp).toString(16).toUpperCase(), 4);
                 if(beat != '.') {
-                    var waifuDiv = document.getElementById("waifu");
-                    
                     if(beat == '|') {
                         shortBlackout = true;
                         document.getElementById("blackout").style.display = "block";
@@ -217,14 +219,21 @@
                     } else {
                         document.getElementById("blackout").style.display = "none";
                     }
+                    if(beat != ':' && beat != 'O' && beat != 'X') {
+                        var waifu = GetRandomWaifu();
+                        var waifuDiv = document.getElementsByClassName('waifuImg')[nCurrentWaifu];
+                        current = document.getElementsByClassName('active');
+                        if(current.length) {
+                            current[0].style.display = "none";
+                            current[0].className = "waifuImg";
+                        }
+                        waifuDiv.style.display = "block";
+                        waifuDiv.className = "waifuImg active";
+                        document.getElementById("waifuName").innerHTML = waifu.name;
+                    }
                     if(beat != '*' && beat != 'X' && beat != 'O') {
                         document.getElementById("waifuColour").style.backgroundColor = c;
                         document.getElementById("colourName").innerHTML = colors[cc];
-                    }
-                    if(beat != ':' && beat != 'O' && beat != 'X') {
-                        var waifu = waifus[waifuIndex++%waifus.length];
-                        waifuDiv.style.backgroundImage = 'url("images/' + waifu.file + '")';
-                        document.getElementById("waifuName").innerHTML = waifu.name;
                     }
                     if(beat.toLowerCase() == 'o') {
                         $("#blur animate").get(1).beginElement();
@@ -259,7 +268,7 @@
                         function(buffer) {
                             tmpSong[tmpArray] = trimSilence(buffer);
                             if(!--leftToLoad) {
-                                onLoaded(index);
+                                onFilesLoaded(index);
                             }
                         },
                         function() {
@@ -271,12 +280,8 @@
             }
             
                         
-            function onLoaded(index) {
+            function onFilesLoaded(index) {
                 var buf;
-                if(initialLoad) {
-                    document.getElementById('waifu').className = "loaded";
-                    initialLoad = false;
-                }
                 // is there a buildup?
                 if(tmpSong[0]) {
                     buf = concatenateAudioBuffers(tmpSong[0],tmpSong[1]);
@@ -288,32 +293,13 @@
                 
                 audio.buffer[index] = buf;
                 
+                if(initialLoad) {
+                    document.getElementById('waifu').className = "loaded";
+                    initialLoad = false;
+                    if(noAutoPlay)
+                        return;
+                }
                 audio.playIndex(index);
-            }
-         
-            //-----------------------------
-            // Check Web Audio API Support
-            //-----------------------------
-            try {
-                // More info at http://caniuse.com/#feat=audio-api
-                window.AudioContext = window.AudioContext || window.webkitAudioContext;
-                audio.context = new window.AudioContext();
-            } catch(e) {
-                audio.proceed = false;
-                alert('Web Audio API not supported in this browser.');
-            }
-            
-            // preloads, don't update leftToLoad as that's up top
-            for(var waifu in waifus) {
-                o = document.createElement('img');
-                o.src = "images/" + waifus[waifu].file;
-                o.onload = function() {if(!--leftToLoad) onLoaded(0);};
-            }
-         
-            if (audio.proceed) {
-                audio.playIndex(0);
-                animationLoop();
-                timerLoop();
             }
             
             // because MP3 is bad
@@ -381,25 +367,65 @@
                 }
                 return tmp;
             };
+            
+            window.onload = function() {
+                // Check Web Audio API Support
+                try {
+                    // More info at http://caniuse.com/#feat=audio-api
+                    window.AudioContext = window.AudioContext || window.webkitAudioContext;
+                    audio.context = new window.AudioContext();
+                } catch(e) {
+                    audio.proceed = false;
+                    alert('Web Audio API not supported in this browser.');
+                }
+                
+                // preloads, don't update leftToLoad as that's up top
+                for(var waifu in waifus) {
+                    o = document.createElement('img');
+                    o.src = "images/" + waifus[waifu].file;
+                    o.onload = function() {if(!--leftToLoad) onFilesLoaded(0);};
+                }
+            
+                // actual images
+                var container = document.getElementById('waifu');
+                for(var waifu in waifus) {
+                    o = document.createElement('div');
+                    o.style.backgroundImage = 'url("images/' + waifus[waifu].file + '")';
+                    o.className = "waifuImg";
+                    container.appendChild(o);
+                }
+                var megumi = document.getElementsByClassName("waifuImg")[0];
+                megumi.style.display = "block";
+                megumi.className = "waifuImg active";
+             
+                setTimeout( function() {
+                    if (audio.proceed) {
+                        audio.playIndex(0);
+                        animationLoop();
+                        timerLoop();
+                    }
+                }, 400);
+            };
         </script>
     </head>
     <body>
-        <div id="blackout"></div>
-        
-        <div id="waifu"></div>
-        <div id="waifuColour"></div>
         
         <div id="controls">
             <a href="#" onclick="void(audio.stop());">stop</a>
             <a href="#" onclick="void(audio.play());">play</a>
             <a href="#" onclick="void(audio.prev());">prev</a>
             <a href="#" onclick="void(audio.next());">next</a>
+            <div id="beatCount">B=0x0000</div>
+            <div id="timer">T=0x0000</div>
             <div id="songname"></div>
             <div id="beets"></div>
             <div id="waifuName"></div>
             <div id="colourName"></div>
-            <div id="beatCount"></div>
-            <div id="timer"></div>
         </div>
+        
+        <div id="blackout"></div>
+        
+        <div id="waifu"></div>
+        <div id="waifuColour"></div>
     </body>
 </html>

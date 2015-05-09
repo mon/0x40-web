@@ -1382,7 +1382,15 @@ var rgSongs = [
 		name: "Pendulum - Propane Nightmares",
 		source: "https://www.youtube.com/watch?v=y2j5uMYTnDE",
 		rhythm: "o.x..ox.o.x..ox.o.x..ox.o.x..xx.o.x..ox.o.x..ox.o.x..ox.o.x..xx.o.x..ox.o.x..ox.o.x..ox.o.x..xx.o.x..ox.o.x..ox.o.x..ox..x..x.x.o.x..ox.o.x..ox.o.x..ox.o.x..xx.o.x..ox.o.x..ox.o.x..ox.o.x..xx.o.x..ox.o.x..ox.o.x..ox.o.x..xx.o.x..ox.o.x..ox.o.xxxxxxxxxxxxxxo..ox..oo.oox...o..ox..oo.oox.xxo..ox..oo.oox...o..ox..oo.oox.xxo..ox..oo.oox...o..ox..oo.oox.xxo..ox..oo.oox...o..ox..o.xoox.o."
-	}
+	},
+	{
+		pack: 3,
+		file: "songs/loop_Sail.mp3",
+		name: "AWOLNation - Sail",
+		rhythm: "x..::.+.x...+...x..::.+.x:.:+...x..::.+.x...+...x..::.+.x::::...",
+        buildUp: "songs/build_Sail.mp3",
+		buildUpRhythm: ".....+...........o...+..........o:...+...........o...+...o...+.o.:..."
+	},
 ];
 
 var nCurrentColor = 0;
@@ -1390,20 +1398,16 @@ var nCurrentWaifu = 0;
 
 var nColorX, nColorY, nColorZ;
 
-/*
+
 function GetRandomWaifu()
 {
-	var x = 0;
-	while(x++ < 100)
-	{
-		var tmp = Math.round((Math.random() * (waifus.length - 1)));
-		waifu = waifus[tmp];
-		if(waifu && waifu.texture) {
-			nCurrentWaifu = tmp;
-			return waifu;
-		}
-	}
-}*/
+    var tmp = Math.round((Math.random() * (waifus.length - 1)));
+    if(tmp == nCurrentWaifu) {
+        return GetRandomWaifu();
+    }
+    nCurrentWaifu = tmp;
+    return waifus[tmp];
+}
            
 function pad(n, width, z) {
   z = z || '0';
@@ -1422,7 +1426,11 @@ function rgbToHex(rgb) {
 function RequestNextColor()
 {
     var rgb = new Array;
-	nCurrentColor = (nCurrentColor + Math.round( (Math.random() * (colors.length - 2) ) ) + 1) % colors.length;
+    var tmp = (nCurrentColor + Math.round( (Math.random() * (colors.length - 2) ) ) + 1) % colors.length;
+    if(tmp == nCurrentColor) {
+        return RequestNextColor();
+    }
+	nCurrentColor = tmp;
 
 	nColorX = nCurrentColor % 4;
 	nColorY = parseInt(nCurrentColor / 4) % 4;

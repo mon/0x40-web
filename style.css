@@ -1,8 +1,8 @@
-#waifu { 
-    background: url("images/Megumi.png") no-repeat center center fixed; 
-    -webkit-background-size: cover;
-    background-size: cover;
-    
+body {
+    background-color:#ffffff;
+}
+
+#waifu {
     width: 100%;
     height: 100%;
     position: absolute;
@@ -11,18 +11,36 @@
     z-index: -10;
     
     opacity: 0;
+    
+    #-webkit-transform: scale(3);
+    #transform: scale(3);
+    #-webkit-transform-origin: top left;
+    #transform-origin: top left;
 }
 
 #waifu.loaded {
     animation-name: fadein;
     animation-duration: 1s;
-    opacity: 255;
+    opacity: 1;
+}
+
+.waifuImg {
+    background-repeat: no-repeat;
+    background-position: center center;
+    -webkit-background-size: cover;
+    background-size: cover;
+    width: 100%;
+    height: 100%;
+    display: none;
+}
+
+.waifuImg.active {
+    display: block;
 }
 
 #waifuColour {
-    opacity: 0.69; 
-
-    -mix-blend-mode: hard-light;
+    opacity: 0.7;
+    mix-blend-mode: hard-light;
     width: 100%;
     height: 100%;
     position: absolute;
@@ -46,11 +64,13 @@
     font-family: monospace;
     background-color:#ffffff;
     width:800px;
-    position: relative;
-    z-index 2;
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    z-index: 2;
 }
 
 @keyframes fadein {
     from {opacity: 0;}
-    to {opacity: 255;}
+    to {opacity: 1;}
 }
