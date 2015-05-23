@@ -1,0 +1,1886 @@
+//class HuesReloadedRe
+package 
+{
+    import flash.display.*;
+    import flash.events.*;
+    import flash.filters.*;
+    import flash.geom.*;
+    import flash.media.*;
+    import flash.net.*;
+    import flash.ui.*;
+    import flash.utils.*;
+    
+    public class HuesReloadedRe extends flash.display.MovieClip implements HuesCore
+    {
+        public function HuesReloadedRe()
+        {
+            this.currentColors = this.oldColors;
+            this.respackBytes = new flash.utils.ByteArray();
+            this.uiArray = [];
+            this.lastSongArray = [];
+            this.lastImageArray = [];
+            this.sampleTargetArray = new flash.utils.ByteArray();
+            super();
+            Logging.log("0x40 Hues " + this.versionText + " (" + this.versionDate + ") - start your engines!");
+            this._settings = new HuesSettings();
+            this.oldAutoSong = this.settings.autosong;
+            this.outputSound = new flash.media.Sound();
+            this.outputSound.addEventListener(flash.events.SampleDataEvent.SAMPLE_DATA, this.sampler);
+            this.resourceManager = new ResourceManager();
+            this.builtIn = new BuiltResourcePack();
+            this.builtIn.addEventListener(flash.events.Event.COMPLETE, this.respackLoaded);
+            this.blackOverlay = new flash.display.MovieClip();
+            this.blackOverlay.graphics.beginFill(0);
+            this.blackOverlay.graphics.drawRect(0, 0, 10, 10);
+            this.blackOverlay.graphics.endFill();
+            this.blackOverlay.width = 1280;
+            this.blackOverlay.height = 720;
+            this.blackOverlay.mouseEnabled = false;
+            this.blackOverlay.mouseChildren = false;
+            this.blackOverlay.alpha = 0;
+            this.blackOverlayColorTransform = new flash.geom.ColorTransform();
+            this.destBMD = new flash.display.BitmapData(1280, 720);
+            this.colorBMD = new flash.display.BitmapData(1280, 720, false, 4294967295);
+            this.destBM = new flash.display.Bitmap(this.destBMD);
+            this.destBM.smoothing = true;
+            this.colorBM = new flash.display.Bitmap(this.colorBMD);
+            this.colorBM.smoothing = false;
+            this.colorBM.alpha = 0.7;
+            this.colorBM.blendMode = flash.display.BlendMode.HARDLIGHT;
+            this.colorBM.width = 1280;
+            this.colorBM.height = 720;
+            this.imageHolder = new flash.display.MovieClip();
+            this.imageHolder.addChild(this.destBM);
+            this.imageHolder.addChild(this.colorBM);
+            addChildAt(this.imageHolder, 0);
+            addChildAt(this.blackOverlay, (this.numChildren - 1));
+            this.blurFilter = new flash.filters.BlurFilter(0, 0, 1);
+            this.userInterface = this.retroui as HuesUserInterface;
+            this.userInterface.connectCore(this);
+            this.window.connectCore(this);
+            this.uiArray.push(new RetroUI(), new WeedUI(), new ModernUI(), new XmasUI());
+            this.settings.addCallback(this.settingsUpdated);
+            this.addEventListener(flash.events.Event.ADDED_TO_STAGE, this.onAddedToStage);
+            this.window.hide();
+            this.builtIn.ready();
+            return;
+        }
+
+        public function loadLocal():void
+        {
+            this.loadLocalMulti();
+            return;
+        }
+
+        public function loadLocalMulti():void
+        {
+            trace("Opening multiple");
+            this.files = new flash.net.FileReferenceList();
+            var loc1:*=new flash.net.FileFilter("Resource pack (*.zip)", "*.zip");
+            this.files.addEventListener(flash.events.Event.SELECT, this.selectedMultipleFiles);
+            this.files.browse([loc1]);
+            return;
+        }
+
+        internal function selectedMultipleFiles(arg1:flash.events.Event=null):*
+        {
+            var loc1:*=undefined;
+            if (arg1) 
+            {
+                arg1.target.removeEventListener(flash.events.Event.SELECT, this.selectedMultipleFiles);
+            }
+            if (this.loadedFiles < this.files.fileList.length) 
+            {
+                loc1 = this.files.fileList[this.loadedFiles];
+                trace("@@@ Loading file", this.loadedFiles, "of", this.files.fileList.length, loc1.name);
+                loc1.addEventListener(flash.events.Event.COMPLETE, this.loadedFile);
+                loc1.load();
+            }
+            else 
+            {
+                trace("@@@ All loaded!");
+                this.loadedFiles = 0;
+                this.files = null;
+            }
+            return;
+        }
+
+        internal function loadedFile(arg1:flash.events.Event):*
+        {
+            var loc2:*;
+            var loc3:*=((loc2 = this).loadedFiles + 1);
+            loc2.loadedFiles = loc3;
+            var loc1:*=new ResourcePack();
+            this.window.loadingLocal(loc1);
+            loc1.addEventListener(flash.events.Event.COMPLETE, this.respackLoaded);
+            loc1.loadFileReference(arg1.target);
+            arg1.target.removeEventListener(flash.events.Event.COMPLETE, this.loadedFile);
+            this.selectedMultipleFiles();
+            return;
+        }
+
+        public function getCurrentMode():String
+        {
+            return this.isFullAuto ? "FULL AUTO" : "NORMAL";
+        }
+
+        public function get colors():Array
+        {
+            return this.currentColors;
+        }
+
+        public function getColorNames():Array
+        {
+            return this.oldColorNames;
+        }
+
+        public function get version():String
+        {
+            return "5.11";
+        }
+
+        public function get flavor():String
+        {
+            return null;
+        }
+
+        public function get versionDate():String
+        {
+            return "14.03.2015";
+        }
+
+        public function get versionText():String
+        {
+            return this.flavor ? this.version + " " + this.flavor : this.version;
+        }
+
+        internal function increaseVolume():*
+        {
+            this.volumeMuted = false;
+            this.currentVolume = this.currentVolume + 4;
+            if (this.currentVolume > 100) 
+            {
+                this.currentVolume = 100;
+            }
+            this.updateVolume();
+            return;
+        }
+
+        internal function toggleMute():*
+        {
+            this.volumeMuted = !this.volumeMuted;
+            this.updateVolume();
+            return;
+        }
+
+        internal function updateVolume():*
+        {
+            var loc1:*=undefined;
+            if (this.soundChannel) 
+            {
+                loc1 = this.soundChannel.soundTransform;
+                loc1.volume = this.volumeMuted ? 0 : this.currentVolume / 100;
+                this.soundChannel.soundTransform = loc1;
+            }
+            return;
+        }
+
+        public function get settings():HuesSettings
+        {
+            return this._settings;
+        }
+
+        public function nextSong():void
+        {
+            this.lastSongArray = [];
+            var loc1:*=(this.songIndex + 1 + this.resourceManager.enabledSongCount) % this.resourceManager.enabledSongCount;
+            this.setSong(loc1);
+            return;
+        }
+
+        public function previousSong():void
+        {
+            this.lastSongArray = [];
+            var loc1:*=((this.songIndex - 1) + this.resourceManager.enabledSongCount) % this.resourceManager.enabledSongCount;
+            this.setSong(loc1);
+            return;
+        }
+
+        public function get resManager():ResourceManager
+        {
+            return this.resourceManager;
+        }
+
+        public function getSongIndex():Number
+        {
+            return this.songIndex;
+        }
+
+        public function setSong(arg1:Number):void
+        {
+            var loc1:*=undefined;
+            var loc2:*=undefined;
+            this.songIndex = arg1;
+            this.currentSong = this.resourceManager.enabledSongs[this.songIndex];
+            trace("Next song:", this.songIndex, this.currentSong, this.currentSong ? this.currentSong.name : "<null song>");
+            if (this.currentSong == undefined) 
+            {
+                this.currentSong = {"name":"None", "title":"None", "rhythm":".", "source":null, "crc":"none", "sound":null, "enabled":true, "filename":"none"};
+            }
+            this.userInterface.setSongText();
+            this.loopCount = 0;
+            if (this.currentSong.buildup) 
+            {
+                if (this.currentSong.force) 
+                {
+                    if (this.currentSong.force != "song") 
+                    {
+                        this.currentSong.buildupPlayed = false;
+                        this.doBuildup = true;
+                    }
+                    else 
+                    {
+                        this.currentSong.buildupPlayed = true;
+                        this.doBuildup = false;
+                    }
+                    this.currentSong.force = null;
+                }
+                else 
+                {
+                    var loc3:*=this.settings.buildups;
+                    switch (loc3) 
+                    {
+                        case "off":
+                        {
+                            this.currentSong.buildupPlayed = true;
+                            this.doBuildup = false;
+                            break;
+                        }
+                        case "on":
+                        {
+                            this.currentSong.buildupPlayed = false;
+                            this.doBuildup = true;
+                            break;
+                        }
+                        case "once":
+                        {
+                            this.doBuildup = !this.currentSong.buildupPlayed;
+                            break;
+                        }
+                    }
+                }
+                loc1 = this.calculateSongLength(this.currentSong.sound) / this.currentSong.rhythm.length;
+                loc2 = int(this.calculateSongLength(this.currentSong.buildup) / loc1) + 1;
+                if (this.currentSong.buildupRhythm == null) 
+                {
+                    this.currentSong.buildupRhythm = "";
+                }
+                if (this.currentSong.buildupRhythm.length < loc2) 
+                {
+                    trace("Filling buildup beatmap");
+                    while (this.currentSong.buildupRhythm.length < loc2) 
+                    {
+                        this.currentSong.buildupRhythm = this.currentSong.buildupRhythm + ".";
+                    }
+                }
+                trace("Buildup length:", loc2);
+            }
+            this.restartAudio();
+            return;
+        }
+
+        internal function decreaseVolume():*
+        {
+            this.volumeMuted = false;
+            this.currentVolume = this.currentVolume - 4;
+            if (this.currentVolume < 0) 
+            {
+                this.currentVolume = 0;
+            }
+            this.updateVolume();
+            return;
+        }
+
+        public function randomSong():void
+        {
+            var loc2:*=undefined;
+            var loc1:*=int(Math.random() * this.resourceManager.enabledSongCount);
+            if (loc1 == this.songIndex && this.resourceManager.enabledSongCount > 1 || !(this.lastSongArray.indexOf(loc1) == -1)) 
+            {
+                this.randomSong();
+            }
+            else 
+            {
+                trace("Randoming a song!");
+                this.setSong(loc1);
+                this.lastSongArray.push(loc1);
+                loc2 = Math.min(5, int(this.resourceManager.enabledSongCount / 2));
+                while (this.lastSongArray.length > loc2 && loc2 >= 0) 
+                {
+                    this.lastSongArray.shift();
+                }
+            }
+            return;
+        }
+
+        internal function onLoop():*
+        {
+            this.loopCount = this.loopCount + 1;
+            var loc1:*=this.settings.autosong;
+            switch (loc1) 
+            {
+                case "loop":
+                {
+                    trace("Checking loops");
+                    if (this.loopCount >= this.settings.autosongDelay) 
+                    {
+                        this.startSongChangeFade();
+                    }
+                    break;
+                }
+                case "time":
+                {
+                    trace("Checking times");
+                    if (this.currentSong.sound && this.calculateSongLength(this.currentSong.sound) / 1000 * this.loopCount >= this.settings.autosongDelay * 60) 
+                    {
+                        this.startSongChangeFade();
+                    }
+                    break;
+                }
+            }
+            return;
+        }
+
+        public function startSongChangeFade():void
+        {
+            var loc1:*;
+            this.fadeDirection = loc1 = true;
+            this.fadeOut = loc1;
+            return;
+        }
+
+        public function restartAudio():*
+        {
+            this.resetAudio();
+            this.doBlackout = false;
+            this.soundChannel = this.outputSound.play();
+            this.updateVolume();
+            return;
+        }
+
+        public function songDataUpdated():void
+        {
+            if (this.currentSong) 
+            {
+                this.samples = this.calculateSamples(this.currentSong.sound);
+                this.beatLength = this.calculateSongLength(this.currentSong.sound) / this.currentSong.rhythm.length;
+                this.userInterface.updateLists();
+                this.userInterface.updateTexts();
+                this.userInterface.setSongText();
+                this.userInterface.setImageText();
+            }
+            else 
+            {
+                var loc1:*;
+                this.beatLength = loc1 = -1;
+                this.samples = loc1;
+            }
+            return;
+        }
+
+        public function resetAudio():*
+        {
+            this.samplePosition = 0;
+            this.lastBeat = -123;
+            this.position = 0;
+            this.testPosition = 0;
+            this.lastSC = 0;
+            this.buildupDiff = 0;
+            this.songDataUpdated();
+            if (this.soundChannel) 
+            {
+                this.soundChannel.stop();
+            }
+            this.soundChannel = null;
+            return;
+        }
+
+        public function randomImage():void
+        {
+            var loc2:*=undefined;
+            var loc1:*=int(Math.random() * this.resourceManager.enabledBothCount);
+            if ((loc1 == this.imageIndex || !(this.lastImageArray.indexOf(loc1) == -1)) && this.resourceManager.enabledBothCount > 1) 
+            {
+                this.randomImage();
+            }
+            else 
+            {
+                this.setImage(loc1);
+                this.lastImageArray.push(loc1);
+                loc2 = Math.min(20, int(this.resourceManager.enabledBothCount / 2));
+                while (this.lastImageArray.length > loc2 && loc2 >= 0) 
+                {
+                    this.lastImageArray.shift();
+                }
+            }
+            return;
+        }
+
+        public function getImageIndex():Number
+        {
+            return this.imageIndex;
+        }
+
+        public function setImage(arg1:Number):void
+        {
+            this.imageIndex = arg1;
+            this.animationFrame = 0;
+            this.tmpFrame = 0;
+            var loc1:*=this.resourceManager.enabledBoth[this.imageIndex];
+            if (loc1 == this.currentImage && !(loc1 == null)) 
+            {
+                return;
+            }
+            if (loc1 != undefined) 
+            {
+                this.currentImage = loc1;
+            }
+            else if (!this.currentImage || !(this.currentImage.crc == "none")) 
+            {
+                this.currentImage = {"name":"None", "fullname":"None", "align":"center", "bitmap":new flash.display.BitmapData(1280, 720, true, 16777215), "crc":"none", "source":null, "enabled":true};
+                this.imageIndex = -1;
+                this.lastImageArray = [];
+            }
+            if (this.animTimeoutID) 
+            {
+                flash.utils.clearTimeout(this.animTimeoutID);
+            }
+            if (this.currentImage.bitmaps) 
+            {
+                this.animTimeoutID = flash.utils.setTimeout(this.animationTimeOut, this.currentImage.frameDurations[0]);
+            }
+            this.userInterface.setImageText();
+            this.drawImage();
+            return;
+        }
+
+        public function getCurrentSong():Object
+        {
+            return this.currentSong;
+        }
+
+        public function getCurrentImage():Object
+        {
+            return this.currentImage;
+        }
+
+        internal function alignImage():*
+        {
+            if (!stage) 
+            {
+                return;
+            }
+            if (this.settings.smartAlign && !(this.currentImage == null)) 
+            {
+                var loc1:*=this.currentImage.align;
+                switch (loc1) 
+                {
+                    case "center":
+                    {
+                        this.destBM.x = (stage.stageWidth - this.destBM.width) / 2;
+                        break;
+                    }
+                    case "left":
+                    {
+                        this.destBM.x = 0;
+                        break;
+                    }
+                    case "right":
+                    {
+                        this.destBM.x = stage.stageWidth - this.destBM.width;
+                        break;
+                    }
+                }
+            }
+            else 
+            {
+                this.destBM.x = (stage.stageWidth - this.destBM.width) / 2;
+            }
+            return;
+        }
+
+        public function nextImage():void
+        {
+            this.isFullAuto = false;
+            var loc1:*=(this.imageIndex + 1 + this.resourceManager.enabledBothCount) % this.resourceManager.enabledBothCount;
+            this.setImage(loc1);
+            this.lastImageArray = [];
+            return;
+        }
+
+        public function previousImage():void
+        {
+            this.isFullAuto = false;
+            var loc1:*=((this.imageIndex - 1) + this.resourceManager.enabledBothCount) % this.resourceManager.enabledBothCount;
+            this.setImage(loc1);
+            this.lastImageArray = [];
+            return;
+        }
+
+        internal function randomColorIndex():*
+        {
+            var loc1:*=int(Math.random() * 64);
+            var loc2:*=!(this.settings.blendMode == "hard") && this.colors[loc1].c == 0;
+            if (loc1 == this.colorIndex || loc2) 
+            {
+                return this.randomColorIndex();
+            }
+            return loc1;
+        }
+
+        internal function randomColor():*
+        {
+            var loc1:*=this.randomColorIndex();
+            this.setColor(loc1);
+            return;
+        }
+
+        internal function setColor(arg1:Number):*
+        {
+            this.stopFade();
+            this.colorIndex = arg1;
+            var loc1:*=this.colors[this.colorIndex].c;
+            this.colorBMD.fillRect(this.colorBMD.rect, loc1);
+            return;
+        }
+
+        internal function startFade(arg1:*):*
+        {
+            trace("started fadde");
+            this.doColorFade = true;
+            this.colorFadeLength = int(arg1);
+            this.colorFadeStarted = flash.utils.getTimer();
+            this.oldColor = this.colors[this.colorIndex].c;
+            this.colorIndex = this.randomColorIndex();
+            return;
+        }
+
+        internal function stopFade():*
+        {
+            this.doColorFade = false;
+            this.oldColor = 16777215;
+            this.colorFadeStarted = 0;
+            this.colorFadeLength = 0;
+            return;
+        }
+
+        internal function fadeColor(arg1:Number):*
+        {
+            var loc1:*=this.mixColors(this.oldColor, this.colors[this.colorIndex].c, arg1);
+            this.colorBMD.fillRect(this.colorBMD.rect, loc1);
+            return;
+        }
+
+        internal function mixColors(arg1:*, arg2:*, arg3:*):*
+        {
+            arg3 = Math.min(1, Math.max(0, arg3));
+            var loc1:*=arg1 >> 16 & 255;
+            var loc2:*=arg1 >> 8 & 255;
+            var loc3:*=arg1 & 255;
+            var loc4:*=arg2 >> 16 & 255;
+            var loc5:*=arg2 >> 8 & 255;
+            var loc6:*=arg2 & 255;
+            var loc7:*=loc1 * (1 - arg3) + loc4 * arg3;
+            var loc8:*=loc2 * (1 - arg3) + loc5 * arg3;
+            var loc9:*=loc3 * (1 - arg3) + loc6 * arg3;
+            var loc10:*;
+            return loc10 = loc7 << 16 | loc8 << 8 | loc9;
+        }
+
+        public function getColorIndex():Number
+        {
+            return this.colorIndex;
+        }
+
+        public function getBlurFilter():flash.filters.BlurFilter
+        {
+            return this.blurFilter;
+        }
+
+        public function getLastBeat():Number
+        {
+            return Math.max(this.lastBeat, 0);
+        }
+
+        public function getCurrentBeat():Number
+        {
+            if (!this.currentSong || !this.soundChannel) 
+            {
+                return 0;
+            }
+            var loc1:*=this.currentSong.buildup ? this.calculateSongLength(this.currentSong.buildup) : 0;
+            var loc2:*=this.soundChannel.position - (this.doBuildup ? loc1 : 0) < 0;
+            var loc3:*=loc2 ? this.soundChannel.position - (this.doBuildup ? loc1 : 0) : (this.soundChannel.position - (this.doBuildup ? loc1 : 0)) % this.calculateSongLength(this.currentSong.sound);
+            var loc4:*;
+            return loc4 = Math.floor(loc3 / this.beatLength);
+        }
+
+        public function getSoundPosition():Number
+        {
+            return this.soundChannel ? (this.soundChannel.position - this.buildupDiff) % (this.beatLength * this.currentSong.rhythm.length) : 0;
+        }
+
+        public function getRhythm():String
+        {
+            return this.currentSong.buildup && !this.currentSong.buildupPlayed ? this.currentSong.buildupRhythm : this.currentSong.rhythm;
+        }
+
+        internal function beater():*
+        {
+            var loc1:*=undefined;
+            var loc2:*=undefined;
+            var loc3:*=undefined;
+            var loc4:*=undefined;
+            var loc5:*=undefined;
+            var loc6:*=undefined;
+            var loc7:*=undefined;
+            var loc8:*=undefined;
+            var loc9:*=undefined;
+            var loc10:*=undefined;
+            var loc11:*=undefined;
+            var loc12:*=undefined;
+            if (this.soundChannel && this.currentSong && this.currentSong.sound) 
+            {
+                loc1 = this.currentSong.buildup ? this.calculateSongLength(this.currentSong.buildup) : 0;
+                loc2 = this.soundChannel.position - (this.doBuildup ? loc1 : 0) < 0;
+                loc3 = loc2 ? this.soundChannel.position - (this.doBuildup ? loc1 : 0) : (this.soundChannel.position - (this.doBuildup ? loc1 : 0)) % this.calculateSongLength(this.currentSong.sound);
+                if ((loc4 = Math.floor(loc3 / this.beatLength)) != this.lastBeat) 
+                {
+                    loc5 = loc2 ? this.currentSong.buildupRhythm : this.currentSong.rhythm;
+                    loc6 = loc2 ? loc5.length + loc4 : loc4;
+                    this.userInterface.doBeat(loc4);
+                    loc7 = loc5.charAt(loc6);
+                    var loc13:*=loc7;
+                    switch (loc13) 
+                    {
+                        case "X":
+                        case "x":
+                        {
+                            this.blurFilter.blurY = 96 * this.blurMultiplier;
+                            break;
+                        }
+                        case "O":
+                        case "o":
+                        {
+                            this.blurFilter.blurX = 96 * this.blurMultiplier;
+                            break;
+                        }
+                        case "+":
+                        {
+                            this.blurFilter.blurX = 96 * this.blurMultiplier;
+                            this.doBlackout = true;
+                            this.recolorBlackout(false);
+                            break;
+                        }
+                        case "¤":
+                        {
+                            this.blurFilter.blurX = 96 * this.blurMultiplier;
+                            this.doBlackout = true;
+                            this.recolorBlackout(true);
+                            break;
+                        }
+                        case "|":
+                        {
+                            this.halfBeatBlackout();
+                            break;
+                        }
+                        case ":":
+                        {
+                            this.randomColor();
+                            break;
+                        }
+                        case "*":
+                        {
+                            if (this.isFullAuto) 
+                            {
+                                this.randomImage();
+                            }
+                            break;
+                        }
+                        case "=":
+                        {
+                            if (this.isFullAuto) 
+                            {
+                                this.randomImage();
+                            }
+                        }
+                        case "~":
+                        {
+                            loc9 = loc5.substr(loc6);
+                            loc10 = 1;
+                            loc11 = false;
+                            for (;;) 
+                            {
+                                if (loc9.length <= loc10) 
+                                {
+                                    if (loc11) 
+                                    {
+                                        break;
+                                    }
+                                    loc9 = loc9 + this.currentSong.rhythm;
+                                    loc11 = true;
+                                }
+                                if ((loc12 = loc9.charAt(loc10)) != ".") 
+                                {
+                                    break;
+                                }
+                                ++loc10;
+                            }
+                            this.stopFade();
+                            this.startFade(loc10 * this.beatLength);
+                            break;
+                        }
+                    }
+                    if ([".", "+", "|", "¤"].indexOf(loc7) == -1) 
+                    {
+                        this.doBlackout = false;
+                    }
+                    if ((loc8 = [".", "+", ":", "*", "X", "O", "~", "="]).indexOf(loc7) == -1) 
+                    {
+                        this.randomColor();
+                        if (this.isFullAuto) 
+                        {
+                            this.randomImage();
+                        }
+                    }
+                    this.lastBeat = loc4;
+                }
+            }
+            return;
+        }
+
+        internal function halfBeatBlackout():*
+        {
+            this.doBlackout = true;
+            this.recolorBlackout(false);
+            flash.utils.setTimeout(this.stopBlackout, this.beatLength / 1.7);
+            return;
+        }
+
+        internal function recolorBlackout(arg1:Boolean=false):*
+        {
+            var loc1:*=arg1 ? 16777215 : 0;
+            if (this.blackOverlayColorTransform.color != loc1) 
+            {
+                this.blackOverlayColorTransform.color = loc1;
+                this.blackOverlay.transform.colorTransform = this.blackOverlayColorTransform;
+            }
+            return;
+        }
+
+        public function get isFullAuto():Boolean
+        {
+            return this._isFullAuto;
+        }
+
+        public function set isFullAuto(arg1:Boolean):*
+        {
+            this._isFullAuto = arg1;
+            if (this.userInterface) 
+            {
+                this.userInterface.modeUpdated();
+            }
+            return;
+        }
+
+        public function setModeAuto():void
+        {
+            this.isFullAuto = true;
+            return;
+        }
+
+        public function setModeNormal():void
+        {
+            this.isFullAuto = false;
+            return;
+        }
+
+        internal function stopBlackout():*
+        {
+            this.doBlackout = false;
+            return;
+        }
+
+        internal function animationTimeOut():*
+        {
+            this.animationFrame = this.animationFrame + 1;
+            if (this.animationFrame >= this.currentImage.bitmaps.length) 
+            {
+                this.animationFrame = 0;
+            }
+            var loc1:*=this.currentImage.frameDurations[this.animationFrame];
+            this.animTimeoutID = flash.utils.setTimeout(this.animationTimeOut, loc1);
+            this.drawImage();
+            return;
+        }
+
+        public function setVolume(arg1:Number):void
+        {
+            this.currentVolume = Math.max(0, Math.min(100, arg1));
+            this.updateVolume();
+            return;
+        }
+
+        public function setMute(arg1:Boolean):void
+        {
+            this.volumeMuted = arg1;
+            this.updateVolume();
+            return;
+        }
+
+        public function getVolume():Number
+        {
+            return this.currentVolume;
+        }
+
+        public function getVolumeMuted():Boolean
+        {
+            return this.volumeMuted;
+        }
+
+        internal function enterFrame(arg1:flash.events.Event):*
+        {
+            var loc1:*=undefined;
+            var loc2:*=undefined;
+            var loc3:*=undefined;
+            var loc4:*=undefined;
+            var loc5:*=undefined;
+            var loc6:*=undefined;
+            this.doImageBlurring();
+            this.setTexts();
+            if (this.doColorFade) 
+            {
+                loc1 = flash.utils.getTimer() - this.colorFadeStarted;
+                loc2 = loc1 / this.colorFadeLength;
+                if (loc2 >= 1) 
+                {
+                    this.stopFade();
+                }
+                else 
+                {
+                    this.fadeColor(loc2);
+                }
+            }
+            if (this.fadeOut) 
+            {
+                loc3 = 0.02;
+                loc4 = this.fadeDirection ? -loc3 : loc3;
+                if (this.soundChannel) 
+                {
+                    loc5 = this.soundChannel.soundTransform;
+                    loc6 = Math.max(0, Math.min(this.currentVolume / 100, loc5.volume + loc4));
+                    loc5.volume = loc6;
+                    this.soundChannel.soundTransform = loc5;
+                    if (loc6 == 0) 
+                    {
+                        var loc7:*;
+                        this.fadeOut = loc7 = false;
+                        this.fadeDirection = loc7;
+                        if (this.settings.autosongShuffle) 
+                        {
+                            this.randomSong();
+                        }
+                        else 
+                        {
+                            this.nextSong();
+                        }
+                    }
+                }
+            }
+            if (this.doBlackout) 
+            {
+                this.blackOverlay.alpha = this.blackOverlay.alpha + 0.4;
+                if (this.blackOverlay.alpha > 1) 
+                {
+                    this.blackOverlay.alpha = 1;
+                }
+            }
+            else 
+            {
+                this.blackOverlay.alpha = 0;
+            }
+            return;
+        }
+
+        public function respackLoaded(arg1:flash.events.Event):void
+        {
+            var loc1:*=null;
+            if (arg1 && arg1.target && arg1.target is ResourcePackInterface) 
+            {
+                loc1 = arg1.target as ResourcePackInterface;
+                this.resourceManager.addPack(loc1);
+            }
+            this.window.updateList(this.resManager);
+            this.init();
+            this.userInterface.updateLists();
+            if (this.doRandom && arg1 && arg1.target && flash.utils.getQualifiedClassName(arg1.target) == "BuiltResourcePack") 
+            {
+                this.randomSong();
+            }
+            return;
+        }
+
+        public function get userInterface():HuesUserInterface
+        {
+            return this._userInterface;
+        }
+
+        public function set userInterface(arg1:HuesUserInterface):*
+        {
+            this._userInterface = arg1;
+            return;
+        }
+
+        internal function setTexts():*
+        {
+            this.userInterface.updateTexts();
+            return;
+        }
+
+        internal function doImageBlurring():*
+        {
+            var loc1:*=this.blurFilter.blurX;
+            var loc2:*=this.blurFilter.blurY;
+            var loc3:*=1 + this.blurDecayMultiplier;
+            if (this.blurFilter.blurX > 0) 
+            {
+                this.blurFilter.blurX = this.blurFilter.blurX / loc3;
+            }
+            if (this.blurFilter.blurX <= 1) 
+            {
+                this.blurFilter.blurX = 0;
+            }
+            if (this.blurFilter.blurY > 0) 
+            {
+                this.blurFilter.blurY = this.blurFilter.blurY / loc3;
+            }
+            if (this.blurFilter.blurY <= 1) 
+            {
+                this.blurFilter.blurY = 0;
+            }
+            if (!(this.blurFilter.blurX == loc1) || !(this.blurFilter.blurY == loc2)) 
+            {
+                this.drawImage();
+            }
+            return;
+        }
+
+        public function getWindow():flash.display.MovieClip
+        {
+            return this.window as flash.display.MovieClip;
+        }
+
+        internal function resizeBitmap(arg1:flash.display.BitmapData):*
+        {
+            var loc5:*=null;
+            var loc1:*=arg1.rect;
+            var loc2:*=this.destBMD.rect;
+            var loc3:*="[" + loc1.width + "," + loc1.height + "]";
+            var loc4:*="[" + loc2.width + "," + loc2.height + "]";
+            if (!(loc1.width == loc2.width) || !(loc1.height == loc2.height)) 
+            {
+                trace("Creating new BMD, since", loc3, "!=", loc4);
+                loc5 = new flash.display.BitmapData(loc1.width, loc1.height);
+                this.destBMD.dispose();
+                this.destBMD = loc5;
+                this.destBM.bitmapData = this.destBMD;
+                this.destBM.smoothing = this.settings.imageSmoothing;
+                this.resizeListener(null);
+            }
+            return;
+        }
+
+        internal function drawImage():*
+        {
+            var loc1:*=null;
+            if (this.currentImage.bitmap) 
+            {
+                loc1 = this.currentImage.bitmap.clone();
+                this.resizeBitmap(loc1);
+                if (this.settings.blurEnabled) 
+                {
+                    this.destBMD.applyFilter(loc1, loc1.rect, new flash.geom.Point(0, 0), this.blurFilter);
+                }
+                else 
+                {
+                    this.destBMD.copyPixels(loc1, loc1.rect, new flash.geom.Point(0, 0));
+                }
+            }
+            else if (this.currentImage.bitmaps) 
+            {
+                loc1 = this.currentImage.bitmaps[this.animationFrame].clone();
+                this.resizeBitmap(loc1);
+                this.destBMD.fillRect(this.destBMD.rect, 16777215);
+                if (this.settings.blurEnabled) 
+                {
+                    this.destBMD.applyFilter(loc1, loc1.rect, new flash.geom.Point(0, 0), this.blurFilter);
+                }
+                else 
+                {
+                    this.destBMD.copyPixels(loc1, loc1.rect, new flash.geom.Point(0, 0));
+                }
+            }
+            loc1.dispose();
+            loc1 = null;
+            this.alignImage();
+            return;
+        }
+
+        internal function toHex(arg1:Number, arg2:Number):*
+        {
+            var loc1:*=arg1.toString(16);
+            while (loc1.length < arg2) 
+            {
+                loc1 = "0" + loc1;
+            }
+            return loc1;
+        }
+
+        internal function sampler(arg1:flash.events.SampleDataEvent):*
+        {
+            this.extractSamples(arg1.data, this.BUFFER_SIZE);
+            return;
+        }
+
+        internal function resizeListener(arg1:flash.events.Event):*
+        {
+            if (!stage) 
+            {
+                trace("No stage!");
+                return;
+            }
+            var loc1:*=stage.stageWidth;
+            var loc2:*=stage.stageHeight;
+            var loc3:*;
+            var loc4:*=(loc3 = loc1 / loc2) >= 1280 / 720;
+            var loc6:*;
+            this.blackOverlay.width = loc6 = loc1;
+            this.colorBM.width = loc6;
+            this.blackOverlay.height = loc6 = loc2;
+            this.colorBM.height = loc6;
+            this.blackOverlay.y = loc6 = 0;
+            this.blackOverlay.x = loc6 = loc6;
+            this.colorBM.y = loc6 = loc6;
+            this.colorBM.x = loc6;
+            if (this.whiteOverlay) 
+            {
+                this.whiteOverlay.width = loc1;
+                this.whiteOverlay.height = loc2;
+            }
+            this.window.relativePosition(loc1, loc2);
+            this.window.fitIntoView();
+            var loc5:*=1;
+            loc6 = this.settings.imagescaling;
+            switch (loc6) 
+            {
+                case "on":
+                {
+                    loc5 = loc2 / this.destBMD.height;
+                    break;
+                }
+                case "semi":
+                {
+                    loc5 = this.destBMD.height >= loc2 ? loc2 / this.destBMD.height : 1;
+                    break;
+                }
+            }
+            this.destBM.scaleY = loc6 = loc5;
+            this.destBM.scaleX = loc6;
+            this.destBM.x = (loc1 - this.destBM.width) / 2;
+            this.destBM.y = (loc2 - this.destBM.height) / 2;
+            if (this.userInterface) 
+            {
+                this.userInterface.resizeInterface(loc1, loc2);
+            }
+            this.alignImage();
+            return;
+        }
+
+        internal function onAddedToStage(arg1:flash.events.Event):*
+        {
+            var loc1:*=null;
+            var loc2:*=this;
+            while (loc2.parent != null) 
+            {
+                loc2 = loc2.parent;
+            }
+            if (loc2) 
+            {
+                loc1 = flash.display.LoaderInfo(loc2.loaderInfo).parameters;
+            }
+            else 
+            {
+                loc1 = flash.display.LoaderInfo(this.root.loaderInfo).parameters;
+            }
+            this._settings.getSettingsFromParameters(loc1);
+            this.window.checkUpdates();
+            stage.addEventListener(flash.events.Event.RESIZE, this.resizeListener);
+            stage.scaleMode = flash.display.StageScaleMode.NO_SCALE;
+            stage.align = flash.display.StageAlign.TOP_LEFT;
+            stage.addEventListener(flash.events.KeyboardEvent.KEY_DOWN, this.keyboardListener);
+            stage.addEventListener(flash.events.KeyboardEvent.KEY_UP, this.keyboardListener);
+            stage.addEventListener(flash.events.MouseEvent.RIGHT_CLICK, this.rightClickListener);
+            stage.addEventListener(flash.events.MouseEvent.MOUSE_WHEEL, this.rightClickListener);
+            this.resizeListener(null);
+            if (this.whiteOverlay) 
+            {
+                this.addEventListener(flash.events.Event.ENTER_FRAME, this.fadeInListener);
+            }
+            this.removeEventListener(flash.events.Event.ADDED_TO_STAGE, this.onAddedToStage);
+            return;
+        }
+
+        internal function rightClickListener(arg1:flash.events.MouseEvent):*
+        {
+            var loc1:*=arg1.type;
+            switch (loc1) 
+            {
+                case flash.events.MouseEvent.RIGHT_CLICK:
+                {
+                    this.toggleWindow();
+                    break;
+                }
+                case flash.events.MouseEvent.MOUSE_WHEEL:
+                {
+                    if (arg1.delta > 0) 
+                    {
+                        this.increaseVolume();
+                    }
+                    else 
+                    {
+                        this.decreaseVolume();
+                    }
+                    break;
+                }
+            }
+            return;
+        }
+
+        internal function fadeInListener(arg1:flash.events.Event):*
+        {
+            if (this.whiteOverlay.alpha == 0) 
+            {
+                this.whiteOverlay.visible = false;
+                this.removeChild(this.whiteOverlay);
+                this.whiteOverlay = null;
+                this.removeEventListener(flash.events.Event.ENTER_FRAME, this.fadeInListener);
+            }
+            else 
+            {
+                this.whiteOverlay.alpha = Math.max(0, this.whiteOverlay.alpha - 0.05);
+            }
+            return;
+        }
+
+        internal function calculateSamples(arg1:flash.media.Sound=null):Number
+        {
+            if (arg1) 
+            {
+                return int(arg1.length * 44.1 - (arg1 is FakeSound ? 0 : this.LAME_DELAY_START + this.LAME_DELAY_END));
+            }
+            trace("Can\'t calculateSamples");
+            return -1;
+        }
+
+        internal function changeUI(arg1:Number):*
+        {
+            var loc1:*=undefined;
+            if (arg1 >= 0 && this.uiArray.length > arg1 && !(this.userInterface == this.uiArray[arg1])) 
+            {
+                this.userInterface.disconnect();
+                loc1 = this.uiArray[arg1];
+                addChild(loc1 as flash.display.MovieClip);
+                swapChildren(loc1, this.userInterface as flash.display.MovieClip);
+                removeChild(this.userInterface as flash.display.MovieClip);
+                this.userInterface = loc1;
+                this.userInterface.connectCore(this);
+                this.userInterface.updateLists();
+                this.userInterface.updateTexts();
+                this.userInterface.resourcePackLoaded();
+                this.userInterface.setSongText();
+                this.userInterface.setImageText();
+                if (stage) 
+                {
+                    this.userInterface.resizeInterface(stage.stageWidth, stage.stageHeight);
+                }
+                this.currentUIIndex = arg1;
+            }
+            return;
+        }
+
+        internal function calculateSongLength(arg1:flash.media.Sound=null):Number
+        {
+            if (arg1) 
+            {
+                return this.calculateSamples(arg1) / 44.1;
+            }
+            return -1;
+        }
+
+        internal function settingsUpdated():*
+        {
+            trace("Updating according to this.settings");
+            this.destBM.smoothing = this.settings.imageSmoothing;
+            if (stage) 
+            {
+                stage.quality = this.settings.flashQuality;
+            }
+            this.blurMultiplier = {"low":0.5, "medium":1, "high":4}[this.settings.blurAmount];
+            this.blurDecayMultiplier = {"low":0.3, "medium":0.6, "high":1, "vhigh":1.6}[this.settings.blurDecay];
+            var loc1:*=new flash.media.SoundTransform();
+            var loc2:*=this.settings.channels;
+            switch (loc2) 
+            {
+                case "stereo":
+                {
+                    break;
+                }
+                case "left":
+                {
+                    loc1.leftToRight = loc2 = 1;
+                    loc1.leftToLeft = loc2;
+                    loc1.rightToRight = loc2 = 0;
+                    loc1.rightToLeft = loc2;
+                    break;
+                }
+                case "right":
+                {
+                    loc1.leftToRight = loc2 = 0;
+                    loc1.leftToLeft = loc2;
+                    loc1.rightToRight = loc2 = 1;
+                    loc1.rightToLeft = loc2;
+                    break;
+                }
+                case "mono":
+                {
+                    loc1.leftToRight = loc2 = 0.6;
+                    loc1.leftToLeft = loc2;
+                    loc1.rightToRight = loc2 = 0.6;
+                    loc1.rightToLeft = loc2;
+                    break;
+                }
+            }
+            flash.media.SoundMixer.soundTransform = loc1;
+            loc2 = this.settings.blendMode;
+            switch (loc2) 
+            {
+                case "plain":
+                {
+                    this.imageHolder.removeChild(this.destBM);
+                    this.imageHolder.removeChild(this.colorBM);
+                    this.imageHolder.addChild(this.colorBM);
+                    this.imageHolder.addChild(this.destBM);
+                    this.colorBM.alpha = 1;
+                    this.destBM.alpha = 1;
+                    this.colorBM.blendMode = flash.display.BlendMode.NORMAL;
+                    break;
+                }
+                case "alpha":
+                {
+                    this.imageHolder.removeChild(this.destBM);
+                    this.imageHolder.removeChild(this.colorBM);
+                    this.imageHolder.addChild(this.colorBM);
+                    this.imageHolder.addChild(this.destBM);
+                    this.colorBM.alpha = 1;
+                    this.destBM.alpha = 0.7;
+                    this.colorBM.blendMode = flash.display.BlendMode.NORMAL;
+                    break;
+                }
+                case "hard":
+                {
+                    this.imageHolder.removeChild(this.destBM);
+                    this.imageHolder.removeChild(this.colorBM);
+                    this.imageHolder.addChild(this.destBM);
+                    this.imageHolder.addChild(this.colorBM);
+                    this.colorBM.alpha = 0.7;
+                    this.destBM.alpha = 1;
+                    this.colorBM.blendMode = flash.display.BlendMode.HARDLIGHT;
+                    break;
+                }
+            }
+            loc2 = this.settings.blackoutUI;
+            switch (loc2) 
+            {
+                case true:
+                {
+                    removeChild(this.blackOverlay);
+                    addChildAt(this.blackOverlay, getChildIndex(this.window));
+                    break;
+                }
+                case false:
+                {
+                    removeChild(this.blackOverlay);
+                    addChildAt(this.blackOverlay, getChildIndex(this.userInterface as flash.display.MovieClip));
+                    break;
+                }
+            }
+            loc2 = this.settings.colors;
+            switch (loc2) 
+            {
+                case "normal":
+                {
+                    this.currentColors = this.oldColors;
+                    break;
+                }
+                case "pastel":
+                {
+                    this.currentColors = this.pastelColors;
+                    break;
+                }
+                case "gp":
+                {
+                    this.currentColors = this.gpColors;
+                    break;
+                }
+            }
+            loc2 = this.settings.ui;
+            switch (loc2) 
+            {
+                case "retro":
+                {
+                    this.changeUI(0);
+                    break;
+                }
+                case "weed":
+                {
+                    this.changeUI(1);
+                    break;
+                }
+                case "modern":
+                {
+                    this.changeUI(2);
+                    break;
+                }
+                case "xmas":
+                {
+                    this.changeUI(3);
+                    break;
+                }
+            }
+            if (this.oldAutoSong == "off" && !(this.settings.autosong == "off")) 
+            {
+                trace("Resetting loopCount since AutoSong was enabled");
+                this.loopCount = 0;
+                this.oldAutoSong = this.settings.autosong;
+            }
+            if (stage) 
+            {
+                this.resizeListener(null);
+                this.alignImage();
+            }
+            return;
+        }
+
+        public function enabledChanged():void
+        {
+            this.resourceManager.rebuildEnabled();
+            this.userInterface.updateLists();
+            return;
+        }
+
+        internal function extractSamples(arg1:flash.utils.ByteArray, arg2:int):void
+        {
+            var loc2:*=0;
+            var loc3:*=0;
+            var loc4:*=undefined;
+            var loc5:*=undefined;
+            var loc6:*=undefined;
+            var loc7:*=undefined;
+            var loc8:*=undefined;
+            var loc9:*=undefined;
+            var loc1:*=arg2;
+            while (0 < arg2) 
+            {
+                loc4 = this.currentSong.buildup && !this.currentSong.buildupPlayed;
+                loc5 = this.currentSong.sound is FakeSound ? 0 : this.LAME_DELAY_START;
+                loc6 = loc4 ? this.currentSong.buildup : this.currentSong.sound;
+                loc7 = loc4 && this.currentSong.buildupLength ? this.currentSong.buildupLength - loc5 : this.calculateSamples(loc6);
+                if (!(loc4 && this.currentSong.buildupLength)) 
+                {
+                };
+                if (loc7 <= 0 || !loc6) 
+                {
+                    while (loc9 < arg2) 
+                    {
+                        arg1.writeFloat(0);
+                        arg1.writeFloat(0);
+                        ++loc9;
+                    }
+                    return;
+                }
+                loc8 = this.samplePosition;
+                if (this.samplePosition + arg2 > loc7) 
+                {
+                    loc3 = loc7 - this.samplePosition;
+                    loc2 = loc6.extract(arg1, loc3, this.samplePosition + loc5);
+                    this.samplePosition = this.samplePosition + loc2;
+                    arg2 = arg2 - loc2;
+                    if (loc4) 
+                    {
+                        trace("Buildup finished");
+                        this.samplePosition = 0;
+                        this.currentSong.buildupPlayed = true;
+                        this.buildupDiff = loc7 / 44.1;
+                    }
+                }
+                else 
+                {
+                    loc2 = loc6.extract(arg1, arg2, this.samplePosition + loc5);
+                    this.samplePosition = this.samplePosition + loc2;
+                    arg2 = arg2 - loc2;
+                }
+                if (!(this.samplePosition >= loc7)) 
+                {
+                    continue;
+                }
+                this.samplePosition = 0;
+                if (loc4) 
+                {
+                    trace("Buildup finished 2");
+                    this.currentSong.buildupPlayed = true;
+                    this.buildupDiff = this.calculateSongLength(this.currentSong.buildup);
+                    continue;
+                }
+                this.onLoop();
+            }
+            return;
+        }
+
+        internal function unload():*
+        {
+            trace("Unloading!");
+            this.resetAudio();
+            flash.utils.clearInterval(this.beaterId);
+            removeEventListener(flash.events.Event.ENTER_FRAME, this.enterFrame);
+            trace("Unloaded!");
+            return;
+        }
+
+        internal function variableExtractSampleData(arg1:flash.utils.ByteArray, arg2:int):void
+        {
+            var loc1:*=NaN;
+            var loc2:*=0;
+            var loc3:*=NaN;
+            var loc4:*=NaN;
+            var loc5:*=0;
+            var loc6:*=0;
+            var loc7:*=0;
+            var loc8:*=undefined;
+            var loc9:*=0;
+            var loc10:*=NaN;
+            var loc11:*=NaN;
+            var loc12:*=NaN;
+            var loc13:*=NaN;
+            var loc14:*=0;
+            while (0 < arg2) 
+            {
+                this.sampleTargetArray.position = 0;
+                loc1 = arg2 * this.playbackRate / 100;
+                loc2 = this.position;
+                loc4 = loc3 = this.position - loc2;
+                loc5 = -1;
+                loc6 = Math.ceil(loc1) + 2;
+                if (loc2 + loc6 > this.samples) 
+                {
+                    trace("Over samples");
+                    loc8 = this.samples - loc2;
+                    loc7 = this.currentSong.sound.extract(this.sampleTargetArray, loc8, loc2 + this.LAME_DELAY_START);
+                }
+                else 
+                {
+                    loc8 = loc6;
+                    loc7 = this.currentSong.sound.extract(this.sampleTargetArray, loc8, loc2 + this.LAME_DELAY_START);
+                }
+                loc9 = loc7 != loc6 ? loc7 / (this.playbackRate / 100) : arg2;
+                loc14 = 0;
+                while (loc14 < loc9) 
+                {
+                    if (int(loc4) != loc5) 
+                    {
+                        loc5 = loc4;
+                        this.sampleTargetArray.position = loc5 << 3;
+                        loc10 = this.sampleTargetArray.readFloat();
+                        loc11 = this.sampleTargetArray.readFloat();
+                        loc12 = this.sampleTargetArray.readFloat();
+                        loc13 = this.sampleTargetArray.readFloat();
+                    }
+                    arg1.writeFloat(loc10 + loc3 * (loc12 - loc10));
+                    arg1.writeFloat(loc11 + loc3 * (loc13 - loc11));
+                    loc4 = loc4 + this.playbackRate / 100;
+                    loc3 = loc3 + this.playbackRate / 100;
+                    while (loc3 >= 1) 
+                    {
+                        --loc3;
+                    }
+                    ++loc14;
+                }
+                arg2 = arg2 - loc9;
+                this.position = this.position + loc1;
+                if (!(this.position >= this.samples)) 
+                {
+                    continue;
+                }
+                trace("resettomg", this.position, arg2, loc1);
+                this.position = 0;
+            }
+            return;
+        }
+
+        public function init():*
+        {
+            if (!this.initDone) 
+            {
+                this.beaterId = flash.utils.setInterval(this.beater, 5);
+                addEventListener(flash.events.Event.ENTER_FRAME, this.enterFrame);
+                this.setSong(0);
+                this.setImage(0);
+                this.initDone = true;
+            }
+            return;
+        }
+
+        internal function openURL(arg1:String):void
+        {
+            flash.net.navigateToURL(new flash.net.URLRequest(arg1), "_blank");
+            return;
+        }
+
+        public function openSongSource():void
+        {
+            if (this.currentSong && this.currentSong.source) 
+            {
+                this.openURL(this.currentSong.source);
+            }
+            return;
+        }
+
+        public function openImageSource():void
+        {
+            if (this.currentImage && this.currentImage.source) 
+            {
+                this.openURL(this.currentImage.source);
+            }
+            return;
+        }
+
+        internal function keyboardListener(arg1:flash.events.KeyboardEvent):*
+        {
+            if (arg1.type != flash.events.KeyboardEvent.KEY_UP) 
+            {
+                var loc1:*=arg1.keyCode;
+                switch (loc1) 
+                {
+                    case flash.ui.Keyboard.LEFT:
+                    {
+                        this.previousImage();
+                        break;
+                    }
+                    case flash.ui.Keyboard.RIGHT:
+                    {
+                        this.nextImage();
+                        break;
+                    }
+                    case flash.ui.Keyboard.UP:
+                    {
+                        this.nextSong();
+                        break;
+                    }
+                    case flash.ui.Keyboard.DOWN:
+                    {
+                        this.previousSong();
+                        break;
+                    }
+                    case flash.ui.Keyboard.F:
+                    {
+                        this.isFullAuto = !this.isFullAuto;
+                        break;
+                    }
+                    case flash.ui.Keyboard.NUMPAD_SUBTRACT:
+                    case flash.ui.Keyboard.MINUS:
+                    {
+                        this.decreaseVolume();
+                        break;
+                    }
+                    case flash.ui.Keyboard.NUMPAD_ADD:
+                    case flash.ui.Keyboard.EQUAL:
+                    {
+                        this.increaseVolume();
+                        break;
+                    }
+                    case flash.ui.Keyboard.M:
+                    {
+                        this.toggleMute();
+                        break;
+                    }
+                    case flash.ui.Keyboard.H:
+                    {
+                        this.userInterface.toggleHide();
+                        break;
+                    }
+                    case flash.ui.Keyboard.R:
+                    {
+                        this.window.showRespacks();
+                        break;
+                    }
+                    case flash.ui.Keyboard.E:
+                    {
+                        this.window.showEditor();
+                        break;
+                    }
+                    case flash.ui.Keyboard.O:
+                    {
+                        this.window.showOptions();
+                        break;
+                    }
+                    case flash.ui.Keyboard.I:
+                    {
+                        this.window.showInfo();
+                        break;
+                    }
+                    case flash.ui.Keyboard.NUMBER_1:
+                    {
+                        this.settings.ui = "retro";
+                        break;
+                    }
+                    case flash.ui.Keyboard.NUMBER_2:
+                    {
+                        this.settings.ui = "weed";
+                        break;
+                    }
+                    case flash.ui.Keyboard.NUMBER_3:
+                    {
+                        this.settings.ui = "modern";
+                        break;
+                    }
+                    case flash.ui.Keyboard.NUMBER_4:
+                    {
+                        this.settings.ui = "xmas";
+                        break;
+                    }
+                    case flash.ui.Keyboard.L:
+                    {
+                        this.loadLocal();
+                        break;
+                    }
+                    case flash.ui.Keyboard.C:
+                    {
+                        this.toggleImageList();
+                        break;
+                    }
+                    case flash.ui.Keyboard.S:
+                    {
+                        this.toggleSongList();
+                        break;
+                    }
+                    case flash.ui.Keyboard.W:
+                    {
+                        this.toggleWindow();
+                        break;
+                    }
+                    case flash.ui.Keyboard.SHIFT:
+                    {
+                        if (!this.lastKeyEvent || !(this.lastKeyEvent.keyCode == arg1.keyCode) || !(this.lastKeyEvent.type == arg1.type)) 
+                        {
+                            this.randomSong();
+                        }
+                        break;
+                    }
+                }
+            }
+            this.lastKeyEvent = arg1;
+            return;
+        }
+
+        public function toggleWindow():void
+        {
+            this.window.toggleHide();
+            this.hideLists();
+            return;
+        }
+
+        public function hideLists():void
+        {
+            this.userInterface.songList.hide();
+            this.userInterface.imageList.hide();
+            return;
+        }
+
+        public function toggleSongList():void
+        {
+            this.userInterface.songList.toggleHide();
+            this.userInterface.imageList.hide();
+            this.window.hide();
+            return;
+        }
+
+        public function toggleImageList():void
+        {
+            this.userInterface.imageList.toggleHide();
+            this.userInterface.songList.hide();
+            this.window.hide();
+            return;
+        }
+
+        internal const oldColorNames:Array=["black", "brick", "crimson", "red", "turtle", "sludge", "brown", "orange", "green", "grass", "maize", "citrus", "lime", "leaf", "chartreuse", "yellow", "midnight", "plum", "pomegranate", "rose", "swamp", "dust", "dirt", "blossom", "sea", "ill", "haze", "peach", "spring", "mantis", "brilliant", "canary", "navy", "grape", "mauve", "purple", "cornflower", "deep", "lilac", "lavender", "aqua", "steel", "grey", "pink", "bay", "marina", "tornado", "saltine", "blue", "twilight", "orchid", "magenta", "azure", "liberty", "royalty", "thistle", "ocean", "sky", "periwinkle", "carnation", "cyan", "turquoise", "powder", "white"];
+
+        internal const oldColors:Array=[{"n":"black", "c":0}, {"n":"brick", "c":5570560}, {"n":"crimson", "c":11141120}, {"n":"red", "c":16711680}, {"n":"turtle", "c":21760}, {"n":"sludge", "c":5592320}, {"n":"brown", "c":11162880}, {"n":"orange", "c":16733440}, {"n":"green", "c":43520}, {"n":"grass", "c":5614080}, {"n":"maize", "c":11184640}, {"n":"citrus", "c":16755200}, {"n":"lime", "c":65280}, {"n":"leaf", "c":5635840}, {"n":"chartreuse", "c":11206400}, {"n":"yellow", "c":16776960}, {"n":"midnight", "c":85}, {"n":"plum", "c":5570645}, {"n":"pomegranate", "c":11141205}, {"n":"rose", "c":16711765}, {"n":"swamp", "c":21845}, {"n":"dust", "c":5592405}, {"n":"dirt", "c":11162965}, {"n":"blossom", "c":16733525}, {"n":"sea", "c":43605}, {"n":"ill", "c":5614165}, {"n":"haze", "c":11184725}, {"n":"peach", "c":16755285}, {"n":"spring", "c":65365}, {"n":"mantis", "c":5635925}, {"n":"brilliant", "c":11206485}, {"n":"canary", "c":16777045}, {"n":"navy", "c":170}, {"n":"grape", "c":5570730}, {"n":"mauve", "c":11141290}, {"n":"purple", "c":16711850}, {"n":"cornflower", "c":21930}, {"n":"deep", "c":5592490}, {"n":"lilac", "c":11163050}, {"n":"lavender", "c":16733610}, {"n":"aqua", "c":43690}, {"n":"steel", "c":5614250}, {"n":"grey", "c":11184810}, {"n":"pink", "c":16755370}, {"n":"bay", "c":65450}, {"n":"marina", "c":5636010}, {"n":"tornado", "c":11206570}, {"n":"saltine", "c":16777130}, {"n":"blue", "c":255}, {"n":"twilight", "c":5570815}, {"n":"orchid", "c":11141375}, {"n":"magenta", "c":16711935}, {"n":"azure", "c":22015}, {"n":"liberty", "c":5592575}, {"n":"royalty", "c":11163135}, {"n":"thistle", "c":16733695}, {"n":"ocean", "c":43775}, {"n":"sky", "c":5614335}, {"n":"periwinkle", "c":11184895}, {"n":"carnation", "c":16755455}, {"n":"cyan", "c":65535}, {"n":"turquoise", "c":5636095}, {"n":"powder", "c":11206655}, {"n":"white", "c":16777215}];
+
+        internal const pastelColors:Array=[{"n":"Mahogany", "c":13453898}, {"n":"Banana Mania", "c":16443317}, {"n":"Beaver", "c":10453360}, {"n":"Black", "c":2302755}, {"n":"Chestnut", "c":12344664}, {"n":"Copper", "c":14521461}, {"n":"Cornflower", "c":10145515}, {"n":"Denim", "c":2845892}, {"n":"Desert Sand", "c":15715768}, {"n":"Eggplant", "c":7229792}, {"n":"Electric Lime", "c":1964308}, {"n":"Fern", "c":7453816}, {"n":"Goldenrod", "c":16570741}, {"n":"Granny Smith Apple", "c":11068576}, {"n":"Gray", "c":9802124}, {"n":"Green", "c":1879160}, {"n":"Hot Magenta", "c":16719310}, {"n":"Inch Worm", "c":11725917}, {"n":"Indigo", "c":6125259}, {"n":"Laser Lemon", "c":16645236}, {"n":"Lavender", "c":16561365}, {"n":"Macaroni and Cheese", "c":16760200}, {"n":"Manatee", "c":9935530}, {"n":"Mango Tango", "c":16745027}, {"n":"Melon", "c":16628916}, {"n":"Midnight Blue", "c":1722486}, {"n":"Neon Carrot", "c":16753475}, {"n":"Olive Green", "c":12236908}, {"n":"Orange", "c":16741688}, {"n":"Orchid", "c":15116503}, {"n":"Outer Space", "c":4278860}, {"n":"Outrageous Orange", "c":16739914}, {"n":"Pacific Blue", "c":1878473}, {"n":"Periwinkle", "c":12964070}, {"n":"Plum", "c":9323909}, {"n":"Purple Heart", "c":7619272}, {"n":"Raw Sienna", "c":14060121}, {"n":"Razzmatazz", "c":14886251}, {"n":"Red", "c":15605837}, {"n":"Robin Egg Blue", "c":2084555}, {"n":"Royal Purple", "c":7885225}, {"n":"Salmon", "c":16751530}, {"n":"Scarlet", "c":16525383}, {"n":"Sea Green", "c":10478271}, {"n":"Sepia", "c":10840399}, {"n":"Shadow", "c":9075037}, {"n":"Shamrock", "c":4574882}, {"n":"Shocking Pink", "c":16482045}, {"n":"Spring Green", "c":15526590}, {"n":"Sunset Orange", "c":16604755}, {"n":"Tan", "c":16426860}, {"n":"Tickle Me Pink", "c":16550316}, {"n":"Timberwolf", "c":14407634}, {"n":"Tropical Rain Forest", "c":1540205}, {"n":"Turquoise Blue", "c":7855591}, {"n":"Vivid Tangerine", "c":16752777}, {"n":"Vivid Violet", "c":9392285}, {"n":"White", "c":15592941}, {"n":"Wild Strawberry", "c":16728996}, {"n":"Wild Watermelon", "c":16542853}, {"n":"Wisteria", "c":13477086}, {"n":"Yellow", "c":16574595}, {"n":"Yellow Green", "c":12968836}, {"n":"Yellow Orange", "c":16758355}];
+
+        internal const gpColors:Array=[{"n":"Green", "c":65280}, {"n":"Lizard", "c":5923665}, {"n":"Cactus", "c":6516567}, {"n":"Kakapo", "c":4878371}, {"n":"Wet Moss", "c":4018729}, {"n":"Tree Moss", "c":6659378}, {"n":"Lime Rind", "c":3297047}, {"n":"Flight Jacket", "c":8357752}, {"n":"Green Mist", "c":12381585}, {"n":"Holly", "c":4751892}, {"n":"Mtn Dew Bottle", "c":5732922}, {"n":"Seaweed Roll", "c":7635561}, {"n":"Neon Green", "c":8647980}, {"n":"Lichen", "c":12638639}, {"n":"Guacamole", "c":10934149}, {"n":"Pond Scum", "c":6848090}, {"n":"Douglas Fir", "c":4153387}, {"n":"Royal Palm", "c":4155430}, {"n":"Seaweed", "c":6582110}, {"n":"Noble Fir", "c":4680244}, {"n":"Green Led", "c":6159370}, {"n":"Spinach", "c":4414774}, {"n":"Frog", "c":8699498}, {"n":"Emerald", "c":6003812}, {"n":"Circuit Board", "c":3827241}, {"n":"Sapgreen", "c":3178516}, {"n":"Pool Table", "c":3258701}, {"n":"Leaf", "c":5615162}, {"n":"Grass", "c":5094707}, {"n":"Snake", "c":5860438}, {"n":"100 Euro", "c":8832636}, {"n":"Night Vision", "c":8113264}, {"n":"Purple", "c":10494192}, {"n":"Purple", "c":10170623}, {"n":"Purple", "c":9514222}, {"n":"Purple", "c":8201933}, {"n":"Purple", "c":11141375}, {"n":"Purple", "c":8388736}, {"n":"Turnip", "c":10964139}, {"n":"Violet", "c":9395865}, {"n":"Eggplant", "c":8480391}, {"n":"Grape", "c":13369599}, {"n":"Wild Violet", "c":8522683}, {"n":"Concord Grape", "c":6685080}, {"n":"Garden Plum", "c":7431037}, {"n":"Purple Fish", "c":11694758}, {"n":"Ultramarine Violet", "c":6038638}, {"n":"Purple Rose", "c":6172025}, {"n":"Sea Urchin", "c":6830686}, {"n":"Cobalt Violet Deep", "c":9511326}, {"n":"Plum", "c":9135755}, {"n":"Dark Orchid", "c":10040013}, {"n":"Violet Flower", "c":12541951}, {"n":"Purple Candy", "c":12427467}, {"n":"Deep Purple", "c":5577355}, {"n":"Thistle", "c":11882652}, {"n":"Dark Purple", "c":8855416}, {"n":"Purple Ink", "c":10251160}, {"n":"Orchid", "c":14381275}, {"n":"True Purple", "c":10027161}, {"n":"Darkmagenta", "c":9109643}, {"n":"Harold\'s Crayon", "c":11935876}, {"n":"Purple Rain", "c":6898825}, {"n":"Gold", "c":16766720}];
+
+        internal const LAME_DELAY_START:Number=2258;
+
+        internal const LAME_DELAY_END:Number=1000;
+
+        internal const BUFFER_SIZE:int=4410;
+
+        internal var currentColors:*;
+
+        internal var respackBytes:flash.utils.ByteArray;
+
+        internal var respack:ResourcePack;
+
+        internal var _settings:HuesSettings;
+
+        internal var builtIn:BuiltResourcePack;
+
+        internal var resourceManager:ResourceManager;
+
+        internal var outputSound:flash.media.Sound;
+
+        internal var inputSound:flash.media.Sound;
+
+        internal var samplePosition:*=0;
+
+        internal var samples:*=-1;
+
+        internal var lastBeat:*=-123;
+
+        internal var beatLength:*=-1;
+
+        internal var currentSong:*;
+
+        internal var currentImage:*;
+
+        internal var destBMD:flash.display.BitmapData;
+
+        internal var colorBMD:flash.display.BitmapData;
+
+        internal var destBM:flash.display.Bitmap;
+
+        internal var colorBM:flash.display.Bitmap;
+
+        public var whiteOverlay:flash.display.MovieClip;
+
+        internal var blackOverlay:flash.display.MovieClip;
+
+        internal var blackOverlayColorTransform:flash.geom.ColorTransform;
+
+        internal var doBlackout:*=false;
+
+        internal var doWhiteout:*=false;
+
+        internal var imageHolder:flash.display.MovieClip;
+
+        internal var blurFilter:flash.filters.BlurFilter;
+
+        internal var blurMultiplier:Number=1;
+
+        internal var blurDecayMultiplier:Number=1;
+
+        internal var songIndex:*=-1;
+
+        internal var colorIndex:*=0;
+
+        internal var imageIndex:*=-1;
+
+        internal var animationFrame:*=0;
+
+        internal var _isFullAuto:*=true;
+
+        internal var currentVolume:*=70;
+
+        internal var volumeMuted:*=false;
+
+        internal var loopCount:*=0;
+
+        public var retroui:flash.display.MovieClip;
+
+        public var window:RetroWindow;
+
+        public var imageContainer:flash.display.MovieClip;
+
+        public var overlayContainer:flash.display.MovieClip;
+
+        internal var uiArray:Array;
+
+        internal var doRandom:Boolean=false;
+
+        internal var currentUIIndex:*=2;
+
+        internal var oldAutoSong:*=null;
+
+        internal var beaterId:*;
+
+        internal var lastSC:*=0;
+
+        internal var buildupDiff:*=0;
+
+        internal var soundChannel:flash.media.SoundChannel;
+
+        internal var _userInterface:HuesUserInterface;
+
+        internal var doColorFade:*=false;
+
+        internal var oldColor:*=16777215;
+
+        internal var colorFadeStarted:*=0;
+
+        internal var animTimeoutID:Number;
+
+        internal var colorFadeLength:*=0;
+
+        internal var tmpFrame:*=0;
+
+        internal var lastImageArray:*;
+
+        internal var lastSongArray:*;
+
+        internal var tmp_slowdown:*=false;
+
+        internal var fadeOut:*=false;
+
+        internal var fadeDirection:*=false;
+
+        internal var initDone:*=false;
+
+        internal var lastKeyEvent:*=null;
+
+        internal var files:flash.net.FileReferenceList;
+
+        internal var loadedFiles:*=0;
+
+        internal var testPosition:*=0;
+
+        internal var sampleTargetArray:flash.utils.ByteArray;
+
+        internal var position:Number=0;
+
+        internal var playbackRate:Number=100;
+
+        internal var doBuildup:*=false;
+    }
+}
+
+

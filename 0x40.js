@@ -521,15 +521,15 @@ var waifus = [
 		fullname: "Lain Iwakura",
 		align: "center"
 	},
-	{
-		name: "Lain",
-		file: "Lain (anim).gif",
-		source: "http://0x40Hues.blogspot.com/Sources/Defaults#Lain",
-		source_other: "http://myanimelist.net/character/2219/Lain_Iwakura",
-		fullname: "Lain Iwakura",
-		align: "left",
-		frameDuration: 83
-	},
+	//{
+	//	name: "Lain",
+	//	file: "Lain (anim).gif",
+	//	source: "http://0x40Hues.blogspot.com/Sources/Defaults#Lain",
+	//	source_other: "http://myanimelist.net/character/2219/Lain_Iwakura",
+	//	fullname: "Lain Iwakura",
+	//	align: "left",
+	//	frameDuration: 83
+	//},
 	{
 		name: "Lala-Ru",
 		file: "Lala-Ru.png",
@@ -1116,6 +1116,11 @@ var waifus = [
 	}
 ];
 
+var madeonPreload = {
+    file: "songs/prebuild_Finale.mp3",
+    buildUp: "songs/preprebuild_Finale.mp3"
+}
+
 var rgSongs = [
 	// Pack: Default HQ
 	{
@@ -1393,7 +1398,7 @@ var rgSongs = [
 	},
 ];
 
-var nCurrentColor = 0;
+var nCurrentColor = 63; // start white
 var nCurrentWaifu = 0;
 
 var nColorX, nColorY, nColorZ;
