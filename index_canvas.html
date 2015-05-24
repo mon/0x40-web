@@ -9,8 +9,7 @@
         Volume controls
         Prettier ui
         Song shuffle
-        Image pause
-        Keyboard shortcuts
+        Image pause / manual advance
         Different colour palettes
         External respacks
         Change short blackout to beat length / 1.7
@@ -24,10 +23,9 @@
         <script type="text/javascript" src="0x40.js"></script>
         <script type="text/javascript" src="waifuCanvas.js"></script>
         <script type="text/javascript" src="audioUtils.js"></script>
-        <script type="text/javascript" src="sizeof.compressed.js"></script>
         <script type="text/javascript">
             //debug
-            var skipPreloader = true;
+            var skipPreloader = false;
             
             var filesLoaded = 0;
             var initialLoad = 0;
@@ -41,15 +39,14 @@
                 current_index: 0,
                 beat_pointer: 0,
             }
-         
-            audio.play = function() {
-                if(audio.current_song && audio.current_song._playing) {
-                    return;
-                }
+            
+            // Why does this exist? For smooth preloader transition on FF
+            audio.prep = function() {
                 var song = audio.songs[audio.current_index];
                 
                 document.getElementById("songname").innerHTML = song.name
                 document.getElementById("blackout").style.display = "none";
+                
                 // stop() destroys the old, must recreate
                 var newSong = audio.context.createBufferSource()
                 audio.current_song = newSong;
@@ -63,19 +60,27 @@
                 
                 newSong._build = song.buildUpRhythm || "";
                 newSong._beats = newSong._build + song.rhythm;
-                audio.beat_pointer =  -newSong._build.length;
                 
                 newSong._loopWidth = newSong.loopLength / song.rhythm.length;
                 newSong._buildWidth = newSong._build ? newSong.loopStart / newSong._build.length : 0;
                 newSong._beatWidth = newSong._buildWidth;
                 
+                audio.beat_pointer =  -newSong._build.length;
                 document.getElementById("beets").innerHTML = wrapBeats(0, 100);
                 document.getElementById("timer").innerHTML = "T=0x0000"
-
-                newSong.start(0);
+            }
+         
+            audio.play = function(delay) {
+                var cur = audio.current_song;
+                if(cur && cur._playing) {
+                    return;
+                }
+                
+                delay = delay ? delay: 0;
+                cur.start(audio.context.currentTime + delay);
                 // offset to after the build
-                newSong._startTime = audio.context.currentTime + newSong.loopStart;
-                newSong._playing = true;
+                cur._startTime = audio.context.currentTime + cur.loopStart + delay;
+                cur._playing = true;
             }
          
             audio.stop = function() {
@@ -103,6 +108,7 @@
                 audio.current_index = index;
                 loadSong(audio.songs[index], function() {
                     audio.stop();
+                    audio.prep();
                     audio.play();
                 });
             }
@@ -153,8 +159,6 @@
                 timerUpdate();
                 var cur = audio.current_song;
                 if(!cur || !cur._playing) {
-                    // DEBUG
-                    waifuCanvas.animationLoop();
                     return;
                 }
                 var now = currentTime();
@@ -209,10 +213,14 @@
                 }
             }
             
-            function onFileLoad() {
+            function onFileLoad(file) {
                 filesLoaded++;
                 var percent = Math.floor(filesLoaded / initialLoad * 0x40);
                 document.getElementById("preloader").innerHTML = '0x' + pad(percent.toString(16), 2);
+                // Destroy FF lag
+                if(!skipPreloader && file && file.name == "Madeon - Finale") {
+                    audio.prep();
+                }
                 if(filesLoaded >= initialLoad)
                     onAllLoaded();
             }
@@ -224,20 +232,26 @@
                 document.getElementById("preloader").style.color = "#0F0";
                 if(skipPreloader)
                     return;
-                var timeToFade = madeonPreload.loopStart -((audio.context.currentTime - preloaderSong.started) % madeonPreload.loopStart);
+                var fileProgress = (audio.context.currentTime - preloaderSong.started) % madeonPreload.loopStart;
+                var timeToFade = madeonPreload.loopStart - fileProgress;
+                audio.play(preloaderSong.buffer.duration - fileProgress);
                 setTimeout( function() {
                     document.getElementById("preloader").className = "loaded"
                 }, timeToFade * 1000);
                 // hacky disgusting chrome workaround
                 if (/Chrome/.test(navigator.userAgent) && /Google Inc/.test(navigator.vendor)){
                     preloaderSong.stop();
-                    preloaderSong = chromeHacks(madeonPreload, madeonPreload.loopStart - timeToFade);
+                    preloaderSong = chromeHacks(madeonPreload, fileProgress);
                 } else {
                     preloaderSong.loop = false;
                 }
                 preloaderSong.onended = function() {
+                    // get around issues on mobile where pointer-events
+                    // doesn't work
+                    document.getElementById("preloader").style.display = "none";
                     document.getElementById("waifu").className = "loaded"
-                    audio.playIndex(0);
+                    // free dat memory
+                    preloaderSong = null;
                 }
             }
             
@@ -272,12 +286,15 @@
                         preloaderSong.loop = true;
                         preloaderSong.loopStart = 0;
                         preloaderSong.loopEnd = song.loopStart;
+                        
                         preloaderSong.connect(audio.context.destination);
+                        
                         preloaderSong.started = audio.context.currentTime;
                         preloaderSong.start(0);
                     });
                 } else {
                     document.getElementById("preloader").className = "loaded";
+                    document.getElementById("preloader").style.display = "none";
                     document.getElementById("waifu").className = "loaded";
                 }
                          
@@ -288,12 +305,30 @@
                 // preload images
                 waifuCanvas.preload();
             };
+            $(document).keydown(function(e) {
+                switch(e.which) {
+                    case 37: // left
+                        break;
+                    case 38: // up
+                        audio.next();
+                        break;
+                    case 39: // right
+                        break;
+                    case 40: // down
+                        audio.prev();
+                        break;
+                    default: return; // exit this handler for other keys
+                }
+                e.preventDefault(); // prevent the default action (scroll / move caret)
+            });
         </script>
     </head>
     <body>
         <div id="preloader">
             0x00
-        </div>        
+        </div>
+        <div id="beets">.xoxoxoxoxoxo</div>
+        <canvas id="waifu" width="1280" height="720"></canvas>
         <div id="controls">
             <a href="#" onclick="void(audio.stop());">stop</a>
             <a href="#" onclick="void(audio.play());">play</a>
@@ -302,7 +337,6 @@
             <div id="beatCount">B=0x0000</div>
             <div id="timer">T=0x0000</div>
             <div id="songname"></div>
-            <div id="beets"></div>
             <div id="waifuName"></div>
             <div id="colourName">white</div>
         </div>
@@ -311,7 +345,5 @@
             <div id="blackout"></div>
             <div id="waifuColour"></div>
         </div>
-        
-        <canvas id="waifu" width="1280" height="720"></canvas>
     </body>
 </html>

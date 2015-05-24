@@ -1400,6 +1400,8 @@ var rgSongs = [
 
 var nCurrentColor = 63; // start white
 var nCurrentWaifu = 0;
+// initially hold megumi
+var lastWaifus = [0];
 
 var nColorX, nColorY, nColorZ;
 
@@ -1407,8 +1409,12 @@ var nColorX, nColorY, nColorZ;
 function GetRandomWaifu()
 {
     var tmp = Math.round((Math.random() * (waifus.length - 1)));
-    if(tmp == nCurrentWaifu) {
+    if(lastWaifus.indexOf(tmp) != -1) {
         return GetRandomWaifu();
+    }
+    lastWaifus.push(tmp);
+    while(lastWaifus.length > waifus.length / 2) {
+        lastWaifus.shift();
     }
     nCurrentWaifu = tmp;
     return waifus[tmp];

@@ -64,6 +64,19 @@ waifuCanvas.animationLoop = function() {
 
 waifuCanvas.newWaifu = function() {
     GetRandomWaifu(); // increments the waifu counter
+    var style = document.getElementById("waifu").style;
+    style["margin-right"] = "auto";
+    style["margin-left"] = "auto";
+    switch(waifus[nCurrentWaifu].align) {
+        case "left":
+            style["margin-left"] = "0";
+            break;
+        case "right":
+            style["margin-right"] = "0";
+            break;
+        default:
+            break;
+    }
     needsRedraw = true;
 }
 
