@@ -5,7 +5,6 @@
         Clean up the damn code
             if you're not mon, don't read any further, it's pretty bad JS
 
-        Fine tune blur timing
         Volume controls
         Prettier ui
         Song shuffle
@@ -26,7 +25,7 @@
         <script type="text/javascript" src="audioUtils.js"></script>
         <script type="text/javascript">
             //debug
-            var skipPreloader = true;
+            var skipPreloader = false;
             
             var filesLoaded = 0;
             var initialLoad = 0;
@@ -47,7 +46,7 @@
                 var song = audio.songs[audio.current_index];
                 
                 document.getElementById("songname").innerHTML = song.name
-                document.getElementById("blackout").style.display = "none";
+                waifuCanvas.clearBlackout();
                 
                 // stop() destroys the old, must recreate
                 var newSong = audio.context.createBufferSource()
@@ -160,6 +159,7 @@
             function animationLoop() {
                 requestAnimationFrame(animationLoop);
                 timerUpdate();
+                waifuCanvas.animationLoop();
                 var cur = audio.current_song;
                 if(!cur || !cur._playing) {
                     return;
@@ -172,7 +172,6 @@
                     var beat = getBeat(audio.beat_pointer);
                     handleBeat(beat, audio.beat_pointer, RequestNextColor(), nCurrentColor, cur);
                 }
-                waifuCanvas.animationLoop();
             }
             
             function handleBeat(beat, bp, c, cc, current) {
@@ -186,14 +185,14 @@
                 if(beat != '.') {
                     if(beat == '|') {
                         shortBlackout = true;
-                        document.getElementById("blackout").style.display = "block";
+                        waifuCanvas.blackout();
                         return;
                     }
                     if(beat == '+') {
-                        document.getElementById("blackout").style.display = "block";
+                        waifuCanvas.blackout();
                         return;
                     } else {
-                        document.getElementById("blackout").style.display = "none";
+                        waifuCanvas.clearBlackout();
                     }
                     if(beat != ':' && beat != 'O' && beat != 'X') {
                         waifuCanvas.newWaifu();
@@ -201,7 +200,6 @@
                     }
                     if(beat != '*' && beat != 'X' && beat != 'O') {
                         waifuCanvas.setColour(c);
-                        //document.getElementById("waifuColour").style.backgroundColor = c;
                         document.getElementById("colourName").innerHTML = colors[cc];
                     }
                     if(beat.toLowerCase() == 'o') {
@@ -212,7 +210,7 @@
                     }
                 }
                 if(shortBlackout) {
-                    document.getElementById("blackout").style.display = "none";
+                    waifuCanvas.clearBlackout();
                     shortBlackout = false;
                 }
             }
@@ -343,11 +341,6 @@
             <div id="songname"></div>
             <div id="waifuName"></div>
             <div id="colourName">white</div>
-        </div>
-        
-        <div id="colours">
-            <div id="blackout"></div>
-            <!--<div id="waifuColour"></div>-->
         </div>
     </body>
 </html>

@@ -4,13 +4,20 @@ var needsRedraw = false;
 var waifuImgs = new Array();
 var waifuColour = "#FFF";
 
-var blurTime = 8;
-var blurIterations = 20;
+// constant
+var blurIterations = 20; // quality
 var blurMin = -blurIterations/2;
 var blurMax = blurIterations/2;
-var blurDistance = 4;
-var xBlur = 0;
-var yBlur = 0;
+var blurAlpha = 1/(blurIterations/2);
+var blurDecay = 25;
+var blurAmount = 15;
+// dynamic
+var blurStart = 0;
+var blurDistance = 0;
+var xBlur = false;
+var yBlur = false;
+
+var blackout = false;
 var shortBlackout = false;
 
 waifuCanvas = {};
@@ -45,8 +52,15 @@ waifuCanvas.redraw = function() {
     // white BG for the hard light filter
     canvas.globalAlpha = 1;
     canvas.globalCompositeOperation = "source-over";
-    canvas.fillStyle = "#FFF";
-    canvas.fillRect(0,0,width,720);
+    if(blackout) {
+        canvas.fillStyle = "#000";
+        canvas.fillRect(0,0,width,720);
+        needsRedraw = false;
+        return;
+    } else {
+        canvas.fillStyle = "#FFF";
+        canvas.fillRect(0,0,width,720);
+    }
     
     switch(waifus[nCurrentWaifu].align) {
         case "left":
@@ -59,16 +73,18 @@ waifuCanvas.redraw = function() {
             offset = width/2 - image.width/2;
             break;
     }
-    
+    if(xBlur || yBlur) {
+        canvas.globalAlpha = blurAlpha;
+        var delta = audio.context.currentTime - blurStart;
+        blurDistance = blurAmount * Math.exp(-blurDecay * delta);
+    }
     if(xBlur) {
-        canvas.globalAlpha = 1/blurIterations;
-        for(var i=blurMin; i<blurMax; i++) {
-            canvas.drawImage(image, blurDistance * i * xBlur + offset, 0);
+        for(var i=blurMin; i<=blurMax; i++) {
+            canvas.drawImage(image, Math.floor(blurDistance * i) + offset, 0);
         }
     } else if(yBlur) {
-        canvas.globalAlpha = 1/blurIterations;
-        for(var i=blurMin; i<blurMax; i++) {
-            canvas.drawImage(image, offset, blurDistance * i * yBlur);
+        for(var i=blurMin; i<=blurMax; i++) {
+            canvas.drawImage(image, offset, Math.floor(blurDistance * i));
         }
     } else {
         canvas.globalAlpha = 1;
@@ -83,12 +99,12 @@ waifuCanvas.redraw = function() {
 }
 
 waifuCanvas.animationLoop = function() {
-    if(xBlur) {
-        xBlur--;
+    if(blurStart && blurDistance < 0.3) {
+        blurDistance = 0;
+        blurStart = 0;
+        xBlur = yBlur = false;
         waifuCanvas.redraw();
-    }
-    else if(yBlur) {
-        yBlur--;
+    } else if(blurStart) {
         waifuCanvas.redraw();
     } else if(needsRedraw){
         waifuCanvas.redraw();
@@ -105,15 +121,29 @@ waifuCanvas.setColour = function(colour) {
     needsRedraw = true;
 }
 
+waifuCanvas.blackout = function() {
+    blackout = true;
+    needsRedraw = true;
+}
+
+// for song changes
+waifuCanvas.clearBlackout = function() {
+    blackout = false;
+    needsRedraw = true;
+}
+
 waifuCanvas.xBlur = function() {
-    xBlur = blurTime;
-    yBlur = 0;
+    blurStart = audio.context.currentTime;
+    blurDistance = blurAmount;
+    xBlur = true;
+    yBlur = false;
     needsRedraw = true;
 }
 
 waifuCanvas.yBlur = function() {
-    yBlur = blurTime;
-    xBlur = 0;
+    blurStart = audio.context.currentTime;
+    blurDistance = blurAmount;
+    xBlur = false;
+    yBlur = true;
     needsRedraw = true;
 }
-
