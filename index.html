@@ -5,14 +5,14 @@
         Clean up the damn code
             if you're not mon, don't read any further, it's pretty bad JS
 
+        Keep arraybuffer in mem, load AudioBuffer as needed?
         Volume controls
         Prettier ui
         Song shuffle
         Image pause / manual advance
-        Keep arraybuffer in mem, load AudioBuffer as needed?
         Different colour palettes
         External respacks
-        Change short blackout to beat length / 1.7
+        Change short blackout to beat length / 1.7 + change image
         Blur into blackout? iunno
     -->
     <head>
@@ -25,7 +25,7 @@
         <script type="text/javascript" src="audioUtils.js"></script>
         <script type="text/javascript">
             //debug
-            var skipPreloader = false;
+            var skipPreloader = true;
             
             var filesLoaded = 0;
             var initialLoad = 0;
@@ -67,8 +67,9 @@
                 newSong._beatWidth = newSong._buildWidth;
                 
                 audio.beat_pointer =  -newSong._build.length;
-                document.getElementById("beets").innerHTML = wrapBeats(0, 100);
+                updateBeatView(-1);
                 document.getElementById("timer").innerHTML = "T=0x0000"
+                document.getElementById("beetAccent").style.animationDuration = newSong._loopWidth * 1.5 + "s";
             }
          
             audio.play = function(delay) {
@@ -174,15 +175,28 @@
                 }
             }
             
+            function updateBeatView(pointer) {
+                // future minus accent
+                var beatLine = wrapBeats(pointer+1, 30);
+                document.getElementById("beetRight").innerHTML = beatLine;
+                document.getElementById("beetLeft").innerHTML = beatLine.split("").reverse().join("");
+            }
+            
             function handleBeat(beat, bp, c, cc, current) {
                 // we have changed song since we were scheduled
                 if(current != audio.current_song)
                     return;
-                var beatLine = wrapBeats(bp+1, 100);
-                document.getElementById("beets").innerHTML = beatLine; // add reversed bit later
+                updateBeatView(bp);
                 // I probably shouldn't have so much on one line
                 document.getElementById("beatCount").innerHTML = "B=0x" + pad(bp < 0 ? 0: loopBeat(bp).toString(16).toUpperCase(), 4);
                 if(beat != '.') {
+                    var accent = document.getElementById("beetAccent");
+                    accent.innerHTML = beat;
+                    accent.className = "beetView";
+                    // trigger reflow to restart animation
+                    accent.offsetWidth = accent.offsetWidth;
+                    accent.className = "beetView fade";
+                    
                     if(beat == '|') {
                         shortBlackout = true;
                         waifuCanvas.blackout();
@@ -248,8 +262,7 @@
                     preloaderSong.loop = false;
                 }
                 preloaderSong.onended = function() {
-                    // get around issues on mobile where pointer-events
-                    // doesn't work
+                    // get around issues on mobile where pointer-events don't work
                     document.getElementById("preloader").style.display = "none";
                     document.getElementById("waifu").className = "loaded"
                     // free dat memory
@@ -329,17 +342,21 @@
         <div id="preloader">
             0x00
         </div>
-        <div id="beets">.xoxoxoxoxoxo</div>
+        <div class="ui" id="beets">
+            <div class="beetView" id="beetLeft"></div>
+            <div class="beetView" id="beetAccent"></div>
+            <div class="beetView" id="beetRight"></div>
+        </div>
         <canvas id="waifu" width="1280" height="720"></canvas>
-        <div id="controls">
+        <div class="ui" id="controls">
             <a href="#" onclick="void(audio.stop());">stop</a>
             <a href="#" onclick="void(audio.play());">play</a>
             <a href="#" onclick="void(audio.prev());">prev</a>
             <a href="#" onclick="void(audio.next());">next</a>
             <div id="beatCount">B=0x0000</div>
             <div id="timer">T=0x0000</div>
-            <div id="songname"></div>
-            <div id="waifuName"></div>
+            <div id="songname">Madeon - Finale</div>
+            <div id="waifuName">Megumi</div>
             <div id="colourName">white</div>
         </div>
     </body>
