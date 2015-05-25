@@ -4,15 +4,12 @@
     TODO:
         Clean up the damn code
             if you're not mon, don't read any further, it's pretty bad JS
-        
-        Performance in chrome
-        Loading screen
+
         Volume controls
         Prettier ui
         Song shuffle
-        Image pause
-        Fine tune blur
-        Keyboard shortcuts
+        Image pause / manual advance
+        Keep arraybuffer in mem, load AudioBuffer as needed?
         Different colour palettes
         External respacks
         Change short blackout to beat length / 1.7
@@ -23,93 +20,77 @@
         <title>0x40</title>
         <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
         <link rel="stylesheet" href="style.css">
-        <svg version="1.1" xmlns="http://www.w3.org/2000/svg" height="0">
-          <filter id="blur">
-              <feGaussianBlur stdDeviation="0 0">
-                <animate attributeName="stdDeviation" attributeType="XML" 
-                    begin="indefinite" end="indefinite" dur="0.1s" 
-                    fill="freeze" from="0 70" to="0 0"/>
-                <animate attributeName="stdDeviation" attributeType="XML" 
-                    begin="indefinite" end="indefinite" dur="0.1s" 
-                    fill="freeze" from="70 0" to="0 0"/>
-              </feGaussianBlur>
-          </filter>
-        </svg>
-        <!-- Won't work in the CSS without referencing index.html, yay -->
-        <style type='text/css'>
-            #waifu {
-                filter: url(#blur);
-                -webkit-filter: url(#blur);
-            }
-        </style>
         <script type="text/javascript" src="0x40.js"></script>
+        <script type="text/javascript" src="waifuCanvas.js"></script>
+        <script type="text/javascript" src="audioUtils.js"></script>
         <script type="text/javascript">
             //debug
-            var noAutoPlay = false;
+            var skipPreloader = false;
             
-            var leftToLoad = waifus.length;
-            var initialLoad = true;
-            var shortBlackout = false;
+            var filesLoaded = 0;
+            var initialLoad = 0;
             
-            // Milliseconds!
-            var animationLoopTime = 50;
-            // Seconds!
-            var animationLookAhead = 0.2;
-            
-            var tmpSong = {};
+            var preloaderSong = null;
 
-            //--------------
-            // Audio Object
-            //--------------
             var audio = {
-                buffer: {},
+                buffer: null,
                 proceed: true,
                 songs: rgSongs,
                 current_song: null,
                 current_index: 0,
                 beat_pointer: 0,
             }
-         
-            audio.play = function() {
-                if(audio.current_song && audio.current_song._playing) {
-                    return;
-                }
-                document.getElementById("songname").innerHTML = audio.songs[audio.current_index].name
-                document.getElementById("blackout").style.display = "none";
+            
+            // Why does this exist? For smooth preloader transition on FF
+            audio.prep = function() {
+                var song = audio.songs[audio.current_index];
+                
+                document.getElementById("songname").innerHTML = song.name
+                waifuCanvas.clearBlackout();
+                
                 // stop() destroys the old, must recreate
                 var newSong = audio.context.createBufferSource()
                 audio.current_song = newSong;
                 
-                newSong.buffer = audio.buffer[audio.current_index];
+                newSong.buffer = song.buffer;
                 newSong.loop = true;
-                newSong.loopStart = audio.buffer[audio.current_index]._loopStart;
-                newSong.loopEnd = audio.buffer[audio.current_index].duration;
-                newSong._loopLength = audio.buffer[audio.current_index]._loopLength;
+                newSong.loopStart = song.loopStart;
+                newSong.loopEnd = song.buffer.duration;
+                newSong.loopLength = song.loopLength;
                 newSong.connect(audio.context.destination);
                 
-                var songInfo = audio.songs[audio.current_index];
-                newSong._build = songInfo.buildUpRhythm || "";
-                newSong._beats = newSong._build + songInfo.rhythm;
-                audio.beat_pointer =  -newSong._build.length;
+                newSong._build = song.buildUpRhythm || "";
+                newSong._beats = newSong._build + song.rhythm;
                 
-                newSong._loopWidth = newSong._loopLength / songInfo.rhythm.length;
+                newSong._loopWidth = newSong.loopLength / song.rhythm.length;
                 newSong._buildWidth = newSong._build ? newSong.loopStart / newSong._build.length : 0;
                 newSong._beatWidth = newSong._buildWidth;
                 
+                audio.beat_pointer =  -newSong._build.length;
                 document.getElementById("beets").innerHTML = wrapBeats(0, 100);
                 document.getElementById("timer").innerHTML = "T=0x0000"
-
-                newSong.start(0);
+            }
+         
+            audio.play = function(delay) {
+                if(!audio.current_song) {
+                    audio.prep();
+                }
+                var cur = audio.current_song;
+                if(cur._playing) {
+                    return;
+                }
+                
+                delay = delay ? delay: 0;
+                cur.start(audio.context.currentTime + delay);
                 // offset to after the build
-                newSong._startTime = audio.context.currentTime + newSong.loopStart;
-                newSong._playing = true;
+                cur._startTime = audio.context.currentTime + cur.loopStart + delay;
+                cur._playing = true;
             }
          
             audio.stop = function() {
                 if (audio.current_song && audio.current_song._playing) {
                     audio.current_song.stop();
-                    audio.current_song._playing = false;
-                    audio.current_song._startTime = 0;
+                    audio.current_song = null;
                 }
             }
             
@@ -128,19 +109,17 @@
             
             audio.playIndex = function(index) {
                 audio.current_index = index;
-                if(audio.buffer[index]) {
+                loadSong(audio.songs[index], function() {
                     audio.stop();
                     audio.play();
-                } else {
-                    loadSong(index);
-                }
+                });
             }
             
             // In seconds, relative to the loop start
             function currentTime() {
                 var cur = audio.current_song;
                 var time = audio.context.currentTime - cur._startTime;
-                return time;// < 0 ? time : time % cur._loopLength;
+                return time;
             }
             
             function wrapBeats(start, length) {
@@ -165,39 +144,33 @@
                 }
             }
             
-            function timerLoop() {
-                window.requestAnimationFrame(timerLoop);
+            function timerUpdate() {
                 if(!audio.current_song || !audio.current_song._playing) {
                     return;
                 }
                 var now = currentTime();
                 if(now < 0)
                     return;
-                now %= audio.current_song._loopLength;
+                now %= audio.current_song.loopLength;
                 now = parseInt(now * 1000);
                 document.getElementById("timer").innerHTML = "T=0x" + pad(now.toString(16).toUpperCase(), 4);
             }
             
             function animationLoop() {
                 requestAnimationFrame(animationLoop);
-                //setTimeout(animationLoop, animationLoopTime);
+                timerUpdate();
+                waifuCanvas.animationLoop();
                 var cur = audio.current_song;
-                if(!cur || !cur._playing)
+                if(!cur || !cur._playing) {
                     return;
+                }
                 var now = currentTime();
-                var future = now + animationLookAhead;
                 if(audio.beat_pointer >=0)
                     cur._beatWidth = cur._loopWidth;
-                for(var beatTime = audio.beat_pointer * cur._beatWidth; beatTime < future;
+                for(var beatTime = audio.beat_pointer * cur._beatWidth; beatTime < now;
                         beatTime = ++audio.beat_pointer * cur._beatWidth) {
                     var beat = getBeat(audio.beat_pointer);
-                    var timeout = (beatTime - now)*1000;
-                    // Either lagging behind or first note
-                    if(timeout < 0)
-                        timeout = 0;
-                    setTimeout(
-                        handleBeat, timeout,
-                        beat, audio.beat_pointer, RequestNextColor(), nCurrentColor, cur);
+                    handleBeat(beat, audio.beat_pointer, RequestNextColor(), nCurrentColor, cur);
                 }
             }
             
@@ -205,169 +178,93 @@
                 // we have changed song since we were scheduled
                 if(current != audio.current_song)
                     return;
-                document.getElementById("beets").innerHTML = wrapBeats(bp+1, 100);
+                var beatLine = wrapBeats(bp+1, 100);
+                document.getElementById("beets").innerHTML = beatLine; // add reversed bit later
                 // I probably shouldn't have so much on one line
                 document.getElementById("beatCount").innerHTML = "B=0x" + pad(bp < 0 ? 0: loopBeat(bp).toString(16).toUpperCase(), 4);
                 if(beat != '.') {
                     if(beat == '|') {
                         shortBlackout = true;
-                        document.getElementById("blackout").style.display = "block";
+                        waifuCanvas.blackout();
                         return;
                     }
                     if(beat == '+') {
-                        document.getElementById("blackout").style.display = "block";
+                        waifuCanvas.blackout();
                         return;
                     } else {
-                        document.getElementById("blackout").style.display = "none";
+                        waifuCanvas.clearBlackout();
                     }
                     if(beat != ':' && beat != 'O' && beat != 'X') {
-                        var waifu = GetRandomWaifu();
-                        var waifuDiv = document.getElementsByClassName('waifuImg')[nCurrentWaifu];
-                        current = document.getElementsByClassName('active');
-                        if(current.length) {
-                            current[0].style.display = "none";
-                            current[0].className = "waifuImg";
-                        }
-                        waifuDiv.style.display = "block";
-                        waifuDiv.className = "waifuImg active";
-                        document.getElementById("waifuName").innerHTML = waifu.name;
+                        waifuCanvas.newWaifu();
+                        document.getElementById("waifuName").innerHTML = waifus[nCurrentWaifu].name;
                     }
                     if(beat != '*' && beat != 'X' && beat != 'O') {
-                        document.getElementById("waifuColour").style.backgroundColor = c;
+                        waifuCanvas.setColour(c);
                         document.getElementById("colourName").innerHTML = colors[cc];
                     }
                     if(beat.toLowerCase() == 'o') {
-                        $("#blur animate").get(1).beginElement();
+                        waifuCanvas.xBlur();
                     }
                     if(beat.toLowerCase() == 'x') {
-                        $("#blur animate").get(0).beginElement();
+                        waifuCanvas.yBlur();
                     }
                 }
                 if(shortBlackout) {
-                    document.getElementById("blackout").style.display = "none";
+                    waifuCanvas.clearBlackout();
                     shortBlackout = false;
                 }
             }
             
-            function loadSong(index) {
-                leftToLoad++;
-                tmpSong[0] = tmpSong[1] = null;
-                if(audio.songs[index].buildUp) {
-                    leftToLoad++;
-                    loadAudio(audio.songs[index].buildUp, index, 0);
+            function onFileLoad(file) {
+                filesLoaded++;
+                var percent = Math.floor(filesLoaded / initialLoad * 0x40);
+                document.getElementById("preloader").innerHTML = '0x' + pad(percent.toString(16), 2);
+                // Destroy FF lag
+                if(!skipPreloader && file && file.name == "Madeon - Finale") {
+                    audio.prep();
                 }
-                loadAudio(audio.songs[index].file, index, 1);
+                if(filesLoaded >= initialLoad)
+                    onAllLoaded();
             }
-            
-            function loadAudio(filename, index, tmpArray) {
-                var req = new XMLHttpRequest();
-                req.open('GET', filename, true);
-                req.responseType = 'arraybuffer';
-                req.onload = function() {
-                    audio.context.decodeAudioData(
-                        req.response,
-                        function(buffer) {
-                            tmpSong[tmpArray] = trimSilence(buffer);
-                            if(!--leftToLoad) {
-                                onFilesLoaded(index);
-                            }
-                        },
-                        function() {
-                            console.log('Error decoding audio "' + filename + '".');
-                        }
-                    );
-                };
-                req.send();
-            }
-            
-                        
-            function onFilesLoaded(index) {
-                var buf;
-                // is there a buildup?
-                if(tmpSong[0]) {
-                    buf = concatenateAudioBuffers(tmpSong[0],tmpSong[1]);
+
+            function onAllLoaded() {
+                waifuCanvas.init();
+                console.log("Completed inital load");
+                animationLoop();
+                document.getElementById("preloader").style.color = "#0F0";
+                if(skipPreloader)
+                    return;
+                var fileProgress = (audio.context.currentTime - preloaderSong.started) % madeonPreload.loopStart;
+                var timeToFade = madeonPreload.loopStart - fileProgress;
+                audio.play(preloaderSong.buffer.duration - fileProgress);
+                setTimeout( function() {
+                    document.getElementById("preloader").className = "loaded"
+                }, timeToFade * 1000);
+                // hacky disgusting chrome workaround
+                if (/Chrome/.test(navigator.userAgent) && /Google Inc/.test(navigator.vendor)){
+                    preloaderSong.stop();
+                    preloaderSong = chromeHacks(madeonPreload, fileProgress);
                 } else {
-                    buf = tmpSong[1];
+                    preloaderSong.loop = false;
                 }
-                buf._loopStart = tmpSong[0] ? tmpSong[0].duration : 0;
-                buf._loopLength = buf.duration - buf._loopStart;
-                
-                audio.buffer[index] = buf;
-                
-                if(initialLoad) {
-                    document.getElementById('waifu').className = "loaded";
-                    initialLoad = false;
-                    if(noAutoPlay)
-                        return;
+                preloaderSong.onended = function() {
+                    // get around issues on mobile where pointer-events
+                    // doesn't work
+                    document.getElementById("preloader").style.display = "none";
+                    document.getElementById("waifu").className = "loaded"
+                    // free dat memory
+                    preloaderSong = null;
                 }
-                audio.playIndex(index);
             }
             
-            // because MP3 is bad
-            function trimSilence(buffer) {
-                // how much silence we have
-                var minSilence = buffer.length;
-                var maxSilence = 0;
-                for(var i=0; i<buffer.numberOfChannels; i++) {
-                    var tmp = buffer.getChannelData(i);
-                    for(var j=0; j < tmp.length; j++) {
-                        // end of silence
-                        if(tmp[j] != 0) {
-                            if(j < minSilence) {
-                                minSilence = j;
-                            }
-                            break;
-                        }
-                    }
-                    // because just padding 1 end isn't enough for this codec
-                    for(var j=tmp.length-1; j >= 0 ; j--) {
-                        if(tmp[j] != 0) {
-                            if(j > maxSilence) {
-                                maxSilence = j;
-                            }
-                            break;
-                        }
-                    }
-                }
-                // 1152 = one frame, makes the sync better because ID3 tags
-                // take up that space or some garbage
-                var ret = audio.context.createBuffer(buffer.numberOfChannels, maxSilence-minSilence-1152, buffer.sampleRate);
-                for(var i=0; i<buffer.numberOfChannels; i++) {
-                    var oldBuf = buffer.getChannelData(i);
-                    var newBuf = ret.getChannelData(i);
-                    for(var j=0; j<ret.length; j++) {
-                        newBuf[j] = oldBuf[minSilence + j + 1152];
-                    }
-                }
-                
+            function chromeHacks(song, time) {
+                var ret = audio.context.createBufferSource()
+                ret.buffer = song.buffer;
+                ret.connect(audio.context.destination);
+                ret.started = audio.context.currentTime;
+                ret.start(0, time);
                 return ret;
             }
-            
-            function concatenateAudioBuffers(buffer1, buffer2) {
-                if (!buffer1 || !buffer2) {
-                    console.log("no buffers!");
-                    return null;
-                }
-
-                if (buffer1.numberOfChannels != buffer2.numberOfChannels) {
-                    console.log("number of channels is not the same!");
-                    return null;
-                }
-
-                if (buffer1.sampleRate != buffer2.sampleRate) {
-                    console.log("sample rates don't match!");
-                    return null;
-                }
-
-                var tmp = audio.context.createBuffer(buffer1.numberOfChannels, buffer1.length + buffer2.length, buffer1.sampleRate);
-
-                for (var i=0; i<tmp.numberOfChannels; i++) {
-                    var data = tmp.getChannelData(i);
-                    data.set(buffer1.getChannelData(i));
-                    data.set(buffer2.getChannelData(i),buffer1.length);
-                }
-                return tmp;
-            };
             
             window.onload = function() {
                 // Check Web Audio API Support
@@ -380,37 +277,60 @@
                     alert('Web Audio API not supported in this browser.');
                 }
                 
-                // preloads, don't update leftToLoad as that's up top
-                for(var waifu in waifus) {
-                    o = document.createElement('img');
-                    o.src = "images/" + waifus[waifu].file;
-                    o.onload = function() {if(!--leftToLoad) onFilesLoaded(0);};
+                // normal, xBlur, yBlur, songs
+                initialLoad = waifus.length + audio.songs.length;
+                
+                // Sexy audio preloader
+                if(!skipPreloader) {
+                    loadSong(madeonPreload, function(song) {
+                        preloaderSong = audio.context.createBufferSource()
+                        preloaderSong.buffer = song.buffer;
+                        preloaderSong.loop = true;
+                        preloaderSong.loopStart = 0;
+                        preloaderSong.loopEnd = song.loopStart;
+                        
+                        preloaderSong.connect(audio.context.destination);
+                        
+                        preloaderSong.started = audio.context.currentTime;
+                        preloaderSong.start(0);
+                    });
+                } else {
+                    document.getElementById("preloader").className = "loaded";
+                    document.getElementById("preloader").style.display = "none";
+                    document.getElementById("waifu").className = "loaded";
                 }
-            
-                // actual images
-                var container = document.getElementById('waifu');
-                for(var waifu in waifus) {
-                    o = document.createElement('div');
-                    o.style.backgroundImage = 'url("images/' + waifus[waifu].file + '")';
-                    o.className = "waifuImg";
-                    container.appendChild(o);
+                         
+                for(var song in audio.songs) {
+                    loadSong(audio.songs[song], onFileLoad);
                 }
-                var megumi = document.getElementsByClassName("waifuImg")[0];
-                megumi.style.display = "block";
-                megumi.className = "waifuImg active";
-             
-                setTimeout( function() {
-                    if (audio.proceed) {
-                        audio.playIndex(0);
-                        animationLoop();
-                        timerLoop();
-                    }
-                }, 400);
+                
+                // preload images
+                waifuCanvas.preload();
             };
+            $(document).keydown(function(e) {
+                switch(e.which) {
+                    case 37: // left
+                        break;
+                    case 38: // up
+                        audio.next();
+                        break;
+                    case 39: // right
+                        break;
+                    case 40: // down
+                        audio.prev();
+                        break;
+                    default: return; // exit this handler for other keys
+                }
+                e.preventDefault(); // prevent the default action (scroll / move caret)
+            });
         </script>
     </head>
     <body>
-        
+        <div id="preloader">
+            0x00
+        </div>
+        <div id="beets">.xoxoxoxoxoxo</div>
+        <canvas id="waifu" width="1280" height="720"></canvas>
         <div id="controls">
             <a href="#" onclick="void(audio.stop());">stop</a>
             <a href="#" onclick="void(audio.play());">play</a>
@@ -419,14 +339,8 @@
             <div id="beatCount">B=0x0000</div>
             <div id="timer">T=0x0000</div>
             <div id="songname"></div>
-            <div id="beets"></div>
             <div id="waifuName"></div>
-            <div id="colourName"></div>
+            <div id="colourName">white</div>
         </div>
-        
-        <div id="blackout"></div>
-        
-        <div id="waifu"></div>
-        <div id="waifuColour"></div>
     </body>
 </html>
