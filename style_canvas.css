@@ -13,6 +13,7 @@ body {
     position: absolute;
     bottom: 0px;
     left: 50%;
+    transform: translate(-50%, 0);
     z-index: 3;
 }
 
@@ -22,14 +23,15 @@ body {
     position: absolute;
     top: 0px;
     left: 50%;
+    transform: translate(-50%, 0);
     z-index: 3;
 }
 
 #waifu {
     display: block;
     height: 100%;
-    margin-left: auto;
-    margin-right: auto;
+    #margin-left: auto;
+    #margin-right: auto;
     padding: 0;
 
     z-index: -10;

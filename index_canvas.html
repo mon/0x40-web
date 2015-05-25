@@ -10,6 +10,7 @@
         Prettier ui
         Song shuffle
         Image pause / manual advance
+        Keep arraybuffer in mem, load AudioBuffer as needed?
         Different colour palettes
         External respacks
         Change short blackout to beat length / 1.7
@@ -25,7 +26,7 @@
         <script type="text/javascript" src="audioUtils.js"></script>
         <script type="text/javascript">
             //debug
-            var skipPreloader = false;
+            var skipPreloader = true;
             
             var filesLoaded = 0;
             var initialLoad = 0;
@@ -33,6 +34,7 @@
             var preloaderSong = null;
 
             var audio = {
+                buffer: null,
                 proceed: true,
                 songs: rgSongs,
                 current_song: null,
@@ -71,8 +73,11 @@
             }
          
             audio.play = function(delay) {
+                if(!audio.current_song) {
+                    audio.prep();
+                }
                 var cur = audio.current_song;
-                if(cur && cur._playing) {
+                if(cur._playing) {
                     return;
                 }
                 
@@ -86,8 +91,7 @@
             audio.stop = function() {
                 if (audio.current_song && audio.current_song._playing) {
                     audio.current_song.stop();
-                    audio.current_song._playing = false;
-                    audio.current_song._startTime = 0;
+                    audio.current_song = null;
                 }
             }
             
@@ -108,7 +112,6 @@
                 audio.current_index = index;
                 loadSong(audio.songs[index], function() {
                     audio.stop();
-                    audio.prep();
                     audio.play();
                 });
             }
@@ -197,7 +200,8 @@
                         document.getElementById("waifuName").innerHTML = waifus[nCurrentWaifu].name;
                     }
                     if(beat != '*' && beat != 'X' && beat != 'O') {
-                        document.getElementById("waifuColour").style.backgroundColor = c;
+                        waifuCanvas.setColour(c);
+                        //document.getElementById("waifuColour").style.backgroundColor = c;
                         document.getElementById("colourName").innerHTML = colors[cc];
                     }
                     if(beat.toLowerCase() == 'o') {
@@ -343,7 +347,7 @@
         
         <div id="colours">
             <div id="blackout"></div>
-            <div id="waifuColour"></div>
+            <!--<div id="waifuColour"></div>-->
         </div>
     </body>
 </html>
