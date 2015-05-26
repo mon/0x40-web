@@ -1408,7 +1408,7 @@ var nColorX, nColorY, nColorZ;
 
 function GetRandomWaifu()
 {
-    var tmp = Math.round((Math.random() * (waifus.length - 1)));
+    var tmp = Math.round(Math.random() * (waifus.length - 1));
     if(lastWaifus.indexOf(tmp) != -1) {
         return GetRandomWaifu();
     }
@@ -1436,8 +1436,8 @@ function rgbToHex(rgb) {
 
 function RequestNextColor()
 {
-    var rgb = new Array;
-    var tmp = (nCurrentColor + Math.round( (Math.random() * (colors.length - 2) ) ) + 1) % colors.length;
+    var rgb = [];
+    var tmp = Math.round(Math.random() * colors.length);
     if(tmp == nCurrentColor) {
         return RequestNextColor();
     }
