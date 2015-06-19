@@ -1,3 +1,6 @@
+var LAME_DELAY_START = 2258;
+var LAME_DELAY_END = 1000;
+
 // callback is given a populated song object
 function loadSong(song, callback) {
     if(song.buffer) {
@@ -25,9 +28,9 @@ function loadAudioFile(song, isBuild, callback) {
             req.response,
             function(buffer) {
                 if(isBuild) {
-                    song.tmpBuf.build = trimSilence(buffer);
+                    song.tmpBuf.build = trimMP3(buffer);
                 } else {
-                    song.tmpBuf.loop = trimSilence(buffer);
+                    song.tmpBuf.loop = trimMP3(buffer);
                 }
                 onSongLoad(song, callback);
             },
@@ -58,39 +61,13 @@ function onSongLoad(song, callback) {
 }
 
 // because MP3 is bad
-function trimSilence(buffer) {
-    // how much silence we have
-    var minSilence = buffer.length;
-    var maxSilence = 0;
-    for(var i=0; i<buffer.numberOfChannels; i++) {
-        var tmp = buffer.getChannelData(i);
-        for(var j=0; j < tmp.length; j++) {
-            // end of silence
-            if(tmp[j] != 0) {
-                if(j < minSilence) {
-                    minSilence = j;
-                }
-                break;
-            }
-        }
-        // because just padding 1 end isn't enough for this codec
-        for(var j=tmp.length-1; j >= 0 ; j--) {
-            if(tmp[j] != 0) {
-                if(j > maxSilence) {
-                    maxSilence = j;
-                }
-                break;
-            }
-        }
-    }
-    // 1152 = one frame, makes the sync better because ID3 tags
-    // take up that space or some garbage
-    var ret = audio.context.createBuffer(buffer.numberOfChannels, maxSilence-minSilence-1152, buffer.sampleRate);
+function trimMP3(buffer) {
+    var ret = audio.context.createBuffer(buffer.numberOfChannels, buffer.length - LAME_DELAY_START - LAME_DELAY_END, buffer.sampleRate);
     for(var i=0; i<buffer.numberOfChannels; i++) {
         var oldBuf = buffer.getChannelData(i);
         var newBuf = ret.getChannelData(i);
         for(var j=0; j<ret.length; j++) {
-            newBuf[j] = oldBuf[minSilence + j + 1152];
+            newBuf[j] = oldBuf[LAME_DELAY_START + j];
         }
     }
     
