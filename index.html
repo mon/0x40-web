@@ -12,7 +12,6 @@
         Image pause / manual advance
         Different colour palettes
         External respacks
-        Change short blackout to beat length / 1.7 + change image
         Blur into blackout? iunno
     -->
     <head>
@@ -25,7 +24,7 @@
         <script type="text/javascript" src="audioUtils.js"></script>
         <script type="text/javascript">
             //debug
-            var skipPreloader = true;
+            var skipPreloader = false;
             
             var filesLoaded = 0;
             var initialLoad = 0;
@@ -90,6 +89,7 @@
          
             audio.stop = function() {
                 if (audio.current_song && audio.current_song._playing) {
+                    updateBeatView(0);
                     audio.current_song.stop();
                     audio.current_song = null;
                 }
@@ -171,7 +171,8 @@
                 for(var beatTime = audio.beat_pointer * cur._beatWidth; beatTime < now;
                         beatTime = ++audio.beat_pointer * cur._beatWidth) {
                     var beat = getBeat(audio.beat_pointer);
-                    handleBeat(beat, audio.beat_pointer, RequestNextColor(), nCurrentColor, cur);
+                    var c = RequestNextColor();
+                    handleBeat(beat, audio.beat_pointer, cur);
                 }
             }
             
@@ -182,7 +183,7 @@
                 document.getElementById("beetLeft").innerHTML = beatLine.split("").reverse().join("");
             }
             
-            function handleBeat(beat, bp, c, cc, current) {
+            function handleBeat(beat, bp, current) {
                 // we have changed song since we were scheduled
                 if(current != audio.current_song)
                     return;
@@ -197,35 +198,55 @@
                     accent.offsetWidth = accent.offsetWidth;
                     accent.className = "beetView fade";
                     
-                    if(beat == '|') {
-                        shortBlackout = true;
+                    switch(beat) {
+                    case 'X':
+                    case 'x':
+                        waifuCanvas.yBlur();
+                        break;
+                    case 'O':
+                    case 'o':
+                        waifuCanvas.xBlur();
+                        break;
+                    case '+':
+                        waifuCanvas.xBlur();
                         waifuCanvas.blackout();
-                        return;
+                        break;
+                    case '¤':
+                        waifuCanvas.xBlur();
+                        waifuCanvas.blackout(true);
+                        break;
+                    case '|':
+                        waifuCanvas.shortBlackout(current._beatWidth);
+                        waifuCanvas.setColour(RequestNextColor());
+                        document.getElementById("colourName").innerHTML = colors[nCurrentColor];
+                        break;
+                    case ':':
+                        waifuCanvas.setColour(RequestNextColor());
+                        document.getElementById("colourName").innerHTML = colors[nCurrentColor];
+                        break;
+                    case '*':
+                        // if isFullAuto
+                        waifuCanvas.newWaifu();
+                        document.getElementById("waifuName").innerHTML = waifus[nCurrentWaifu].name;
+                        break;
+                    case '=':
+                        // if isFullAuto
+                        waifuCanvas.newWaifu();
+                        document.getElementById("waifuName").innerHTML = waifus[nCurrentWaifu].name;
+                    case '~':
+                        // TODO colour fade
+                        break;
                     }
-                    if(beat == '+') {
-                        waifuCanvas.blackout();
-                        return;
-                    } else {
+                    if ([".", "+", "|", "¤"].indexOf(beat) == -1) {
                         waifuCanvas.clearBlackout();
                     }
-                    if(beat != ':' && beat != 'O' && beat != 'X') {
+                    if([".", "+", ":", "*", "X", "O", "~", "="].indexOf(beat) == -1) {
+                        waifuCanvas.setColour(RequestNextColor());
+                        document.getElementById("colourName").innerHTML = colors[nCurrentColor];
+                        // if isFullAuto
                         waifuCanvas.newWaifu();
                         document.getElementById("waifuName").innerHTML = waifus[nCurrentWaifu].name;
                     }
-                    if(beat != '*' && beat != 'X' && beat != 'O') {
-                        waifuCanvas.setColour(c);
-                        document.getElementById("colourName").innerHTML = colors[cc];
-                    }
-                    if(beat.toLowerCase() == 'o') {
-                        waifuCanvas.xBlur();
-                    }
-                    if(beat.toLowerCase() == 'x') {
-                        waifuCanvas.yBlur();
-                    }
-                }
-                if(shortBlackout) {
-                    waifuCanvas.clearBlackout();
-                    shortBlackout = false;
                 }
             }
             
@@ -265,6 +286,7 @@
                     // get around issues on mobile where pointer-events don't work
                     document.getElementById("preloader").style.display = "none";
                     document.getElementById("waifu").className = "loaded"
+                    updateBeatView(-1);
                     // free dat memory
                     preloaderSong = null;
                 }
@@ -344,7 +366,7 @@
         </div>
         <div class="ui" id="beets">
             <div class="beetView" id="beetLeft"></div>
-            <div class="beetView" id="beetAccent"></div>
+            <div class="beetView fade" id="beetAccent">X</div>
             <div class="beetView" id="beetRight"></div>
         </div>
         <canvas id="waifu" width="1280" height="720"></canvas>
