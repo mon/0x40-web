@@ -1,0 +1,20 @@
+/* TODO: Fix scrollbar */
+
+.RetroUI {
+}
+
+.hues-r-container {
+    position: absolute;
+    bottom: 0px;
+    
+    white-space: nowrap;
+    font-family: 'PetMe64Web';
+    font-size: 5pt;
+}
+
+.hues-r-container a:link, .hues-r-container a:visited {
+    display: block;
+    color: inherit;
+    text-decoration: none;
+    overflow: hidden;
+}

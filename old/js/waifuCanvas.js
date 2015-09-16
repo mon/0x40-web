@@ -26,7 +26,7 @@ waifuCanvas.init = function() {
     canvas = document.getElementById("waifu").getContext("2d");
     window.addEventListener('resize', waifuCanvas.resize);
     waifuCanvas.resize();
-    canvas.drawImage(waifuImgs[0], 0, 0);
+    //canvas.drawImage(waifuImgs[0], 0, 0);
 }
 
 waifuCanvas.resize = function() {

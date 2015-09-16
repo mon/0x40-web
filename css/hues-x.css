@@ -1,0 +1,30 @@
+/* Heavily based on Kepstin's wonderful CSS work
+  https://github.com/kepstin/0x40hues-html5/blob/master/hues-m.css */
+  
+.XmasUI {
+    font-family: 'PetMe64Web';
+}
+
+.hues-x-controls {
+    position: absolute;
+    bottom: 0;
+    max-width: 992px;
+    height: 50px;
+    margin: 0 auto;
+    overflow: hidden;
+    left: 8px;
+    right: 8px;
+    color: rgba(255,255,255,0.7);
+}
+
+.hues-x-beatbar {
+  position: absolute;
+  top: 0;
+  max-width: 992px;
+  height: 30px;
+  margin: 0 auto;
+  overflow: hidden;
+  left: 8px;
+  right: 8px;
+  color: white;
+}
