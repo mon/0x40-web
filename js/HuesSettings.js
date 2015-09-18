@@ -6,7 +6,7 @@ function HuesSettings(defaults) {
 HuesSettings.prototype.connectCore = function(core) {
     this.core = core;
 };
-
+/*
 //class HuesSettings
 package 
 {
@@ -385,3 +385,4 @@ package
 }
 
 
+*/
