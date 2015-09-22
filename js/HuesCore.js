@@ -1,19 +1,3 @@
-var defaultSettings = {
-    load : true, // Debugging var, for loading zips or not
-    autoplay : true, // Debug, play first song automatically?
-    blurQuality: 2, // low/med/high/extreme 0-3
-    
-    // UI accessible config
-    // Autosong stuff is a todo, becuase why even implement that
-    smartAlign: true,
-    blurAmount: 1,           // 0,1,2,3 = off,low,med,high
-    blurDecay: 2,            // 0,1,2,3 = slow,med,fast,faster!
-    colourSet: "normal",     // normal, pastel, 420
-    blackoutUI: false,
-    playBuildups: "on",       // off, once, on
-    volume : 0.7
-}
-
 HuesCore = function(defaults) {
     // Bunch-o-initialisers
     this.version = "0x01";
@@ -25,23 +9,12 @@ HuesCore = function(defaults) {
     this.colourIndex=0;
     this.imageIndex=-1;
     this.isFullAuto = true;
-    this.currentVolume=70;
-    this.volumeMuted=false;
     this.loopCount=0;
-    this.doRandom = false;
-    this.lastSC=0;
-    this.buildupDiff=0;
-    this.animTimeoutID;
     this.fadeOut=false;
     this.fadeDirection=false;
     this.loadedFiles=0;
     this.doBuildup=true;
     this.userInterface = null;
-    
-    for(var attr in defaultSettings) {
-        if(defaults[attr] == undefined)
-            defaults[attr] = defaultSettings[attr];
-    }
     
     console.log("0x40 Hues - start your engines!");
     this.colours = this.oldColours;
@@ -49,7 +22,7 @@ HuesCore = function(defaults) {
     this.lastSongArray = [];
     this.lastImageArray = [];
     this.settings = new HuesSettings(defaults);
-    this.autoSong = this.settings.autosong;
+    //this.autoSong = this.settings.autosong;
     this.resourceManager = new Resources();
     this.soundManager = new SoundManager();
     if(!this.soundManager.canUse) {
@@ -62,7 +35,6 @@ HuesCore = function(defaults) {
     this.changeUI(1);
     this.settings.connectCore(this);
     
-    // todo: only after respacks loaded?
     var that = this;
     if(defaults.load) {
         this.resourceManager.addAll(defaults.respacks, function() {
@@ -113,6 +85,9 @@ HuesCore.prototype.animationLoop = function() {
         this.userInterface.updateTime(0);
     } else {
         this.userInterface.updateTime(this.soundManager.displayableTime());
+        if(this.doBuildup) {
+            this.currentSong.buildupPlayed = true;
+        }
     }
     for(var beatTime = this.beatIndex * this.beatLength; beatTime < now;
             beatTime = ++this.beatIndex * this.beatLength) {
@@ -164,34 +139,23 @@ HuesCore.prototype.setSong = function(index) {
     this.userInterface.setSongText();
     this.loopCount = 0;
     if (this.currentSong.buildup) {
-        if (this.currentSong.force) {
-            if (this.currentSong.force != "song") {
-                this.currentSong.buildupPlayed = false;
-                this.doBuildup = true;
-            } else {
-                this.currentSong.buildupPlayed = true;
-                this.doBuildup = false;
-            }
-            this.currentSong.force = null;
-        } else {
-            switch (this.settings.buildups) {
-            case "off":
-                this.currentSong.buildupPlayed = true;
-                this.doBuildup = false;
-                break;
-            case "on":
-                this.currentSong.buildupPlayed = false;
-                this.doBuildup = true;
-                break;
-            case "once":
-                this.doBuildup = !this.currentSong.buildupPlayed;
-                break;
-            }
+        switch (localStorage["playBuildups"]) {
+        case "off":
+            this.currentSong.buildupPlayed = true;
+            this.doBuildup = false;
+            break;
+        case "on":
+            this.currentSong.buildupPlayed = false;
+            this.doBuildup = true;
+            break;
+        case "once":
+            this.doBuildup = !this.currentSong.buildupPlayed;
+            break;
         }
     }
     this.resetAudio();
     var that = this;
-    this.soundManager.playSong(this.currentSong, function() {
+    this.soundManager.playSong(this.currentSong, this.doBuildup, function() {
         that.fillBuildup();
     });
 }
@@ -266,8 +230,6 @@ HuesCore.prototype.resetAudio = function() {
     this.samplePosition = 0;
     this.beatIndex = 0;
     this.position = 0;
-    this.lastSC = 0;
-    this.buildupDiff = 0;
     this.songDataUpdated();
 }
 
@@ -494,23 +456,11 @@ HuesCore.prototype.changeUI = function(index) {
 }
 
 HuesCore.prototype.settingsUpdated = function() {
-    console.log("Updating according to this.settings");
-    this.blurMultiplier = {"low":0.5, "medium":1, "high":4}[this.settings.blurAmount];
-    this.blurDecayMultiplier = {"low":0.3, "medium":0.6, "high":1, "vhigh":1.6}[this.settings.blurDecay];
-    //this.settings.blackoutUI;
-    // todo: blackoutUI
-    switch (this.settings.colours) {
-    case "normal":
-        this.colours = this.oldColours;
-        break;
-    case "pastel":
-        this.colours = this.pastelColours;
-        break;
-    case "gp":
-        this.colours = this.weedColours;
-        break;
-    }
-    switch (this.settings.ui) {
+    this.renderer.setSmartAlign(localStorage["smartAlign"]);
+    this.renderer.setBlurAmount(localStorage["blurAmount"]);
+    this.renderer.setBlurDecay(localStorage["blurDecay"]);
+    this.renderer.setBlurQuality(localStorage["blurQuality"]);
+    switch (localStorage["currentUI"]) {
     case "retro":
         this.changeUI(0);
         break;
@@ -523,6 +473,20 @@ HuesCore.prototype.settingsUpdated = function() {
     case "xmas":
         this.changeUI(3);
         break;
+    }
+    switch (localStorage["colourSet"]) {
+    case "normal":
+        this.colours = this.oldColours;
+        break;
+    case "pastel":
+        this.colours = this.pastelColours;
+        break;
+    case "gp":
+        this.colours = this.weedColours;
+        break;
+    }
+    if(localStorage["blackoutUI"] == "on") {
+        this.userInterface.show();
     }
     /*if (this.autoSong == "off" && !(this.settings.autosong == "off")) {
         console.log("Resetting loopCount since AutoSong was enabled");

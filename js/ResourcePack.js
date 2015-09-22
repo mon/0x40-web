@@ -77,7 +77,6 @@ Respack.prototype.loadFromURL = function(url, callback, progress) {
             // Unable to compute progress information since the total size is unknown
         }
     }
-    req.on
     req.send();
 }
 

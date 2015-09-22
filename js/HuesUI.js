@@ -61,6 +61,14 @@ HuesUI.prototype.disconnect = function() {
     this.root.style.display = "none";
 }
 
+HuesUI.prototype.show = function() {
+    this.root.style.display = "block";
+}
+
+HuesUI.prototype.hide = function() {
+    this.root.style.display = "none";
+}
+
 // May do nothing, may scale elements if needed etc etc
 HuesUI.prototype.resize = function() {}
 HuesUI.prototype.modeUpdated = function() {}

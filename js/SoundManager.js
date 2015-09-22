@@ -55,7 +55,7 @@ function SoundManager() {
     }, false);
 }
 
-SoundManager.prototype.playSong = function(song, callback) {
+SoundManager.prototype.playSong = function(song, playBuild, callback) {
     var that = this;
     if(this.song == song) {
         return;
@@ -66,7 +66,6 @@ SoundManager.prototype.playSong = function(song, callback) {
     this.loadBuffer(song, function() {
         // To prevent race condition if you press "next" twice fast
         if(song == that.song) {
-            that.startTime = that.context.currentTime + that.loopStart;
             that.bufSource = that.context.createBufferSource();
             that.bufSource.buffer = that.buffer;
             that.bufSource.loop = true;
@@ -74,8 +73,14 @@ SoundManager.prototype.playSong = function(song, callback) {
             that.bufSource.loopEnd = that.buffer.duration;
             that.bufSource.connect(that.gainNode);
 
-            // Mobile Safari requires offset, even if 0
-            that.bufSource.start(0);
+            if(playBuild) {
+                // Mobile Safari requires offset, even if 0
+                that.bufSource.start(0);
+                that.startTime = that.context.currentTime + that.loopStart;
+            } else {
+                that.bufSource.start(0, that.loopStart);
+                that.startTime = that.context.currentTime;
+            }
             // offset to after the build
             //that.startTime = that.context.currentTime + that.loopStart;
             that.playing = true;

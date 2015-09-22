@@ -9,6 +9,7 @@ function HuesCanvas(element, aContext, core) {
     this.needsRedraw = false;
     this.colour = 0xFFFFFF;
     this.image = null;
+    this.smartAlign = true; // avoid string comparisons every frame
 
     this.animTimeout;
     this.animFrame;
@@ -39,9 +40,9 @@ function HuesCanvas(element, aContext, core) {
 
     this.blendMode = "hard-light";
     // Chosen because they look decent
-    this.setBlurAmount(15);
-    this.setBlurIterations(5);
-    this.setBlurDecay(25);
+    this.setBlurAmount("medium");
+    this.setBlurQuality("high");
+    this.setBlurDecay("fast");
     this.canvas = document.getElementById(element).getContext("2d");
     window.addEventListener('resize', this.resizeHandler(this));
     this.resize();
@@ -87,16 +88,20 @@ HuesCanvas.prototype.redraw = function() {
     if(this.image) {
         var bitmap = this.image.animated ?
             this.image.bitmaps[this.animFrame] : this.image.bitmap;
-        switch(this.image.align) {
-            case "left":
-                offset = 0;
-                break;
-            case "right":
-                offset = width - bitmap.width;
-                break;
-            default:
-                offset = width/2 - bitmap.width/2;
-                break;
+        if(this.smartAlign) {
+            switch(this.image.align) {
+                case "left":
+                    offset = 0;
+                    break;
+                case "right":
+                    offset = width - bitmap.width;
+                    break;
+                default:
+                    offset = width/2 - bitmap.width/2;
+                    break;
+            }
+        } else {
+            offset = width/2 - bitmap.width/2;
         }
         if(this.xBlur || this.yBlur) {
             this.canvas.globalAlpha = this.blurAlpha;
@@ -218,6 +223,9 @@ HuesCanvas.prototype.doBlackout = function(whiteout) {
     this.blackoutStart = this.aContext.currentTime;
     this.blackout = true;
     this.needsRedraw = true;
+    if(localStorage["blackoutUI"] == "on") {
+        core.userInterface.hide();
+    }
 }
 
 // for song changes
@@ -225,6 +233,9 @@ HuesCanvas.prototype.clearBlackout = function() {
     this.blackout = false;
     this.blackoutTimeout = 0;
     this.needsRedraw = true;
+    if(localStorage["blackoutUI"] == "on") {
+        core.userInterface.show();
+    }
 }
 
 HuesCanvas.prototype.doShortBlackout = function(beatTime) {
@@ -280,19 +291,24 @@ HuesCanvas.prototype.doYBlur = function() {
 }
 
 HuesCanvas.prototype.setBlurDecay = function(decay) {
-    this.blurDecay = decay;
+    this.blurDecay = {"slow" : 10, "medium" : 15, "fast" : 22, "faster!" : 30}[decay];
 }
 
-HuesCanvas.prototype.setBlurIterations = function(iterations) {
-    this.blurIterations = iterations;
+HuesCanvas.prototype.setBlurQuality = function(quality) {
+    this.blurIterations = {"low" : 3, "medium" : 11, "high" : 19, "extreme" : 35}[quality];
     this.blurDelta = this.blurAmount / this.blurIterations;
     this.blurAlpha = 1/(this.blurIterations/2);
 }
 
 HuesCanvas.prototype.setBlurAmount = function(amount) {
-    this.blurAmount = amount;
+    this.blurAmount = {"low" : 9, "medium" : 15, "high" : 25}[amount];
     this.blurMin = -this.blurAmount/2;
     this.blurMax = this.blurAmount/2;
+    this.blurDelta = this.blurAmount / this.blurIterations;
+}
+
+HuesCanvas.prototype.setSmartAlign = function(align) {
+    this.smartAlign = align == "on";
 }
 
 HuesCanvas.prototype.setAnimating = function(anim) {
