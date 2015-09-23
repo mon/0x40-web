@@ -60,7 +60,8 @@ HuesCore = function(defaults) {
     document.onkeydown = function(e){
         e = e || window.event;
         // Ignore modifiers so we don't steal other events
-        if (e.shiftKey || e.altKey || e.ctrlKey || e.metaKey) {
+        // Shift is actually used, and is thus ignored here
+        if (e.altKey || e.ctrlKey || e.metaKey) {
             return true;
         }
         var key = e.keyCode || e.which;
@@ -486,8 +487,15 @@ HuesCore.prototype.settingsUpdated = function() {
         this.colours = this.weedColours;
         break;
     }
-    if(localStorage["blackoutUI"] == "on") {
+    switch (localStorage["blackoutUI"]) {
+    case "off":
         this.userInterface.show();
+        break;
+    case "on":
+        if(this.renderer.blackout) {
+            this.userInterface.hide();
+        }
+        break;
     }
     /*if (this.autoSong == "off" && !(this.settings.autosong == "off")) {
         console.log("Resetting loopCount since AutoSong was enabled");

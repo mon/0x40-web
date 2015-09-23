@@ -226,7 +226,7 @@ HuesCanvas.prototype.doBlackout = function(whiteout) {
     this.blackout = true;
     this.needsRedraw = true;
     if(localStorage["blackoutUI"] == "on") {
-        core.userInterface.hide();
+        this.core.userInterface.hide();
     }
 }
 
@@ -236,13 +236,12 @@ HuesCanvas.prototype.clearBlackout = function() {
     this.blackoutTimeout = 0;
     this.needsRedraw = true;
     if(localStorage["blackoutUI"] == "on") {
-        core.userInterface.show();
+        this.core.userInterface.show();
     }
 }
 
 HuesCanvas.prototype.doShortBlackout = function(beatTime) {
     this.doBlackout();
-    // GetRandomWaifu(); TODO IMPLEMENT IN CORE INSTEAD
     this.blackoutTimeout = this.aContext.currentTime + beatTime / 1.7;
     // looks better if we go right to black
     this.blackoutStart = 0;
