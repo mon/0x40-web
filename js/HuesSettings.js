@@ -44,7 +44,7 @@ HuesSettings.prototype.settingsOptions = {
     },
     blurAmount : {
         name : "Blur Amount",
-        options : ["low", "med", "high"]
+        options : ["low", "medium", "high"]
     },
     blurDecay : {
         name : "Blur Decay",
@@ -56,11 +56,11 @@ HuesSettings.prototype.settingsOptions = {
     },
     currentUI : {
         name : "User Interface",
-        options : ["retro", "weed", "modern", "xmas"]
+        options : ["retro", "v4.20", "modern", "xmas"]
     },
     colourSet : {
         name : "Colour Set",
-        options : ["normal", "pastel", "420"]
+        options : ["normal", "pastel", "v4.20"]
     },
     blackoutUI : {
         name : "Blackout affects UI",
@@ -75,6 +75,9 @@ HuesSettings.prototype.settingsOptions = {
 
 function HuesSettings(defaults) {
     this.core = null;
+    this.root = document.getElementById("huesSettings");
+    this.window = document.getElementById("settingsWindow");
+    this.show(); // TODO hide
     
     for(var attr in this.defaultSettings) {
         if(attr == "respacks") {
@@ -92,6 +95,8 @@ function HuesSettings(defaults) {
     }
     
     this.defaults = defaults;
+    
+    this.initUI();
 }
 
 HuesSettings.prototype.connectCore = function(core) {
@@ -99,13 +104,81 @@ HuesSettings.prototype.connectCore = function(core) {
     core.settingsUpdated();
 };
 
+HuesSettings.prototype.show = function() {
+    this.window.style.display = "block";
+}
+
+HuesSettings.prototype.hide = function() {
+    this.window.style.display = "none";
+}
+
+HuesSettings.prototype.toggle = function() {
+    if(this.window.style.display == "none") {
+        this.window.style.display = "block";
+    } else {
+        this.window.style.display = "none";
+    }
+}
+
+HuesSettings.prototype.initUI = function() {
+    var doc = this.root.ownerDocument;
+    
+    // To order things nicely
+    for(cat in this.settingsCategories) {
+        var catContainer = doc.createElement("div");
+        catContainer.textContent = cat;
+        catContainer.className = "settings-category";
+        var cats = this.settingsCategories[cat];
+        for(var i = 0; i < cats.length; i++) {
+            var setName = cats[i];
+            var setContainer = doc.createElement("div");
+            var setting = this.settingsOptions[setName];
+            setContainer.textContent = setting.name;
+            setContainer.className = "settings-individual";
+            var buttonContainer = doc.createElement("div");
+            buttonContainer.className = "settings-buttons";
+            for(var j = 0; j < setting.options.length; j++) {
+                var option = setting.options[j];
+                var checkbox = doc.createElement("input");
+                checkbox.className = "settings-checkbox";
+                checkbox.type = "radio";
+                checkbox.name = setName;
+                checkbox.value = option;
+                checkbox.id = setName + "-" + option;
+                if(localStorage[setName] == option) {
+                    checkbox.checked = true;
+                }
+                var that = this;
+                checkbox.onclick = function() {
+                    that.set(this.name, this.value);
+                }
+                buttonContainer.appendChild(checkbox);
+                // So we can style this nicely
+                var label = doc.createElement("label");
+                label.className = "settings-label";
+                label.htmlFor = checkbox.id;
+                label.textContent = option.toUpperCase();
+                buttonContainer.appendChild(label);
+            }
+            setContainer.appendChild(buttonContainer);
+            catContainer.appendChild(setContainer);
+        }
+        this.root.appendChild(catContainer);
+    }
+}
+
 // Set a named index to its named value, returns false if name doesn't exist
 HuesSettings.prototype.set = function(setting, value) {
     value = value.toLowerCase();
     var opt = this.settingsOptions[setting];
     if(!opt || opt.options.indexOf(value) == -1) {
+        console.log(value, "is not a valid value for", setting);
         return false;
     }
+    // for updating the UI selection
+    try {
+        document.getElementById(setting + "-" + value).checked = true;
+    } catch(e) {}
     localStorage[setting] = value;
     core.settingsUpdated();
     return true;

@@ -32,7 +32,6 @@ HuesCore = function(defaults) {
     this.renderer = new HuesCanvas("waifu", this.soundManager.context, this);
     
     this.uiArray.push(new RetroUI(), new WeedUI(), new ModernUI(), new XmasUI());
-    this.changeUI(1);
     this.settings.connectCore(this);
     
     var that = this;
@@ -60,6 +59,10 @@ HuesCore = function(defaults) {
 
     document.onkeydown = function(e){
         e = e || window.event;
+        // Ignore modifiers so we don't steal other events
+        if (e.shiftKey || e.altKey || e.ctrlKey || e.metaKey) {
+            return true;
+        }
         var key = e.keyCode || e.which;
         return that.keyHandler(key);
     };
@@ -218,7 +221,6 @@ HuesCore.prototype.songDataUpdated = function() {
     if (this.currentSong) {
         this.beatLength = 0;
         this.userInterface.updateLists();
-        this.userInterface.updateTexts();
         this.userInterface.setSongText();
         this.userInterface.setImageText();
     } else {
@@ -447,7 +449,6 @@ HuesCore.prototype.changeUI = function(index) {
         this.userInterface = this.uiArray[index];
         this.userInterface.connectCore(this);
         this.userInterface.updateLists();
-        this.userInterface.updateTexts();
         this.userInterface.setSongText();
         this.userInterface.setImageText();
         this.userInterface.setColourText(this.colourIndex);
@@ -464,7 +465,7 @@ HuesCore.prototype.settingsUpdated = function() {
     case "retro":
         this.changeUI(0);
         break;
-    case "weed":
+    case "v4.20":
         this.changeUI(1);
         break;
     case "modern":
@@ -481,7 +482,7 @@ HuesCore.prototype.settingsUpdated = function() {
     case "pastel":
         this.colours = this.pastelColours;
         break;
-    case "gp":
+    case "v4.20":
         this.colours = this.weedColours;
         break;
     }
@@ -561,28 +562,28 @@ HuesCore.prototype.keyHandler = function(key) {
         this.userInterface.toggleHide();
         break;
     case 82: // R
-        this.window.showRespacks();
+        this.settings.showRespacks();
         break;
-    case 69: // E
+    /*case 69: // E
         this.window.showEditor();
-        break;
+        break;*/
     case 79: // O
-        this.window.showOptions();
+        this.settings.showOptions();
         break;
     case 73: // I
-        this.window.showInfo();
+        this.settings.showInfo();
         break;
     case 49: // NUMBER_1
-        this.changeUI(0);
+        this.settings.set("currentUI", "retro");
         break;
     case 50: // NUMBER_2
-        this.changeUI(1);
+        this.settings.set("currentUI", "v4.20");
         break;
     case 51: // NUMBER_3
-        this.changeUI(2);
+        this.settings.set("currentUI", "modern");
         break;
     case 52: // NUMBER_4
-        this.changeUI(3);
+        this.settings.set("currentUI", "xmas");
         break;
     case 76: // L
         this.loadLocal();
@@ -594,7 +595,7 @@ HuesCore.prototype.keyHandler = function(key) {
         this.toggleSongList();
         break;
     case 87: // W
-        this.toggleSettingsWindow();
+        this.settings.toggle();
         break;
     case 16: // SHIFT
         this.randomSong();

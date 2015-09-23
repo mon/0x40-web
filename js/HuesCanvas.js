@@ -85,7 +85,7 @@ HuesCanvas.prototype.redraw = function() {
         this.canvas.fillRect(0,0,width,720);
     }
 
-    if(this.image) {
+    if(this.image && (this.image.bitmap || this.image.bitmaps)) {
         var bitmap = this.image.animated ?
             this.image.bitmaps[this.animFrame] : this.image.bitmap;
         if(this.smartAlign) {
@@ -105,8 +105,6 @@ HuesCanvas.prototype.redraw = function() {
         }
         if(this.xBlur || this.yBlur) {
             this.canvas.globalAlpha = this.blurAlpha;
-            var delta = cTime - this.blurStart;
-            this.blurDistance = this.blurAmount * Math.exp(-this.blurDecay * delta);
         }
         if(this.xBlur) {
             for(var i=this.blurMin; i<=this.blurMax; i+= this.blurDelta) {
@@ -171,6 +169,10 @@ HuesCanvas.prototype.animationLoop = function() {
         this.needsRedraw = true;
     }
     if(this.blurStart) {
+        var delta = this.aContext.currentTime - this.blurStart;
+        this.blurDistance = this.blurAmount * Math.exp(-this.blurDecay * delta);
+        
+        // Update UI
         var dist = this.blurDistance / this.blurAmount;
         if(this.xBlur)
             this.core.blurUpdated(dist, 0);

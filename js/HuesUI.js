@@ -25,6 +25,11 @@ function HuesUI(parent) {
     this.volInput = null;
     this.volLabel = null;
     
+    this.beatCount = null;
+    this.timer = null;
+    this.xBlur = null;
+    this.yBlur = null;
+    
     this.initUI();
 }
 
@@ -47,6 +52,18 @@ HuesUI.prototype.initUI = function() {
 
     var hueName = doc.createElement("div");
     this.hueName = hueName;
+    
+    this.timer = doc.createElement("div");
+    this.timer.textContent = "T=$0x0000";
+    
+    this.beatCount = doc.createElement("div");
+    this.beatCount.textContent = "B=$0x00";
+    
+    this.xBlur = doc.createElement("div");
+    this.xBlur.textContent = "X=$0x00";
+    
+    this.yBlur = doc.createElement("div");
+    this.yBlur.textContent = "Y=$0x00";
 
     //this.setupVolume(leftBox)
 }
@@ -73,8 +90,6 @@ HuesUI.prototype.hide = function() {
 HuesUI.prototype.resize = function() {}
 HuesUI.prototype.modeUpdated = function() {}
 HuesUI.prototype.beat = function() {}
-HuesUI.prototype.updateTime = function() {}
-HuesUI.prototype.blurUpdated = function(x, y) {}
 
 HuesUI.prototype.setSongText = function() {
     var song = this.core.currentSong;
@@ -93,7 +108,7 @@ HuesUI.prototype.setImageText = function() {
         return;
 
     this.imageLink.textContent = image.fullname.toUpperCase();
-    this.imageLink.href = image.source;
+    this.imageLink.href = image.source ? image.source : "";
 }
 
 HuesUI.prototype.setColourText = function(colour) {
@@ -108,8 +123,24 @@ HuesUI.prototype.updateLists = function() {
     // TODO display this
 }
 
-HuesUI.prototype.updateTexts = function() {
-    // Timer, beat counter
+HuesUI.prototype.blurUpdated = function(x, y) {
+    x = Math.floor(x * 0xFF);
+    y = Math.floor(y * 0xFF);;
+    this.xBlur.textContent = "X=" + this.intToHex2(x);
+    this.yBlur.textContent = "Y=" + this.intToHex2(y);
+}
+
+HuesUI.prototype.updateTime = function(time) {
+    time = Math.floor(time * 1000);
+    this.timer.textContent = "T=" + this.intToHex4(time);
+}
+
+HuesUI.prototype.intToHex2 = function(num) {
+    return '$0x' + ("00"+num.toString(16)).slice(-2);
+}
+
+HuesUI.prototype.intToHex4 = function(num) {
+    return '$0x' + ("0000"+num.toString(16)).slice(-4);
 }
 
 /*
@@ -120,8 +151,6 @@ function RetroUI() {
     this.container = null;
     this.mode = null;
     this.beatBar = null;
-    this.beatCount = null;
-    this.timer = null;
     this.colourIndex = null;
     this.version = null;
     HuesUI.call(this);
@@ -142,21 +171,9 @@ RetroUI.prototype.initUI = function() {
     this.mode = doc.createElement("div");
     container.appendChild(this.mode);
     container.appendChild(this.imageName);
-    
-    this.timer = doc.createElement("div");
-    this.timer.textContent = "T=$0x0000";
     container.appendChild(this.timer);
-    
-    this.beatCount = doc.createElement("div");
-    this.beatCount.textContent = "B=$0x00";
     container.appendChild(this.beatCount);
-    
-    this.xBlur = doc.createElement("div");
-    this.xBlur.textContent = "X=$0x00";
     container.appendChild(this.xBlur);
-    
-    this.yBlur = doc.createElement("div");
-    this.yBlur.textContent = "Y=$0x00";
     container.appendChild(this.yBlur);
     
     this.colourIndex = doc.createElement("div");
@@ -184,13 +201,6 @@ RetroUI.prototype.modeUpdated = function() {
     this.mode.textContent = "M=" + this.core.getCurrentMode();
 }
 
-RetroUI.prototype.blurUpdated = function(x, y) {
-    x = Math.floor(x * 0xFF);
-    y = Math.floor(y * 0xFF);;
-    this.xBlur.textContent = "X=" + this.intToHex2(x);
-    this.yBlur.textContent = "Y=" + this.intToHex2(y);
-}
-
 RetroUI.prototype.setImageText = function() {
     var image = this.core.currentImage;
     
@@ -216,18 +226,6 @@ RetroUI.prototype.beat = function() {
     this.beatCount.textContent = "B=" + this.intToHex2(this.core.getSafeBeatIndex());
 }
 
-RetroUI.prototype.updateTime = function(time) {
-    time = Math.floor(time * 1000);
-    this.timer.textContent = "T=" + this.intToHex4(time);
-}
-
-RetroUI.prototype.intToHex2 = function(num) {
-    return '$0x' + ("00"+num.toString(16)).slice(-2);
-}
-RetroUI.prototype.intToHex4 = function(num) {
-    return '$0x' + ("0000"+num.toString(16)).slice(-4);
-}
-
 function ModernUI() {
     this.beatBar = null;
     this.beatLeft = null;
@@ -235,6 +233,8 @@ function ModernUI() {
     this.beatCenter = null;
     this.rightBox = null;
     this.leftBox = null;
+    this.rightInfo = null;
+    this.leftInfo = null;
     this.controls = null;
     
     HuesUI.call(this);
@@ -270,6 +270,19 @@ ModernUI.prototype.initUI = function() {
     rightBox.className = "hues-m-rightbox";
     controls.appendChild(rightBox);
     this.rightBox = rightBox;
+    
+    //TODO add stuff to right box
+    
+    var leftInfo = doc.createElement("div");
+    leftInfo.className = "hues-m-leftinfo";
+    var rightInfo = doc.createElement("div");
+    rightInfo.className = "hues-m-rightinfo";
+    leftInfo.appendChild(this.xBlur);
+    leftInfo.appendChild(this.yBlur);
+    rightInfo.appendChild(this.timer);
+    rightInfo.appendChild(this.beatCount);
+    controls.appendChild(leftInfo);
+    controls.appendChild(rightInfo);
 
     var beatBar = doc.createElement("div");
     beatBar.className = "hues-m-beatbar";
@@ -310,6 +323,7 @@ ModernUI.prototype.beat = function() {
         span.textContent = current;
         this.beatCenter.appendChild(span);
     }
+    this.beatCount.textContent = "B=" + this.intToHex4(this.core.getSafeBeatIndex());
 }
 
 ModernUI.prototype.setSongText = function() {

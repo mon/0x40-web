@@ -32,6 +32,23 @@
     border-radius: 10px;
 }
 
+.hues-m-leftinfo, .hues-m-rightinfo {
+    position: absolute;
+    font-size: 10px;
+    text-align: center;
+    color: rgba(255,255,255, 0.7);
+    bottom: 29px;
+    width: 100px;
+}
+
+.hues-m-leftinfo {
+    left: 8px;
+}
+
+.hues-m-rightinfo {
+    right: 8px;
+}
+
 .hues-m-huename {
     font-size: 8px;
     height: 12px;
@@ -137,16 +154,18 @@
 
 .hues-m-songtitle, .hues-m-imagename, .hues-m-huename {
     position: absolute;
-    left: 8px;
-    right: 8px;
     text-align: center;
     padding: 0 4px;
+    left: 8px;
+    right: 8px;
 }
 .hues-m-songtitle {
     bottom: 5px;
 }
 .hues-m-imagename {
     bottom: 29px;
+    left: 108px;
+    right: 108px;
 }
 
 .hues-m-songtitle > a:link, .hues-m-songtitle > a:visited, .hues-m-imagename > a:link, .hues-m-imagename > a:visited {
@@ -292,10 +311,20 @@ input[type=range]::-ms-thumb {
   .hues-m-controls {
     height: 54px;
     }
-  .hues-m-songtitle, .hues-m-imagename {
+  .hues-m-imagename {
+    left: 300px;
+    right: 300px;
+  }
+  .hues-m-songtitle {
     left: 192px;
     right: 192px;
-    }
+  }
+  .hues-m-leftinfo {
+    left: 200px;
+  }
+  .hues-m-rightinfo {
+    right: 200px;
+  }
   .hues-m-leftbox {
     bottom: 0;
     left: 0;
