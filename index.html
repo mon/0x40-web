@@ -21,8 +21,8 @@
             window.onload = function() {
                 zip.workerScriptsPath = "js/lib/";
                 var defaults = {
-                    respacks : [//"./respacks/Defaults_v5.0.zip", 
-                                //"./respacks/CharPackagev0.03.zip", 
+                    respacks : ["./respacks/Defaults_v5.0.zip", 
+                                "./respacks/CharPackagev0.03.zip", 
                                 "./respacks/HuesMixA.zip"],
                     load     : false, //debug
                     autoplay : false // debug
@@ -41,20 +41,65 @@
         <div id="settingsHelper">
             <div id="settingsWindow">
                 <div id="tabs">
-                    <input class="tab-input" type="radio" name="tabs" id="tab1" >
-                    <label for="tab1">RESPACKS</label>
+                    <input class="tab-input" type="radio" name="tabs" id="tab1">
+                    <label class="tab-label" for="tab1">RESOURCES</label>
                     <input class="tab-input" type="radio" name="tabs" id="tab2" >
-                    <label for="tab2">OPTIONS</label>
-                    <input class="tab-input" type="radio" name="tabs" id="tab3" checked >
-                    <label for="tab3">ABOUT</label>
+                    <label class="tab-label" for="tab2">OPTIONS</label>
+                    <input class="tab-input" type="radio" name="tabs" id="tab3" checked>
+                    <label class="tab-label" for="tab3">ABOUT</label>
                     <div id="tab1-content" class="tab-content">
-                        Bye
+                        Soon
                     </div>
                     <div id="tab2-content" class="tab-content">
                         <div id="huesSettings"></div>
                     </div>
                     <div id="tab3-content" class="tab-content">
-                        Hi
+                        <div id="about">
+                            <h1>0x40 Hues of JS, v0.1</h1>
+                            <h2>Adapted from the <a href="http://0x40hues.blogspot.com">0x40 Flash</a></h2>
+                            <h2>Web-ified by <a href="https://github.com/mon">mon</a></h2>
+                            <h3>With help from <a href="https://github.com/kepstin/0x40hues-html5">Kepstin</a></h3>
+                        </div>
+                        <div id="reference">
+                            <div class="info-ref">
+                                <h3>Beat glossary</h3>
+                                <ul>
+                                    <li>x Vertical blur (snare)</li>
+                                    <li>o Horizontal blur (bass)</li>
+                                    <li>- No blur</li>
+                                    <li>+ Blackout</li>
+                                    <li>| Short blackout</li>
+                                    <li>: Color only</li>
+                                    <li>* Image only</li>
+                                    <li>X Vertical blur only</li>
+                                    <li>O Horizontal blur only</li>
+                                    <li>~ Fade color</li>
+                                    <li>= Fade and change image</li>
+                                    <li>¤ Whiteout</li>
+                                    
+                                </ul>
+                            </div>
+                            <div class="info-ref">
+                                <h3>Keyboard shortcuts</h3>
+                                <ul>
+                                    <li>↑↓  Change song</li>
+                                    <li>←→  Change image</li>
+                                    <li>[SHIFT] Random song</li>
+                                    <li>-+  Change volume</li>
+                                    <li>[M] Toggle mute</li>
+                                    <li>[F] Toggle automode</li>
+                                    <li>[H] Toggle UI hide</li>
+                                    <li>[C] Character list</li>
+                                    <li>[S] Song list</li>
+                                    <li>[W] Toggle window</li>
+                                    <li>[R] Resource packs</li>
+                                    <li>[E] Editor</li>
+                                    <li>[O] Options</li>
+                                    <li>[I] Information</li>
+                                    <li>[1-4] Change UI</li>
+                                </ul>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
