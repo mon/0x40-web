@@ -57,6 +57,39 @@ html, body {
     font-size: 12pt;
 }
 
+#tabs {
+    margin: -1px;
+    min-height: 400px;
+    min-width: 500px;
+}
+
+input[type=radio] {
+    display:none;
+}
+
+input.tab-input[type="radio"] + label{
+    cursor: pointer;
+    display: table-cell;
+    padding: 10px;
+    border: 2px solid black;
+    width: 1%;
+    text-align: center;
+}
+
+input.tab-input[type="radio"]:checked + label {
+    border-bottom: 0px;
+}
+
+.tab-content {
+    display: none;
+}
+
+#tab1:checked ~ #tab1-content,
+#tab2:checked ~ #tab2-content,
+#tab3:checked ~ #tab3-content {
+    display: block;
+}
+
 #settingsHelper {
     display:flex;
     justify-content:center;
@@ -74,6 +107,10 @@ html, body {
     border-width: 2px;
     border-style: solid;
     font-family: 'PetMe64Web';
+    
+}
+
+#huesSettings {
     padding: 5px;
 }
 
@@ -93,7 +130,7 @@ html, body {
     display: none;
 }
 
-input[type="radio"]:checked + label {
+#huesSettings input[type="radio"]:checked + label {
     background: rgba(255,255,255, 0.5);
 }
 

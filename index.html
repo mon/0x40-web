@@ -21,11 +21,11 @@
             window.onload = function() {
                 zip.workerScriptsPath = "js/lib/";
                 var defaults = {
-                    respacks : ["./respacks/Defaults_v5.0.zip", 
-                                "./respacks/CharPackagev0.03.zip", 
+                    respacks : [//"./respacks/Defaults_v5.0.zip", 
+                                //"./respacks/CharPackagev0.03.zip", 
                                 "./respacks/HuesMixA.zip"],
-                    load : true, //debug
-                    autoplay : true // debug
+                    load     : false, //debug
+                    autoplay : false // debug
                 };
                 core = new HuesCore(defaults);
             };
@@ -40,7 +40,23 @@
         </div>
         <div id="settingsHelper">
             <div id="settingsWindow">
-                <div class="content" id="huesSettings"></div>
+                <div id="tabs">
+                    <input class="tab-input" type="radio" name="tabs" id="tab1" >
+                    <label for="tab1">RESPACKS</label>
+                    <input class="tab-input" type="radio" name="tabs" id="tab2" >
+                    <label for="tab2">OPTIONS</label>
+                    <input class="tab-input" type="radio" name="tabs" id="tab3" checked >
+                    <label for="tab3">ABOUT</label>
+                    <div id="tab1-content" class="tab-content">
+                        Bye
+                    </div>
+                    <div id="tab2-content" class="tab-content">
+                        <div id="huesSettings"></div>
+                    </div>
+                    <div id="tab3-content" class="tab-content">
+                        Hi
+                    </div>
+                </div>
             </div>
         </div>
         <div id="huesUI"></div>
