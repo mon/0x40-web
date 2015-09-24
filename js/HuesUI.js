@@ -36,6 +36,7 @@ function HuesUI(parent) {
 HuesUI.prototype.initUI = function() {
     var doc = this.root.ownerDocument
 
+    // Major info, image, song names
     var imageName = doc.createElement("div");
     this.imageName = imageName;
     
@@ -53,6 +54,7 @@ HuesUI.prototype.initUI = function() {
     var hueName = doc.createElement("div");
     this.hueName = hueName;
     
+    // Beat timer, x and y blur, millis timer
     this.timer = doc.createElement("div");
     this.timer.textContent = "T=$0x0000";
     
@@ -246,6 +248,7 @@ ModernUI.prototype.initUI = function() {
     HuesUI.prototype.initUI.call(this);
     
     var doc = this.root.ownerDocument;
+    var that = this;
     
     this.imageName.className = "hues-m-imagename";
     this.songName.className = "hues-m-songtitle";
@@ -271,7 +274,60 @@ ModernUI.prototype.initUI = function() {
     controls.appendChild(rightBox);
     this.rightBox = rightBox;
     
-    //TODO add stuff to right box
+    //Song/image controls
+    var songs = doc.createElement("div");
+    songs.className = "hues-m-controlblock";
+    var songList = document.createElement("div");
+    songList.textContent = "SONGS";
+    songList.className = "hues-m-songbutton";
+    
+    var songControls = doc.createElement("div");
+    songControls.className = "hues-m-controlbuttons";
+    var songLeft = doc.createElement("div");
+    songLeft.textContent = "<";
+    songLeft.className = "hues-m-prevbutton"
+    songLeft.onclick = function() {that.core.previousSong();};
+    var songRight = doc.createElement("div");
+    songRight.textContent = ">";
+    songRight.className = "hues-m-nextbutton"
+    songRight.onclick = function() {that.core.nextSong();};
+    var songShuffle = doc.createElement("div");
+    songShuffle.innerHTML = '<i class="fa fa-random"></i>';
+    songShuffle.className = "hues-m-actbutton";
+    songShuffle.onclick = function() {that.core.randomSong();};
+    songs.appendChild(songList);
+    songControls.appendChild(songLeft);
+    songControls.appendChild(songShuffle);
+    songControls.appendChild(songRight);
+    songs.appendChild(songControls);
+    rightBox.appendChild(songs);
+    
+    var images = doc.createElement("div");
+    images.className = "hues-m-controlblock";
+    var imageList = document.createElement("div");
+    imageList.textContent = "IMAGES";
+    imageList.className = "hues-m-songbutton";
+    
+    var imageControls = doc.createElement("div");
+    imageControls.className = "hues-m-controlbuttons";
+    var imageLeft = doc.createElement("div");
+    imageLeft.textContent = "<";
+    imageLeft.className = "hues-m-prevbutton"
+    imageLeft.onclick = function() {that.core.previousImage();};
+    var imageRight = doc.createElement("div");
+    imageRight.textContent = ">";
+    imageRight.className = "hues-m-nextbutton"
+    imageRight.onclick = function() {that.core.nextImage();};
+    this.imageMode = doc.createElement("div");
+    this.imageMode.innerHTML = "&#9654;"; // PLAY
+    this.imageMode.className = "hues-m-actbutton";
+    this.imageMode.onclick = function() {that.core.toggleFullAuto();};
+    images.appendChild(imageList);
+    imageControls.appendChild(imageLeft);
+    imageControls.appendChild(this.imageMode);
+    imageControls.appendChild(imageRight);
+    images.appendChild(imageControls);
+    rightBox.appendChild(images);
     
     var leftInfo = doc.createElement("div");
     leftInfo.className = "hues-m-leftinfo";
@@ -303,6 +359,14 @@ ModernUI.prototype.initUI = function() {
     beatCenter.className = "hues-m-beatcenter";
     this.root.appendChild(beatCenter);
     this.beatCenter = beatCenter;
+}
+
+ModernUI.prototype.modeUpdated = function() {
+    if(this.core.isFullAuto) {
+        this.imageMode.innerHTML = '<i class="fa fa-pause"></i>'; // PAUSE;
+    } else {
+        this.imageMode.innerHTML = "&#9654;"; // PLAY
+    }
 }
 
 ModernUI.prototype.beat = function() {

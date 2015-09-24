@@ -77,7 +77,7 @@ function HuesSettings(defaults) {
     this.core = null;
     this.root = document.getElementById("huesSettings");
     this.window = document.getElementById("settingsWindow");
-    this.show(); // TODO hide
+    this.hide(); // TODO hide
     
     for(var attr in this.defaultSettings) {
         if(attr == "respacks") {

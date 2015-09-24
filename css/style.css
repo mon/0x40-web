@@ -5,7 +5,7 @@
   -webkit-font-smoothing: none;
   font-smooth: never;
   src: local("PetMe64Web");
-  src: local('Pet Me 64'), local('Pet Me 64'), url("PetMe64.woff") format('woff');
+  src: local('Pet Me 64'), local('Pet Me 64'), url("../fonts/PetMe64.woff") format('woff');
 }
 
 html, body {
@@ -159,6 +159,13 @@ input.tab-input[type="radio"]:checked + label {
     border-width: 2px;
     border-style: solid;
     font-family: 'PetMe64Web';
+    /* It gets selected by accident somehow */
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
 }
 
 #huesSettings {

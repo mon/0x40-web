@@ -62,6 +62,9 @@ SoundManager.prototype.playSong = function(song, playBuild, callback) {
     }
     this.stop();
     this.song = song;
+    if(!song || (!song.sound)) { // null song
+        return;
+    }
     
     this.loadBuffer(song, function() {
         // To prevent race condition if you press "next" twice fast
@@ -136,8 +139,8 @@ SoundManager.prototype.loadAudioFile = function(song, isBuild) {
     this.context.decodeAudioData(
         isBuild ? song.buildup : song.sound,
         this.getAudioCallback(song, isBuild),
-        function() {
-            console.log('Error decoding audio "' + song.name + '".');
+            function() {
+                console.log('Error decoding audio "' + song.name + '".');
         }
     );
 }

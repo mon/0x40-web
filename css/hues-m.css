@@ -197,6 +197,72 @@
     height: 54px;
 }
 
+.hues-m-controlblock {
+    /* It gets selected by accident somehow */
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+    font-size: 12px;
+    width: 50%;
+    margin: auto;
+    float: left;
+}
+
+.hues-m-controlbuttons {
+    margin: auto;
+    position: relative;
+    width: 70px;
+}
+
+.hues-m-songbutton {
+    cursor: pointer;
+    text-align: center;
+}
+
+.hues-m-prevbutton, .hues-m-nextbutton, .hues-m-actbutton {
+    position: absolute;
+    cursor: pointer;
+}
+
+.hues-m-prevbutton, .hues-m-nextbutton {
+    color: white;
+    background: rgba(0,0,0,0.7);
+    height: 20px;
+    line-height: 20px;
+    font-size: 12px;
+    white-space: nowrap;
+    border-radius: 10px;
+    top: 10px;
+}
+
+.hues-m-prevbutton {
+    padding: 0 10px 0 0;
+    left: 0px;
+    border-radius: 10px 0 0 10px;
+}
+
+.hues-m-nextbutton {
+    padding: 0 0 0 10px;
+    left: 48px;
+    border-radius: 0 10px 10px 0;
+}
+
+.hues-m-actbutton {
+    height: 40px;
+    width: 40px;
+    left: 15px;
+    color: white;
+    background: rgb(64,64,64);
+    font-size: 20px;
+    line-height: 40px;
+    border-radius: 20px;
+    text-align: center;
+    z-index: 1;
+}
+
 .hues-m-huename {
     bottom: 5px;
 }

@@ -402,6 +402,10 @@ HuesCore.prototype.setIsFullAuto = function(auto) {
     }
 }
 
+HuesCore.prototype.toggleFullAuto = function() {
+    this.setIsFullAuto(!this.isFullAuto);
+}
+
 /*HuesCore.prototype.enterFrame = function() {
     this.setTexts();
     if (this.fadeOut) {
@@ -454,6 +458,7 @@ HuesCore.prototype.changeUI = function(index) {
         this.userInterface.setImageText();
         this.userInterface.setColourText(this.colourIndex);
         this.userInterface.beat();
+        this.userInterface.modeUpdated();
     }
 }
 
