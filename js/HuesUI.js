@@ -22,6 +22,11 @@ function HuesUI(parent) {
     
     this.hueName = null;
     
+    this.imagePrev = null;
+    this.imageNext = null;
+    this.songPrev = null;
+    this.songNext = null;
+    
     this.volInput = null;
     this.volLabel = null;
     
@@ -30,11 +35,17 @@ function HuesUI(parent) {
     this.xBlur = null;
     this.yBlur = null;
     
+    this.settingsToggle = null;
+    this.hideToggle = null;
+    
+    this.hidden = false;
+    
     this.initUI();
 }
 
 HuesUI.prototype.initUI = function() {
     var doc = this.root.ownerDocument
+    var that = this;
 
     // Major info, image, song names
     var imageName = doc.createElement("div");
@@ -54,6 +65,33 @@ HuesUI.prototype.initUI = function() {
     var hueName = doc.createElement("div");
     this.hueName = hueName;
     
+    // Prev/next controls
+    var imagePrev = doc.createElement("div");
+    imagePrev.textContent = "<";
+    imagePrev.onclick = function() {that.core.previousImage();};
+    this.imagePrev = imagePrev;
+    var imageNext = doc.createElement("div");
+    imageNext.textContent = ">";
+    imageNext.onclick = function() {that.core.nextImage();};
+    this.imageNext = imageNext;
+    var songPrev = doc.createElement("div");
+    songPrev.textContent = "<";
+    this.songPrev = songPrev;
+    songPrev.onclick = function() {that.core.previousSong();};
+    var songNext = doc.createElement("div");
+    songNext.textContent = ">";
+    songNext.onclick = function() {that.core.nextSong();};
+    this.songNext = songNext;
+    
+    var songList = document.createElement("div");
+    songList.textContent = "SONGS";
+    songList.onclick = function() {that.core.toggleSongList()};
+    this.songList = songList;
+    var imageList = document.createElement("div");
+    imageList.textContent = "IMAGES";
+    imageList.onclick = function() {that.core.toggleImageList()};
+    this.imageList = imageList;
+    
     // Beat timer, x and y blur, millis timer
     this.timer = doc.createElement("div");
     this.timer.textContent = "T=$0x0000";
@@ -66,8 +104,19 @@ HuesUI.prototype.initUI = function() {
     
     this.yBlur = doc.createElement("div");
     this.yBlur.textContent = "Y=$0x00";
-
-    //this.setupVolume(leftBox)
+    
+    // Config stuff
+    this.settingsToggle = doc.createElement("div");
+    this.settingsToggle.innerHTML = '<i class="fa fa-cog"></i>';
+    this.settingsToggle.onclick = function() {
+        that.core.settings.toggle();
+    }
+    
+    this.hideToggle = doc.createElement("div");
+    this.hideToggle.innerHTML = "&#x25BC;";
+    this.hideToggle.onclick = function() {
+        that.toggleHide();
+    }
 }
 
 HuesUI.prototype.connectCore = function(core) {
@@ -80,18 +129,30 @@ HuesUI.prototype.disconnect = function() {
     this.root.style.display = "none";
 }
 
+// ONLY FOR CHANGING UI, NOT FOR "HIDE" FEATURE
 HuesUI.prototype.show = function() {
     this.root.style.display = "block";
 }
 
+// ONLY FOR CHANGING UI, NOT FOR "HIDE" FEATURE
 HuesUI.prototype.hide = function() {
     this.root.style.display = "none";
+}
+
+HuesUI.prototype.toggleHide = function() {
+    this.hidden = !this.hidden;
+    if(this.hidden) {
+        this.root.className = this.constructor.name + " hidden";
+    } else {
+        this.root.className = this.constructor.name;
+    }
 }
 
 // May do nothing, may scale elements if needed etc etc
 HuesUI.prototype.resize = function() {}
 HuesUI.prototype.modeUpdated = function() {}
 HuesUI.prototype.beat = function() {}
+HuesUI.prototype.updateVolume = function(vol) {}
 
 HuesUI.prototype.setSongText = function() {
     var song = this.core.currentSong;
@@ -108,8 +169,10 @@ HuesUI.prototype.setImageText = function() {
     
     if(!image)
         return;
+    
+    var name = image.fullname ? image.fullname : image.name;
 
-    this.imageLink.textContent = image.fullname.toUpperCase();
+    this.imageLink.textContent = name.toUpperCase();
     this.imageLink.href = image.source ? image.source : "";
 }
 
@@ -155,6 +218,10 @@ function RetroUI() {
     this.beatBar = null;
     this.colourIndex = null;
     this.version = null;
+    this.imageModeAuto = null;
+    this.imageModeAuto = null;
+    this.subControls = null;
+    
     HuesUI.call(this);
 }
 RetroUI.prototype = Object.create(HuesUI.prototype);
@@ -164,6 +231,7 @@ RetroUI.prototype.initUI = function() {
     HuesUI.prototype.initUI.call(this);
     
     var doc = this.root.ownerDocument;
+    var that = this;
     
     var container = doc.createElement("div");
     container.className = "hues-r-container";
@@ -190,6 +258,70 @@ RetroUI.prototype.initUI = function() {
     
     this.beatBar = doc.createElement("div");
     container.appendChild(this.beatBar);
+    
+    this.controls = doc.createElement("div");
+    this.controls.className = "hues-r-controls";
+    
+    var imageMode = doc.createElement("div");
+    this.imageModeManual = doc.createElement("div");
+    this.imageModeManual.textContent = "NORMAL";
+    this.imageModeManual.onclick = function() {that.core.setIsFullAuto(false);};
+    this.imageModeManual.className = "hues-r-manualmode hues-r-button";
+    this.imageModeAuto = doc.createElement("div");
+    this.imageModeAuto.textContent = "FULL AUTO";
+    this.imageModeAuto.onclick = function() {that.core.setIsFullAuto(true);};
+    this.imageModeAuto.className = "hues-r-automode hues-r-button";
+    imageMode.appendChild(this.imageModeManual);
+    imageMode.appendChild(this.imageModeAuto);
+    
+    this.imagePrev.className = "hues-r-button";
+    this.imageNext.className = "hues-r-button";
+    this.songPrev.className = "hues-r-button";
+    this.songNext.className = "hues-r-button";
+    this.controls.appendChild(this.imagePrev);
+    this.controls.appendChild(imageMode);
+    this.controls.appendChild(this.imageNext);
+    
+    this.songList.className = "hues-r-songs hues-r-button";
+    this.controls.appendChild(this.songPrev);
+    this.controls.appendChild(this.songList);
+    this.controls.appendChild(this.songNext);
+    
+    this.root.appendChild(this.controls);
+    
+    var subControl = doc.createElement("div");
+    subControl.className = "hues-r-subcontrols";
+    subControl.appendChild(this.settingsToggle);
+    this.imageList.textContent = "C";
+    subControl.appendChild(this.imageList);
+    subControl.appendChild(this.hideToggle);
+    this.subControls = subControl;
+    
+    this.root.appendChild(subControl);
+    
+    this.hideRestore = doc.createElement("div");
+    this.hideRestore.className = "hues-r-hiderestore";
+    this.hideRestore.innerHTML = "&#x25B2;";
+    this.hideRestore.onclick = function() {
+        that.toggleHide();
+    }
+    this.root.appendChild(this.hideRestore);
+}
+
+RetroUI.prototype.toggleHide = function(stylename) {
+    stylename = stylename ? stylename : 'r';
+    if(this.hidden) {
+        this.subControls.className = "hues-" + stylename + "-subcontrols";
+        this.controls.className = "hues-" + stylename + "-controls";
+        this.container.className = "hues-r-container";
+        this.hideRestore.className = "hues-r-hiderestore";
+    } else {
+        this.subControls.className = "hues-" + stylename + "-subcontrols hidden";
+        this.controls.className = "hues-" + stylename + "-controls hidden";
+        this.container.className = "hues-r-container hidden";
+        this.hideRestore.className = "hues-r-hiderestore hidden";
+    }
+    this.hidden = !this.hidden;
 }
 
 RetroUI.prototype.connectCore = function(core) {
@@ -238,8 +370,11 @@ function ModernUI() {
     this.rightInfo = null;
     this.leftInfo = null;
     this.controls = null;
+    this.volInput = null;
     
     HuesUI.call(this);
+    
+    this.hidden = 0; // we have a 3 stage hide
 }
 ModernUI.prototype = Object.create(HuesUI.prototype);
 ModernUI.prototype.constructor = ModernUI;
@@ -269,6 +404,41 @@ ModernUI.prototype.initUI = function() {
     this.hueName.className = "hues-m-huename";
     leftBox.appendChild(this.hueName);
     
+    var volCluster = doc.createElement("div");
+    volCluster.className = "hues-m-vol-cluster";
+    leftBox.appendChild(volCluster);
+    
+    this.settingsToggle.className = "hues-m-cog";
+    volCluster.appendChild(this.settingsToggle);
+    
+    var volBar = doc.createElement("div");
+    volBar.className = "hues-m-vol-bar";
+    volCluster.appendChild(volBar);
+
+    var label = doc.createElement("div");
+    label.textContent = "VOL";
+    label.className = "hues-m-vol-label";
+    volBar.appendChild(label);
+    
+    var infoToggle = doc.createElement("div");
+    infoToggle.innerHTML = '?';
+    infoToggle.className = "hues-m-question";
+    infoToggle.onclick = function() {
+        that.core.settings.showInfo();
+    }
+    volCluster.appendChild(infoToggle);
+
+    var input = doc.createElement("input");
+    input.type = "range";
+    input.min = 0;
+    input.max = 1;
+    input.step = 0.1;
+    volBar.appendChild(input);
+    this.volInput = input;
+    input.oninput = function() {
+        that.core.soundManager.setVolume(parseFloat(input.value));
+    }
+    
     var rightBox = doc.createElement("div");
     rightBox.className = "hues-m-rightbox";
     controls.appendChild(rightBox);
@@ -277,28 +447,20 @@ ModernUI.prototype.initUI = function() {
     //Song/image controls
     var songs = doc.createElement("div");
     songs.className = "hues-m-controlblock";
-    var songList = document.createElement("div");
-    songList.textContent = "SONGS";
-    songList.className = "hues-m-songbutton";
+    this.songList.className = "hues-m-songbutton";
     
     var songControls = doc.createElement("div");
     songControls.className = "hues-m-controlbuttons";
-    var songLeft = doc.createElement("div");
-    songLeft.textContent = "<";
-    songLeft.className = "hues-m-prevbutton"
-    songLeft.onclick = function() {that.core.previousSong();};
-    var songRight = doc.createElement("div");
-    songRight.textContent = ">";
-    songRight.className = "hues-m-nextbutton"
-    songRight.onclick = function() {that.core.nextSong();};
+    this.songPrev.className = "hues-m-prevbutton"
+    this.songNext.className = "hues-m-nextbutton"
     var songShuffle = doc.createElement("div");
     songShuffle.innerHTML = '<i class="fa fa-random"></i>';
     songShuffle.className = "hues-m-actbutton";
     songShuffle.onclick = function() {that.core.randomSong();};
-    songs.appendChild(songList);
-    songControls.appendChild(songLeft);
+    songs.appendChild(this.songList);
+    songControls.appendChild(this.songPrev);
     songControls.appendChild(songShuffle);
-    songControls.appendChild(songRight);
+    songControls.appendChild(this.songNext);
     songs.appendChild(songControls);
     rightBox.appendChild(songs);
     
@@ -310,22 +472,17 @@ ModernUI.prototype.initUI = function() {
     
     var imageControls = doc.createElement("div");
     imageControls.className = "hues-m-controlbuttons";
-    var imageLeft = doc.createElement("div");
-    imageLeft.textContent = "<";
-    imageLeft.className = "hues-m-prevbutton"
-    imageLeft.onclick = function() {that.core.previousImage();};
-    var imageRight = doc.createElement("div");
-    imageRight.textContent = ">";
-    imageRight.className = "hues-m-nextbutton"
-    imageRight.onclick = function() {that.core.nextImage();};
+    
     this.imageMode = doc.createElement("div");
     this.imageMode.innerHTML = "&#9654;"; // PLAY
     this.imageMode.className = "hues-m-actbutton";
     this.imageMode.onclick = function() {that.core.toggleFullAuto();};
+    this.imagePrev.className = "hues-m-prevbutton";
+    this.imageNext.className = "hues-m-nextbutton";
     images.appendChild(imageList);
-    imageControls.appendChild(imageLeft);
+    imageControls.appendChild(this.imagePrev);
     imageControls.appendChild(this.imageMode);
-    imageControls.appendChild(imageRight);
+    imageControls.appendChild(this.imageNext);
     images.appendChild(imageControls);
     rightBox.appendChild(images);
     
@@ -337,6 +494,8 @@ ModernUI.prototype.initUI = function() {
     leftInfo.appendChild(this.yBlur);
     rightInfo.appendChild(this.timer);
     rightInfo.appendChild(this.beatCount);
+    this.rightInfo = rightInfo
+    this.leftInfo = leftInfo;
     controls.appendChild(leftInfo);
     controls.appendChild(rightInfo);
 
@@ -359,6 +518,24 @@ ModernUI.prototype.initUI = function() {
     beatCenter.className = "hues-m-beatcenter";
     this.root.appendChild(beatCenter);
     this.beatCenter = beatCenter;
+}
+
+ModernUI.prototype.toggleHide = function() {
+    this.beatBar.className = "hues-m-beatbar";
+    this.beatCenter.className = "hues-m-beatcenter";
+    this.controls.className = "hues-m-controls";
+    switch(this.hidden) {
+        case 1:
+            this.beatBar.className = "hues-m-beatbar hidden";
+            this.beatCenter.className = "hues-m-beatcenter hidden";
+        case 0:
+            this.controls.className = "hues-m-controls hidden";
+    }
+    this.hidden = (this.hidden+1) % 3;
+}
+
+ModernUI.prototype.updateVolume = function(vol) {
+    this.volInput.value = vol;
 }
 
 ModernUI.prototype.modeUpdated = function() {
@@ -439,6 +616,9 @@ WeedUI.prototype.initUI = function() {
     this.container.removeChild(this.beatBar)
     var doc = this.root.ownerDocument;
     
+    this.controls.className = "hues-w-controls";
+    this.subControls.className = "hues-w-subcontrols";
+    
     var beatBar = doc.createElement("div");
     beatBar.className = "hues-w-beatbar";
     this.root.appendChild(beatBar);
@@ -453,6 +633,18 @@ WeedUI.prototype.initUI = function() {
     beatRight.className = "hues-w-beatright";
     beatBar.appendChild(beatRight);
     this.beatRight = beatRight;
+    
+    this.imageModeManual.textContent = "ONE";
+    this.imageModeAuto.textContent = "MANY";
+}
+
+WeedUI.prototype.toggleHide = function() {
+    if(this.hidden) {
+        this.beatBar.className = "hues-w-beatbar";
+    } else {
+        this.beatBar.className = "hues-w-beatbar hidden";
+    }
+    RetroUI.prototype.toggleHide.call(this, 'w');
 }
 
 WeedUI.prototype.beat = function() {
@@ -497,8 +689,11 @@ function XmasUI() {
     
     this.controls.removeChild(this.leftBox);
     this.controls.removeChild(this.rightBox);
+    this.controls.removeChild(this.rightInfo);
+    this.controls.removeChild(this.leftInfo);
     
-    this.leftBox = this.rightBox = this.hueName = null;
+    this.leftBox = this.rightBox = this.hueName = this.xBlur = this.yBlur 
+        = this.timer = null;
     
     this.controls.className = "hues-x-controls";
     this.beatBar.className = "hues-x-beatbar";
@@ -506,4 +701,20 @@ function XmasUI() {
 XmasUI.prototype = Object.create(ModernUI.prototype);
 XmasUI.prototype.constructor = XmasUI;
 
+XmasUI.prototype.toggleHide = function() {
+    this.beatBar.className = "hues-x-beatbar";
+    this.beatCenter.className = "hues-m-beatcenter";
+    this.controls.className = "hues-x-controls";
+    switch(this.hidden) {
+        case 1:
+            this.beatBar.className = "hues-x-beatbar hidden";
+            this.beatCenter.className = "hues-m-beatcenter hidden";
+        case 0:
+            this.controls.className = "hues-x-controls hidden";
+    }
+    this.hidden = (this.hidden+1) % 3;
+}
+
 XmasUI.prototype.setColourText = function(colour) {};
+XmasUI.prototype.blurUpdated = function(x, y) {};
+XmasUI.prototype.updateTime = function(time) {};

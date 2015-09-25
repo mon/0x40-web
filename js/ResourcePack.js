@@ -158,7 +158,7 @@ Respack.prototype.parseXML = function() {
         if (this._songFile) {
             this._songFile.getText(function(text) {
                 //XML parser will complain about a bare '&'
-                text = text.replace(/&/g, '&amp;amp;');
+                text = text.replace(/&/g, '&amp;');
                 that.parseSongFile(text);
                 // Go to next in series
                 that._songFile = null;
@@ -173,7 +173,7 @@ Respack.prototype.parseXML = function() {
     }
     if (this.images.length > 0 && this._imageFile) {
         this._imageFile.getText(function(text) {
-            text = text.replace(/&/g, '&amp;amp;');
+            text = text.replace(/&/g, '&amp;');
             that.parseImageFile(text);
             that._imageFile = null;
             that.parseXML();
@@ -182,7 +182,7 @@ Respack.prototype.parseXML = function() {
     }
     if (this._infoFile) {
         this._infoFile.getText(function(text) {
-            text = text.replace(/&/g, '&amp;amp;');
+            text = text.replace(/&/g, '&amp;');
             that.parseInfoFile(text);
             that._infoFile = null;
             that.parseXML();

@@ -1,14 +1,13 @@
 /* TODO: Fix scrollbar */
 
 .RetroUI {
+    font-family: 'PetMe64Web';
 }
 
 .hues-r-container {
     position: absolute;
     bottom: 0px;
-    
     white-space: nowrap;
-    font-family: 'PetMe64Web';
     font-size: 5pt;
 }
 
@@ -17,4 +16,90 @@
     color: inherit;
     text-decoration: none;
     overflow: hidden;
+}
+
+.hues-r-controls {
+    display:flex;
+    align-items:center;
+    position: absolute;
+    right: 0px;
+    bottom: 10px;
+    font-size: 30px;
+}
+
+.hues-r-button {
+    float: left;
+    cursor: pointer;
+    text-align: center;
+    opacity: 0.5;
+}
+
+.hues-r-button:hover  {
+    opacity: 1;
+}
+
+.hues-r-songs {
+    font-size: 13px;
+    margin: 0px -8px;
+}
+
+.hues-r-manualmode, .hues-r-automode {
+    float: none;
+    clear: both;
+}
+
+.hues-r-manualmode {
+    font-size: 15px;
+}
+
+.hues-r-automode {
+    font-size: 10px;
+}
+
+.hues-r-subcontrols {
+    position: absolute;
+    right: 0px;
+    bottom: 40px;
+    font-size: 25px;
+    text-align: center;
+}
+
+.hues-r-subcontrols > div{
+    margin: 3px;
+    cursor: pointer;
+    opacity: 0.5;
+}
+
+.hues-r-subcontrols > div:hover {
+    opacity: 1;
+}
+
+.hues-r-hiderestore {
+    position: absolute;
+    bottom: 5px;
+    right: 5px;
+    display: none;
+    font-size: 25px;
+    cursor: pointer;
+    opacity: 0.5;
+}
+
+.hues-r-hiderestore.hidden {
+    display: block;
+}
+
+.hues-r-hiderestore:hover {
+    opacity: 1;
+}
+
+.hues-r-container, .hues-r-controls, .hues-r-subcontrols {
+    transform: translateY(0px);
+    -webkit-transform: translateY(0px);
+    transition: transform 1s linear;
+    -webkit-transition: transform 1s linear;
+}
+
+.hues-r-container.hidden, .hues-r-controls.hidden, .hues-r-subcontrols.hidden {
+    transform: translateY(200px);
+    -webkit-transform: translateY(200px);
 }

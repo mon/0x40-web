@@ -86,14 +86,13 @@ h1, h2, h3 {
     top: 0;
     left: 0;
     z-index: 10;
+    opacity: 1;
+    transition: opacity 2s linear;
+    -webkit-transition: opacity 2s linear;
 }
 
 #preloadHelper.loaded {
     opacity: 0;
-    animation-name: fadeout;
-    animation-duration: 1s;    
-    -webkit-animation-name: fadeout;
-    -webkit-animation-duration: 3s;
 }
 
 #preloader {
@@ -159,13 +158,6 @@ input.tab-input[type="radio"]:checked + label {
     border-width: 2px;
     border-style: solid;
     font-family: 'PetMe64Web';
-    /* It gets selected by accident somehow */
-    -webkit-touch-callout: none;
-    -webkit-user-select: none;
-    -khtml-user-select: none;
-    -moz-user-select: none;
-    -ms-user-select: none;
-    user-select: none;
 }
 
 #huesSettings {
@@ -182,6 +174,13 @@ input.tab-input[type="radio"]:checked + label {
 
 .settings-buttons{
     margin: 10px 2px 10px 0px;
+    /* Don't want double click to select */
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
 }
 
 .settings-checkbox{
@@ -205,13 +204,4 @@ label.settings-label:hover {
 
 #huesSettings input[type="radio"]:checked + label {
     background: rgba(255,255,255, 0.5);
-}
-
-@keyframes fadeout {
-    from {opacity: 1;}
-    to {opacity: 0;}
-}
-@-webkit-keyframes fadeout {
-    from {opacity: 1;}
-    to {opacity: 0;}
 }

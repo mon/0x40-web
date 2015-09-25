@@ -22,9 +22,10 @@
             window.onload = function() {
                 zip.workerScriptsPath = "js/lib/";
                 var defaults = {
-                    respacks : ["./respacks/Defaults_v5.0.zip", 
+                    respacks : [//"./respacks/Defaults_v5.0.zip", 
                                 "./respacks/CharPackagev0.03.zip", 
-                                "./respacks/HuesMixA.zip"],
+                                //"./respacks/HuesMixB.zip",
+                                "./respacks/PackShit.zip"],
                     load     : false, //debug
                     autoplay : false // debug
                 };
@@ -44,10 +45,10 @@
                 <div id="tabs">
                     <input class="tab-input" type="radio" name="tabs" id="tab1">
                     <label class="tab-label" for="tab1">RESOURCES</label>
-                    <input class="tab-input" type="radio" name="tabs" id="tab2" >
+                    <input class="tab-input" type="radio" name="tabs" id="tab2" checked>
                     <label class="tab-label" for="tab2">OPTIONS</label>
-                    <input class="tab-input" type="radio" name="tabs" id="tab3" checked>
-                    <label class="tab-label" for="tab3">ABOUT</label>
+                    <input class="tab-input" type="radio" name="tabs" id="tab3">
+                    <label class="tab-label" for="tab3">INFO</label>
                     <div id="tab1-content" class="tab-content">
                         Soon
                     </div>
@@ -77,7 +78,6 @@
                                     <li>O Horizontal blur only</li>
                                     <li>~ Fade color</li>
                                     <li>= Fade and change image</li>
-                                    <li>¤ Whiteout</li>
                                     
                                 </ul>
                             </div>
@@ -95,7 +95,6 @@
                                     <li>[S] Song list</li>
                                     <li>[W] Toggle window</li>
                                     <li>[R] Resource packs</li>
-                                    <li>[E] Editor</li>
                                     <li>[O] Options</li>
                                     <li>[I] Information</li>
                                     <li>[1-4] Change UI</li>

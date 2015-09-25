@@ -1,7 +1,8 @@
 var LAME_DELAY_START = 2258;
 var LAME_DELAY_END = 1000;
 
-function SoundManager() {
+function SoundManager(core) {
+    this.core = core;
     this.playing = false;
     this.song = null;
     
@@ -39,7 +40,7 @@ function SoundManager() {
     }
     
     var that = this;
-    window.addEventListener('touchstart', function() {
+    window.addEventListener('touchend', function() {
 
         // create empty buffer
         var buffer = that.context.createBuffer(1, 1, 22050);
@@ -193,11 +194,11 @@ SoundManager.prototype.onSongLoad = function(song) {
 
 // because MP3 is bad, we nuke silence
 SoundManager.prototype.trimMP3 = function(buffer) {
-    var isFirefox = navigator.userAgent.toLowerCase().indexOf('firefox') > -1;
+    /*var isFirefox = navigator.userAgent.toLowerCase().indexOf('firefox') > -1;
     if(!isFirefox) {
         // Webkit is better than Gecko, clearly
         return buffer;
-    }
+    }*/
     var ret = this.context.createBuffer(buffer.numberOfChannels, 
         buffer.length - LAME_DELAY_START - LAME_DELAY_END, buffer.sampleRate);
     for(var i=0; i<buffer.numberOfChannels; i++) {
@@ -211,7 +212,6 @@ SoundManager.prototype.trimMP3 = function(buffer) {
 }
 
 // This wouldn't be required if Web Audio could do gapless playback properly
-// Looking at you, Firefox
 SoundManager.prototype.concatenateAudioBuffers = function(buffer1, buffer2) {
     if (!buffer1 || !buffer2) {
         console.log("no buffers!");
@@ -246,6 +246,7 @@ SoundManager.prototype.setMute = function(mute) {
     } else if(this.mute && !mute) { // unmuting
         this.gainNode.gain.value = this.lastVol;
     }
+    this.core.userInterface.updateVolume(this.gainNode.gain.value);
     this.mute = mute;
 }
 
@@ -257,10 +258,17 @@ SoundManager.prototype.decreaseVolume = function() {
     this.setMute(false);
     val = Math.max(this.gainNode.gain.value - 0.1, 0);
     this.gainNode.gain.value = val;
+    this.core.userInterface.updateVolume(val);
 }
 
 SoundManager.prototype.increaseVolume = function() {
     this.setMute(false);
     val = Math.min(this.gainNode.gain.value + 0.1, 1);
     this.gainNode.gain.value = val;
+    this.core.userInterface.updateVolume(val);
+}
+
+SoundManager.prototype.setVolume = function(vol) {
+    this.gainNode.gain.value = vol;
+    this.core.userInterface.updateVolume(vol);
 }

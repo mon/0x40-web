@@ -1,7 +1,56 @@
-/* TODO: Fix scrollbar */
-
 .WeedUI {
     font-family: 'PetMe64Web';
+}
+
+.hues-w-controls {
+    display:flex;
+    align-items:center;
+    position: absolute;
+    right: 0px;
+    bottom: 0px;
+    font-size: 30px;
+}
+
+.hues-w-subcontrols {
+    position: absolute;
+    right: 0px;
+    bottom: 30px;
+    font-size: 25px;
+    text-align: center;
+}
+
+.hues-w-subcontrols > div{
+    margin: 3px;
+    cursor: pointer;
+    opacity: 0.5;
+}
+
+.hues-w-subcontrols > div:hover {
+    opacity: 1;
+}
+
+.hues-w-controls, .hues-w-subcontrols {
+    transform: translateY(0px);
+    -webkit-transform: translateY(0px);
+    transition: transform 1s linear;
+    -webkit-transition: transform 1s linear;
+}
+
+.hues-w-controls.hidden, .hues-w-subcontrols.hidden {
+    transform: translateY(200px);
+    -webkit-transform: translateY(200px);
+}
+
+.hues-w-beatbar {
+    transform: translateY(0px);
+    -webkit-transform: translateY(0px);
+    transition: transform 1s linear;
+    -webkit-transition: transform 1s linear;
+}
+
+.hues-w-beatbar.hidden {
+    transform: translateY(-40px);   
+    -webkit-transform: translateY(-40px);
 }
 
 .hues-w-beatleft, .hues-w-beatright {

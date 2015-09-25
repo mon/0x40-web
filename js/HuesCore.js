@@ -16,6 +16,13 @@ HuesCore = function(defaults) {
     this.doBuildup=true;
     this.userInterface = null;
     
+    var that = this;
+    window.onerror = function(msg, url, line, col, error) {
+        that.error(msg);
+        // Get more info in console
+        return false;
+    };
+    
     console.log("0x40 Hues - start your engines!");
     this.colours = this.oldColours;
     this.uiArray = [];
@@ -24,7 +31,7 @@ HuesCore = function(defaults) {
     this.settings = new HuesSettings(defaults);
     //this.autoSong = this.settings.autosong;
     this.resourceManager = new Resources();
-    this.soundManager = new SoundManager();
+    this.soundManager = new SoundManager(this);
     if(!this.soundManager.canUse) {
         this.error("Web Audio API not supported in this browser.");
         return;
@@ -34,7 +41,6 @@ HuesCore = function(defaults) {
     this.uiArray.push(new RetroUI(), new WeedUI(), new ModernUI(), new XmasUI());
     this.settings.connectCore(this);
     
-    var that = this;
     if(defaults.load) {
         this.resourceManager.addAll(defaults.respacks, function() {
             document.getElementById("preloadHelper").className = "loaded";
@@ -66,13 +72,6 @@ HuesCore = function(defaults) {
         }
         var key = e.keyCode || e.which;
         return that.keyHandler(key);
-    };
-    
-    window.onerror = function(msg, url, line, col, error) {
-        that.error(msg);
-
-        // Get more info in console
-        return false;
     };
     
     this.animationLoop();

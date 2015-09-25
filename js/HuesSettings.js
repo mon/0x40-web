@@ -11,7 +11,7 @@ HuesSettings.prototype.defaultSettings = {
     smartAlign: "on",
     blurAmount: "medium",
     blurDecay: "fast",
-    blurQuality: "high",
+    blurQuality: "medium",
     currentUI: "modern",
     colourSet: "normal",
     blackoutUI: "off",
@@ -118,6 +118,21 @@ HuesSettings.prototype.toggle = function() {
     } else {
         this.window.style.display = "none";
     }
+}
+
+HuesSettings.prototype.showRespacks = function() {
+    this.show();
+    document.getElementById("tab1").checked = true;
+}
+
+HuesSettings.prototype.showOptions = function() {
+    this.show();
+    document.getElementById("tab2").checked = true;
+}
+
+HuesSettings.prototype.showInfo = function() {
+    this.show();
+    document.getElementById("tab3").checked = true;
 }
 
 HuesSettings.prototype.initUI = function() {

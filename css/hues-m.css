@@ -5,6 +5,30 @@
     font-family: 'PetMe64Web';
 }
 
+.hues-m-beatbar, .hues-m-beatcenter{
+    transform: translateY(0px);
+    -webkit-transform: translateY(0px);
+    transition: transform 1s linear;
+    -webkit-transition: transform 1s linear;
+}
+
+.hues-m-controls {
+    transform: translateY(0px);
+    -webkit-transform: translateY(0px);
+    transition: transform 1s linear;
+    -webkit-transition: transform 1s linear;
+}
+
+.hues-m-beatbar.hidden, .hues-m-beatcenter.hidden{
+    transform: translateY(-40px);   
+    -webkit-transform: translateY(-40px);
+}
+
+.hues-m-controls.hidden {
+    transform: translateY(104px);
+    -webkit-transform: translateY(104px);
+}
+
 .hues-m-beatbar {
     position: absolute;
     top: 0;
@@ -198,7 +222,7 @@
 }
 
 .hues-m-controlblock {
-    /* It gets selected by accident somehow */
+    /* Don't want double click to select */
     -webkit-touch-callout: none;
     -webkit-user-select: none;
     -khtml-user-select: none;
@@ -229,7 +253,7 @@
 
 .hues-m-prevbutton, .hues-m-nextbutton {
     color: white;
-    background: rgba(0,0,0,0.7);
+    background: rgb(32,32,32);
     height: 20px;
     line-height: 20px;
     font-size: 12px;
@@ -255,7 +279,7 @@
     width: 40px;
     left: 15px;
     color: white;
-    background: rgb(64,64,64);
+    background: rgb(32,32,32);
     font-size: 20px;
     line-height: 40px;
     border-radius: 20px;
@@ -267,15 +291,33 @@
     bottom: 5px;
 }
 
+.hues-m-question, .hues-m-cog {
+    cursor: pointer;
+}
+
+.hues-m-cog {
+    position: absolute;
+    left: 8px;
+    top: 5px;
+    font-size: 25px;
+}
+
+.hues-m-question {
+    position: absolute;
+    right: 8px;
+    top: 8px;
+    font-size: 25px;
+}
+
 .hues-m-vol-bar {
     position: absolute;
     height: 20px;
     bottom: 21px;
-    left: 32px;
-    right: 32px;
+    left: 40px;
+    right: 40px;
 }
 
-.hues-m-vol-bar > button {
+.hues-m-vol-label {
     display: block;
     position: absolute;
     left: 0;
