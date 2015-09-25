@@ -44,41 +44,40 @@ function HuesUI(parent) {
 }
 
 HuesUI.prototype.initUI = function() {
-    var doc = this.root.ownerDocument
     var that = this;
 
     // Major info, image, song names
-    var imageName = doc.createElement("div");
+    var imageName = document.createElement("div");
     this.imageName = imageName;
     
-    this.imageLink = doc.createElement("a");
+    this.imageLink = document.createElement("a");
     this.imageLink.target = "_blank";
     this.imageName.appendChild(this.imageLink);
 
-    var songName = doc.createElement("div");
+    var songName = document.createElement("div");
     this.songName = songName;
     
-    this.songLink = doc.createElement("a");
+    this.songLink = document.createElement("a");
     this.songLink.target = "_blank";
     this.songName.appendChild(this.songLink);
 
-    var hueName = doc.createElement("div");
+    var hueName = document.createElement("div");
     this.hueName = hueName;
     
     // Prev/next controls
-    var imagePrev = doc.createElement("div");
+    var imagePrev = document.createElement("div");
     imagePrev.textContent = "<";
     imagePrev.onclick = function() {that.core.previousImage();};
     this.imagePrev = imagePrev;
-    var imageNext = doc.createElement("div");
+    var imageNext = document.createElement("div");
     imageNext.textContent = ">";
     imageNext.onclick = function() {that.core.nextImage();};
     this.imageNext = imageNext;
-    var songPrev = doc.createElement("div");
+    var songPrev = document.createElement("div");
     songPrev.textContent = "<";
     this.songPrev = songPrev;
     songPrev.onclick = function() {that.core.previousSong();};
-    var songNext = doc.createElement("div");
+    var songNext = document.createElement("div");
     songNext.textContent = ">";
     songNext.onclick = function() {that.core.nextSong();};
     this.songNext = songNext;
@@ -93,26 +92,26 @@ HuesUI.prototype.initUI = function() {
     this.imageList = imageList;
     
     // Beat timer, x and y blur, millis timer
-    this.timer = doc.createElement("div");
+    this.timer = document.createElement("div");
     this.timer.textContent = "T=$0x0000";
     
-    this.beatCount = doc.createElement("div");
+    this.beatCount = document.createElement("div");
     this.beatCount.textContent = "B=$0x00";
     
-    this.xBlur = doc.createElement("div");
+    this.xBlur = document.createElement("div");
     this.xBlur.textContent = "X=$0x00";
     
-    this.yBlur = doc.createElement("div");
+    this.yBlur = document.createElement("div");
     this.yBlur.textContent = "Y=$0x00";
     
     // Config stuff
-    this.settingsToggle = doc.createElement("div");
+    this.settingsToggle = document.createElement("div");
     this.settingsToggle.innerHTML = '<i class="fa fa-cog"></i>';
     this.settingsToggle.onclick = function() {
         that.core.settings.toggle();
     }
     
-    this.hideToggle = doc.createElement("div");
+    this.hideToggle = document.createElement("div");
     this.hideToggle.innerHTML = "&#x25BC;";
     this.hideToggle.onclick = function() {
         that.toggleHide();
@@ -230,15 +229,14 @@ RetroUI.prototype.constructor = RetroUI;
 RetroUI.prototype.initUI = function() {
     HuesUI.prototype.initUI.call(this);
     
-    var doc = this.root.ownerDocument;
     var that = this;
     
-    var container = doc.createElement("div");
+    var container = document.createElement("div");
     container.className = "hues-r-container";
     this.root.appendChild(container);
     this.container = container;
     
-    this.mode = doc.createElement("div");
+    this.mode = document.createElement("div");
     container.appendChild(this.mode);
     container.appendChild(this.imageName);
     container.appendChild(this.timer);
@@ -246,28 +244,28 @@ RetroUI.prototype.initUI = function() {
     container.appendChild(this.xBlur);
     container.appendChild(this.yBlur);
     
-    this.colourIndex = doc.createElement("div");
+    this.colourIndex = document.createElement("div");
     this.colourIndex.textContent = "C=$0x00";
     container.appendChild(this.colourIndex);
     
-    this.version = doc.createElement("div");
+    this.version = document.createElement("div");
     container.appendChild(this.version);
     
     container.appendChild(this.hueName);
     container.appendChild(this.songName);
     
-    this.beatBar = doc.createElement("div");
+    this.beatBar = document.createElement("div");
     container.appendChild(this.beatBar);
     
-    this.controls = doc.createElement("div");
+    this.controls = document.createElement("div");
     this.controls.className = "hues-r-controls";
     
-    var imageMode = doc.createElement("div");
-    this.imageModeManual = doc.createElement("div");
+    var imageMode = document.createElement("div");
+    this.imageModeManual = document.createElement("div");
     this.imageModeManual.textContent = "NORMAL";
     this.imageModeManual.onclick = function() {that.core.setIsFullAuto(false);};
     this.imageModeManual.className = "hues-r-manualmode hues-r-button";
-    this.imageModeAuto = doc.createElement("div");
+    this.imageModeAuto = document.createElement("div");
     this.imageModeAuto.textContent = "FULL AUTO";
     this.imageModeAuto.onclick = function() {that.core.setIsFullAuto(true);};
     this.imageModeAuto.className = "hues-r-automode hues-r-button";
@@ -289,7 +287,7 @@ RetroUI.prototype.initUI = function() {
     
     this.root.appendChild(this.controls);
     
-    var subControl = doc.createElement("div");
+    var subControl = document.createElement("div");
     subControl.className = "hues-r-subcontrols";
     subControl.appendChild(this.settingsToggle);
     this.imageList.textContent = "C";
@@ -299,7 +297,7 @@ RetroUI.prototype.initUI = function() {
     
     this.root.appendChild(subControl);
     
-    this.hideRestore = doc.createElement("div");
+    this.hideRestore = document.createElement("div");
     this.hideRestore.className = "hues-r-hiderestore";
     this.hideRestore.innerHTML = "&#x25B2;";
     this.hideRestore.onclick = function() {
@@ -382,13 +380,12 @@ ModernUI.prototype.constructor = ModernUI;
 ModernUI.prototype.initUI = function() {
     HuesUI.prototype.initUI.call(this);
     
-    var doc = this.root.ownerDocument;
     var that = this;
     
     this.imageName.className = "hues-m-imagename";
     this.songName.className = "hues-m-songtitle";
     
-    var controls = doc.createElement("div");
+    var controls = document.createElement("div");
     controls.className = "hues-m-controls";
     this.root.appendChild(controls);
     this.controls = controls;
@@ -396,7 +393,7 @@ ModernUI.prototype.initUI = function() {
     controls.appendChild(this.imageName);
     controls.appendChild(this.songName);
 
-    var leftBox = doc.createElement("div");
+    var leftBox = document.createElement("div");
     leftBox.className = "hues-m-leftbox";
     controls.appendChild(leftBox);
     this.leftBox = leftBox;
@@ -404,23 +401,23 @@ ModernUI.prototype.initUI = function() {
     this.hueName.className = "hues-m-huename";
     leftBox.appendChild(this.hueName);
     
-    var volCluster = doc.createElement("div");
+    var volCluster = document.createElement("div");
     volCluster.className = "hues-m-vol-cluster";
     leftBox.appendChild(volCluster);
     
     this.settingsToggle.className = "hues-m-cog";
     volCluster.appendChild(this.settingsToggle);
     
-    var volBar = doc.createElement("div");
+    var volBar = document.createElement("div");
     volBar.className = "hues-m-vol-bar";
     volCluster.appendChild(volBar);
 
-    var label = doc.createElement("div");
+    var label = document.createElement("div");
     label.textContent = "VOL";
     label.className = "hues-m-vol-label";
     volBar.appendChild(label);
     
-    var infoToggle = doc.createElement("div");
+    var infoToggle = document.createElement("div");
     infoToggle.innerHTML = '?';
     infoToggle.className = "hues-m-question";
     infoToggle.onclick = function() {
@@ -428,7 +425,7 @@ ModernUI.prototype.initUI = function() {
     }
     volCluster.appendChild(infoToggle);
 
-    var input = doc.createElement("input");
+    var input = document.createElement("input");
     input.type = "range";
     input.min = 0;
     input.max = 1;
@@ -439,21 +436,21 @@ ModernUI.prototype.initUI = function() {
         that.core.soundManager.setVolume(parseFloat(input.value));
     }
     
-    var rightBox = doc.createElement("div");
+    var rightBox = document.createElement("div");
     rightBox.className = "hues-m-rightbox";
     controls.appendChild(rightBox);
     this.rightBox = rightBox;
     
     //Song/image controls
-    var songs = doc.createElement("div");
+    var songs = document.createElement("div");
     songs.className = "hues-m-controlblock";
     this.songList.className = "hues-m-songbutton";
     
-    var songControls = doc.createElement("div");
+    var songControls = document.createElement("div");
     songControls.className = "hues-m-controlbuttons";
     this.songPrev.className = "hues-m-prevbutton"
     this.songNext.className = "hues-m-nextbutton"
-    var songShuffle = doc.createElement("div");
+    var songShuffle = document.createElement("div");
     songShuffle.innerHTML = '<i class="fa fa-random"></i>';
     songShuffle.className = "hues-m-actbutton";
     songShuffle.onclick = function() {that.core.randomSong();};
@@ -464,16 +461,16 @@ ModernUI.prototype.initUI = function() {
     songs.appendChild(songControls);
     rightBox.appendChild(songs);
     
-    var images = doc.createElement("div");
+    var images = document.createElement("div");
     images.className = "hues-m-controlblock";
     var imageList = document.createElement("div");
     imageList.textContent = "IMAGES";
     imageList.className = "hues-m-songbutton";
     
-    var imageControls = doc.createElement("div");
+    var imageControls = document.createElement("div");
     imageControls.className = "hues-m-controlbuttons";
     
-    this.imageMode = doc.createElement("div");
+    this.imageMode = document.createElement("div");
     this.imageMode.innerHTML = "&#9654;"; // PLAY
     this.imageMode.className = "hues-m-actbutton";
     this.imageMode.onclick = function() {that.core.toggleFullAuto();};
@@ -486,9 +483,9 @@ ModernUI.prototype.initUI = function() {
     images.appendChild(imageControls);
     rightBox.appendChild(images);
     
-    var leftInfo = doc.createElement("div");
+    var leftInfo = document.createElement("div");
     leftInfo.className = "hues-m-leftinfo";
-    var rightInfo = doc.createElement("div");
+    var rightInfo = document.createElement("div");
     rightInfo.className = "hues-m-rightinfo";
     leftInfo.appendChild(this.xBlur);
     leftInfo.appendChild(this.yBlur);
@@ -499,22 +496,22 @@ ModernUI.prototype.initUI = function() {
     controls.appendChild(leftInfo);
     controls.appendChild(rightInfo);
 
-    var beatBar = doc.createElement("div");
+    var beatBar = document.createElement("div");
     beatBar.className = "hues-m-beatbar";
     this.root.appendChild(beatBar);
     this.beatBar = beatBar;
 
-    var beatLeft = doc.createElement("div");
+    var beatLeft = document.createElement("div");
     beatLeft.className = "hues-m-beatleft";
     beatBar.appendChild(beatLeft);
     this.beatLeft = beatLeft;
 
-    var beatRight = doc.createElement("div");
+    var beatRight = document.createElement("div");
     beatRight.className = "hues-m-beatright";
     beatBar.appendChild(beatRight);
     this.beatRight = beatRight;
     
-    var beatCenter = doc.createElement("div");
+    var beatCenter = document.createElement("div");
     beatCenter.className = "hues-m-beatcenter";
     this.root.appendChild(beatCenter);
     this.beatCenter = beatCenter;
@@ -614,22 +611,21 @@ WeedUI.prototype.initUI = function() {
     RetroUI.prototype.initUI.call(this);
     
     this.container.removeChild(this.beatBar)
-    var doc = this.root.ownerDocument;
     
     this.controls.className = "hues-w-controls";
     this.subControls.className = "hues-w-subcontrols";
     
-    var beatBar = doc.createElement("div");
+    var beatBar = document.createElement("div");
     beatBar.className = "hues-w-beatbar";
     this.root.appendChild(beatBar);
     this.beatBar = beatBar;
 
-    var beatLeft = doc.createElement("div");
+    var beatLeft = document.createElement("div");
     beatLeft.className = "hues-w-beatleft";
     beatBar.appendChild(beatLeft);
     this.beatLeft = beatLeft;
 
-    var beatRight = doc.createElement("div");
+    var beatRight = document.createElement("div");
     beatRight.className = "hues-w-beatright";
     beatBar.appendChild(beatRight);
     this.beatRight = beatRight;
@@ -657,8 +653,7 @@ WeedUI.prototype.beat = function() {
     this.beatCount.textContent = "B=" + this.intToHex2(this.core.getSafeBeatIndex());
     
     if(["x", "o", "X", "O"].indexOf(beats[0]) != -1) {
-        var doc = this.root.ownerDocument;
-        var beatCenter = doc.createElement("div");
+        var beatCenter = document.createElement("div");
         beatCenter.className = "hues-w-beataccent";
         var rot = this.round10(15 - Math.random() * 30);
         var x = this.round10(- this.xVariance / 2 + Math.random() * this.xVariance);
