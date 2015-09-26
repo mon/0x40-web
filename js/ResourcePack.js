@@ -80,7 +80,7 @@ Respack.prototype.loadFromURL = function(url, callback, progress) {
     req.send();
 }
 
-Respack.prototype.loadBlob = function(blob, callback) {
+Respack.prototype.loadBlob = function(blob, callback, errorCallback) {
     this._completionCallback = callback;
     var that = this;
     this.size = blob.size;
@@ -90,8 +90,11 @@ Respack.prototype.loadBlob = function(blob, callback) {
             that.parseWholeZip();
         },
         function(error) {   // failure
-            console.log("Error loading respack : ", error.toString());
+            console.log("Error loading respack :", error.toString());
             that.file = null;
+            if(errorCallback) {
+                errorCallback(error.toString());
+            }
         } 
     );
 }

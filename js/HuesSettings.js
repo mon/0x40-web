@@ -138,6 +138,9 @@ HuesSettings.prototype.showInfo = function() {
 HuesSettings.prototype.initUI = function() {
     var doc = this.root.ownerDocument;
     
+    var that = this;
+    document.getElementById("closeButton").onclick = function() {that.hide();};
+    
     // To order things nicely
     for(cat in this.settingsCategories) {
         var catContainer = doc.createElement("div");

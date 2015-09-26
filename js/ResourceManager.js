@@ -1,4 +1,9 @@
-function Resources() {
+// NOTE: Any packs referenced need CORS enabled or loads fail
+var packsURL = "http://cdn.0x40hu.es/getRespacks.php";
+
+function Resources(core) {
+    this.core = core;
+    
     this.resourcePacks = [];
 
     this.allSongs = [];
@@ -14,6 +19,7 @@ function Resources() {
     
     this.root = null;
     this.packView = {
+        pack: null,
         name: null,
         creator: null,
         size: null,
@@ -22,18 +28,24 @@ function Resources() {
         imageCount: null,
         songList: null,
         imageList: null,
+        packButtons: null,
         totalSongs: null,
         totalImages: null
     };
     this.packsView = {
         respackList: null,
         remoteList: null,
+        loadRemote: null,
         progressBar: null,
         progressStatus: null,
         progressCurrent: null,
         progressTop: null,
         progressPercent: null
     };
+    this.remotes = null;
+    this.fileInput = null;
+    this.fileParseQueue = [];
+    this.currentlyParsing = false;
     this.initUI();
 }
 
@@ -89,16 +101,20 @@ Resources.prototype.updateProgress = function() {
 
 Resources.prototype.addPack = function(pack) {
     console.log("Added", pack.name, "to respacks");
-    var id = "res" + this.resourcePacks.length;
+    var that = this;
+    var id = this.resourcePacks.length;
     this.resourcePacks.push(pack);
     this.addResourcesToArrays(pack);
     this.rebuildEnabled();
     this.updateTotals();
     
-    this.appendListItem("respacks", pack.name, id, this.packsView.respackList);
-    if(id == "res0") {
-        this.selectPack(0);
-    }
+    this.appendListItem("respacks", pack.name, "res" + id, this.packsView.respackList,
+        function() {
+            pack.enabled = this.checked;
+            that.rebuildEnabled();
+        }, 
+        this.selectPackCallback(id)
+    );
 }
 
 Resources.prototype.addResourcesToArrays = function(pack) {
@@ -117,9 +133,8 @@ Resources.prototype.rebuildArrays = function() {
 }
 
 Resources.prototype.rebuildEnabled = function() {
-    enabledSongs = [];
-    enabledImages = [];
-    _enabledAnimations = [];
+    this.enabledSongs = [];
+    this.enabledImages = [];
 
     for(var i = 0; i < this.resourcePacks.length; i++) {
         var pack = this.resourcePacks[i];
@@ -139,6 +154,7 @@ Resources.prototype.rebuildEnabled = function() {
             }
         }
     }
+    this.updateTotals();
 }
 
 Resources.prototype.removePack = function(pack) {
@@ -162,8 +178,39 @@ Resources.prototype.getSongNames = function() {
     return names;
 }
 
+Resources.prototype.loadLocal = function() {
+    console.log("Loading local zip(s)");
+    var files = this.fileInput.files;
+    for(var i = 0; i < files.length; i++) {
+        this.fileParseQueue.push(files[i]);
+    }
+    this.parseLocalQueue();
+}
+
+Resources.prototype.parseLocalQueue = function(recursing) {
+    var that = this;
+    // avoid race conditions
+    if(this.currentlyParsing && !recursing) {
+        return;
+    }
+    this.currentlyParsing = true;
+    if(this.fileParseQueue.length) {
+        var r = new Respack();
+        r.loadBlob(this.fileParseQueue.shift(), 
+            function() {
+                that.addPack(r);
+                that.parseLocalQueue(true);
+            },
+            function() {that.parseLocalQueue(true);});
+    } else {
+        console.log("Local respack parsing complete");
+        this.currentlyParsing = false;
+    }
+}
+
 Resources.prototype.initUI = function() {
     this.root = document.getElementById("huesResources");
+    var that = this;
     
     var packsContainer = document.createElement("div");
     packsContainer.className = "res-packscontainer";
@@ -182,19 +229,30 @@ Resources.prototype.initUI = function() {
     var remoteList = document.createElement("div");
     remoteList.className = "res-list";
     remoteList.id = "res-remotelist";
+    this.appendSimpleListItem("Click to load the list", remoteList,
+        function() {that.loadRemotes();});
     this.packsView.remoteList = remoteList;
     
     var buttons = document.createElement("div");
     buttons.className = "res-buttons";
     var loadRemote = document.createElement("div");
-    loadRemote.className = "res-button";
-    loadRemote.textContent = "LOAD";
+    loadRemote.className = "res-button hidden";
+    loadRemote.textContent = "LOAD REMOTE";
+    loadRemote.onclick = function() {that.loadCurrentRemote();};
     var loadLocal = document.createElement("div");
     loadLocal.className = "res-button";
     loadLocal.textContent = "LOAD ZIPS";
-    buttons.appendChild(loadRemote);
+    loadLocal.onclick = function() {that.fileInput.click();};
     buttons.appendChild(loadLocal);
+    buttons.appendChild(loadRemote);
+    this.packsView.loadRemote = loadRemote;
     
+    this.fileInput = document.createElement("input");
+    this.fileInput.type ="file";
+    this.fileInput.accept="application/zip";
+    this.fileInput.multiple = true;
+    this.fileInput.onchange = function() {that.loadLocal();};
+
     var progressContainer = document.createElement("div");
     var progressBar = document.createElement("div");
     var progressStatus = document.createElement("div");
@@ -223,58 +281,97 @@ Resources.prototype.initUI = function() {
     indivView.className = "res-packcontainer";
     
     var packName = document.createElement("div");
+    packName.textContent = "<select a respack>";
     var packInfo = document.createElement("div");
     packInfo.id = "res-packinfo";
     var packCreator = document.createElement("div");
     packCreator.id = "res-packcreator";
     var packCreatorText = document.createElement("a");
+    packCreatorText.textContent = "<author>";
     packCreator.appendChild(packCreatorText);
     packInfo.appendChild(packCreator);
     var packSize = document.createElement("div");
+    packSize.textContent = "0b";
     packInfo.appendChild(packSize);
     var packDesc = document.createElement("div");
     packDesc.id = "res-packdesc";
+    packDesc.textContent = "<no description>"
     
     var packTabs = document.createElement("div");
     packTabs.id = "res-packtabs";
-    var songCount = document.createElement("div");
-    songCount.textContent = "Songs:";
-    packTabs.appendChild(songCount);
-    var imageCount = document.createElement("div");
-    imageCount.textContent = "Images:";
-    packTabs.appendChild(imageCount);
     
-    var packContents = document.createElement("div");
-    packContents.className = "res-list";
-    packContents.id = "res-packcontents";
+    var songCheck = document.createElement("input");
+    songCheck.type = "radio";
+    songCheck.name = "packtab";
+    songCheck.value = "songs";
+    songCheck.checked = true;
+    songCheck.id = "res-songtab";
+    var songCount = document.createElement("label");
+    songCount.textContent = "Songs:";
+    songCount.htmlFor = "res-songtab";
+    packTabs.appendChild(songCheck);
+    packTabs.appendChild(songCount);
+    
+    var imageCheck = document.createElement("input");
+    imageCheck.type = "radio";
+    imageCheck.name = "packtab";
+    imageCheck.value = "images";
+    imageCheck.id = "res-imagetab";
+    var imageCount = document.createElement("label");
+    imageCount.textContent = "Images:";
+    imageCount.htmlFor = "res-imagetab";
+    packTabs.appendChild(imageCheck);
+    packTabs.appendChild(imageCount);
+    ;
     var songList = document.createElement("div");
-    packContents.appendChild(songList);
+    songList.id = "res-songlist";
+    songList.className = "res-list";
     var imageList = document.createElement("div");
-    packContents.appendChild(imageList);
+    imageList.id = "res-imagelist";
+    imageList.className = "res-list";
+    packTabs.appendChild(songList);
+    packTabs.appendChild(imageList);
     
     var packButtons = document.createElement("div");
-    packButtons.className = "res-buttons";
+    packButtons.className = "res-buttons hidden";
     packButtons.id = "res-packbuttons";
     var enableAll = document.createElement("div");
     enableAll.textContent = "ENABLE ALL";
     enableAll.className = "res-button";
+    enableAll.onclick = function() {that.enableAll();};
     var invert = document.createElement("div");
     invert.textContent = "INVERT";
     invert.className = "res-button";
+    invert.onclick = function() {that.invert();};
     var disableAll = document.createElement("div");
     disableAll.textContent = "DISABLE ALL";
     disableAll.className = "res-button";
+    disableAll.onclick = function() {that.disableAll();};
     packButtons.appendChild(enableAll);
     packButtons.appendChild(invert);
     packButtons.appendChild(disableAll);
     
     var totalCounts = document.createElement("div");
-    var totalSongs = document.createElement("div");
-    totalSongs.textContent = "Total Songs:";
-    var totalImages = document.createElement("div");
-    totalImages.textContent = "Total images:";
-    totalCounts.appendChild(totalSongs);
-    totalCounts.appendChild(totalImages);
+    totalCounts.id = "res-countscontainer";
+    
+    var totalSongsCont = document.createElement("div");
+    var totalSongsLabel = document.createElement("span");
+    totalSongsLabel.textContent = "Total Songs:";
+    var totalSongs = document.createElement("span");
+    totalSongs.className = "res-counts";
+    totalSongsCont.appendChild(totalSongsLabel);
+    totalSongsCont.appendChild(totalSongs);
+
+    var totalImagesCont = document.createElement("div");
+    var totalImagesLabel = document.createElement("span");
+    totalImagesLabel.textContent = "Total images:";
+    var totalImages = document.createElement("span");
+    totalImages.className = "res-counts";
+    totalImagesCont.appendChild(totalImagesLabel);
+    totalImagesCont.appendChild(totalImages);
+    
+    totalCounts.appendChild(totalSongsCont);
+    totalCounts.appendChild(totalImagesCont);
     
     this.packView.name = packName;
     this.packView.creator = packCreatorText;
@@ -284,6 +381,7 @@ Resources.prototype.initUI = function() {
     this.packView.imageCount = imageCount;
     this.packView.songList = songList;
     this.packView.imageList = imageList;
+    this.packView.packButtons = packButtons;
     this.packView.totalSongs = totalSongs;
     this.packView.totalImages = totalImages;
     
@@ -291,7 +389,6 @@ Resources.prototype.initUI = function() {
     indivView.appendChild(packInfo);
     indivView.appendChild(packDesc);
     indivView.appendChild(packTabs);
-    indivView.appendChild(packContents);
     indivView.appendChild(packButtons);
     indivView.appendChild(totalCounts);
     
@@ -300,19 +397,32 @@ Resources.prototype.initUI = function() {
 }
 
 Resources.prototype.updateTotals = function() {
-    this.packView.totalSongs.textContent = "Total songs: " + 
+    this.packView.totalSongs.textContent =
             this.enabledSongs.length + "/" + this.allSongs.length;
-    this.packView.totalImages.textContent = "Total images: " + 
+    this.packView.totalImages.textContent =
             this.enabledImages.length + "/" + this.allImages.length;
+}
+
+Resources.prototype.truncateNum = function(num) {
+    return Math.round(num * 100) / 100;
 }
 
 Resources.prototype.selectPack = function(id) {
     var pack = this.resourcePacks[id];
+    this.packView.pack = pack;
+    
+    this.packView.packButtons.className = "res-buttons";
+    this.packsView.loadRemote.className = "res-button hidden";
     
     this.packView.name.textContent = pack.name;
     this.packView.creator.textContent = pack.author;
     this.packView.creator.href = pack.link ? pack.link : "";
-    this.packView.size.textContent = Math.round(pack.size / 1024, 2) + "kiB";
+    var size = pack.size / 1024;
+    if(size < 512) {
+        this.packView.size.textContent = this.truncateNum(size) + "kB";
+    } else {
+        this.packView.size.textContent = this.truncateNum(size / 1024) + "MB";
+    }
     this.packView.desc.textContent = pack.description;
     this.packView.songCount.textContent = "Songs: " + pack.songs.length;
     this.packView.imageCount.textContent = "Images: " + pack.images.length;
@@ -328,16 +438,103 @@ Resources.prototype.selectPack = function(id) {
     
     for(var i = 0; i < pack.songs.length; i++) {
         var song = pack.songs[i];
-        this.appendListItem("songs", song.title, "song" + i, songList);
+        this.appendListItem("songs", song.title, "song" + i, songList,
+            this.selectResourceCallback(song),
+            this.clickResourceCallback(song, true),
+            song.enabled);
     }
     
     for(var i = 0; i < pack.images.length; i++) {
         var image = pack.images[i];
-        this.appendListItem("images", image.name, "image" + i, imageList);
+        this.appendListItem("images", image.name, "image" + i, imageList,
+            this.selectResourceCallback(image),
+            this.clickResourceCallback(image, false),
+            image.enabled);
     }
 }
 
-Resources.prototype.appendListItem = function(name, value, id, root) {
+Resources.prototype.selectPackCallback = function(id) {
+    var that = this;
+    return function() {that.selectPack(id)};
+}
+
+Resources.prototype.selectResourceCallback = function(res) {
+    var that = this;
+    return function() {
+        res.enabled = this.checked;
+        that.rebuildEnabled();
+    };
+}
+
+Resources.prototype.clickResourceCallback = function(res, isSong) {
+    var that = this;
+    return function() {
+        if(!res.enabled) {
+            res.enabled = true;
+            that.rebuildEnabled();
+            // rebuild display
+            that.selectPack(that.resourcePacks.indexOf(that.packView.pack));
+        }
+        if(isSong) {
+            that.core.setSong(that.enabledSongs.indexOf(res));
+        } else {
+            that.core.setImage(that.enabledImages.indexOf(res));
+            that.core.setIsFullAuto(false);
+        }
+    };
+}
+
+Resources.prototype.getEnabledTabContents = function() {
+    var pack = this.packView.pack;
+    if(!pack) {
+        return null;
+    }
+    var ret = {arr: pack.images,
+               elName: "image"};
+    if(document.getElementById("res-songtab").checked) {
+        ret.arr = pack.songs;
+        ret.elName = "song";
+    }
+    return ret;
+}
+
+Resources.prototype.enableAll = function() {
+    var tab = this.getEnabledTabContents();
+    if(!tab)
+        return;
+    for(var i = 0; i < tab.arr.length; i++) {
+        tab.arr[i].enabled = true;
+        document.getElementById(tab.elName + i).checked = true;
+    }    
+    this.rebuildEnabled();
+}
+
+Resources.prototype.disableAll = function() {
+    var tab = this.getEnabledTabContents();
+    if(!tab)
+        return;
+    for(var i = 0; i < tab.arr.length; i++) {
+        tab.arr[i].enabled = false;
+        document.getElementById(tab.elName + i).checked = false;
+    }    
+    this.rebuildEnabled();
+}
+
+Resources.prototype.invert = function() {
+    var tab = this.getEnabledTabContents();
+    if(!tab)
+        return;
+    for(var i = 0; i < tab.arr.length; i++) {
+        tab.arr[i].enabled = !tab.arr[i].enabled;
+        document.getElementById(tab.elName + i).checked = tab.arr[i].enabled;
+    }    
+    this.rebuildEnabled();
+}
+
+Resources.prototype.appendListItem = function(name, value, id, root, oncheck, onclick, checked) {
+    if(checked == undefined) {
+        checked = true;
+    }
     var div = document.createElement("div");
     div.className = "res-listitem";
     var checkbox = document.createElement("input");
@@ -345,10 +542,129 @@ Resources.prototype.appendListItem = function(name, value, id, root) {
     checkbox.name = name;
     checkbox.value = value;
     checkbox.id = id;
-    checkbox.checked = true;
+    checkbox.checked = checked;
+    checkbox.onclick = oncheck;
+    var checkStyler = document.createElement("label");
+    checkStyler.htmlFor = checkbox.id;
     var label = document.createElement("span");
     label.textContent = value;
+    label.onclick = onclick;
     div.appendChild(checkbox);
+    div.appendChild(checkStyler);
     div.appendChild(label);
     root.appendChild(div);
+}
+
+Resources.prototype.loadRemotes = function() {
+    var that = this;
+    var remoteList = this.packsView.remoteList;
+    while(remoteList.firstElementChild) {
+        remoteList.removeChild(remoteList.firstElementChild)
+    }
+    var item = this.appendSimpleListItem("Loading...", remoteList);
+    
+    var req = new XMLHttpRequest();
+    req.open('GET', packsURL, true);
+    req.responseType = 'json';
+    req.onload = function() {
+        if(!req.response) {
+            req.onerror();
+        }
+        that.remotes = req.response;
+        that.populateRemotes();
+    };
+    req.onerror = function() {
+        item.textContent = "Could not load list! Click to try again";
+        item.onclick = function() {that.loadRemotes();};
+    }
+    req.send();
+}
+
+Resources.prototype.populateRemotes = function() {
+    var remoteList = this.packsView.remoteList;
+    while(remoteList.firstElementChild) {
+        remoteList.removeChild(remoteList.firstElementChild)
+    }
+    for(var i = 0; i < this.remotes.length; i++) {
+        this.remotes[i].loaded = false;
+        this.appendSimpleListItem(this.remotes[i].name, remoteList,
+            this.getRemoteCallback(i));
+    }
+}
+
+Resources.prototype.getRemoteCallback = function(index) {
+    var that = this;
+    return function() {that.selectRemotePack(index);};
+}
+
+Resources.prototype.selectRemotePack = function(id) {
+    var pack = this.remotes[id];
+    this.packView.pack = pack;
+    
+    this.packView.packButtons.className = "res-buttons hidden";
+    this.packsView.loadRemote.className = "res-button";
+    if(pack.loaded) {
+        this.packsView.loadRemote.className += " loaded";
+        this.packsView.loadRemote.textContent = "LOADED";
+    } else {
+        this.packsView.loadRemote.textContent = "LOAD REMOTE";
+    }
+    
+    this.packView.name.textContent = pack.name;
+    this.packView.creator.textContent = pack.author;
+    this.packView.creator.href = pack.link ? pack.link : "";
+    var size = pack.size / 1024;
+    if(size < 512) {
+        this.packView.size.textContent = this.truncateNum(size) + "kB";
+    } else {
+        this.packView.size.textContent = this.truncateNum(size / 1024) + "MB";
+    }
+    this.packView.desc.textContent = pack.description;
+    this.packView.songCount.textContent = "Songs: " + pack.songcount;
+    this.packView.imageCount.textContent = "Images: " + pack.imagecount;
+    
+    var songList = this.packView.songList;
+    var imageList = this.packView.imageList;
+    while (songList.firstElementChild) {
+        songList.removeChild(songList.firstElementChild)
+    }    
+    while (imageList.firstElementChild) {
+        imageList.removeChild(imageList.firstElementChild)
+    }
+    
+    for(var i = 0; i < pack.songs.length; i++) {
+        var song = pack.songs[i];
+        this.appendSimpleListItem(song, songList);
+    }
+    
+    for(var i = 0; i < pack.images.length; i++) {
+        var image = pack.images[i];
+        this.appendSimpleListItem(image, imageList);
+    }
+}
+
+Resources.prototype.loadCurrentRemote = function() {
+    var pack = this.packView.pack;
+    
+    // Not actually a remote, ignore. How did you press this :<
+    if(pack.loaded == undefined || pack.loaded) {
+        return;
+    }
+    
+    this.addAll([pack.url], function() {
+            pack.loaded = true;
+            this.packsView.loadRemote.className = "res-button loaded";
+        }, null
+    );
+}
+
+Resources.prototype.appendSimpleListItem = function(value, root, onclick) {
+    var div = document.createElement("div");
+    div.className = "res-listitem";
+    var label = document.createElement("span");
+    label.textContent = value;
+    label.onclick = onclick;
+    div.appendChild(label);
+    root.appendChild(div);
+    return label;
 }

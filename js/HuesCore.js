@@ -6,7 +6,7 @@ HuesCore = function(defaults) {
     this.currentSong;
     this.currentImage;
     this.songIndex=-1;
-    this.colourIndex=0;
+    this.colourIndex=0; // TODO should be 0xF
     this.imageIndex=-1;
     this.isFullAuto = true;
     this.loopCount=0;
@@ -30,7 +30,7 @@ HuesCore = function(defaults) {
     this.lastImageArray = [];
     this.settings = new HuesSettings(defaults);
     //this.autoSong = this.settings.autosong;
-    this.resourceManager = new Resources();
+    this.resourceManager = new Resources(this);
     this.soundManager = new SoundManager(this);
     if(!this.soundManager.canUse) {
         this.error("Web Audio API not supported in this browser.");
@@ -40,6 +40,7 @@ HuesCore = function(defaults) {
     
     this.uiArray.push(new RetroUI(), new WeedUI(), new ModernUI(), new XmasUI());
     this.settings.connectCore(this);
+    this.setColour(this.colourIndex);
     
     if(defaults.load) {
         this.resourceManager.addAll(defaults.respacks, function() {
@@ -50,9 +51,6 @@ HuesCore = function(defaults) {
             that.setImage(0);
             if(defaults.autoplay) {
                 that.setSong(0);
-                // TODO delete me
-                that.previousSong();
-                that.previousSong();
             }
         }, function(progress) {
             var prog = document.getElementById("preMain");
@@ -132,7 +130,9 @@ HuesCore.prototype.previousSong = function() {
 }
 
 HuesCore.prototype.setSong = function(index) {
-    this.soundManager.stop();
+    if(this.currentSong == this.resourceManager.enabledSongs[index]) {
+        return;
+    }
     this.songIndex = index;
     this.currentSong = this.resourceManager.enabledSongs[this.songIndex];
     if (this.currentSong == undefined) {
@@ -250,19 +250,16 @@ HuesCore.prototype.randomImage = function() {
     }
 }
 
-HuesCore.prototype.getImageIndex = function() {
-    return this.imageIndex;
-}
-
 HuesCore.prototype.setImage = function(index) {
-    this.imageIndex = index;
+    // If there are no images, this corrects NaN to 0
+    this.imageIndex = index ? index : 0;
     var img=this.resourceManager.enabledImages[this.imageIndex];
     if (img == this.currentImage && !(img == null)) {
         return;
     }
     if (img) {
         this.currentImage = img;
-    } else if (!this.currentImage) {
+    } else {
         this.currentImage = {"name":"None", "fullname":"None", "align":"center", "bitmap":null, "source":null, "enabled":true};
         this.imageIndex = -1;
         this.lastImageArray = [];

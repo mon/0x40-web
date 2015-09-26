@@ -76,6 +76,9 @@ SoundManager.prototype.playSong = function(song, playBuild, callback) {
             that.bufSource.loopStart = that.loopStart;
             that.bufSource.loopEnd = that.buffer.duration;
             that.bufSource.connect(that.gainNode);
+            
+            if(callback)
+                callback();
 
             if(playBuild) {
                 // Mobile Safari requires offset, even if 0
@@ -88,8 +91,6 @@ SoundManager.prototype.playSong = function(song, playBuild, callback) {
             // offset to after the build
             //that.startTime = that.context.currentTime + that.loopStart;
             that.playing = true;
-            if(callback)
-                callback();
         }
     });
 }
