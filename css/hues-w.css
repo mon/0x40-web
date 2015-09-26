@@ -3,7 +3,9 @@
 }
 
 .hues-w-controls {
+    display:-webkit-flex;
     display:flex;
+    -webkit-align-items:center;
     align-items:center;
     position: absolute;
     right: 0px;
@@ -32,8 +34,8 @@
 .hues-w-controls, .hues-w-subcontrols {
     transform: translateY(0px);
     -webkit-transform: translateY(0px);
-    transition: transform 1s linear;
-    -webkit-transition: transform 1s linear;
+    transition: transform 1s ease-out;
+    -webkit-transition: -webkit-transform 1s ease-out;
 }
 
 .hues-w-controls.hidden, .hues-w-subcontrols.hidden {
@@ -44,8 +46,8 @@
 .hues-w-beatbar {
     transform: translateY(0px);
     -webkit-transform: translateY(0px);
-    transition: transform 1s linear;
-    -webkit-transition: transform 1s linear;
+    transition: transform 1s ease-out;
+    -webkit-transition: -webkit-transform 1s ease-out;
 }
 
 .hues-w-beatbar.hidden {

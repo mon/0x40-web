@@ -6,7 +6,7 @@ HuesCore = function(defaults) {
     this.currentSong;
     this.currentImage;
     this.songIndex=-1;
-    this.colourIndex=0; // TODO should be 0xF
+    this.colourIndex=0x3f;
     this.imageIndex=-1;
     this.isFullAuto = true;
     this.loopCount=0;
@@ -33,7 +33,7 @@ HuesCore = function(defaults) {
     this.resourceManager = new Resources(this);
     this.soundManager = new SoundManager(this);
     if(!this.soundManager.canUse) {
-        this.error("Web Audio API not supported in this browser.");
+        this.error(this.soundManager.errorMsg);
         return;
     }
     this.renderer = new HuesCanvas("waifu", this.soundManager.context, this);
@@ -129,6 +129,17 @@ HuesCore.prototype.previousSong = function() {
     this.setSong(index);
 }
 
+HuesCore.prototype.setSongByName = function(name) {
+    var songs = this.resourceManager.enabledSongs;
+    for(var i = 0; i < songs.length; i++) {
+        if(songs[i].title == name) {
+            this.setSong(i);
+            return;
+        }
+    }
+    this.setSong(0); // fallback
+}
+
 HuesCore.prototype.setSong = function(index) {
     if(this.currentSong == this.resourceManager.enabledSongs[index]) {
         return;
@@ -156,9 +167,9 @@ HuesCore.prototype.setSong = function(index) {
             break;
         }
     }
-    this.resetAudio();
     var that = this;
     this.soundManager.playSong(this.currentSong, this.doBuildup, function() {
+        that.resetAudio();
         that.fillBuildup();
     });
 }

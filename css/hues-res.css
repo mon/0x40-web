@@ -17,6 +17,7 @@
 
 .res-packcontainer {
     width: 55%;
+    height: 100%;
     right: 0;
     margin-left: 10px;
 }
@@ -37,6 +38,48 @@
     height: 155px;
 }
 
+#res-progress-container {
+    font-size: 11px;
+}
+
+#res-progress-bar {
+    height:5px;  /* Can be anything */
+    position: relative;
+    background: #000;
+    -moz-border-radius: 25px;
+    -webkit-border-radius: 25px;
+    border-radius: 25px;
+    padding: 2px;
+    margin: 2px;
+}
+
+#res-progress-filled {
+  display: block;
+  height: 100%;
+  border-radius: 8px;
+  background-color: rgb(43,194,83);
+  position: relative;
+  overflow: hidden;
+}
+
+#res-progress-texts {
+    font-size: 9px;
+}
+
+#res-progress-current {
+    position: absolute;
+    left: 5px;
+}
+
+#res-progress-top {
+    position: absolute;
+    right: 5px;
+}
+
+#res-progress-percent {
+    text-align: center;
+}
+
 .res-list {
     border: 2px solid black;
     background: rgba(255,255,255,0.3);
@@ -47,7 +90,9 @@
 .res-listitem {
     font-size: 10px;
     border-bottom: 1px solid black;
+    display: -webkit-flex;
     display: flex;
+    -webkit-align-items: center;
     align-items: center;
 }
 
@@ -91,7 +136,9 @@
 }
 
 .res-buttons {
+    display: -webkit-flex;
     display: flex;
+    -webkit-justify-content: space-between;
     justify-content: space-between;
     padding: 0px 0px;
 }
@@ -132,7 +179,9 @@
 }
 
 #res-countscontainer {
-    margin-top: 3px;
+    position: absolute;
+    bottom: 0;
+    width: 100%;
 }
 
 .res-counts {
@@ -143,7 +192,9 @@
 #res-packinfo {
     margin-top: 5px;
     font-size: 9px;
+    display: -webkit-flex;
     display: flex;
+    -webkit-justify-content: space-between;
     justify-content: space-between;
 }
 
@@ -189,6 +240,7 @@
 }
 
 #res-packbuttons > .res-button {
+    -webkit-flex-grow: 1;
     flex-grow: 1;
     text-align: center;
 }

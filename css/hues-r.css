@@ -19,7 +19,9 @@
 }
 
 .hues-r-controls {
+    display:-webkit-flex;
     display:flex;
+    -webkit-align-items:center;
     align-items:center;
     position: absolute;
     right: 0px;
@@ -95,8 +97,8 @@
 .hues-r-container, .hues-r-controls, .hues-r-subcontrols {
     transform: translateY(0px);
     -webkit-transform: translateY(0px);
-    transition: transform 1s linear;
-    -webkit-transition: transform 1s linear;
+    transition: transform 1s ease-out;
+    -webkit-transition: -webkit-transform 1s ease-out;
 }
 
 .hues-r-container.hidden, .hues-r-controls.hidden, .hues-r-subcontrols.hidden {

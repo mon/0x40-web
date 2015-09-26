@@ -48,21 +48,20 @@ Respack.prototype.updateProgress = function() {
         if(this.loadedFromURL) {
             percent = (percent / 2) + 0.5;
         }
-        this.progressCallback(percent);
+        this.progressCallback(percent, this);
     }
 }
 
 Respack.prototype.loadFromURL = function(url, callback, progress) {
     var that = this;
     
-    this.progressCallback = progress;
     this.loadedFromURL = true;
     
     var req = new XMLHttpRequest();
     req.open('GET', url, true);
     req.responseType = 'blob';
     req.onload = function() {
-        that.loadBlob(req.response, callback);
+        that.loadBlob(req.response, callback, progress);
     };
     req.onerror = function() {
         console.log("Could not load respack at URL", url);
@@ -80,8 +79,9 @@ Respack.prototype.loadFromURL = function(url, callback, progress) {
     req.send();
 }
 
-Respack.prototype.loadBlob = function(blob, callback, errorCallback) {
+Respack.prototype.loadBlob = function(blob, callback, progress, errorCallback) {
     this._completionCallback = callback;
+    this.progressCallback = progress;
     var that = this;
     this.size = blob.size;
     this.file = new zip.fs.FS();

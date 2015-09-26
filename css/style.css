@@ -37,8 +37,11 @@ h1, h2, h3 {
 }
 
 #reference {
+    display:-webkit-flex;
     display:flex;
+    -webkit-align-items:center;
     align-items:center;
+    -webkit-justify-content: center;
     justify-content: center;
 }
 
@@ -76,9 +79,13 @@ h1, h2, h3 {
     background-color: #FFF; 
     width: 100%;
     height: 100%;
+    display:-webkit-flex;
     display:flex;
+    -webkit-justify-content:center;
     justify-content:center;
+    -webkit-align-items:center;
     align-items:center;
+    -webkit-flex-direction: column;
     flex-direction: column;
     font-family: 'PetMe64Web';
     font-size: 25pt;
@@ -144,8 +151,11 @@ input.tab-input[type="radio"]:checked + label {
 }
 
 #settingsHelper {
+    display:-webkit-flex;
     display:flex;
+    -webkit-justify-content:center;
     justify-content:center;
+    -webkit-align-items:center;
     align-items:center;
     position: absolute;
     top: 0;

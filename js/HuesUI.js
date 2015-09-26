@@ -203,6 +203,10 @@ HuesUI.prototype.intToHex2 = function(num) {
     return '$0x' + ("00"+num.toString(16)).slice(-2);
 }
 
+HuesUI.prototype.intToHex3 = function(num) {
+    return '$0x' + ("000"+num.toString(16)).slice(-3);
+}
+
 HuesUI.prototype.intToHex4 = function(num) {
     return '$0x' + ("0000"+num.toString(16)).slice(-4);
 }
@@ -355,7 +359,7 @@ RetroUI.prototype.beat = function() {
 
     this.beatBar.textContent = ">>" + rest;
     
-    this.beatCount.textContent = "B=" + this.intToHex2(this.core.getSafeBeatIndex());
+    this.beatCount.textContent = "B=" + this.intToHex3(this.core.getSafeBeatIndex());
 }
 
 function ModernUI() {
@@ -369,6 +373,7 @@ function ModernUI() {
     this.leftInfo = null;
     this.controls = null;
     this.volInput = null;
+    this.hideRestore = null;
     
     HuesUI.call(this);
     
@@ -407,6 +412,9 @@ ModernUI.prototype.initUI = function() {
     
     this.settingsToggle.className = "hues-m-cog";
     volCluster.appendChild(this.settingsToggle);
+    
+    this.hideToggle.className = "hues-m-hide";
+    volCluster.appendChild(this.hideToggle);
     
     var volBar = document.createElement("div");
     volBar.className = "hues-m-vol-bar";
@@ -515,18 +523,27 @@ ModernUI.prototype.initUI = function() {
     beatCenter.className = "hues-m-beatcenter";
     this.root.appendChild(beatCenter);
     this.beatCenter = beatCenter;
+    
+    this.hideRestore = document.createElement("div");
+    this.hideRestore.className = "hues-m-hiderestore";
+    this.hideRestore.onclick = function() {
+        that.toggleHide();
+    }
+    this.root.appendChild(this.hideRestore);
 }
 
 ModernUI.prototype.toggleHide = function() {
     this.beatBar.className = "hues-m-beatbar";
     this.beatCenter.className = "hues-m-beatcenter";
     this.controls.className = "hues-m-controls";
+    this.hideRestore.className = "hues-m-hiderestore";
     switch(this.hidden) {
         case 1:
             this.beatBar.className = "hues-m-beatbar hidden";
             this.beatCenter.className = "hues-m-beatcenter hidden";
         case 0:
             this.controls.className = "hues-m-controls hidden";
+            this.hideRestore.className = "hues-m-hiderestore hidden";
     }
     this.hidden = (this.hidden+1) % 3;
 }
@@ -650,7 +667,7 @@ WeedUI.prototype.beat = function() {
     this.beatLeft.textContent = rest;
     this.beatRight.textContent = rest;
     
-    this.beatCount.textContent = "B=" + this.intToHex2(this.core.getSafeBeatIndex());
+    this.beatCount.textContent = "B=" + this.intToHex3(this.core.getSafeBeatIndex());
     
     if(["x", "o", "X", "O"].indexOf(beats[0]) != -1) {
         var beatCenter = document.createElement("div");

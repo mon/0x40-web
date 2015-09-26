@@ -199,13 +199,35 @@ Resources.prototype.parseLocalQueue = function(recursing) {
         r.loadBlob(this.fileParseQueue.shift(), 
             function() {
                 that.addPack(r);
+                that.localComplete();
                 that.parseLocalQueue(true);
             },
+            function(progress, respack) {that.localProgress(progress, respack);},
             function() {that.parseLocalQueue(true);});
     } else {
         console.log("Local respack parsing complete");
         this.currentlyParsing = false;
     }
+}
+
+Resources.prototype.localProgress = function(progress, respack) {
+    this.packsView.progressStatus.textContent = "Processing...";
+    
+    this.packsView.progressBar.style.width = (progress * 100) + "%";
+    this.packsView.progressCurrent.textContent = respack.filesLoaded;
+    this.packsView.progressTop.textContent = respack.filesToLoad;
+    this.packsView.progressPercent.textContent = Math.round(progress * 100) + "%";
+}
+
+Resources.prototype.localComplete = function(progress) {
+    var progStat = this.packsView.progressStatus;
+    progStat.textContent = "Complete";
+    window.setTimeout(function() {progStat.textContent = "Idle";}, 2000);
+    
+    this.packsView.progressBar.style.width = "100%";
+    this.packsView.progressCurrent.textContent = "0b";
+    this.packsView.progressTop.textContent = "0b";
+    this.packsView.progressPercent.textContent = "0%";
 }
 
 Resources.prototype.initUI = function() {
@@ -254,21 +276,38 @@ Resources.prototype.initUI = function() {
     this.fileInput.onchange = function() {that.loadLocal();};
 
     var progressContainer = document.createElement("div");
+    progressContainer.id = "res-progress-container";
     var progressBar = document.createElement("div");
+    progressBar.id = "res-progress-bar";
+    var progressFilled = document.createElement("span");
+    progressFilled.id = "res-progress-filled";
+    progressBar.appendChild(progressFilled);
     var progressStatus = document.createElement("div");
+    progressStatus.textContent = "Idle";
+    
+    var progressTexts = document.createElement("div");
+    progressTexts.id = "res-progress-texts";
     var progressCurrent = document.createElement("div");
+    progressCurrent.id = "res-progress-current";
+    progressCurrent.textContent = "0b";
     var progressTop = document.createElement("div");
+    progressTop.id = "res-progress-top";
+    progressTop.textContent = "0b";
     var progressPercent = document.createElement("div");
-    this.packsView.progressBar = progressBar;
+    progressPercent.id = "res-progress-percent";
+    progressPercent.textContent = "0%";
+    progressTexts.appendChild(progressCurrent);
+    progressTexts.appendChild(progressTop);
+    progressTexts.appendChild(progressPercent);
+    
+    this.packsView.progressBar = progressFilled;
     this.packsView.progressStatus = progressStatus;
     this.packsView.progressCurrent = progressCurrent;
     this.packsView.progressTop = progressTop;
     this.packsView.progressPercent = progressPercent;
-    progressContainer.appendChild(progressBar);
     progressContainer.appendChild(progressStatus);
-    progressContainer.appendChild(progressCurrent);
-    progressContainer.appendChild(progressTop);
-    progressContainer.appendChild(progressPercent);
+    progressContainer.appendChild(progressBar);
+    progressContainer.appendChild(progressTexts);
     
     packsContainer.appendChild(packHeader);
     packsContainer.appendChild(packList);

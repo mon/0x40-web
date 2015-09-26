@@ -37,11 +37,20 @@ function SoundManager(core) {
         this.gainNode.connect(this.context.destination);
     } catch(e) {
         this.canUse = false;
+        this.errorMsg = "Web Audio API not supported in this browser.";
+        return;
+    }
+    var audio  = document.createElement("audio"),
+    canPlayMP3 = (typeof audio.canPlayType === "function" &&
+              audio.canPlayType("audio/mpeg") !== "");
+    if(!canPlayMP3) {
+        this.canUse = false;
+        this.errorMsg = "MP3 not supported in this browser.";
+        return;
     }
     
     var that = this;
     window.addEventListener('touchend', function() {
-
         // create empty buffer
         var buffer = that.context.createBuffer(1, 1, 22050);
         var source =  that.context.createBufferSource();
@@ -81,7 +90,7 @@ SoundManager.prototype.playSong = function(song, playBuild, callback) {
                 callback();
 
             if(playBuild) {
-                // Mobile Safari requires offset, even if 0
+                // mobile webkit requires offset, even if 0
                 that.bufSource.start(0);
                 that.startTime = that.context.currentTime + that.loopStart;
             } else {
@@ -97,7 +106,8 @@ SoundManager.prototype.playSong = function(song, playBuild, callback) {
 
 SoundManager.prototype.stop = function() {
     if (this.playing) {
-        this.bufSource.stop();
+        // arg required for mobile webkit
+        this.bufSource.stop(0);
         this.bufSource.disconnect(); // TODO needed?
         this.bufSource = null;
         this.playing = false;

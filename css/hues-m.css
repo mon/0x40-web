@@ -8,15 +8,15 @@
 .hues-m-beatbar, .hues-m-beatcenter{
     transform: translateY(0px);
     -webkit-transform: translateY(0px);
-    transition: transform 1s linear;
-    -webkit-transition: transform 1s linear;
+    transition: transform 1s ease-out;
+    -webkit-transition: -webkit-transform 1s ease-out;
 }
 
 .hues-m-controls {
     transform: translateY(0px);
     -webkit-transform: translateY(0px);
-    transition: transform 1s linear;
-    -webkit-transition: transform 1s linear;
+    transition: transform 1s ease-out;
+    -webkit-transition: -webkit-transform 1s ease-out;
 }
 
 .hues-m-beatbar.hidden, .hues-m-beatcenter.hidden{
@@ -231,7 +231,7 @@
     user-select: none;
     font-size: 12px;
     width: 50%;
-    margin: auto;
+    margin: 3px auto;
     float: left;
 }
 
@@ -251,37 +251,41 @@
     cursor: pointer;
 }
 
+.hues-m-prevbutton:hover, .hues-m-nextbutton:hover, .hues-m-actbutton:hover {
+    background: rgb(100,100,100);
+}
+
 .hues-m-prevbutton, .hues-m-nextbutton {
     color: white;
-    background: rgb(32,32,32);
+    background: rgb(40,40,40);
     height: 20px;
     line-height: 20px;
     font-size: 12px;
     white-space: nowrap;
     border-radius: 10px;
-    top: 10px;
+    top: 7.5px;
 }
 
 .hues-m-prevbutton {
     padding: 0 10px 0 0;
-    left: 0px;
+    left: 5px;
     border-radius: 10px 0 0 10px;
 }
 
 .hues-m-nextbutton {
     padding: 0 0 0 10px;
-    left: 48px;
+    left: 42px;
     border-radius: 0 10px 10px 0;
 }
 
 .hues-m-actbutton {
-    height: 40px;
-    width: 40px;
-    left: 15px;
+    height: 35px;
+    width: 35px;
+    left: 17.5px;
     color: white;
     background: rgb(32,32,32);
     font-size: 20px;
-    line-height: 40px;
+    line-height: 35px;
     border-radius: 20px;
     text-align: center;
     z-index: 1;
@@ -291,15 +295,45 @@
     bottom: 5px;
 }
 
-.hues-m-question, .hues-m-cog {
+.hues-m-question, .hues-m-cog, .hues-m-hide {
     cursor: pointer;
 }
 
 .hues-m-cog {
     position: absolute;
+    left: 15px;
+    top: 0px;
+    font-size: 20px;
+}
+
+.hues-m-hide {
+    position: absolute;
+    left: 17px;
+    top: 20px;
+    font-size: 12px;
+}
+
+.hues-m-hiderestore {
+    display: none;
+    position: absolute;
     left: 8px;
-    top: 5px;
-    font-size: 25px;
+    right: 8px;
+    bottom: 0px;
+    margin: 0 auto;
+    height: 30px;
+    max-width: 992px;
+    background: linear-gradient(rgba(0,0,0,0), rgba(0,0,0,0.2));
+    border-top-left-radius: 100px;
+    border-top-right-radius: 100px;
+    cursor: pointer;
+}
+
+.hues-m-hiderestore:hover {
+    background: linear-gradient(rgba(0,0,0,0), rgba(0,0,0,0.4));
+}
+
+.hues-m-hiderestore.hidden {
+    display: block;
 }
 
 .hues-m-question {
