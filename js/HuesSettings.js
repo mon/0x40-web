@@ -5,6 +5,8 @@ HuesSettings.prototype.defaultSettings = {
     autoplay : true,
     // If true, defaults passed in initialiser override locally saved
     overwriteLocal : false,
+    // If set, will attempt to play the named song first
+    firstSong: null,
     
     // UI accessible config
     // Autosong stuff is a todo, becuase why even implement that

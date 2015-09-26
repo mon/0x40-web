@@ -50,7 +50,11 @@ HuesCore = function(defaults) {
             }, 1500);
             that.setImage(0);
             if(defaults.autoplay) {
-                that.setSong(0);
+                if(defaults.firstSong) {
+                    that.setSongByName(defaults.firstSong);
+                } else {
+                    that.setSong(0);
+                }
             }
         }, function(progress) {
             var prog = document.getElementById("preMain");
