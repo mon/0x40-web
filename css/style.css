@@ -115,7 +115,7 @@ h1, h2, h3 {
 #tabs {
     margin: -1px;
     padding-top: 22px;
-    min-height: 400px;
+    height: 455px;
     min-width: 500px;
 }
 
