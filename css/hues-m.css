@@ -378,6 +378,12 @@
     height: 12px;
 }
 
+.hues-m-listcontainer {
+    position: absolute;
+    right: 8px;
+    bottom: 110px;
+}
+
 /* Fun slider stuff! */
 
 input[type=range] {
@@ -481,5 +487,11 @@ input[type=range]::-ms-thumb {
     right: 0;
     width: 192px;
     height: 54px;
+    }
+  .hues-m-listcontainer {
+    bottom: 60px;
+    max-width: 992px;
+    margin: 0 auto;
+    left: 8px;
     }
 }

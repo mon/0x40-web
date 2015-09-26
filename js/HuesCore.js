@@ -231,7 +231,6 @@ HuesCore.prototype.startSongChangeFade = function() {
 HuesCore.prototype.songDataUpdated = function() {
     if (this.currentSong) {
         this.beatLength = 0;
-        this.userInterface.updateLists();
         this.userInterface.setSongText();
         this.userInterface.setImageText();
     } else {
@@ -436,7 +435,6 @@ HuesCore.prototype.toggleFullAuto = function() {
 
 HuesCore.prototype.respackLoaded = function() {
     this.init();
-    this.userInterface.updateLists();
 }
 
 /*HuesCore.prototype.rightClickListener = function(event) {
@@ -456,11 +454,11 @@ HuesCore.prototype.respackLoaded = function() {
 
 HuesCore.prototype.changeUI = function(index) {
     if (index >= 0 && this.uiArray.length > index && !(this.userInterface == this.uiArray[index])) {
+        this.hideLists();
         if(this.userInterface)
             this.userInterface.disconnect();
         this.userInterface = this.uiArray[index];
         this.userInterface.connectCore(this);
-        this.userInterface.updateLists();
         this.userInterface.setSongText();
         this.userInterface.setImageText();
         this.userInterface.setColourText(this.colourIndex);
@@ -518,22 +516,20 @@ HuesCore.prototype.settingsUpdated = function() {
 
 HuesCore.prototype.enabledChanged = function() {
     this.resourceManager.rebuildEnabled();
-    this.userInterface.updateLists();
 }
 
 HuesCore.prototype.hideLists = function() {
-    this.userInterface.songList.hide();
-    this.userInterface.imageList.hide();
+    this.resourceManager.hideLists();
 }
 
 HuesCore.prototype.toggleSongList = function() {
-    this.userInterface.songList.toggleHide();
-    this.userInterface.imageList.hide();
+    this.settings.hide();
+    this.resourceManager.toggleSongList();
 }
 
 HuesCore.prototype.toggleImageList = function() {
-    this.userInterface.imageList.toggleHide();
-    this.userInterface.songList.hide();
+    this.settings.hide();
+    this.resourceManager.toggleImageList();
 }
 
 HuesCore.prototype.openSongSource = function() {
@@ -604,9 +600,6 @@ HuesCore.prototype.keyHandler = function(key) {
         break;
     case 52: // NUMBER_4
         this.settings.set("currentUI", "xmas");
-        break;
-    case 76: // L
-        this.loadLocal();
         break;
     case 67: // C
         this.toggleImageList();

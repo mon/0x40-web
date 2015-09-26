@@ -105,3 +105,9 @@
     transform: translateY(200px);
     -webkit-transform: translateY(200px);
 }
+
+.hues-r-listcontainer {
+    position: absolute;
+    right: 35px;
+    bottom: 45px;
+}

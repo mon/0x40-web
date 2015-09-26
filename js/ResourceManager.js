@@ -18,6 +18,10 @@ function Resources(core) {
     this.progressCallback = null;
     
     this.root = null;
+    // For songs/images
+    this.listView = null;
+    this.enabledSongList = null;
+    this.enabledImageList = null;
     this.packView = {
         pack: null,
         name: null,
@@ -154,7 +158,38 @@ Resources.prototype.rebuildEnabled = function() {
             }
         }
     }
+    
+    var songList = this.enabledSongList;
+    while(songList.firstElementChild) {
+        songList.removeChild(songList.firstElementChild)
+    }    
+    var imageList = this.enabledImageList;
+    while(imageList.firstElementChild) {
+        imageList.removeChild(imageList.firstElementChild)
+    }
+    for(var i = 0; i < this.enabledSongs.length; i++) {
+        var song = this.enabledSongs[i];
+        this.appendSimpleListItem(song.title, songList, this.playSongCallback(i));
+    }
+    for(var i = 0; i < this.enabledImages.length; i++) {
+        var image = this.enabledImages[i];
+        this.appendSimpleListItem(image.name, imageList, this.selectImageCallback(i));
+    }
     this.updateTotals();
+}
+
+Resources.prototype.playSongCallback = function(index) {
+    var that = this;
+    return function() {
+        that.core.setSong(index);
+    };
+}
+
+Resources.prototype.selectImageCallback = function(index) {
+    var that = this;
+    return function() {
+        that.core.setImage(index);
+    };
 }
 
 Resources.prototype.removePack = function(pack) {
@@ -433,6 +468,40 @@ Resources.prototype.initUI = function() {
     
     this.root.appendChild(packsContainer);
     this.root.appendChild(indivView);
+    
+    this.listView = document.createElement("div");
+    this.enabledSongList = document.createElement("div");
+    this.enabledSongList.id = "res-enabledsonglist";
+    this.enabledSongList.className = "hidden";
+    this.enabledImageList = document.createElement("div");
+    this.enabledImageList.id = "res-enabledimagelist";
+    this.enabledImageList.className = "hidden";
+    
+    this.listView.appendChild(this.enabledSongList);
+    this.listView.appendChild(this.enabledImageList);
+}
+
+Resources.prototype.hideLists = function() {
+    this.enabledSongList.className = "hidden";
+    this.enabledImageList.className = "hidden";
+}
+
+Resources.prototype.toggleSongList = function() {
+    if(this.enabledSongList.className == "hidden") {
+        this.enabledSongList.className = "res-list";
+    } else {
+        this.enabledSongList.className = "hidden";
+    }
+    this.enabledImageList.className = "hidden";
+}
+
+Resources.prototype.toggleImageList = function() {
+    if(this.enabledImageList.className == "hidden") {
+        this.enabledImageList.className = "res-list";
+    } else {
+        this.enabledImageList.className = "hidden";
+    }
+    this.enabledSongList.className = "hidden";
 }
 
 Resources.prototype.updateTotals = function() {

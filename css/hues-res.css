@@ -244,3 +244,24 @@
     flex-grow: 1;
     text-align: center;
 }
+
+#res-enabledsonglist, #res-enabledimagelist {
+    display: block;
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    max-height: 150px;
+    overflow: auto;
+}
+
+#res-enabledsonglist.hidden, #res-enabledimagelist.hidden {
+    display: none;
+}
+
+#res-enabledsonglist {
+    width: 515px;
+}
+
+#res-enabledimagelist {
+    width: 315px;
+}
