@@ -259,10 +259,11 @@ SoundManager.prototype.setMute = function(mute) {
     }
     this.core.userInterface.updateVolume(this.gainNode.gain.value);
     this.mute = mute;
+    return mute;
 }
 
 SoundManager.prototype.toggleMute = function() {
-    this.setMute(!this.mute);
+    return this.setMute(!this.mute);
 }
 
 SoundManager.prototype.decreaseVolume = function() {

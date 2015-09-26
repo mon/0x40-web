@@ -367,6 +367,7 @@
     width: 100%;
     background: transparent;
     border: none;
+    cursor: pointer;
 }
 .hues-m-vol-bar > input {
     display: block;

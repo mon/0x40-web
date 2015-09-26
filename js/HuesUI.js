@@ -27,9 +27,6 @@ function HuesUI(parent) {
     this.songPrev = null;
     this.songNext = null;
     
-    this.volInput = null;
-    this.volLabel = null;
-    
     this.beatCount = null;
     this.timer = null;
     this.xBlur = null;
@@ -423,6 +420,13 @@ ModernUI.prototype.initUI = function() {
     var label = document.createElement("div");
     label.textContent = "VOL";
     label.className = "hues-m-vol-label";
+    label.onclick = function() {
+        if(that.core.soundManager.toggleMute()) {
+            this.textContent = "(VOL)";
+        } else {
+            this.textContent = "VOL";
+        };
+    };
     volBar.appendChild(label);
     
     var infoToggle = document.createElement("div");
