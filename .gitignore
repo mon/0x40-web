@@ -1,2 +1,6 @@
 original/
 respacks/
+release/
+*.jar
+css/hues-min.css
+js/hues-min.js
