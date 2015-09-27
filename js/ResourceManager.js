@@ -109,19 +109,19 @@ Resources.prototype.addAll = function(urls, callback, progressCallback) {
 
 Resources.prototype.createProgCallback = function(i) {
     var that = this;
-    return function(progress) {
+    return function(progress, pack) {
         that.progressState[i] = progress;
-        that.updateProgress();
+        that.updateProgress(pack);
     }
 }
 
-Resources.prototype.updateProgress = function() {
+Resources.prototype.updateProgress = function(pack) {
     var total = 0;
     for(var i = 0; i < this.progressState.length; i++) {
         total += this.progressState[i];
     }
     total /= this.progressState.length;
-    this.progressCallback(total);
+    this.progressCallback(total, pack);
 }
 
 Resources.prototype.addPack = function(pack) {
@@ -774,17 +774,49 @@ Resources.prototype.selectRemotePack = function(id) {
 
 Resources.prototype.loadCurrentRemote = function() {
     var pack = this.packView.pack;
+    var that = this;
     
     // Not actually a remote, ignore. How did you press this :<
     if(pack.loaded == undefined || pack.loaded) {
         return;
     }
     
+    // TODO Error checking on failure
+    pack.loaded = true;
+    that.packsView.loadRemote.className = "res-button loaded";
+    that.packsView.loadRemote.textContent = "LOADING";
     this.addAll([pack.url], function() {
-            pack.loaded = true;
-            this.packsView.loadRemote.className = "res-button loaded";
-        }, null
+            that.remoteComplete();
+        }, function(progress, respack) {that.remoteProgress(progress, respack);}
     );
+}
+
+Resources.prototype.remoteProgress = function(progress, respack) {
+    if(progress < 0.5) {
+        this.packsView.progressStatus.textContent = "Downloading...";
+        this.packsView.progressCurrent.textContent = Math.round(respack.downloaded / 1024) + "b";
+        this.packsView.progressTop.textContent = Math.round(respack.size / 1024) + "b";
+        this.packsView.progressBar.style.width = (progress * 2 * 100) + "%";
+        this.packsView.progressPercent.textContent = Math.round(progress * 2 * 100) + "%";
+    } else {
+        this.packsView.progressStatus.textContent = "Processing...";
+        this.packsView.progressCurrent.textContent = respack.filesLoaded;
+        this.packsView.progressTop.textContent = respack.filesToLoad;
+        this.packsView.progressBar.style.width = ((progress - 0.5) * 2 * 100) + "%";
+        this.packsView.progressPercent.textContent = Math.round((progress - 0.5) * 2 * 100) + "%";
+    }
+}
+
+Resources.prototype.remoteComplete = function(progress) {
+    var progStat = this.packsView.progressStatus;
+    progStat.textContent = "Complete";
+    window.setTimeout(function() {progStat.textContent = "Idle";}, 2000);
+    this.packsView.loadRemote.textContent = "LOADED";
+    
+    this.packsView.progressBar.style.width = "100%";
+    this.packsView.progressCurrent.textContent = "0b";
+    this.packsView.progressTop.textContent = "0b";
+    this.packsView.progressPercent.textContent = "0%";
 }
 
 Resources.prototype.appendSimpleListItem = function(value, root, onclick) {

@@ -38,6 +38,7 @@ function Respack(url) {
     this.link = null;
 
     this.size = -1;
+    this.downloaded = -1;
     this.enabled = true;
 
     this._songFile = null;
@@ -89,9 +90,11 @@ Respack.prototype.loadFromURL = function(url, callback, progress) {
     }
     req.onprogress = function(event) {
         if (event.lengthComputable) {
+            that.size = event.total;
+            that.downloaded = event.loaded;
             var percent = event.loaded / event.total;
             if(progress) {
-                progress(percent / 2); // because of processing too
+                progress(percent / 2, that); // because of processing too
             }
         } else {
             // Unable to compute progress information since the total size is unknown

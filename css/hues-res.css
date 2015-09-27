@@ -169,13 +169,18 @@
     display: none;
 }
 
+.res-button.loaded {
+    background-color: rgba(0,127,0,0.5);
+    cursor: auto;
+}
+
 .res-button:hover {
     background: rgba(255,255,255, 0.5);
 }
 
-.res-button.loaded {
-    background-color: rgb(0,127,0,0.5);
-    cursor: auto;
+.res-button.loaded:hover {
+    background-color: rgba(0,127,0,0.5);
+    cursor: default;
 }
 
 #res-countscontainer {
