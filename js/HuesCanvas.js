@@ -229,9 +229,13 @@ HuesCanvas.prototype.setImage = function(image) {
     }
 }
 
-HuesCanvas.prototype.setColour = function(colour) {
-    this.stopFade();
-    this.colour = colour;
+HuesCanvas.prototype.setColour = function(colour, isFade) {
+    if(isFade) {
+        this.newColour = colour;
+    } else {
+        this.stopFade();
+        this.colour = colour;
+    }
     this.needsRedraw = true;
 }
 
@@ -268,12 +272,11 @@ HuesCanvas.prototype.doShortBlackout = function(beatTime) {
     this.blackoutStart = 0;
 }
 
-HuesCanvas.prototype.doColourFade = function(length, newColour) {
+HuesCanvas.prototype.doColourFade = function(length) {
     this.colourFade = true;
     this.colourFadeLength = length;
     this.colourFadeStart = this.aContext.currentTime;
     this.oldColour = this.colour;
-    this.newColour = newColour;
 }
 
 HuesCanvas.prototype.stopFade = function() {

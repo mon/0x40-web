@@ -325,14 +325,14 @@ HuesCore.prototype.randomColourIndex = function() {
     return index;
 }
 
-HuesCore.prototype.randomColour = function() {
+HuesCore.prototype.randomColour = function(isFade) {
     var index=this.randomColourIndex();
-    this.setColour(index);
+    this.setColour(index, isFade);
 }
 
-HuesCore.prototype.setColour = function(index) {
+HuesCore.prototype.setColour = function(index, isFade) {
     this.colourIndex = index;
-    this.renderer.setColour(this.colours[this.colourIndex].c);
+    this.renderer.setColour(this.colours[this.colourIndex].c, isFade);
     this.userInterface.setColourText();
 }
 
@@ -391,8 +391,9 @@ HuesCore.prototype.beater = function(beat) {
                     break;
                 }
             }
-            this.stopFade();
-            this.startFade(fadeLen * this.beatLength);
+            this.renderer.stopFade();
+            this.renderer.doColourFade(fadeLen * this.beatLength);
+            this.randomColour(true);
             break;
         }
         if ([".", "+", "|", "¤"].indexOf(beat) == -1) {
