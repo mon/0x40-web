@@ -1,14 +1,17 @@
 JS=HuesCanvas.js HuesCore.js HuesSettings.js HuesUI.js ResourceManager.js ResourcePack.js SoundManager.js
+YUI=yuicompressor-2.4.8.jar
 
-all:
+all: minify pack
+
+minify:
 	cd ./js ; java -jar ../compiler.jar --js $(JS) --js_output_file hues-min.js
 	-rm ./css/hues-min.css
-	cd ./css ; java -jar ../yuicompressor-2.4.8.jar --type css -o hues-m-min.css hues-m.css
-	cd ./css ; java -jar ../yuicompressor-2.4.8.jar --type css -o hues-r-min.css hues-r.css
-	cd ./css ; java -jar ../yuicompressor-2.4.8.jar --type css -o hues-w-min.css hues-w.css
-	cd ./css ; java -jar ../yuicompressor-2.4.8.jar --type css -o hues-x-min.css hues-x.css
-	cd ./css ; java -jar ../yuicompressor-2.4.8.jar --type css -o hues-res-min.css hues-res.css
-	cd ./css ; java -jar ../yuicompressor-2.4.8.jar --type css -o style-min.css style.css
+	cd ./css ; java -jar ../$(YUI) --type css -o hues-m-min.css hues-m.css
+	cd ./css ; java -jar ../$(YUI) --type css -o hues-r-min.css hues-r.css
+	cd ./css ; java -jar ../$(YUI) --type css -o hues-w-min.css hues-w.css
+	cd ./css ; java -jar ../$(YUI) --type css -o hues-x-min.css hues-x.css
+	cd ./css ; java -jar ../$(YUI) --type css -o hues-res-min.css hues-res.css
+	cd ./css ; java -jar ../$(YUI) --type css -o style-min.css style.css
 	cat ./css/*-min.css >> hues-min.css
 	cat ./css/font-awesome.min.css >> hues-min.css
 	rm ./css/*-min.css
