@@ -19,7 +19,8 @@
  * THE SOFTWARE.
  */
 
-var LAME_DELAY_START = 2258;
+// Flash value + MAGIC WEB VALUE
+var LAME_DELAY_START = 2258 + 1534;
 var LAME_DELAY_END = 1000;
 
 function SoundManager(core) {
@@ -196,9 +197,9 @@ SoundManager.prototype.getAudioCallback = function(song, isBuild) {
             return;
         }
         if(isBuild) {
-            that.tmpBuild = that.trimMP3(buffer);
+            that.tmpBuild = that.trimMP3(buffer, song.forceTrim);
         } else {
-            that.tmpBuffer = that.trimMP3(buffer);
+            that.tmpBuffer = that.trimMP3(buffer, song.forceTrim);
         }
         that.onSongLoad(song);
     };
@@ -225,19 +226,26 @@ SoundManager.prototype.onSongLoad = function(song) {
 }
 
 // because MP3 is bad, we nuke silence
-SoundManager.prototype.trimMP3 = function(buffer) {
-    /*var isFirefox = navigator.userAgent.toLowerCase().indexOf('firefox') > -1;
-    if(!isFirefox) {
-        // Webkit is better than Gecko, clearly
+SoundManager.prototype.trimMP3 = function(buffer, forceTrim) {
+    // Firefox has to trim always, Chrome only on PackShit
+    var isFirefox = navigator.userAgent.toLowerCase().indexOf('firefox') > -1;
+    // forceTrim is because PackShit breaks everything
+    if(!(isFirefox || forceTrim)) {
         return buffer;
-    }*/
-    var ret = this.context.createBuffer(buffer.numberOfChannels, 
-        buffer.length - LAME_DELAY_START - LAME_DELAY_END, buffer.sampleRate);
+    }
+    var start = LAME_DELAY_START;
+    var newLength = buffer.length - LAME_DELAY_START - LAME_DELAY_END;
+    if(forceTrim && !isFirefox) {
+        // yes, really
+        newLength -= 1200;
+        start += 1200;
+    }
+    var ret = this.context.createBuffer(buffer.numberOfChannels, newLength, buffer.sampleRate);
     for(var i=0; i<buffer.numberOfChannels; i++) {
         var oldBuf = buffer.getChannelData(i);
         var newBuf = ret.getChannelData(i);
         for(var j=0; j<ret.length; j++) {
-            newBuf[j] = oldBuf[LAME_DELAY_START + j];
+            newBuf[j] = oldBuf[start + j];
         }
     }
     return ret;

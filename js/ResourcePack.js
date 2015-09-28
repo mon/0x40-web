@@ -181,6 +181,16 @@ Respack.prototype.parseImage = function(file) {
 Respack.prototype.parseXML = function() {
     var that = this;
     
+    if (this._infoFile) {
+        this._infoFile.getText(function(text) {
+            text = text.replace(/&amp;/g, '&');
+            text = text.replace(/&/g, '&amp;');
+            that.parseInfoFile(text);
+            that._infoFile = null;
+            that.parseXML();
+        });
+        return;
+    }
     if (this.songs.length > 0) {
         if (this._songFile) {
             this._songFile.getText(function(text) {
@@ -205,16 +215,6 @@ Respack.prototype.parseXML = function() {
             text = text.replace(/&/g, '&amp;');
             that.parseImageFile(text);
             that._imageFile = null;
-            that.parseXML();
-        });
-        return;
-    }
-    if (this._infoFile) {
-        this._infoFile.getText(function(text) {
-            text = text.replace(/&amp;/g, '&');
-            text = text.replace(/&/g, '&amp;');
-            that.parseInfoFile(text);
-            that._infoFile = null;
             that.parseXML();
         });
         return;
@@ -287,6 +287,11 @@ Respack.prototype.parseSongFile = function(text) {
             song.buildupRhythm = el.getTag("buildupRhythm");
             song.source = el.getTag("source");
             
+            // Because PackShit breaks everything
+            console.log(this.name);
+            if(this.name == "PackShit") {
+                song.forceTrim  = true;
+            }
             newSongs.push(song);
             debug("  [I] " + song.name, ": '" + song.title + "' added to songs");
         } else {
