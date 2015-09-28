@@ -288,7 +288,6 @@ Respack.prototype.parseSongFile = function(text) {
             song.source = el.getTag("source");
             
             // Because PackShit breaks everything
-            console.log(this.name);
             if(this.name == "PackShit") {
                 song.forceTrim  = true;
             }
