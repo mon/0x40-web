@@ -210,6 +210,7 @@ Resources.prototype.selectImageCallback = function(index) {
     var that = this;
     return function() {
         that.core.setImage(index);
+        that.core.setIsFullAuto(false);
     };
 }
 
