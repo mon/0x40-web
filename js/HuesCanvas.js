@@ -34,6 +34,7 @@ function HuesCanvas(element, aContext, core) {
 
     this.animTimeout = null;
     this.animFrame = null;
+    this.animSync = false; // for synced anims
 
     // set later
     this.blurDecay = null;
@@ -181,13 +182,22 @@ HuesCanvas.prototype.animationLoop = function() {
     if(this.blackoutTimeout && this.aContext.currentTime > this.blackoutTimeout) {
         this.clearBlackout();
     }
-    if(this.image && this.image.animated
-            && this.animTimeout < this.aContext.currentTime) {
-        this.animFrame++;
-        this.animFrame %= this.image.frameDurations.length;
-        this.animTimeout = this.aContext.currentTime +
-            this.image.frameDurations[this.animFrame]/1000;
-        this.needsRedraw = true;
+    if(this.image && this.image.animated){
+        if(this.image.beatsPerAnim && this.core.currentSong && this.core.currentSong.charsPerBeat) {
+            var a = this.animFrame;
+            this.syncAnim();
+            if(this.animFrame != a) {
+                this.needsRedraw = true;
+                // If you change to a non-synced song, this needs to be reset
+                this.animTimeout = this.aContext.currentTime;
+            }
+        } else if(this.animTimeout < this.aContext.currentTime) {
+            this.animFrame++;
+            this.animFrame %= this.image.frameDurations.length;
+            // Don't rebase to current time otherwise we may lag
+            this.animTimeout += this.image.frameDurations[this.animFrame]/1000;
+            this.needsRedraw = true;
+        }
     }
     if(this.blurStart) {
         var delta = this.aContext.currentTime - this.blurStart;
@@ -224,9 +234,28 @@ HuesCanvas.prototype.setImage = function(image) {
         return;
     }
     if(image.animated) {
+        this.animBeat = null;
         this.animFrame = 0;
         this.animTimeout = this.aContext.currentTime + image.frameDurations[0]/1000;
+        if(image.beatsPerAnim && this.core.currentSong && this.core.currentSong.charsPerBeat) {
+            this.syncAnim();
+        }
     }
+}
+
+HuesCanvas.prototype.syncAnim = function() {
+    var song = this.core.currentSong;
+    if(!song) { // fallback to default
+       return;
+    }
+    // This loops A-OK because the core's beatIndex never rolls over for a new loop
+    var beatLoc = (this.core.beatIndex / song.charsPerBeat) % this.image.beatsPerAnim;
+    this.animFrame = Math.floor(this.image.bitmaps.length * (beatLoc / this.image.beatsPerAnim));
+    // for build
+    if(this.animFrame < 0) {
+        this.animFrame += this.image.bitmaps.length;
+    }
+    this.animSync = true;
 }
 
 HuesCanvas.prototype.setColour = function(colour, isFade) {

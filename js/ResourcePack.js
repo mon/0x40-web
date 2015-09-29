@@ -286,6 +286,7 @@ Respack.prototype.parseSongFile = function(text) {
             
             song.buildupRhythm = el.getTag("buildupRhythm");
             song.source = el.getTag("source");
+            song.charsPerBeat = parseFloat(el.getTag("charsPerBeat"));
             
             // Because PackShit breaks everything
             if(this.name == "PackShit") {
@@ -348,6 +349,7 @@ Respack.prototype.parseImageFile = function(text) {
             image.source = el.getTag("source");
             // self reference defaults to avoid changing strings twice in future
             image.align = el.getTag("align", image.align);
+            image.beatsPerAnim = parseFloat(el.getTag("beatsPerAnim"));
             var frameDur = el.getTag("frameDuration");
             if(frameDur) {
                 image.frameDurations = []
@@ -425,7 +427,8 @@ Respack.prototype.parseSongQueue = function() {
                        //"crc":this.quickCRC(file), TODO
                        "sound":null,
                        "enabled":true,
-                       "filename":songFile.name};
+                       "filename":songFile.name,
+                       "charsPerBeat": null};
         songFile.getBlob("audio/mpeg3", function(sound) {
             // Because blobs are crap
             var fr = new FileReader();
@@ -456,7 +459,8 @@ Respack.prototype.parseImageQueue = function() {
                     "frameDurations":[33],
                     "source":null,
                     "enabled":true,
-                    "animated":true};
+                    "animated":true,
+                    "beatsPerAnim": null};
             this.images.push(anim);
         }
         this.imageLoadStart(imgFile, anim);
