@@ -346,7 +346,7 @@ Respack.prototype.parseImageFile = function(text) {
                 debug("  WARNING!", image.name, "has no full name!");
             }
             image.source = el.getTag("source");
-            // self reference strings to avoid changing strings twice in future
+            // self reference defaults to avoid changing strings twice in future
             image.align = el.getTag("align", image.align);
             var frameDur = el.getTag("frameDuration");
             if(frameDur) {

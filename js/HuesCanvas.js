@@ -32,17 +32,17 @@ function HuesCanvas(element, aContext, core) {
     this.image = null;
     this.smartAlign = true; // avoid string comparisons every frame
 
-    this.animTimeout;
-    this.animFrame;
+    this.animTimeout = null;
+    this.animFrame = null;
 
     // set later
-    this.blurDecay;
-    this.blurAmount;
-    this.blurIterations;
-    this.blurMin;
-    this.blurMax;
-    this.blurDelta;
-    this.blurAlpha;
+    this.blurDecay = null;
+    this.blurAmount = null;
+    this.blurIterations = null;
+    this.blurMin = null;
+    this.blurMax = null;
+    this.blurDelta = null;
+    this.blurAlpha = null;
     // dynamic
     this.blurStart = 0;
     this.blurDistance = 0;
@@ -51,7 +51,7 @@ function HuesCanvas(element, aContext, core) {
 
     this.blackout = false;
     this.blackoutColour = "#000"; // for the whiteout case we must store this
-    this.blackoutTimeout;
+    this.blackoutTimeout = null;
 
     this.colourFade = false;
     this.colourFadeStart=0;

@@ -24,8 +24,8 @@ HuesCore = function(defaults) {
     this.version = "0x01";
     this.beatIndex = 0;
     this.beatLength=-1;
-    this.currentSong;
-    this.currentImage;
+    this.currentSong = null;
+    this.currentImage = null;
     this.songIndex=-1;
     this.colourIndex=0x3f;
     this.imageIndex=-1;
