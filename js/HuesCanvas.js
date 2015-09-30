@@ -59,6 +59,7 @@ function HuesCanvas(element, aContext, core) {
     this.colourFadeLength=0;
     this.oldColour=0xFFFFFF;
     this.newColour=0xFFFFFF;
+    this.serialColour = 0;
 
     this.blendMode = "hard-light";
     // Chosen because they look decent
@@ -71,6 +72,26 @@ function HuesCanvas(element, aContext, core) {
 
     this.animating = true;
     requestAnimationFrame(this.getAnimLoop());
+}
+
+HuesCanvas.prototype.sendSerial = function() {
+    if(!ser)
+        return;
+    var col = this.colour;
+    if(this.blackout) {
+        bOpacity = (this.aContext.currentTime - this.blackoutStart)*10;
+        bOpacity = Math.min(1, bOpacity);
+        col *= 1 - bOpacity;
+        col = Math.floor(col);
+    }
+    if(col == this.serialColour)
+        return;
+    this.serialColour = col;
+    var str = String(col);
+    for(var i = 0; i < str.length; i++) {
+        ser.send(str[i]);
+    }
+    ser.send("\n".charCodeAt(0));
 }
 
 HuesCanvas.prototype.resizeHandler = function(that) {
@@ -224,6 +245,7 @@ HuesCanvas.prototype.animationLoop = function() {
     if(this.animating) {
         requestAnimationFrame(this.getAnimLoop());
     }
+    this.sendSerial();
 }
 
 HuesCanvas.prototype.setImage = function(image) {
