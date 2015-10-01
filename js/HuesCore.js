@@ -264,7 +264,6 @@ HuesCore.prototype.songDataUpdated = function() {
 }
 
 HuesCore.prototype.resetAudio = function() {
-    this.samplePosition = 0;
     this.beatIndex = 0;
     this.position = 0;
     this.songDataUpdated();
@@ -346,6 +345,7 @@ HuesCore.prototype.getBeat = function(index) {
 
 HuesCore.prototype.beater = function(beat) {
     this.userInterface.beat();
+    this.renderer.beat();
     switch(beat) {
         case 'X':
         case 'x':

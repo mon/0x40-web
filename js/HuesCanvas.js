@@ -34,7 +34,7 @@ function HuesCanvas(element, aContext, core) {
 
     this.animTimeout = null;
     this.animFrame = null;
-    this.animSync = false; // for synced anims
+    this.lastBeat = 0;
 
     // set later
     this.blurDecay = null;
@@ -243,19 +243,28 @@ HuesCanvas.prototype.setImage = function(image) {
     }
 }
 
+HuesCanvas.prototype.beat = function() {
+    this.lastBeat = this.aContext.currentTime;
+}
+
 HuesCanvas.prototype.syncAnim = function() {
     var song = this.core.currentSong;
     if(!song) { // fallback to default
        return;
     }
-    // This loops A-OK because the core's beatIndex never rolls over for a new loop
-    var beatLoc = (this.core.beatIndex / song.charsPerBeat) % this.image.beatsPerAnim;
-    this.animFrame = Math.floor(this.image.bitmaps.length * (beatLoc / this.image.beatsPerAnim));
-    // for build
-    if(this.animFrame < 0) {
-        this.animFrame += this.image.bitmaps.length;
+    var index = this.core.beatIndex;
+    // When animation has more frames than song has beats, or part thereof
+    if(this.lastBeat && this.core.beatLength) {
+        var interp = (this.aContext.currentTime - this.lastBeat) / this.core.beatLength;
+        index += Math.min(interp, 1);
     }
-    this.animSync = true;
+    // This loops A-OK because the core's beatIndex never rolls over for a new loop
+    var beatLoc = (index / song.charsPerBeat) % this.image.beatsPerAnim;
+    
+    var aLen = this.image.bitmaps.length;
+    this.animFrame = Math.floor(aLen * (beatLoc / this.image.beatsPerAnim));
+    // Because negative mods are different in JS
+    this.animFrame = ((this.animFrame % aLen) + aLen) % aLen;
 }
 
 HuesCanvas.prototype.setColour = function(colour, isFade) {
