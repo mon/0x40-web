@@ -302,15 +302,19 @@ Resources.prototype.initUI = function() {
     packList.className = "res-list";
     packList.id = "res-packlist";
     this.packsView.respackList = packList;
-    var remoteHeader = document.createElement("div");
-    remoteHeader.textContent = "Remote respacks";
-    remoteHeader.className = "res-header";
-    var remoteList = document.createElement("div");
-    remoteList.className = "res-list";
-    remoteList.id = "res-remotelist";
-    this.appendSimpleListItem("Click to load the list", remoteList,
-        function() {that.loadRemotes();});
-    this.packsView.remoteList = remoteList;
+    if(!this.core.settings.defaults.disableRemoteResources) {
+        var remoteHeader = document.createElement("div");
+        remoteHeader.textContent = "Remote respacks";
+        remoteHeader.className = "res-header";
+        var remoteList = document.createElement("div");
+        remoteList.className = "res-list";
+        remoteList.id = "res-remotelist";
+        this.appendSimpleListItem("Click to load the list", remoteList,
+            function() {that.loadRemotes();});
+        this.packsView.remoteList = remoteList;
+    } else {
+        packList.className += " noremotes";
+    }
     
     var buttons = document.createElement("div");
     buttons.className = "res-buttons";
@@ -368,8 +372,10 @@ Resources.prototype.initUI = function() {
     
     packsContainer.appendChild(packHeader);
     packsContainer.appendChild(packList);
-    packsContainer.appendChild(remoteHeader);
-    packsContainer.appendChild(remoteList);
+    if(!this.core.settings.defaults.disableRemoteResources) {
+        packsContainer.appendChild(remoteHeader);
+        packsContainer.appendChild(remoteList);
+    }
     packsContainer.appendChild(buttons);
     packsContainer.appendChild(progressContainer);
     

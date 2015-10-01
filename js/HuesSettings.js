@@ -29,6 +29,8 @@ HuesSettings.prototype.defaultSettings = {
     overwriteLocal : false,
     // If set, will attempt to play the named song first
     firstSong: null,
+    // If set, will disable the remote resources menu. For custom pages.
+    disableRemoteResources: false,
     
     // UI accessible config
     // Autosong stuff is a todo, becuase why even implement that
@@ -42,6 +44,16 @@ HuesSettings.prototype.defaultSettings = {
     playBuildups: "on",
     volume : 0.7
 }
+
+// Don't get saved to localStorage
+HuesSettings.prototype.ephemeralSettings = [
+    "load",
+    "autoplay",
+    "overwriteLocal",
+    "respacks",
+    "firstSong",
+    "disableRemoteResources"
+];
 
 // To dynamically build the UI like the cool guy I am
 HuesSettings.prototype.settingsCategories = {
@@ -104,12 +116,14 @@ function HuesSettings(defaults) {
     this.hide();
     
     for(var attr in this.defaultSettings) {
-        if(attr == "respacks") {
-            continue;
-        }
         if(defaults[attr] == undefined) {
             defaults[attr] = this.defaultSettings[attr];
-        } else if(defaults.overwriteLocal) {
+        }
+        // don't write to local if it's a temp settings
+        if(this.ephemeralSettings.indexOf(attr) != -1) {
+            continue;
+        }
+        if(defaults.overwriteLocal) {
             localStorage[attr] = defaults[attr];
         }
         // populate defaults, ignoring current
@@ -234,7 +248,7 @@ HuesSettings.prototype.set = function(setting, value) {
 // the defaults given in the initialiser
 HuesSettings.prototype.setDefaults = function() {
     for(var attr in this.defaults) {
-        if(attr == "respacks") {
+        if(this.ephemeralSettings.indexOf(attr) != -1) {
             continue;
         }
         localStorage[attr] = this.defaults[attr];

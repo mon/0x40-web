@@ -34,6 +34,10 @@
     height: 120px;
 }
 
+#res-packlist.noremotes {
+    height: 305px;
+} 
+
 #res-remotelist {
     height: 155px;
 }
