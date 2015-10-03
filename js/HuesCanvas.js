@@ -68,6 +68,12 @@ function HuesCanvas(element, aContext, core) {
     this.canvas = document.getElementById(element).getContext("2d");
     window.addEventListener('resize', this.resizeHandler(this));
     this.resize();
+    
+    this.snowing = false;
+    this.maxSnow = 30;
+    this.snowAngle = 0;
+    this.lastSnow = 0;
+    this.snowflakes = [];
 
     this.animating = true;
     requestAnimationFrame(this.getAnimLoop());
@@ -80,7 +86,9 @@ HuesCanvas.prototype.resizeHandler = function(that) {
 HuesCanvas.prototype.resize = function() {
     // height is constant 720px, we expand width to suit
     var ratio = window.innerWidth / window.innerHeight;
-    this.canvas.canvas.width = 720 * ratio + 1;
+    this.canvas.canvas.width = Math.ceil(720 * ratio);
+    var snow = document.getElementById("snow").getContext("2d");
+    snow.canvas.width = Math.ceil(720 * ratio);
     this.needsRedraw = true;
 }
 
@@ -220,6 +228,9 @@ HuesCanvas.prototype.animationLoop = function() {
         this.redraw();
     } else if(this.needsRedraw){
         this.redraw();
+    }
+    if(this.snowing) {
+        this.drawSnow();
     }
     if(this.animating) {
         requestAnimationFrame(this.getAnimLoop());
@@ -379,4 +390,77 @@ HuesCanvas.prototype.setAnimating = function(anim) {
         requestAnimationFrame(this.animationLoop);
     }
     this.animating = anim;
+}
+
+// From http://thecodeplayer.com/walkthrough/html5-canvas-snow-effect
+
+HuesCanvas.prototype.startSnow = function() {
+    this.snowing = true;
+    document.getElementById("snow").style.display = "block";
+    var height = this.canvas.canvas.height;
+    var width = this.canvas.canvas.width;
+    this.snowAngle = 0;
+    this.snowflakes = [];
+	for(var i = 0; i < this.maxSnow; i++) {
+		this.snowflakes.push({
+			x: Math.random()*width, //x-coordinate
+			y: Math.random()*height, //y-coordinate
+			r: Math.random()*4+1, //radius
+			d: Math.random()*25 //density
+		})
+	}
+    this.lastSnow = this.aContext.currentTime;
+}
+
+HuesCanvas.prototype.stopSnow = function() {
+    this.snowing = false;
+    document.getElementById("snow").style.display = "none";
+}
+
+HuesCanvas.prototype.drawSnow = function() {
+    var ctx = document.getElementById("snow").getContext("2d");
+    var W = ctx.canvas.width;
+    var H = ctx.canvas.height;
+    var delta = this.lastSnow - this.aContext.currentTime;
+    ctx.clearRect(0, 0, W, H);
+
+    ctx.fillStyle = "rgba(255, 255, 255, 0.8)";
+    ctx.beginPath();
+    for(var i = 0; i < this.maxSnow; i++) {
+        var p = this.snowflakes[i];
+        ctx.moveTo(p.x, p.y);
+        ctx.arc(p.x, p.y, p.r, 0, Math.PI*2, true);
+    }
+    ctx.fill();
+    
+    this.snowAngle += delta / 6;
+    for(var i = 0; i < this.maxSnow; i++) {
+        var p = this.snowflakes[i];
+        //Updating X and Y coordinates
+        //We will add 1 to the cos function to prevent negative values which will lead flakes to move upwards
+        //Every particle has its own density which can be used to make the downward movement different for each flake
+        //Lets make it more random by adding in the radius
+        p.y += Math.cos(this.snowAngle+p.d) + 1 + p.r/2;
+        p.x += Math.sin(this.snowAngle) * 2;
+        
+        //Sending flakes back from the top when it exits
+        //Lets make it a bit more organic and let flakes enter from the left and right also.
+        if(p.x > W+5 || p.x < -5 || p.y > H) {
+            if(i%3 > 0) {//66.67% of the flakes
+                this.snowflakes[i] = {x: Math.random()*W, y: -10, r: p.r, d: p.d};
+            }
+            else {
+                //If the flake is exitting from the right
+                if(Math.sin(this.snowAngle) > 0) {
+                    //Enter from the left
+                    this.snowflakes[i] = {x: -5, y: Math.random()*H, r: p.r, d: p.d};
+                }
+                else {
+                    //Enter from the right
+                    this.snowflakes[i] = {x: W+5, y: Math.random()*H, r: p.r, d: p.d};
+                }
+            }
+        }
+    }
+    this.lastSnow = this.aContext.currentTime;
 }

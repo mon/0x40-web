@@ -481,6 +481,8 @@ function ModernUI() {
     this.volLabel = null;
     this.hideRestore = null;
     
+    this.currentBeat = ".";
+    
     HuesUI.call(this);
     
     this.hidden = 0; // we have a 3 stage hide
@@ -679,19 +681,19 @@ ModernUI.prototype.modeUpdated = function() {
 ModernUI.prototype.beat = function() {
     var beats = this.core.getBeatString();
 
-    var current = beats[0];
+    this.currentBeat = beats[0];
     var rest = beats.slice(1);
 
     this.beatLeft.textContent = rest;
     this.beatRight.textContent = rest;
 
 
-    if (current != ".") {
+    if (this.currentBeat != ".") {
         while (this.beatCenter.firstElementChild) {
             this.beatCenter.removeChild(this.beatCenter.firstElementChild);
         }
         var span = this.beatCenter.ownerDocument.createElement("span");
-        span.textContent = current;
+        span.textContent = this.currentBeat;
         this.beatCenter.appendChild(span);
     }
     this.beatCount.textContent = "B=" + this.intToHex4(this.core.getSafeBeatIndex());
@@ -744,9 +746,131 @@ function XmasUI() {
     
     this.controls.className = "hues-x-controls";
     this.beatBar.className = "hues-x-beatbar";
+    
+    this.lights = [];
+    
+    var wires = document.createElement("div");
+    wires.className = "hues-x-wires";
+    
+    var left = document.createElement("div");
+    left.className = "hues-x-wiresleft";
+    for(var i = 0; i < xleft.length; i++) {
+        var l = xleft[i];
+        var light = this.newLight(l, left);
+        light.style.transform = "rotate(" + l.angle + "deg)";
+        light.style.left = l.x + "px";
+        light.style.top = l.y + "px";
+        this.lights.push(light);
+    }
+    
+    var right = document.createElement("div");
+    right.className = "hues-x-wiresright";
+    for(var i = 0; i < xright.length; i++) {
+        var l = xright[i];
+        var light = this.newLight(l, right);
+        light.style.transform = "rotate(" + (-l.angle) + "deg)";
+        light.style.right = l.x + "px";
+        light.style.top = l.y + "px";
+        this.lights.push(light);
+    }
+    
+    var bottom = document.createElement("div");
+    bottom.className = "hues-x-wiresbottom";
+    for(var i = 0; i < xbottom.length; i++) {
+        var l = xbottom[i];
+        var light = this.newLight(l, bottom);
+        light.style.transform = "rotate(" + l.angle + "deg)";
+        light.style.left = l.x + "px";
+        light.style.bottom = l.y + "px";
+        this.lights.push(light);
+    }
+    
+    wires.appendChild(left);
+    wires.appendChild(right);
+    wires.appendChild(bottom);
+    this.root.appendChild(wires);
 }
 XmasUI.prototype = Object.create(ModernUI.prototype);
 XmasUI.prototype.constructor = XmasUI;
+
+XmasUI.prototype.connectCore = function(core) {
+    HuesUI.prototype.connectCore.call(this, core);
+    this.core.renderer.startSnow();
+}
+
+XmasUI.prototype.disconnect = function() {
+    this.core.renderer.stopSnow();
+    HuesUI.prototype.disconnect.call(this);
+}
+
+XmasUI.prototype.lightOn = function(light) {
+    light.on.className = "hues-x-lighton";
+    light.off.className = "hues-x-lightoff";
+}
+
+XmasUI.prototype.lightOff = function(light) {
+    light.on.className = "hues-x-lighton off";
+    light.off.className = "hues-x-lightoff off";
+}
+
+XmasUI.prototype.lightFadeOut = function(light) {
+    light.on.className = "hues-x-lighton hues-x-fade off";
+    light.off.className = "hues-x-lightoff hues-x-fade off";
+}
+
+XmasUI.prototype.lightRecolour = function(light) {
+    var hue = Math.random() * 360;
+    light.bulb.style.filter = "hue-rotate(" + hue + "deg)";
+    light.bulb.style.webkitFilter = "hue-rotate(" + hue + "deg)";
+}
+
+XmasUI.prototype.randomLight = function(light) {
+    if(Math.random() >= 0.5) {
+        this.lightOn(light);
+    } else {
+        this.lightOff(light);
+    }
+}
+
+XmasUI.prototype.newLight = function(l, parent) {
+    var light = document.createElement("div");
+    light.className = "hues-x-light";
+    var bulb = document.createElement("div");
+    var on = document.createElement("img");
+    on.src = "./img/lighton.png";
+    var off = document.createElement("img");
+    off.src = "./img/lightoff.png";
+    bulb.appendChild(on);
+    bulb.appendChild(off);
+    light.appendChild(bulb);
+    parent.appendChild(light);
+    light.on = on;
+    light.off = off;
+    light.bulb = bulb;
+    this.randomLight(light);
+    this.lightRecolour(light);
+    return light;
+}
+
+XmasUI.prototype.beat = function() {
+    ModernUI.prototype.beat.call(this);
+    if(this.currentBeat != ".") {
+        for(var i = 0; i < this.lights.length; i++) {
+            var l = this.lights[i];
+            switch(this.currentBeat) {
+                case ":":
+                    this.lightOn(l);
+                    this.lightRecolour(l);
+                    break;
+                case "+":
+                    this.lightFadeOut(l);
+                    break;
+                default:
+                    this.randomLight(this.lights[i]);
+            }
+        }
+    }
+}
 
 XmasUI.prototype.toggleHide = function() {
     this.beatBar.className = "hues-x-beatbar";
@@ -765,3 +889,79 @@ XmasUI.prototype.toggleHide = function() {
 XmasUI.prototype.setColourText = function(colour) {};
 XmasUI.prototype.blurUpdated = function(x, y) {};
 XmasUI.prototype.updateTime = function(time) {};
+
+var xleft = [
+    {"angle":122.529582194,"x":19.4,"y":-19.35},
+    {"angle":92.5309436511,"x":25.4,"y":38.7},
+    {"angle":107.530202659,"x":39.4,"y":107.75},
+    {"angle":77.5309700777,"x":20.75,"y":184.8},
+    {"angle":77.5309700777,"x":32.3,"y":249.8},
+    {"angle":107.530202659,"x":40.45,"y":327.9},
+    {"angle":88.3307935055,"x":35,"y":410.9},
+    {"angle":107.530202659,"x":54.35,"y":490.95},
+    {"angle":74.9981580491,"x":28.15,"y":573.8},
+    {"angle":89.9973772074,"x":23.45,"y":675.35},
+    {"angle":107.530202659,"x":21.65,"y":762.6},
+    {"angle":107.530202659,"x":15.8,"y":842.75},
+    {"angle":92.5309436511,"x":36.55,"y":905.7},
+    {"angle":88.3307935055,"x":31.1,"y":988.7},
+    {"angle":107.530202659,"x":50.45,"y":1068.75},
+    {"angle":74.9981580491,"x":45.75,"y":1158.5},
+    {"angle":88.3307935055,"x":35.85,"y":1238.55}
+]
+var xright = [
+    {"angle":120.001009518,"x":33.3,"y":-29.75},
+    {"angle":90.0026227926,"x":35.35,"y":53.65},
+    {"angle":102.469029922,"x":41.5,"y":136.5},
+    {"angle":91.6692064945,"x":22.15,"y":216.55},
+    {"angle":72.4697973408,"x":34.4,"y":278.25},
+    {"angle":102.469029922,"x":45.75,"y":361.85},
+    {"angle":87.4699314665,"x":26.65,"y":426.35},
+    {"angle":72.4697973408,"x":41.6,"y":502.15},
+    {"angle":102.469029922,"x":27.5,"y":566},
+    {"angle":72.4697973408,"x":7.65,"y":638.45},
+    {"angle":102.469029922,"x":11,"y":721.25},
+    {"angle":76.1887724128,"x":7.65,"y":792.7},
+    {"angle":87.4690563489,"x":36.15,"y":850.35},
+    {"angle":102.46813454,"x":16.6,"y":924.3},
+    {"angle":72.4697973408,"x":15.3,"y":990.8},
+    {"angle":76.1887724128,"x":11.95,"y":1062.25},
+    {"angle":87.4690563489,"x":40.45,"y":1119.9},
+    {"angle":102.46813454,"x":20.9,"y":1193.85}
+]
+var xbottom = [
+    {"angle":32.5804579323,"x":110.35,"y":-12.1},
+    {"angle":3.28979777069,"x":168.05,"y":-5.55},
+    {"angle":17.6989154099,"x":238.35,"y":7.7},
+    {"angle":-12.6587029361,"x":314.8,"y":-10.4},
+    {"angle":-12.6587029361,"x":379.4,"y":1.05},
+    {"angle":17.6989154099,"x":457.75,"y":9.4},
+    {"angle":2.59102780115,"x":540.6,"y":3.75},
+    {"angle":17.6989154099,"x":620.35,"y":22.7},
+    {"angle":-15.134241831,"x":703,"y":-2.9},
+    {"angle":2.30443717424,"x":804.75,"y":-7.85},
+    {"angle":17.6989154099,"x":892.45,"y":-9.55},
+    {"angle":17.6989154099,"x":971.65,"y":-15.5},
+    {"angle":3.28979777069,"x":1035.2,"y":4.35},
+    {"angle":2.59102780115,"x":1118,"y":0.2},
+    {"angle":17.6989154099,"x":1198.05,"y":18.95},
+    {"angle":-18.378894807,"x":1288.2,"y":14.2},
+    {"angle":-4.561224264,"x":1367.9,"y":4.6},
+    {"angle":32.5804579323,"x":1452.6,"y":-1.7},
+    {"angle":3.28979777069,"x":1511.45,"y":4.45},
+    {"angle":17.6989154099,"x":1580.6,"y":17.6},
+    {"angle":-12.6587029361,"x":1656.6,"y":-0.95},
+    {"angle":-12.6587029361,"x":1722.1,"y":11.1},
+    {"angle":17.6989154099,"x":1800.5,"y":18.8},
+    {"angle":2.59102780115,"x":1883.1,"y":13},
+    {"angle":17.6989154099,"x":1963,"y":32.6},
+    {"angle":-15.134241831,"x":2045.8,"y":7},
+    {"angle":2.30443717424,"x":2147.55,"y":1.55},
+    {"angle":17.6989154099,"x":2234.1,"y":0.4},
+    {"angle":17.6989154099,"x":2315,"y":-5.6},
+    {"angle":3.28979777069,"x":2377.8,"y":14.5},
+    {"angle":2.59102780115,"x":2460.65,"y":9.75},
+    {"angle":17.6989154099,"x":2540.2,"y":28.5},
+    {"angle":-18.378894807,"x":2627.55,"y":24.9},
+    {"angle":-4.561224264,"x":2710.4,"y":14.4}
+]

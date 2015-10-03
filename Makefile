@@ -26,6 +26,7 @@ pack:
 	mkdir -p release/fonts
 	mkdir -p release/respacks
 	cp -r respacks release/
+	cp -r img release/
 	cp -r fonts release/
 	cp -r js/lib release/js
 	cp js/hues-min.js release/js

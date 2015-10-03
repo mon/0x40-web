@@ -1,6 +1,3 @@
-/* Heavily based on Kepstin's wonderful CSS work
-  https://github.com/kepstin/0x40hues-html5/blob/master/hues-m.css */
-  
 .XmasUI {
     font-family: 'PetMe64Web';
 }
@@ -15,6 +12,7 @@
     left: 8px;
     right: 8px;
     color: rgba(255,255,255,0.7);
+    z-index: 1;
 }
 
 .hues-x-beatbar {
@@ -41,15 +39,78 @@
     -webkit-transform: translateY(0px);
     transition: transform 1s ease-out;
     -webkit-transition: -webkit-transform 1s ease-out;
-    
 }
 
 .hues-x-beatbar.hidden{
-transform: translateY(-40px);   
+    transform: translateY(-40px);   
     -webkit-transform: translateY(-40px);
 }
 
 .hues-x-controls.hidden {
     transform: translateY(104px);
     -webkit-transform: translateY(104px);
+}
+
+.hues-x-light {
+    position: absolute;
+    width: 68px;
+    height: 113px;
+    transform-origin: 32px 69px;
+    -webkit-transform-origin: 32px 69px;
+    background-image: url("../img/lightbase.png");
+}
+
+.hues-x-light > div > img {
+    position: absolute;
+}
+
+.hues-x-fade{
+    transition: opacity 0.1s linear;
+    -webkit-transition: opacity 0.1s linear;
+}
+
+.hues-x-lighton {
+    opacity: 1;
+}
+
+.hues-x-lightoff {
+    opacity: 0;
+}
+
+.hues-x-lighton.off{
+    opacity: 0;
+}
+
+.hues-x-lightoff.off{
+    opacity: 1;
+}
+
+.hues-x-wiresleft, .hues-x-wiresbottom, .hues-x-wiresright {
+    position: absolute;
+    background-repeat: no-repeat;
+}
+
+.hues-x-wiresleft, .hues-x-wiresright {
+    height: 100%;
+    top: 0px;
+}
+
+.hues-x-wiresleft {
+    width: 76px;
+    left: 0px;
+    background-image: url("../img/wiresleft.png");
+}
+
+.hues-x-wiresright {
+    width: 59px;
+    right: 0px;
+    background-image: url("../img/wiresright.png");
+}
+
+.hues-x-wiresbottom {
+    bottom: 0px;
+    height: 56px;
+    width:2889px;
+    background-image: url("../img/wiresbottom.png");
+    left:50%;margin-left:-1444.5px;
 }

@@ -12,7 +12,6 @@ html, body {
     height: 100%;
     margin: 0; padding: 0;
     overflow: hidden;
-    background-color:#fff;
 }
 
 h1 {
@@ -67,12 +66,23 @@ h1, h2, h3 {
     margin: 10px;
 }
 
-#waifu {
+#waifu, #snow {
+    position: absolute;
     display: block;
     height: 100%;
     padding: 0;
+}
 
+#waifu {
     z-index: -10;
+}
+
+#snow {
+    z-index: -9;
+}
+
+#snow.hidden {
+    display: none;
 }
 
 #preloadHelper {
