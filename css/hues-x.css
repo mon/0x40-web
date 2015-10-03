@@ -93,24 +93,36 @@
 .hues-x-wiresleft, .hues-x-wiresright {
     height: 100%;
     top: 0px;
+    overflow: hidden;
 }
 
 .hues-x-wiresleft {
-    width: 76px;
+    width: 200px;
     left: 0px;
     background-image: url("../img/wiresleft.png");
 }
 
 .hues-x-wiresright {
-    width: 59px;
+    width: 200px;
     right: 0px;
     background-image: url("../img/wiresright.png");
+    background-position: 141px 0px;
+}
+
+.hues-x-wiresbottomhelper {
+    position: absolute;
+    bottom: 0px;
+    width: 100%;
+    height: 200px;
+    overflow: hidden;
 }
 
 .hues-x-wiresbottom {
-    bottom: 0px;
-    height: 56px;
+    height: 200px;
     width:2889px;
     background-image: url("../img/wiresbottom.png");
-    left:50%;margin-left:-1444.5px;
+    background-position: 0px 144px;
+    left:50%;
+    margin-left: -1444.5px;
+    overflow: hidden;
 }

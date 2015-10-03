@@ -8,6 +8,8 @@
     position: absolute;
     bottom: 0px;
     white-space: nowrap;
+    overflow: hidden;
+    width: 100%;
     font-size: 10px;
 }
 

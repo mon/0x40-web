@@ -774,6 +774,8 @@ function XmasUI() {
         this.lights.push(light);
     }
     
+    var bottomHelper = document.createElement("div");
+    bottomHelper.className = "hues-x-wiresbottomhelper";
     var bottom = document.createElement("div");
     bottom.className = "hues-x-wiresbottom";
     for(var i = 0; i < xbottom.length; i++) {
@@ -787,7 +789,8 @@ function XmasUI() {
     
     wires.appendChild(left);
     wires.appendChild(right);
-    wires.appendChild(bottom);
+    bottomHelper.appendChild(bottom);
+    wires.appendChild(bottomHelper);
     this.root.appendChild(wires);
 }
 XmasUI.prototype = Object.create(ModernUI.prototype);
