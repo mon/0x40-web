@@ -31,6 +31,10 @@ HuesSettings.prototype.defaultSettings = {
     firstSong: null,
     // If set, will disable the remote resources menu. For custom pages.
     disableRemoteResources: false,
+    // Preloader customisation
+    preloadPrefix: "0x",
+    preloadBase: 16,
+    preloadMax: 0x40,
     
     // UI accessible config
     // Autosong stuff is a todo, becuase why even implement that
@@ -52,7 +56,10 @@ HuesSettings.prototype.ephemeralSettings = [
     "overwriteLocal",
     "respacks",
     "firstSong",
-    "disableRemoteResources"
+    "disableRemoteResources",
+    "preloadPrefix",
+    "preloadBase",
+    "preloadMax"
 ];
 
 // To dynamically build the UI like the cool guy I am

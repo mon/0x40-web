@@ -61,6 +61,8 @@ HuesCore = function(defaults) {
     
     this.uiArray.push(new RetroUI(), new WeedUI(), new ModernUI(), new XmasUI());
     this.settings.connectCore(this);
+    // Update with merged
+    defaults = this.settings.defaults;
     this.setColour(this.colourIndex);
     
     if(defaults.load) {
@@ -79,8 +81,9 @@ HuesCore = function(defaults) {
             }
         }, function(progress) {
             var prog = document.getElementById("preMain");
-            var scale = Math.floor(progress * 0x40);
-            prog.textContent = '0x' + ("00"+scale.toString(16)).slice(-2);
+            var scale = Math.floor(progress * defaults.preloadMax);
+            var padding = defaults.preloadMax.toString(defaults.preloadBase).length;
+            prog.textContent = defaults.preloadPrefix + (Array(padding).join("0")+scale.toString(defaults.preloadBase)).slice(-padding);
         });
     } else {
         document.getElementById("preloadHelper").style.display = "none";
