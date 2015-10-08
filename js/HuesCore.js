@@ -273,7 +273,7 @@ HuesCore.prototype.resetAudio = function() {
 
 HuesCore.prototype.randomImage = function() {
     var len = this.resourceManager.enabledImages.length;
-    var index=Math.floor(Math.random() * len);
+    var index = Math.floor(Math.random() * len);
     if ((index == this.imageIndex || this.lastImageArray.indexOf(index) != -1) && len > 1) {
         this.randomImage();
     } else {

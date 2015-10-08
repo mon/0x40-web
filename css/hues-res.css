@@ -226,10 +226,12 @@
     border: 2px solid black;
     padding: 5px;
     cursor: pointer;
+    /* Actually wider than the container, but has a centering effect */
+    width: 200px;
 }
 
 #res-packtabs > input:checked + label {
-    background: rgba(255,255,255,0.5);
+    background: rgba(255,255,255,0.3);
     border-bottom: none;
 }
 
