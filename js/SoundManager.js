@@ -110,18 +110,20 @@ SoundManager.prototype.playSong = function(song, playBuild, callback) {
             
             if(callback)
                 callback();
-
-            if(playBuild) {
-                // mobile webkit requires offset, even if 0
-                that.bufSource.start(0);
-                that.startTime = that.context.currentTime + that.loopStart;
-            } else {
-                that.bufSource.start(0, that.loopStart);
-                that.startTime = that.context.currentTime;
-            }
-            // offset to after the build
-            //that.startTime = that.context.currentTime + that.loopStart;
-            that.playing = true;
+            
+            // This fixes sync issues on Firefox and slow machines.
+            that.context.suspend().then(function() {
+                if(playBuild) {
+                    // mobile webkit requires offset, even if 0
+                    that.bufSource.start(0);
+                    that.startTime = that.context.currentTime + that.loopStart;
+                } else {
+                    that.bufSource.start(0, that.loopStart);
+                    that.startTime = that.context.currentTime;
+                }
+                that.context.resume();
+                that.playing = true;
+            });
         }
     });
 }
