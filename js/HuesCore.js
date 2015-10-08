@@ -268,7 +268,6 @@ HuesCore.prototype.songDataUpdated = function() {
 
 HuesCore.prototype.resetAudio = function() {
     this.beatIndex = 0;
-    this.position = 0;
     this.songDataUpdated();
 }
 

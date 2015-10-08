@@ -101,15 +101,16 @@ SoundManager.prototype.playSong = function(song, playBuild, callback) {
     this.loadBuffer(song, function() {
         // To prevent race condition if you press "next" twice fast
         if(song == that.song) {
+            // more racing than the Melbourne Cup
+            try {
+                that.bufSource.stop(0);
+            } catch(err) {}
             that.bufSource = that.context.createBufferSource();
             that.bufSource.buffer = that.buffer;
             that.bufSource.loop = true;
             that.bufSource.loopStart = that.loopStart;
             that.bufSource.loopEnd = that.buffer.duration;
             that.bufSource.connect(that.gainNode);
-            
-            if(callback)
-                callback();
             
             // This fixes sync issues on Firefox and slow machines.
             that.context.suspend().then(function() {
@@ -121,8 +122,11 @@ SoundManager.prototype.playSong = function(song, playBuild, callback) {
                     that.bufSource.start(0, that.loopStart);
                     that.startTime = that.context.currentTime;
                 }
-                that.context.resume();
-                that.playing = true;
+                that.context.resume().then(function() {
+                    if(callback)
+                        callback();
+                    that.playing = true;
+                });
             });
         }
     });
