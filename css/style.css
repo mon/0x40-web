@@ -162,6 +162,8 @@ input.tab-input[type="radio"]:checked + label {
     position: absolute;
     left: 50%;
     top: 50%;
+    width: 0;
+    height: 0;
 }
 
 #settingsWindow {
@@ -169,8 +171,8 @@ input.tab-input[type="radio"]:checked + label {
     z-index: 9;
     width: 640px;
     height: 470px;
-    left: -320px;
-    top: -235px;
+    margin-left: -320px;
+    margin-top: -235px;
     
     background: rgba(200,200,200, 0.7);
     border-color: "black";

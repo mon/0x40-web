@@ -152,7 +152,7 @@ HuesSettings.prototype.connectCore = function(core) {
 HuesSettings.prototype.show = function() {
     if(this.core)
         this.core.hideLists();
-    this.window.style.display = "flex";
+    this.window.style.display = "block";
 }
 
 HuesSettings.prototype.hide = function() {
@@ -161,7 +161,7 @@ HuesSettings.prototype.hide = function() {
 
 HuesSettings.prototype.toggle = function() {
     if(this.window.style.display == "none") {
-        this.window.style.display = "flex";
+        this.window.style.display = "block";
         if(this.core)
             this.core.hideLists();
     } else {
