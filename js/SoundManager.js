@@ -113,7 +113,23 @@ SoundManager.prototype.playSong = function(song, playBuild, callback) {
             that.bufSource.connect(that.gainNode);
             
             // This fixes sync issues on Firefox and slow machines.
-            that.context.suspend().then(function() {
+            if(that.context.suspend && that.context.resume) {
+                that.context.suspend().then(function() {
+                    if(playBuild) {
+                        // mobile webkit requires offset, even if 0
+                        that.bufSource.start(0);
+                        that.startTime = that.context.currentTime + that.loopStart;
+                    } else {
+                        that.bufSource.start(0, that.loopStart);
+                        that.startTime = that.context.currentTime;
+                    }
+                    that.context.resume().then(function() {
+                        if(callback)
+                            callback();
+                        that.playing = true;
+                    });
+                });
+            } else {
                 if(playBuild) {
                     // mobile webkit requires offset, even if 0
                     that.bufSource.start(0);
@@ -122,12 +138,10 @@ SoundManager.prototype.playSong = function(song, playBuild, callback) {
                     that.bufSource.start(0, that.loopStart);
                     that.startTime = that.context.currentTime;
                 }
-                that.context.resume().then(function() {
-                    if(callback)
-                        callback();
-                    that.playing = true;
-                });
-            });
+                if(callback)
+                    callback();
+                that.playing = true;
+            }
         }
     });
 }
