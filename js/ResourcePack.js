@@ -60,7 +60,7 @@ function Respack(url) {
         this.loadFromURL(url);
 }
 
-Respack.prototype.audioExtensions = new RegExp("\\.(mp3)$", "i");
+Respack.prototype.audioExtensions = new RegExp("\\.(mp3|ogg)$", "i");
 Respack.prototype.imageExtensions = new RegExp("\\.(png|gif|jpg|jpeg)$", "i");
 Respack.prototype.animRegex = new RegExp("(.*?)_\\d+$");
 
@@ -429,7 +429,20 @@ Respack.prototype.parseSongQueue = function() {
                        "enabled":true,
                        "filename":songFile.name,
                        "charsPerBeat": null};
-        songFile.getBlob("audio/mpeg3", function(sound) {
+        var extension = songFile.name.split('.').pop().toLowerCase();
+        var mime = "";
+        switch(extension) {
+            case "mp3":
+                mime = "audio/mpeg3";
+                break;
+            case "ogg":
+                mime = "audio/ogg";
+                newSong.noTrim = true;
+                break;
+            default:
+                mime = "application/octet-stream";
+        }
+        songFile.getBlob(mime, function(sound) {
             // Because blobs are crap
             var fr = new FileReader();
             fr.onload = function() {
@@ -485,7 +498,7 @@ Respack.prototype.parseImageQueue = function() {
 Respack.prototype.imageLoadStart = function(imgFile, imageObj) {
     var that = this;
     var extension = imgFile.name.split('.').pop().toLowerCase();
-    var mime;
+    var mime = "";
     switch(extension) {
         case "png":
             mime = "image/png";

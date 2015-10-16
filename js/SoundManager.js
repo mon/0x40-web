@@ -82,7 +82,7 @@ function SoundManager(core) {
         source.connect( that.context.destination);
 
         // play the file
-        source.noteOn(0);
+        source.start(0);
 
     }, false);
 }
@@ -217,9 +217,9 @@ SoundManager.prototype.getAudioCallback = function(song, isBuild) {
             return;
         }
         if(isBuild) {
-            that.tmpBuild = that.trimMP3(buffer, song.forceTrim);
+            that.tmpBuild = that.trimMP3(buffer, song.forceTrim, song.noTrim);
         } else {
-            that.tmpBuffer = that.trimMP3(buffer, song.forceTrim);
+            that.tmpBuffer = that.trimMP3(buffer, song.forceTrim, song.noTrim);
         }
         that.onSongLoad(song);
     };
@@ -246,11 +246,12 @@ SoundManager.prototype.onSongLoad = function(song) {
 }
 
 // because MP3 is bad, we nuke silence
-SoundManager.prototype.trimMP3 = function(buffer, forceTrim) {
+SoundManager.prototype.trimMP3 = function(buffer, forceTrim, noTrim) {
     // Firefox has to trim always, Chrome only on PackShit
     var isFirefox = navigator.userAgent.toLowerCase().indexOf('firefox') > -1;
     // forceTrim is because PackShit breaks everything
-    if(!(isFirefox || forceTrim)) {
+    // noTrim is for oggs
+    if((!isFirefox && !forceTrim) || noTrim) {
         return buffer;
     }
     var start = LAME_DELAY_START;
