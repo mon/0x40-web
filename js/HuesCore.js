@@ -68,9 +68,6 @@ HuesCore = function(defaults) {
     if(defaults.load) {
         this.resourceManager.addAll(defaults.respacks, function() {
             document.getElementById("preloadHelper").className = "loaded";
-            window.setTimeout(function() {
-                document.getElementById("preloadHelper").style.display = "none";
-            }, 1500);
             that.setImage(0);
             if(defaults.autoplay) {
                 if(defaults.firstSong) {
