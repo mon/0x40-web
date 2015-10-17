@@ -31,28 +31,16 @@
     opacity: 1;
 }
 
-.hues-w-controls, .hues-w-subcontrols {
-    transform: translateY(0px);
-    -webkit-transform: translateY(0px);
-    transition: transform 1s ease-out;
-    -webkit-transition: -webkit-transform 1s ease-out;
+.hues-w-controls, .hues-w-subcontrols, .hues-w-beatbar {
+    visibility: visible;
+    opacity: 1;
+    transition: visibility 0.5s linear, opacity 0.5s linear;
+    -webkit-transition: visibility 0.5s linear, opacity 0.5s linear;
 }
 
-.hues-w-controls.hidden, .hues-w-subcontrols.hidden {
-    transform: translateY(200px);
-    -webkit-transform: translateY(200px);
-}
-
-.hues-w-beatbar {
-    transform: translateY(0px);
-    -webkit-transform: translateY(0px);
-    transition: transform 1s ease-out;
-    -webkit-transition: -webkit-transform 1s ease-out;
-}
-
-.hues-w-beatbar.hidden {
-    transform: translateY(-40px);   
-    -webkit-transform: translateY(-40px);
+.hues-w-controls.hidden, .hues-w-subcontrols.hidden, .hues-w-beatbar.hidden {
+    visibility: hidden;
+    opacity: 0;
 }
 
 .hues-w-beatleft, .hues-w-beatright {

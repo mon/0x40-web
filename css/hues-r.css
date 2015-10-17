@@ -97,15 +97,15 @@
 }
 
 .hues-r-container, .hues-r-controls, .hues-r-subcontrols {
-    transform: translateY(0px);
-    -webkit-transform: translateY(0px);
-    transition: transform 1s ease-out;
-    -webkit-transition: -webkit-transform 1s ease-out;
+    visibility: visible;
+    opacity: 1;
+    transition: visibility 0.5s linear, opacity 0.5s linear;
+    -webkit-transition: visibility 0.5s linear, opacity 0.5s linear;
 }
 
 .hues-r-container.hidden, .hues-r-controls.hidden, .hues-r-subcontrols.hidden {
-    transform: translateY(200px);
-    -webkit-transform: translateY(200px);
+    visibility: hidden;
+    opacity: 0;
 }
 
 .hues-r-listcontainer {
