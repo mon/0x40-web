@@ -40,8 +40,6 @@ function HuesCanvas(element, aContext, core) {
     this.blurDecay = null;
     this.blurAmount = null;
     this.blurIterations = null;
-    this.blurMin = null;
-    this.blurMax = null;
     this.blurDelta = null;
     this.blurAlpha = null;
     // dynamic
@@ -137,11 +135,11 @@ HuesCanvas.prototype.redraw = function() {
             this.canvas.globalAlpha = this.blurAlpha;
         }
         if(this.xBlur) {
-            for(var i=this.blurMin; i<=this.blurMax; i+= this.blurDelta) {
+            for(var i=-1; i<=1; i+= this.blurDelta) {
                 this.canvas.drawImage(bitmap, Math.floor(this.blurDistance * i) + offset, 0);
             }
         } else if(this.yBlur) {
-            for(var i=this.blurMin; i<=this.blurMax; i+= this.blurDelta) {
+            for(var i=-1; i<=1; i+= this.blurDelta) {
                 this.canvas.drawImage(bitmap, offset, Math.floor(this.blurDistance * i));
             }
         } else {
@@ -208,7 +206,8 @@ HuesCanvas.prototype.animationLoop = function() {
         }
     }
     if(this.blurStart) {
-        var delta = this.aContext.currentTime - this.blurStart;
+        // flash offsets blur gen by a frame
+        var delta = this.aContext.currentTime - this.blurStart + (1/30);
         this.blurDistance = this.blurAmount * Math.exp(-this.blurDecay * delta);
         
         // Update UI
@@ -218,7 +217,7 @@ HuesCanvas.prototype.animationLoop = function() {
         else
             this.core.blurUpdated(0, dist);
     }
-    if(this.blurStart && this.blurDistance < 0.3) {
+    if(this.blurStart && this.blurDistance < 1) {
         this.core.blurUpdated(0, 0);
         this.blurDistance = 0;
         this.blurStart = 0;
@@ -365,20 +364,17 @@ HuesCanvas.prototype.doYBlur = function() {
 }
 
 HuesCanvas.prototype.setBlurDecay = function(decay) {
-    this.blurDecay = {"slow" : 10, "medium" : 15, "fast" : 22, "faster!" : 30}[decay];
+    this.blurDecay = {"slow" : 7.8, "medium" : 14.1, "fast" : 20.8, "faster!" : 28.7}[decay];
 }
 
 HuesCanvas.prototype.setBlurQuality = function(quality) {
     this.blurIterations = {"low" : 3, "medium" : 11, "high" : 19, "extreme" : 35}[quality];
-    this.blurDelta = this.blurAmount / this.blurIterations;
-    this.blurAlpha = 1/(this.blurIterations/2);
+    this.blurDelta = 1 / (this.blurIterations/2);
+    this.blurAlpha = 1 / (this.blurIterations/2);
 }
 
 HuesCanvas.prototype.setBlurAmount = function(amount) {
-    this.blurAmount = {"low" : 9, "medium" : 15, "high" : 25}[amount];
-    this.blurMin = -this.blurAmount/2;
-    this.blurMax = this.blurAmount/2;
-    this.blurDelta = this.blurAmount / this.blurIterations;
+    this.blurAmount = {"low" : 48, "medium" : 96, "high" : 384}[amount];
 }
 
 HuesCanvas.prototype.setSmartAlign = function(align) {
