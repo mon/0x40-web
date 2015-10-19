@@ -247,16 +247,18 @@ SoundManager.prototype.onSongLoad = function(song) {
 
 // because MP3 is bad, we nuke silence
 SoundManager.prototype.trimMP3 = function(buffer, forceTrim, noTrim) {
-    // Firefox has to trim always, Chrome only on PackShit
-    var isFirefox = navigator.userAgent.toLowerCase().indexOf('firefox') > -1;
+    // Firefox/Edge has to trim always, other Webkit only on PackShit
+    var isWebkit = navigator.userAgent.indexOf('AppleWebKit') != -1;
+    // Edge is webkit but doesn't act like it
+    isWebkit = isWebkit && navigator.userAgent.indexOf('Edge') == -1;
     // forceTrim is because PackShit breaks everything
     // noTrim is for oggs
-    if((!isFirefox && !forceTrim) || noTrim) {
+    if((isWebkit && !forceTrim) || noTrim) {
         return buffer;
     }
     var start = LAME_DELAY_START;
     var newLength = buffer.length - LAME_DELAY_START - LAME_DELAY_END;
-    if(forceTrim && !isFirefox) {
+    if(forceTrim && isWebkit) {
         // yes, really
         newLength -= 1200;
         start += 1200;
