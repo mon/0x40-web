@@ -139,12 +139,20 @@ HuesUI.prototype.initUI = function() {
     }
     
     this.listContainer = document.createElement("div");
+    
+    var that = this;
+    this.resizeHandler = function() {
+        that.resize();
+    }
 }
 
 HuesUI.prototype.connectCore = function(core) {
     this.core = core;
     this.root.style.display = "block";
     this.listContainer.appendChild(core.resourceManager.listView);
+    
+    window.addEventListener('resize', this.resizeHandler);
+    this.resizeHandler();
 }
 
 HuesUI.prototype.disconnect = function() {
@@ -153,6 +161,8 @@ HuesUI.prototype.disconnect = function() {
     while (this.listContainer.firstElementChild) {
         this.listContainer.removeChild(this.listContainer.firstElementChild);
     }
+
+    window.removeEventListener('resize', this.resizeHandler);
 }
 
 // ONLY FOR CHANGING UI, NOT FOR "HIDE" FEATURE
@@ -699,21 +709,36 @@ ModernUI.prototype.beat = function() {
     this.beatCount.textContent = "B=" + this.intToHex4(this.core.getSafeBeatIndex());
 }
 
+ModernUI.prototype.resize = function() {
+    this.resizeSong();
+    this.resizeImage();
+}
+
+ModernUI.prototype.resizeElement = function(el, parent) {
+    el.className = ""
+    if (el.offsetWidth > parent.clientWidth) {
+        el.className = "small"
+    }
+    if (el.offsetWidth > parent.clientWidth) {
+        el.className = "x-small"
+    }
+}
+
+ModernUI.prototype.resizeSong = function() {
+    this.resizeElement(this.songLink, this.songName);
+}
+
+ModernUI.prototype.resizeImage = function() {
+    this.resizeElement(this.imageLink, this.imageName);
+}
+
 ModernUI.prototype.setSongText = function() {
     HuesUI.prototype.setSongText.call(this);
     
     if(!this.core.currentSong)
         return;
-    
-    var name = this.songName;
 
-    name.className = "hues-m-songtitle"
-    if (name.offsetWidth > name.clientWidth) {
-        name.className = "hues-m-songtitle small"
-    }
-    if (name.offsetWidth > name.clientWidth) {
-        name.className = "hues-m-songtitle x-small"
-    }
+    this.resizeSong();
 }
 
 ModernUI.prototype.setImageText = function() {
@@ -722,15 +747,7 @@ ModernUI.prototype.setImageText = function() {
     if(!this.core.currentImage)
         return;
     
-    var name = this.imageName
-
-    name.className = "hues-m-imagename"
-    if (name.offsetWidth > name.clientWidth) {
-        name.className = "hues-m-imagename small"
-    }
-    if (name.offsetWidth > name.clientWidth) {
-        name.className = "hues-m-imagename x-small"
-    }
+    this.resizeImage();
 }
 
 function XmasUI() {

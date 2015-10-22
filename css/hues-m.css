@@ -193,14 +193,14 @@
 }
 
 .hues-m-songtitle > a:link, .hues-m-songtitle > a:visited, .hues-m-imagename > a:link, .hues-m-imagename > a:visited {
-    display: block;
     color: inherit;
     text-decoration: none;
-    overflow: hidden;
 }
+
 .hues-m-songtitle > a.small, .hues-m-imagename > a.small {
     font-size: 10px;
 }
+
 .hues-m-songtitle > a.x-small, .hues-m-imagename > a.x-small {
     font-size: 8px;
 }
