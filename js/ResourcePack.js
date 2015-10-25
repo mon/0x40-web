@@ -381,6 +381,9 @@ Respack.prototype.parseImageFile = function(text) {
             newImages.push(image);
         }
     }
+    newImages.sort(function(a, b) {
+        return a.name.localeCompare(b.name);
+    });
     this.images = newImages;
 }
 
