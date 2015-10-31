@@ -19,6 +19,9 @@
  * THE SOFTWARE.
  */
 
+/* We don't  want localstorage variables optimised to different identifiers*/
+/*jshint -W069 */
+
 HuesCore = function(defaults) {
     // Bunch-o-initialisers
     this.version = "0x01";
@@ -98,12 +101,12 @@ HuesCore = function(defaults) {
     };
     
     this.animationLoop();
-}
+};
 
 HuesCore.prototype.animationLoop = function() {
     var that = this;
     if(!this.soundManager.playing) {
-        requestAnimationFrame(function() {that.animationLoop()});
+        requestAnimationFrame(function() {that.animationLoop();});
         return;
     }
     var now = this.soundManager.currentTime();
@@ -120,12 +123,12 @@ HuesCore.prototype.animationLoop = function() {
         var beat = this.getBeat(this.beatIndex);
         this.beater(beat);
     }
-    requestAnimationFrame(function() {that.animationLoop()});
-}
+    requestAnimationFrame(function() {that.animationLoop();});
+};
 
 HuesCore.prototype.getCurrentMode = function() {
     return this.isFullAuto ? "FULL AUTO" : "NORMAL";
-}
+};
 
 HuesCore.prototype.getSafeBeatIndex = function() {
     if(!this.soundManager.playing) {
@@ -136,23 +139,23 @@ HuesCore.prototype.getSafeBeatIndex = function() {
     } else {
         return this.beatIndex % this.currentSong.rhythm.length;
     }
-}
+};
 
 HuesCore.prototype.blurUpdated = function(x, y) {
     this.userInterface.blurUpdated(x, y);
-}
+};
 
 HuesCore.prototype.nextSong = function() {
     this.lastSongArray = [];
     var index = (this.songIndex + 1) % this.resourceManager.enabledSongs.length;
     this.setSong(index);
-}
+};
 
 HuesCore.prototype.previousSong = function() {
     this.lastSongArray = [];
     var index = ((this.songIndex - 1) + this.resourceManager.enabledSongs.length) % this.resourceManager.enabledSongs.length;
     this.setSong(index);
-}
+};
 
 HuesCore.prototype.setSongByName = function(name) {
     var songs = this.resourceManager.enabledSongs;
@@ -163,7 +166,7 @@ HuesCore.prototype.setSongByName = function(name) {
         }
     }
     this.setSong(0); // fallback
-}
+};
 
 HuesCore.prototype.setSong = function(index) {
     if(this.currentSong == this.resourceManager.enabledSongs[index]) {
@@ -171,7 +174,7 @@ HuesCore.prototype.setSong = function(index) {
     }
     this.songIndex = index;
     this.currentSong = this.resourceManager.enabledSongs[this.songIndex];
-    if (this.currentSong == undefined) {
+    if (this.currentSong === undefined) {
         this.currentSong = {"name":"None", "title":"None", "rhythm":".", "source":null, "crc":"none", "sound":null, "enabled":true, "filename":"none"};
     }
     console.log("Next song:", this.songIndex, this.currentSong);
@@ -197,12 +200,12 @@ HuesCore.prototype.setSong = function(index) {
         that.resetAudio();
         that.fillBuildup();
     });
-}
+};
 
 HuesCore.prototype.fillBuildup = function() {
     this.beatLength = this.soundManager.loopLength / this.currentSong.rhythm.length;
     var buildBeats = Math.floor(this.soundManager.loopStart / this.beatLength) + 1;
-    if (this.currentSong.buildupRhythm == null) {
+    if (this.currentSong.buildupRhythm === null) {
         this.currentSong.buildupRhythm = "";
     }
     if (this.currentSong.buildupRhythm.length < buildBeats) {
@@ -213,22 +216,22 @@ HuesCore.prototype.fillBuildup = function() {
     }
     console.log("Buildup length:", buildBeats);
     this.beatIndex = this.doBuildup ? -this.currentSong.buildupRhythm.length : 0;
-}
+};
 
 HuesCore.prototype.randomSong = function() {
     var index=Math.floor((Math.random() * this.resourceManager.enabledSongs.length));
-    if (index == this.songIndex && this.resourceManager.enabledSongs.length > 1 || !(this.lastSongArray.indexOf(index) == -1)) {
+    if (index == this.songIndex && this.resourceManager.enabledSongs.length > 1 || this.lastSongArray.indexOf(index) != -1) {
         this.randomSong();
     } else {
         console.log("Randoming a song!");
         this.setSong(index);
         this.lastSongArray.push(index);
-        noRepeat = Math.min(5, Math.floor((this.resourceManager.enabledSongs.length / 2)));
+        var noRepeat = Math.min(5, Math.floor((this.resourceManager.enabledSongs.length / 2)));
         while (this.lastSongArray.length > noRepeat && noRepeat >= 0) {
             this.lastSongArray.shift();
         }
     }
-}
+};
 /*
 HuesCore.prototype.onLoop = function() {
     this.loopCount = this.loopCount + 1;
@@ -261,12 +264,12 @@ HuesCore.prototype.songDataUpdated = function() {
     } else {
         this.beatLength = -1;
     }
-}
+};
 
 HuesCore.prototype.resetAudio = function() {
     this.beatIndex = 0;
     this.songDataUpdated();
-}
+};
 
 HuesCore.prototype.randomImage = function() {
     var len = this.resourceManager.enabledImages.length;
@@ -281,13 +284,13 @@ HuesCore.prototype.randomImage = function() {
             this.lastImageArray.shift();
         }
     }
-}
+};
 
 HuesCore.prototype.setImage = function(index) {
     // If there are no images, this corrects NaN to 0
     this.imageIndex = index ? index : 0;
     var img=this.resourceManager.enabledImages[this.imageIndex];
-    if (img == this.currentImage && !(img == null)) {
+    if (img == this.currentImage && img !== null) {
         return;
     }
     if (img) {
@@ -299,21 +302,21 @@ HuesCore.prototype.setImage = function(index) {
     }
     this.renderer.setImage(this.currentImage);
     this.userInterface.setImageText();
-}
+};
 
 HuesCore.prototype.nextImage = function() {
     this.setIsFullAuto(false);
     var img=(this.imageIndex + 1) % this.resourceManager.enabledImages.length;
     this.setImage(img);
     this.lastImageArray = [];
-}
+};
 
 HuesCore.prototype.previousImage = function() {
     this.setIsFullAuto(false);
     var img=((this.imageIndex - 1) + this.resourceManager.enabledImages.length) % this.resourceManager.enabledImages.length;
     this.setImage(img);
     this.lastImageArray = [];
-}
+};
 
 HuesCore.prototype.randomColourIndex = function() {
     var index=Math.floor((Math.random() * 64));
@@ -321,18 +324,18 @@ HuesCore.prototype.randomColourIndex = function() {
         return this.randomColourIndex();
     }
     return index;
-}
+};
 
 HuesCore.prototype.randomColour = function(isFade) {
     var index=this.randomColourIndex();
     this.setColour(index, isFade);
-}
+};
 
 HuesCore.prototype.setColour = function(index, isFade) {
     this.colourIndex = index;
     this.renderer.setColour(this.colours[this.colourIndex].c, isFade);
     this.userInterface.setColourText();
-}
+};
 
 HuesCore.prototype.getBeat = function(index) {
     if(index < 0) {
@@ -340,7 +343,7 @@ HuesCore.prototype.getBeat = function(index) {
     } else {
         return this.currentSong.rhythm[index % this.currentSong.rhythm.length];
     }
-}
+};
 
 HuesCore.prototype.beater = function(beat) {
     this.userInterface.beat();
@@ -404,7 +407,7 @@ HuesCore.prototype.beater = function(beat) {
                 this.randomImage();
             }
     }
-}
+};
 
 HuesCore.prototype.getBeatString = function(length) {
     length = length ? length : 256;
@@ -424,18 +427,18 @@ HuesCore.prototype.getBeatString = function(length) {
     }
 
     return beatString;
-}
+};
 
 HuesCore.prototype.setIsFullAuto = function(auto) {
     this.isFullAuto = auto;
     if (this.userInterface) {
         this.userInterface.modeUpdated();
     }
-}
+};
 
 HuesCore.prototype.toggleFullAuto = function() {
     this.setIsFullAuto(!this.isFullAuto);
-}
+};
 
 /*HuesCore.prototype.enterFrame = function() {
     this.setTexts();
@@ -460,7 +463,7 @@ HuesCore.prototype.toggleFullAuto = function() {
 
 HuesCore.prototype.respackLoaded = function() {
     this.init();
-}
+};
 
 /*HuesCore.prototype.rightClickListener = function(event) {
     switch (event) {
@@ -478,7 +481,7 @@ HuesCore.prototype.respackLoaded = function() {
 }*/
 
 HuesCore.prototype.changeUI = function(index) {
-    if (index >= 0 && this.uiArray.length > index && !(this.userInterface == this.uiArray[index])) {
+    if (index >= 0 && this.uiArray.length > index && this.userInterface != this.uiArray[index]) {
         this.hideLists();
         if(this.userInterface)
             this.userInterface.disconnect();
@@ -490,7 +493,7 @@ HuesCore.prototype.changeUI = function(index) {
         this.userInterface.beat();
         this.userInterface.modeUpdated();
     }
-}
+};
 
 HuesCore.prototype.settingsUpdated = function() {
     this.renderer.setSmartAlign(localStorage["smartAlign"]);
@@ -537,37 +540,37 @@ HuesCore.prototype.settingsUpdated = function() {
         this.loopCount = 0;
         this.autoSong = this.settings.autosong;
     }*/
-}
+};
 
 HuesCore.prototype.enabledChanged = function() {
     this.resourceManager.rebuildEnabled();
-}
+};
 
 HuesCore.prototype.hideLists = function() {
     this.resourceManager.hideLists();
-}
+};
 
 HuesCore.prototype.toggleSongList = function() {
     this.settings.hide();
     this.resourceManager.toggleSongList();
-}
+};
 
 HuesCore.prototype.toggleImageList = function() {
     this.settings.hide();
     this.resourceManager.toggleImageList();
-}
+};
 
 HuesCore.prototype.openSongSource = function() {
     if (this.currentSong && this.currentSong.source) {
         window.open(this.currentSong.source,'_blank');
     }
-}
+};
 
 HuesCore.prototype.openImageSource = function() {
     if (this.currentImage && this.currentImage.source) {
         window.open(this.currentImage.source,'_blank');
     }
-}
+};
 
 HuesCore.prototype.keyHandler = function(key) {
     switch (key) {
@@ -642,12 +645,12 @@ HuesCore.prototype.keyHandler = function(key) {
         return true;
     }
     return false;
-}
+};
 
 HuesCore.prototype.error = function(message) {
     document.getElementById("preSub").textContent = "Error: " + message;
     document.getElementById("preMain").style.color = "#F00";
-}
+};
 
 HuesCore.prototype.oldColours = 
    [{'c': 0x000000, 'n': 'black'},

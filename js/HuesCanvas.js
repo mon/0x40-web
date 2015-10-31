@@ -79,7 +79,7 @@ function HuesCanvas(element, aContext, core) {
 
 HuesCanvas.prototype.resizeHandler = function(that) {
     return function() {that.resize();};
-}
+};
 
 HuesCanvas.prototype.resize = function() {
     // height is constant 720px, we expand width to suit
@@ -88,7 +88,7 @@ HuesCanvas.prototype.resize = function() {
     var snow = document.getElementById("snow").getContext("2d");
     snow.canvas.width = Math.ceil(720 * ratio);
     this.needsRedraw = true;
-}
+};
 
 HuesCanvas.prototype.redraw = function() {
     var offset; // for centering/right/left align
@@ -159,19 +159,19 @@ HuesCanvas.prototype.redraw = function() {
     } else {
         this.needsRedraw = false;
     }
-}
+};
 
 /* Second fastest method from
  http://stackoverflow.com/questions/10073699/pad-a-number-with-leading-zeros-in-javascript
  It stil does millions of ops per second, and isn't ugly like the integer if/else */
 HuesCanvas.prototype.intToHex = function(num) {
     return '#' + ("00000"+num.toString(16)).slice(-6);
-}
+};
 
 HuesCanvas.prototype.getAnimLoop = function() {
     var that = this;
-    return function() {that.animationLoop()};
-}
+    return function() {that.animationLoop();};
+};
 
 HuesCanvas.prototype.animationLoop = function() {
     if (this.colourFade) {
@@ -234,7 +234,7 @@ HuesCanvas.prototype.animationLoop = function() {
     if(this.animating) {
         requestAnimationFrame(this.getAnimLoop());
     }
-}
+};
 
 HuesCanvas.prototype.setImage = function(image) {
     this.needsRedraw = true;
@@ -251,11 +251,11 @@ HuesCanvas.prototype.setImage = function(image) {
             this.syncAnim();
         }
     }
-}
+};
 
 HuesCanvas.prototype.beat = function() {
     this.lastBeat = this.aContext.currentTime;
-}
+};
 
 HuesCanvas.prototype.syncAnim = function() {
     var song = this.core.currentSong;
@@ -275,7 +275,7 @@ HuesCanvas.prototype.syncAnim = function() {
     this.animFrame = Math.floor(aLen * (beatLoc / this.image.beatsPerAnim));
     // Because negative mods are different in JS
     this.animFrame = ((this.animFrame % aLen) + aLen) % aLen;
-}
+};
 
 HuesCanvas.prototype.setColour = function(colour, isFade) {
     if(isFade) {
@@ -285,7 +285,7 @@ HuesCanvas.prototype.setColour = function(colour, isFade) {
         this.colour = colour;
     }
     this.needsRedraw = true;
-}
+};
 
 HuesCanvas.prototype.doBlackout = function(whiteout) {
     if (typeof(whiteout)==='undefined') whiteout = false;
@@ -301,7 +301,7 @@ HuesCanvas.prototype.doBlackout = function(whiteout) {
     if(localStorage["blackoutUI"] == "on") {
         this.core.userInterface.hide();
     }
-}
+};
 
 // for song changes
 HuesCanvas.prototype.clearBlackout = function() {
@@ -311,27 +311,27 @@ HuesCanvas.prototype.clearBlackout = function() {
     if(localStorage["blackoutUI"] == "on") {
         this.core.userInterface.show();
     }
-}
+};
 
 HuesCanvas.prototype.doShortBlackout = function(beatTime) {
     this.doBlackout();
     this.blackoutTimeout = this.aContext.currentTime + beatTime / 1.7;
     // looks better if we go right to black
     this.blackoutStart = 0;
-}
+};
 
 HuesCanvas.prototype.doColourFade = function(length) {
     this.colourFade = true;
     this.colourFadeLength = length;
     this.colourFadeStart = this.aContext.currentTime;
     this.oldColour = this.colour;
-}
+};
 
 HuesCanvas.prototype.stopFade = function() {
     this.colourFade = false;
     this.colourFadeStart = 0;
     this.colourFadeLength = 0;
-}
+};
 
 HuesCanvas.prototype.mixColours = function(percent) {
     percent = Math.min(1, percent);
@@ -345,7 +345,7 @@ HuesCanvas.prototype.mixColours = function(percent) {
     var mixG = oldG * (1 - percent) + newG * percent;
     var mixB = oldB * (1 - percent) + newB * percent;
     this.colour = mixR << 16 | mixG << 8 | mixB;
-}
+};
 
 HuesCanvas.prototype.doXBlur = function() {
     this.blurStart = this.aContext.currentTime;
@@ -353,7 +353,7 @@ HuesCanvas.prototype.doXBlur = function() {
     this.xBlur = true;
     this.yBlur = false;
     this.needsRedraw = true;
-}
+};
 
 HuesCanvas.prototype.doYBlur = function() {
     this.blurStart = this.aContext.currentTime;
@@ -361,32 +361,32 @@ HuesCanvas.prototype.doYBlur = function() {
     this.xBlur = false;
     this.yBlur = true;
     this.needsRedraw = true;
-}
+};
 
 HuesCanvas.prototype.setBlurDecay = function(decay) {
     this.blurDecay = {"slow" : 7.8, "medium" : 14.1, "fast" : 20.8, "faster!" : 28.7}[decay];
-}
+};
 
 HuesCanvas.prototype.setBlurQuality = function(quality) {
     this.blurIterations = {"low" : 3, "medium" : 11, "high" : 19, "extreme" : 35}[quality];
     this.blurDelta = 1 / (this.blurIterations/2);
     this.blurAlpha = 1 / (this.blurIterations/2);
-}
+};
 
 HuesCanvas.prototype.setBlurAmount = function(amount) {
     this.blurAmount = {"low" : 48, "medium" : 96, "high" : 384}[amount];
-}
+};
 
 HuesCanvas.prototype.setSmartAlign = function(align) {
     this.smartAlign = align == "on";
-}
+};
 
 HuesCanvas.prototype.setAnimating = function(anim) {
     if(!this.animating && anim) {
         requestAnimationFrame(this.animationLoop);
     }
     this.animating = anim;
-}
+};
 
 // From http://thecodeplayer.com/walkthrough/html5-canvas-snow-effect
 
@@ -403,15 +403,15 @@ HuesCanvas.prototype.startSnow = function() {
 			y: Math.random()*height, //y-coordinate
 			r: Math.random()*4+1, //radius
 			d: Math.random()*25 //density
-		})
+		});
 	}
     this.lastSnow = this.aContext.currentTime;
-}
+};
 
 HuesCanvas.prototype.stopSnow = function() {
     this.snowing = false;
     document.getElementById("snow").style.display = "none";
-}
+};
 
 HuesCanvas.prototype.drawSnow = function() {
     var ctx = document.getElementById("snow").getContext("2d");
@@ -459,4 +459,4 @@ HuesCanvas.prototype.drawSnow = function() {
         }
     }
     this.lastSnow = this.aContext.currentTime;
-}
+};

@@ -144,7 +144,7 @@ SoundManager.prototype.playSong = function(song, playBuild, callback) {
             }
         }
     });
-}
+};
 
 SoundManager.prototype.stop = function() {
     if (this.playing) {
@@ -157,7 +157,7 @@ SoundManager.prototype.stop = function() {
         this.loopStart = 0;
         this.loopLength = 0;
     }
-}
+};
 
 // In seconds, relative to the loop start
 SoundManager.prototype.currentTime = function() {
@@ -165,7 +165,7 @@ SoundManager.prototype.currentTime = function() {
         return 0;
     }
     return this.context.currentTime - this.startTime;
-}
+};
 
 SoundManager.prototype.displayableTime = function() {
     if(!this.playing) {
@@ -177,7 +177,7 @@ SoundManager.prototype.displayableTime = function() {
     } else {
         return time % this.loopLength;
     }
-}
+};
 
 SoundManager.prototype.loadBuffer = function(song, callback) {
     if(callback) {
@@ -187,7 +187,7 @@ SoundManager.prototype.loadBuffer = function(song, callback) {
         this.loadAudioFile(song, true);
     }
     this.loadAudioFile(song, false);
-}
+};
 
 SoundManager.prototype.loadAudioFile = function(song, isBuild) {
     this.context.decodeAudioData(
@@ -197,7 +197,7 @@ SoundManager.prototype.loadAudioFile = function(song, isBuild) {
                 console.log('Error decoding audio "' + song.name + '".');
         }
     );
-}
+};
 
 /* decodeAudioData nukes our original MP3 array, but we want to keep it around
   for memory saving purposes, so we must duplicate it locally here */
@@ -223,7 +223,7 @@ SoundManager.prototype.getAudioCallback = function(song, isBuild) {
         }
         that.onSongLoad(song);
     };
-}
+};
 
 SoundManager.prototype.onSongLoad = function(song) {
     // if this fails, we need to wait for the other part to load
@@ -243,7 +243,7 @@ SoundManager.prototype.onSongLoad = function(song) {
             this.onLoadCallback = null;
         }
     }
-}
+};
 
 // because MP3 is bad, we nuke silence
 SoundManager.prototype.trimMP3 = function(buffer, forceTrim, noTrim) {
@@ -272,7 +272,7 @@ SoundManager.prototype.trimMP3 = function(buffer, forceTrim, noTrim) {
         }
     }
     return ret;
-}
+};
 
 // This wouldn't be required if Web Audio could do gapless playback properly
 SoundManager.prototype.concatenateAudioBuffers = function(buffer1, buffer2) {
@@ -312,27 +312,27 @@ SoundManager.prototype.setMute = function(mute) {
     this.core.userInterface.updateVolume(this.gainNode.gain.value);
     this.mute = mute;
     return mute;
-}
+};
 
 SoundManager.prototype.toggleMute = function() {
     return this.setMute(!this.mute);
-}
+};
 
 SoundManager.prototype.decreaseVolume = function() {
     this.setMute(false);
-    val = Math.max(this.gainNode.gain.value - 0.1, 0);
+    var val = Math.max(this.gainNode.gain.value - 0.1, 0);
     this.gainNode.gain.value = val;
     this.core.userInterface.updateVolume(val);
-}
+};
 
 SoundManager.prototype.increaseVolume = function() {
     this.setMute(false);
-    val = Math.min(this.gainNode.gain.value + 0.1, 1);
+    var val = Math.min(this.gainNode.gain.value + 0.1, 1);
     this.gainNode.gain.value = val;
     this.core.userInterface.updateVolume(val);
-}
+};
 
 SoundManager.prototype.setVolume = function(vol) {
     this.gainNode.gain.value = vol;
     this.core.userInterface.updateVolume(vol);
-}
+};

@@ -72,7 +72,7 @@ Respack.prototype.updateProgress = function() {
         }
         this.progressCallback(percent, this);
     }
-}
+};
 
 Respack.prototype.loadFromURL = function(url, callback, progress) {
     var that = this;
@@ -87,7 +87,7 @@ Respack.prototype.loadFromURL = function(url, callback, progress) {
     };
     req.onerror = function() {
         console.log("Could not load respack at URL", url);
-    }
+    };
     req.onprogress = function(event) {
         if (event.lengthComputable) {
             that.size = event.total;
@@ -99,9 +99,9 @@ Respack.prototype.loadFromURL = function(url, callback, progress) {
         } else {
             // Unable to compute progress information since the total size is unknown
         }
-    }
+    };
     req.send();
-}
+};
 
 Respack.prototype.loadBlob = function(blob, callback, progress, errorCallback) {
     this._completionCallback = callback;
@@ -121,7 +121,7 @@ Respack.prototype.loadBlob = function(blob, callback, progress, errorCallback) {
             }
         } 
     );
-}
+};
 
 Respack.prototype.parseWholeZip = function() {
     // TODO might break on bad file
@@ -143,10 +143,10 @@ Respack.prototype.parseWholeZip = function() {
     
     debug("ZIP loader: trying to finish");
     this.tryFinish();
-}
+};
 
 Respack.prototype.parseFile = function(file) {
-    var name = file.name
+    var name = file.name;
     if (name.match(this.audioExtensions)) {
         this.parseSong(file);
         this.filesToLoad++;
@@ -168,15 +168,15 @@ Respack.prototype.parseFile = function(file) {
             default:
         }
     }
-}
+};
 
 Respack.prototype.parseSong = function(file) {
     this.songQueue.push(file);
-}
+};
 
 Respack.prototype.parseImage = function(file) {
     this.imageQueue.push(file);
-}
+};
 
 Respack.prototype.parseXML = function() {
     var that = this;
@@ -227,13 +227,13 @@ Respack.prototype.parseXML = function() {
     if(this._completionCallback) {
         this._completionCallback();
     }
-}
+};
 
 // Save some chars
 Element.prototype.getTag = function(tag, def) {
     var t = this.getElementsByTagName(tag)[0];
     return t ? t.textContent : (def ? def : null);
-}
+};
 
 Respack.prototype.parseSongFile = function(text) {
     debug(" - Parsing songFile");
@@ -241,7 +241,7 @@ Respack.prototype.parseSongFile = function(text) {
     var oParser = new DOMParser();
     var oDOM = oParser.parseFromString(text, "text/xml");
     if(oDOM.documentElement.nodeName !== "songs"){
-        console.log("songs.xml error, corrupt file?")
+        console.log("songs.xml error, corrupt file?");
         return;
     }
     
@@ -280,7 +280,7 @@ Respack.prototype.parseSongFile = function(text) {
                     // get rid of the junk
                     this.songs.splice(this.songs.indexOf(build), 1);
                 } else {
-                    debug("  WARNING!", "Didn't find a buildup '" + buildup + "'!");
+                    debug("  WARNING!", "Didn't find a buildup '" + song.buildup + "'!");
                 }
             }
             
@@ -301,11 +301,11 @@ Respack.prototype.parseSongFile = function(text) {
     }
     for(var i = 0; i < this.songs.length; i++) {
         if(newSongs.indexOf(this.songs[i]) == -1) {
-            debug("  WARNING!", "We have a file for", song.name, "but no information for it");
+            debug("  WARNING!", "We have a file for", this.songs[i].name, "but no information for it");
         }
     }
     this.songs = newSongs;
-}
+};
 
 Respack.prototype.parseInfoFile = function(text) {
     debug(" - Parsing infoFile");
@@ -314,7 +314,7 @@ Respack.prototype.parseInfoFile = function(text) {
     var oDOM = oParser.parseFromString(text, "text/xml");
     var info = oDOM.documentElement;
     if(info.nodeName !== "info"){
-        console.log("info.xml error, corrupt file?")
+        console.log("info.xml error, corrupt file?");
         return;
     }
     
@@ -323,7 +323,7 @@ Respack.prototype.parseInfoFile = function(text) {
     this.author = info.getTag("author", this.author);
     this.description = info.getTag("description", this.description);
     this.link = info.getTag("link", this.link);
-}
+};
 
 Respack.prototype.parseImageFile = function(text) {
     debug(" - Parsing imagefile");
@@ -331,7 +331,7 @@ Respack.prototype.parseImageFile = function(text) {
     var oParser = new DOMParser();
     var oDOM = oParser.parseFromString(text, "text/xml");
     if(oDOM.documentElement.nodeName !== "images"){
-        console.log("images.xml error, corrupt file?")
+        console.log("images.xml error, corrupt file?");
         return;
     }
     
@@ -352,7 +352,7 @@ Respack.prototype.parseImageFile = function(text) {
             image.beatsPerAnim = parseFloat(el.getTag("beatsPerAnim"));
             var frameDur = el.getTag("frameDuration");
             if(frameDur) {
-                image.frameDurations = []
+                image.frameDurations = [];
                 var strSplit = frameDur.split(",");
                 for(var j = 0; j < strSplit.length; j++) {
                     image.frameDurations.push(parseInt(strSplit[j]));
@@ -385,15 +385,15 @@ Respack.prototype.parseImageFile = function(text) {
         return a.name.localeCompare(b.name);
     });
     this.images = newImages;
-}
+};
 
 Respack.prototype.containsSong = function(name) {
     return this.getSong(name) !== null;
-}
+};
 
 Respack.prototype.containsImage = function(name) {
     return this.getImage(name) !== null;
-}
+};
 
 Respack.prototype.getSong = function(name) {
     for(var i = 0; i < this.songs.length; i++) {
@@ -402,7 +402,7 @@ Respack.prototype.getSong = function(name) {
         }
     }
     return null;
-}
+};
 
 Respack.prototype.getImage = function(name) {
     for(var i = 0; i < this.images.length; i++) {
@@ -411,7 +411,7 @@ Respack.prototype.getImage = function(name) {
         }
     }
     return null;
-}
+};
 
 Respack.prototype.parseSongQueue = function() {
     var that = this;
@@ -458,14 +458,14 @@ Respack.prototype.parseSongQueue = function() {
         });
         this.songs.push(newSong);
     }
-}
+};
 
 Respack.prototype.parseImageQueue = function() {
     var imgFile = this.imageQueue.shift();
     var name = imgFile.name.replace(this.imageExtensions, "");
     
-    if (match = name.match(new RegExp("^(.*)_(\\d+)$"))) {
-        var anim = this.getImage(match[1])
+    if((match = name.match(new RegExp("^(.*)_(\\d+)$")))) {
+        var anim = this.getImage(match[1]);
         if(!anim) { // make a fresh one
             anim = {"name":match[1],
                     "fullname":match[1],
@@ -493,10 +493,10 @@ Respack.prototype.parseImageQueue = function() {
         this.images.push(img);
         this.imageLoadStart(imgFile, img);
     } else {
-        existing = this.getImage(name);
+        var existing = this.getImage(name);
         debug("WARNING: Image", name, "already exists! Conflict with", imgFile.name, "and", existing.name);
     }
-}
+};
 
 Respack.prototype.imageLoadStart = function(imgFile, imageObj) {
     var that = this;
@@ -519,10 +519,10 @@ Respack.prototype.imageLoadStart = function(imgFile, imageObj) {
     imgFile.getData64URI(mime, function(image) {
         that.imageLoadComplete(image, imageObj);
     });
-}
+};
 
 Respack.prototype.imageLoadComplete = function(imageBmp, imageObj) {
-    newImg = new Image();
+    var newImg = new Image();
     newImg.src = imageBmp;
     if (imageObj.animated) {
         imageObj.bitmaps.push(newImg);
@@ -533,7 +533,7 @@ Respack.prototype.imageLoadComplete = function(imageBmp, imageObj) {
     this.filesLoaded++;
     this.updateProgress();
     this.tryFinish();
-}
+};
 
 Respack.prototype.tryFinish = function() {
     if (this.imageQueue.length > 0) {
@@ -544,4 +544,4 @@ Respack.prototype.tryFinish = function() {
         debug("Finished parsing images/songs, parsing xml files...");
         this.parseXML();
     }
-}
+};

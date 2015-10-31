@@ -34,7 +34,7 @@ function Resources(core) {
     
     this.toLoad = 0;
     this.progressState = [];
-    this.rToLoad = []
+    this.rToLoad = [];
     this.loadFinishCallback = null;
     this.progressCallback = null;
     
@@ -105,15 +105,15 @@ Resources.prototype.addAll = function(urls, callback, progressCallback) {
             }
         }, this.createProgCallback(i));
     }
-}
+};
 
 Resources.prototype.createProgCallback = function(i) {
     var that = this;
     return function(progress, pack) {
         that.progressState[i] = progress;
         that.updateProgress(pack);
-    }
-}
+    };
+};
 
 Resources.prototype.updateProgress = function(pack) {
     var total = 0;
@@ -122,7 +122,7 @@ Resources.prototype.updateProgress = function(pack) {
     }
     total /= this.progressState.length;
     this.progressCallback(total, pack);
-}
+};
 
 Resources.prototype.addPack = function(pack) {
     console.log("Added", pack.name, "to respacks");
@@ -140,12 +140,12 @@ Resources.prototype.addPack = function(pack) {
         }, 
         this.selectPackCallback(id)
     );
-}
+};
 
 Resources.prototype.addResourcesToArrays = function(pack) {
     this.allImages = this.allImages.concat(pack.images);
     this.allSongs = this.allSongs.concat(pack.songs);
-}
+};
 
 Resources.prototype.rebuildArrays = function() {
     this.allSongs = [];
@@ -155,7 +155,7 @@ Resources.prototype.rebuildArrays = function() {
     for(var i = 0; i < this.resourcePacks.length; i++) {
         this.addResourcesToArrays(this.resourcePacks[i]);
     }
-}
+};
 
 Resources.prototype.rebuildEnabled = function() {
     this.enabledSongs = [];
@@ -163,7 +163,7 @@ Resources.prototype.rebuildEnabled = function() {
 
     for(var i = 0; i < this.resourcePacks.length; i++) {
         var pack = this.resourcePacks[i];
-        if (pack["enabled"] != true) {
+        if (pack.enabled !== true) {
             continue;
         }
         for(var j = 0; j < pack.songs.length; j++) {
@@ -182,11 +182,11 @@ Resources.prototype.rebuildEnabled = function() {
     
     var songList = this.enabledSongList;
     while(songList.firstElementChild) {
-        songList.removeChild(songList.firstElementChild)
+        songList.removeChild(songList.firstElementChild);
     }    
     var imageList = this.enabledImageList;
     while(imageList.firstElementChild) {
-        imageList.removeChild(imageList.firstElementChild)
+        imageList.removeChild(imageList.firstElementChild);
     }
     for(var i = 0; i < this.enabledSongs.length; i++) {
         var song = this.enabledSongs[i];
@@ -197,14 +197,14 @@ Resources.prototype.rebuildEnabled = function() {
         this.appendSimpleListItem(image.name, imageList, this.selectImageCallback(i));
     }
     this.updateTotals();
-}
+};
 
 Resources.prototype.playSongCallback = function(index) {
     var that = this;
     return function() {
         that.core.setSong(index);
     };
-}
+};
 
 Resources.prototype.selectImageCallback = function(index) {
     var that = this;
@@ -212,7 +212,7 @@ Resources.prototype.selectImageCallback = function(index) {
         that.core.setImage(index);
         that.core.setIsFullAuto(false);
     };
-}
+};
 
 Resources.prototype.removePack = function(pack) {
     var index = this.resourcePacks.indexOf(pack);
@@ -220,20 +220,20 @@ Resources.prototype.removePack = function(pack) {
         this.resourcePacks.splice(index, 1);
         this.rebuildArrays();
     }
-}
+};
 
 Resources.prototype.removeAllPacks = function() {
     this.resourcePacks = [];
     this.rebuildArrays();
-}
+};
 
 Resources.prototype.getSongNames = function() {
-    var names = []
+    var names = [];
     for(var i = 0; i < this.allSongs.length; i++) {
         names.push(this.allSongs[i]);
     }
     return names;
-}
+};
 
 Resources.prototype.loadLocal = function() {
     console.log("Loading local zip(s)");
@@ -242,7 +242,7 @@ Resources.prototype.loadLocal = function() {
         this.fileParseQueue.push(files[i]);
     }
     this.parseLocalQueue();
-}
+};
 
 Resources.prototype.parseLocalQueue = function(recursing) {
     var that = this;
@@ -265,7 +265,7 @@ Resources.prototype.parseLocalQueue = function(recursing) {
         console.log("Local respack parsing complete");
         this.currentlyParsing = false;
     }
-}
+};
 
 Resources.prototype.localProgress = function(progress, respack) {
     this.packsView.progressStatus.textContent = "Processing...";
@@ -274,7 +274,7 @@ Resources.prototype.localProgress = function(progress, respack) {
     this.packsView.progressCurrent.textContent = respack.filesLoaded;
     this.packsView.progressTop.textContent = respack.filesToLoad;
     this.packsView.progressPercent.textContent = Math.round(progress * 100) + "%";
-}
+};
 
 Resources.prototype.localComplete = function(progress) {
     var progStat = this.packsView.progressStatus;
@@ -285,7 +285,7 @@ Resources.prototype.localComplete = function(progress) {
     this.packsView.progressCurrent.textContent = "0b";
     this.packsView.progressTop.textContent = "0b";
     this.packsView.progressPercent.textContent = "0%";
-}
+};
 
 Resources.prototype.initUI = function() {
     this.root = document.getElementById("huesResources");
@@ -302,11 +302,14 @@ Resources.prototype.initUI = function() {
     packList.className = "res-list";
     packList.id = "res-packlist";
     this.packsView.respackList = packList;
+    // so we don't use it out of scope in the next if
+    var remoteHeader = null;
+    var remoteList = null;
     if(!this.core.settings.defaults.disableRemoteResources) {
-        var remoteHeader = document.createElement("div");
+        remoteHeader = document.createElement("div");
         remoteHeader.textContent = "Remote respacks";
         remoteHeader.className = "res-header";
-        var remoteList = document.createElement("div");
+        remoteList = document.createElement("div");
         remoteList.className = "res-list";
         remoteList.id = "res-remotelist";
         this.appendSimpleListItem("Click to load the list", remoteList,
@@ -397,7 +400,7 @@ Resources.prototype.initUI = function() {
     packInfo.appendChild(packSize);
     var packDesc = document.createElement("div");
     packDesc.id = "res-packdesc";
-    packDesc.textContent = "<no description>"
+    packDesc.textContent = "<no description>";
     
     var packTabs = document.createElement("div");
     packTabs.id = "res-packtabs";
@@ -424,7 +427,7 @@ Resources.prototype.initUI = function() {
     imageCount.htmlFor = "res-imagetab";
     packTabs.appendChild(imageCheck);
     packTabs.appendChild(imageCount);
-    ;
+    
     var songList = document.createElement("div");
     songList.id = "res-songlist";
     songList.className = "res-list";
@@ -507,12 +510,12 @@ Resources.prototype.initUI = function() {
     
     this.listView.appendChild(this.enabledSongList);
     this.listView.appendChild(this.enabledImageList);
-}
+};
 
 Resources.prototype.hideLists = function() {
     this.enabledSongList.className = "hidden";
     this.enabledImageList.className = "hidden";
-}
+};
 
 Resources.prototype.toggleSongList = function() {
     if(this.enabledSongList.className == "hidden") {
@@ -521,7 +524,7 @@ Resources.prototype.toggleSongList = function() {
         this.enabledSongList.className = "hidden";
     }
     this.enabledImageList.className = "hidden";
-}
+};
 
 Resources.prototype.toggleImageList = function() {
     if(this.enabledImageList.className == "hidden") {
@@ -530,18 +533,18 @@ Resources.prototype.toggleImageList = function() {
         this.enabledImageList.className = "hidden";
     }
     this.enabledSongList.className = "hidden";
-}
+};
 
 Resources.prototype.updateTotals = function() {
     this.packView.totalSongs.textContent =
             this.enabledSongs.length + "/" + this.allSongs.length;
     this.packView.totalImages.textContent =
             this.enabledImages.length + "/" + this.allImages.length;
-}
+};
 
 Resources.prototype.truncateNum = function(num) {
     return Math.round(num * 100) / 100;
-}
+};
 
 Resources.prototype.selectPack = function(id) {
     var pack = this.resourcePacks[id];
@@ -566,10 +569,10 @@ Resources.prototype.selectPack = function(id) {
     var songList = this.packView.songList;
     var imageList = this.packView.imageList;
     while (songList.firstElementChild) {
-        songList.removeChild(songList.firstElementChild)
+        songList.removeChild(songList.firstElementChild);
     }    
     while (imageList.firstElementChild) {
-        imageList.removeChild(imageList.firstElementChild)
+        imageList.removeChild(imageList.firstElementChild);
     }
     
     for(var i = 0; i < pack.songs.length; i++) {
@@ -587,12 +590,12 @@ Resources.prototype.selectPack = function(id) {
             this.clickResourceCallback(image, false),
             image.enabled);
     }
-}
+};
 
 Resources.prototype.selectPackCallback = function(id) {
     var that = this;
-    return function() {that.selectPack(id)};
-}
+    return function() {that.selectPack(id);};
+};
 
 Resources.prototype.selectResourceCallback = function(res) {
     var that = this;
@@ -600,7 +603,7 @@ Resources.prototype.selectResourceCallback = function(res) {
         res.enabled = this.checked;
         that.rebuildEnabled();
     };
-}
+};
 
 Resources.prototype.clickResourceCallback = function(res, isSong) {
     var that = this;
@@ -618,7 +621,7 @@ Resources.prototype.clickResourceCallback = function(res, isSong) {
             that.core.setIsFullAuto(false);
         }
     };
-}
+};
 
 Resources.prototype.getEnabledTabContents = function() {
     var pack = this.packView.pack;
@@ -632,7 +635,7 @@ Resources.prototype.getEnabledTabContents = function() {
         ret.elName = "song";
     }
     return ret;
-}
+};
 
 Resources.prototype.enableAll = function() {
     var tab = this.getEnabledTabContents();
@@ -643,7 +646,7 @@ Resources.prototype.enableAll = function() {
         document.getElementById(tab.elName + i).checked = true;
     }    
     this.rebuildEnabled();
-}
+};
 
 Resources.prototype.disableAll = function() {
     var tab = this.getEnabledTabContents();
@@ -654,7 +657,7 @@ Resources.prototype.disableAll = function() {
         document.getElementById(tab.elName + i).checked = false;
     }    
     this.rebuildEnabled();
-}
+};
 
 Resources.prototype.invert = function() {
     var tab = this.getEnabledTabContents();
@@ -665,10 +668,10 @@ Resources.prototype.invert = function() {
         document.getElementById(tab.elName + i).checked = tab.arr[i].enabled;
     }    
     this.rebuildEnabled();
-}
+};
 
 Resources.prototype.appendListItem = function(name, value, id, root, oncheck, onclick, checked) {
-    if(checked == undefined) {
+    if(checked === undefined) {
         checked = true;
     }
     var div = document.createElement("div");
@@ -689,13 +692,13 @@ Resources.prototype.appendListItem = function(name, value, id, root, oncheck, on
     div.appendChild(checkStyler);
     div.appendChild(label);
     root.appendChild(div);
-}
+};
 
 Resources.prototype.loadRemotes = function() {
     var that = this;
     var remoteList = this.packsView.remoteList;
     while(remoteList.firstElementChild) {
-        remoteList.removeChild(remoteList.firstElementChild)
+        remoteList.removeChild(remoteList.firstElementChild);
     }
     var item = this.appendSimpleListItem("Loading...", remoteList);
     
@@ -712,26 +715,26 @@ Resources.prototype.loadRemotes = function() {
     req.onerror = function() {
         item.textContent = "Could not load list! Click to try again";
         item.onclick = function() {that.loadRemotes();};
-    }
+    };
     req.send();
-}
+};
 
 Resources.prototype.populateRemotes = function() {
     var remoteList = this.packsView.remoteList;
     while(remoteList.firstElementChild) {
-        remoteList.removeChild(remoteList.firstElementChild)
+        remoteList.removeChild(remoteList.firstElementChild);
     }
     for(var i = 0; i < this.remotes.length; i++) {
         this.remotes[i].loaded = false;
         this.appendSimpleListItem(this.remotes[i].name, remoteList,
             this.getRemoteCallback(i));
     }
-}
+};
 
 Resources.prototype.getRemoteCallback = function(index) {
     var that = this;
     return function() {that.selectRemotePack(index);};
-}
+};
 
 Resources.prototype.selectRemotePack = function(id) {
     var pack = this.remotes[id];
@@ -762,10 +765,10 @@ Resources.prototype.selectRemotePack = function(id) {
     var songList = this.packView.songList;
     var imageList = this.packView.imageList;
     while (songList.firstElementChild) {
-        songList.removeChild(songList.firstElementChild)
+        songList.removeChild(songList.firstElementChild);
     }    
     while (imageList.firstElementChild) {
-        imageList.removeChild(imageList.firstElementChild)
+        imageList.removeChild(imageList.firstElementChild);
     }
     
     for(var i = 0; i < pack.songs.length; i++) {
@@ -777,14 +780,14 @@ Resources.prototype.selectRemotePack = function(id) {
         var image = pack.images[i];
         this.appendSimpleListItem(image, imageList);
     }
-}
+};
 
 Resources.prototype.loadCurrentRemote = function() {
     var pack = this.packView.pack;
     var that = this;
     
     // Not actually a remote, ignore. How did you press this :<
-    if(pack.loaded == undefined || pack.loaded) {
+    if(pack.loaded === undefined || pack.loaded) {
         return;
     }
     
@@ -796,7 +799,7 @@ Resources.prototype.loadCurrentRemote = function() {
             that.remoteComplete();
         }, function(progress, respack) {that.remoteProgress(progress, respack);}
     );
-}
+};
 
 Resources.prototype.remoteProgress = function(progress, respack) {
     if(progress < 0.5) {
@@ -812,7 +815,7 @@ Resources.prototype.remoteProgress = function(progress, respack) {
         this.packsView.progressBar.style.width = ((progress - 0.5) * 2 * 100) + "%";
         this.packsView.progressPercent.textContent = Math.round((progress - 0.5) * 2 * 100) + "%";
     }
-}
+};
 
 Resources.prototype.remoteComplete = function(progress) {
     var progStat = this.packsView.progressStatus;
@@ -824,7 +827,7 @@ Resources.prototype.remoteComplete = function(progress) {
     this.packsView.progressCurrent.textContent = "0b";
     this.packsView.progressTop.textContent = "0b";
     this.packsView.progressPercent.textContent = "0%";
-}
+};
 
 Resources.prototype.appendSimpleListItem = function(value, root, onclick) {
     var div = document.createElement("div");
@@ -835,4 +838,4 @@ Resources.prototype.appendSimpleListItem = function(value, root, onclick) {
     div.appendChild(label);
     root.appendChild(div);
     return label;
-}
+};
