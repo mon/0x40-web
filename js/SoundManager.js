@@ -27,7 +27,7 @@ function SoundManager(core) {
     this.core = core;
     this.playing = false;
     this.song = null;
-    
+
     /* Lower level audio and timing info */
     this.bufSource = null;
     this.buffer = null;
@@ -35,21 +35,21 @@ function SoundManager(core) {
     this.startTime = 0;  // File start time - 0 is loop start, not build start
     this.loopStart = 0;  // When the build ends, if any
     this.loopLength = 0; // For calculating beat lengths
-    
+
     // Volume
     this.gainNode = null;
     this.mute = false;
     this.lastVol = 1;
-    
+
     // For concatenating our files
     this.leftToLoad = 0;
     this.tmpBuffer = null;
     this.tmpBuild = null;
     this.onLoadCallback = null;
-    
+
     // In case of API non-support
     this.canUse = true;
-    
+
     // Check Web Audio API Support
     try {
         // More info at http://caniuse.com/#feat=audio-api
@@ -70,7 +70,7 @@ function SoundManager(core) {
         this.errorMsg = "MP3 not supported in this browser.";
         return;
     }
-    
+
     var that = this;
     window.addEventListener('touchend', function() {
         // create empty buffer
@@ -97,7 +97,7 @@ SoundManager.prototype.playSong = function(song, playBuild, callback) {
     if(!song || (!song.sound)) { // null song
         return;
     }
-    
+
     this.loadBuffer(song, function() {
         // To prevent race condition if you press "next" twice fast
         if(song == that.song) {
@@ -111,7 +111,7 @@ SoundManager.prototype.playSong = function(song, playBuild, callback) {
             that.bufSource.loopStart = that.loopStart;
             that.bufSource.loopEnd = that.buffer.duration;
             that.bufSource.connect(that.gainNode);
-            
+
             // This fixes sync issues on Firefox and slow machines.
             if(that.context.suspend && that.context.resume) {
                 that.context.suspend().then(function() {

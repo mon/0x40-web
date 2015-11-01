@@ -35,7 +35,7 @@ HuesSettings.prototype.defaultSettings = {
     preloadPrefix: "0x",
     preloadBase: 16,
     preloadMax: 0x40,
-    
+
     // UI accessible config
     // Autosong stuff is a todo, becuase why even implement that
     smartAlign: "on",
@@ -113,7 +113,7 @@ HuesSettings.prototype.settingsOptions = {
         name : "Play buildups",
         options : ["off", "once", "on"]
     }
-    
+
 };
 
 function HuesSettings(defaults) {
@@ -121,7 +121,7 @@ function HuesSettings(defaults) {
     this.root = document.getElementById("huesSettings");
     this.window = document.getElementById("settingsHelper");
     this.hide();
-    
+
     for(var attr in this.defaultSettings) {
       if(this.defaultSettings.hasOwnProperty(attr)) {
           if(defaults[attr] === undefined) {
@@ -140,9 +140,9 @@ function HuesSettings(defaults) {
           }
       }
     }
-    
+
     this.defaults = defaults;
-    
+
     this.initUI();
 }
 
@@ -188,10 +188,10 @@ HuesSettings.prototype.showInfo = function() {
 
 HuesSettings.prototype.initUI = function() {
     var doc = this.root.ownerDocument;
-    
+
     var that = this;
     document.getElementById("closeButton").onclick = function() {that.hide();};
-    
+
     // To order things nicely
     for(var cat in this.settingsCategories) {
             if(this.settingsCategories.hasOwnProperty(cat)) {

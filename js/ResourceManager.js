@@ -24,20 +24,20 @@ var packsURL = "http://cdn.0x40hu.es/getRespacks.php";
 
 function Resources(core) {
     this.core = core;
-    
+
     this.resourcePacks = [];
 
     this.allSongs = [];
     this.allImages = [];
     this.enabledSongs = [];
     this.enabledImages = [];
-    
+
     this.toLoad = 0;
     this.progressState = [];
     this.rToLoad = [];
     this.loadFinishCallback = null;
     this.progressCallback = null;
-    
+
     this.root = null;
     // For songs/images
     this.listView = null;
@@ -132,12 +132,12 @@ Resources.prototype.addPack = function(pack) {
     this.addResourcesToArrays(pack);
     this.rebuildEnabled();
     this.updateTotals();
-    
+
     this.appendListItem("respacks", pack.name, "res" + id, this.packsView.respackList,
         function() {
             pack.enabled = this.checked;
             that.rebuildEnabled();
-        }, 
+        },
         this.selectPackCallback(id)
     );
 };
@@ -151,7 +151,7 @@ Resources.prototype.rebuildArrays = function() {
     this.allSongs = [];
     this.allImages = [];
     this.allAnimations = [];
-    
+
     for(var i = 0; i < this.resourcePacks.length; i++) {
         this.addResourcesToArrays(this.resourcePacks[i]);
     }
@@ -179,11 +179,11 @@ Resources.prototype.rebuildEnabled = function() {
             }
         }
     }
-    
+
     var songList = this.enabledSongList;
     while(songList.firstElementChild) {
         songList.removeChild(songList.firstElementChild);
-    }    
+    }
     var imageList = this.enabledImageList;
     while(imageList.firstElementChild) {
         imageList.removeChild(imageList.firstElementChild);
@@ -253,7 +253,7 @@ Resources.prototype.parseLocalQueue = function(recursing) {
     this.currentlyParsing = true;
     if(this.fileParseQueue.length) {
         var r = new Respack();
-        r.loadBlob(this.fileParseQueue.shift(), 
+        r.loadBlob(this.fileParseQueue.shift(),
             function() {
                 that.addPack(r);
                 that.localComplete();
@@ -269,7 +269,7 @@ Resources.prototype.parseLocalQueue = function(recursing) {
 
 Resources.prototype.localProgress = function(progress, respack) {
     this.packsView.progressStatus.textContent = "Processing...";
-    
+
     this.packsView.progressBar.style.width = (progress * 100) + "%";
     this.packsView.progressCurrent.textContent = respack.filesLoaded;
     this.packsView.progressTop.textContent = respack.filesToLoad;
@@ -280,7 +280,7 @@ Resources.prototype.localComplete = function(progress) {
     var progStat = this.packsView.progressStatus;
     progStat.textContent = "Complete";
     window.setTimeout(function() {progStat.textContent = "Idle";}, 2000);
-    
+
     this.packsView.progressBar.style.width = "100%";
     this.packsView.progressCurrent.textContent = "0b";
     this.packsView.progressTop.textContent = "0b";
@@ -290,10 +290,10 @@ Resources.prototype.localComplete = function(progress) {
 Resources.prototype.initUI = function() {
     this.root = document.getElementById("huesResources");
     var that = this;
-    
+
     var packsContainer = document.createElement("div");
     packsContainer.className = "res-packscontainer";
-    
+
     var packHeader = document.createElement("div");
     packHeader.textContent = "Current respacks";
     packHeader.className = "res-header";
@@ -318,7 +318,7 @@ Resources.prototype.initUI = function() {
     } else {
         packList.className += " noremotes";
     }
-    
+
     var buttons = document.createElement("div");
     buttons.className = "res-buttons";
     var loadRemote = document.createElement("div");
@@ -332,7 +332,7 @@ Resources.prototype.initUI = function() {
     buttons.appendChild(loadLocal);
     buttons.appendChild(loadRemote);
     this.packsView.loadRemote = loadRemote;
-    
+
     this.fileInput = document.createElement("input");
     this.fileInput.type ="file";
     this.fileInput.accept="application/zip";
@@ -348,7 +348,7 @@ Resources.prototype.initUI = function() {
     progressBar.appendChild(progressFilled);
     var progressStatus = document.createElement("div");
     progressStatus.textContent = "Idle";
-    
+
     var progressTexts = document.createElement("div");
     progressTexts.id = "res-progress-texts";
     var progressCurrent = document.createElement("div");
@@ -363,7 +363,7 @@ Resources.prototype.initUI = function() {
     progressTexts.appendChild(progressCurrent);
     progressTexts.appendChild(progressTop);
     progressTexts.appendChild(progressPercent);
-    
+
     this.packsView.progressBar = progressFilled;
     this.packsView.progressStatus = progressStatus;
     this.packsView.progressCurrent = progressCurrent;
@@ -372,7 +372,7 @@ Resources.prototype.initUI = function() {
     progressContainer.appendChild(progressStatus);
     progressContainer.appendChild(progressBar);
     progressContainer.appendChild(progressTexts);
-    
+
     packsContainer.appendChild(packHeader);
     packsContainer.appendChild(packList);
     if(!this.core.settings.defaults.disableRemoteResources) {
@@ -381,10 +381,10 @@ Resources.prototype.initUI = function() {
     }
     packsContainer.appendChild(buttons);
     packsContainer.appendChild(progressContainer);
-    
+
     var indivView = document.createElement("div");
     indivView.className = "res-packcontainer";
-    
+
     var packName = document.createElement("div");
     packName.textContent = "<select a respack>";
     var packInfo = document.createElement("div");
@@ -401,10 +401,10 @@ Resources.prototype.initUI = function() {
     var packDesc = document.createElement("div");
     packDesc.id = "res-packdesc";
     packDesc.textContent = "<no description>";
-    
+
     var packTabs = document.createElement("div");
     packTabs.id = "res-packtabs";
-    
+
     var songCheck = document.createElement("input");
     songCheck.type = "radio";
     songCheck.name = "packtab";
@@ -416,7 +416,7 @@ Resources.prototype.initUI = function() {
     songCount.htmlFor = "res-songtab";
     packTabs.appendChild(songCheck);
     packTabs.appendChild(songCount);
-    
+
     var imageCheck = document.createElement("input");
     imageCheck.type = "radio";
     imageCheck.name = "packtab";
@@ -427,7 +427,7 @@ Resources.prototype.initUI = function() {
     imageCount.htmlFor = "res-imagetab";
     packTabs.appendChild(imageCheck);
     packTabs.appendChild(imageCount);
-    
+
     var songList = document.createElement("div");
     songList.id = "res-songlist";
     songList.className = "res-list";
@@ -436,7 +436,7 @@ Resources.prototype.initUI = function() {
     imageList.className = "res-list";
     packTabs.appendChild(songList);
     packTabs.appendChild(imageList);
-    
+
     var packButtons = document.createElement("div");
     packButtons.className = "res-buttons hidden";
     packButtons.id = "res-packbuttons";
@@ -455,10 +455,10 @@ Resources.prototype.initUI = function() {
     packButtons.appendChild(enableAll);
     packButtons.appendChild(invert);
     packButtons.appendChild(disableAll);
-    
+
     var totalCounts = document.createElement("div");
     totalCounts.id = "res-countscontainer";
-    
+
     var totalSongsCont = document.createElement("div");
     var totalSongsLabel = document.createElement("span");
     totalSongsLabel.textContent = "Total Songs:";
@@ -474,10 +474,10 @@ Resources.prototype.initUI = function() {
     totalImages.className = "res-counts";
     totalImagesCont.appendChild(totalImagesLabel);
     totalImagesCont.appendChild(totalImages);
-    
+
     totalCounts.appendChild(totalSongsCont);
     totalCounts.appendChild(totalImagesCont);
-    
+
     this.packView.name = packName;
     this.packView.creator = packCreatorText;
     this.packView.size = packSize;
@@ -489,17 +489,17 @@ Resources.prototype.initUI = function() {
     this.packView.packButtons = packButtons;
     this.packView.totalSongs = totalSongs;
     this.packView.totalImages = totalImages;
-    
+
     indivView.appendChild(packName);
     indivView.appendChild(packInfo);
     indivView.appendChild(packDesc);
     indivView.appendChild(packTabs);
     indivView.appendChild(packButtons);
     indivView.appendChild(totalCounts);
-    
+
     this.root.appendChild(packsContainer);
     this.root.appendChild(indivView);
-    
+
     this.listView = document.createElement("div");
     this.enabledSongList = document.createElement("div");
     this.enabledSongList.id = "res-enabledsonglist";
@@ -507,7 +507,7 @@ Resources.prototype.initUI = function() {
     this.enabledImageList = document.createElement("div");
     this.enabledImageList.id = "res-enabledimagelist";
     this.enabledImageList.className = "hidden";
-    
+
     this.listView.appendChild(this.enabledSongList);
     this.listView.appendChild(this.enabledImageList);
 };
@@ -549,10 +549,10 @@ Resources.prototype.truncateNum = function(num) {
 Resources.prototype.selectPack = function(id) {
     var pack = this.resourcePacks[id];
     this.packView.pack = pack;
-    
+
     this.packView.packButtons.className = "res-buttons";
     this.packsView.loadRemote.className = "res-button hidden";
-    
+
     this.packView.name.textContent = pack.name;
     this.packView.creator.textContent = pack.author;
     this.packView.creator.href = pack.link ? pack.link : "";
@@ -565,16 +565,16 @@ Resources.prototype.selectPack = function(id) {
     this.packView.desc.textContent = pack.description;
     this.packView.songCount.textContent = "Songs: " + pack.songs.length;
     this.packView.imageCount.textContent = "Images: " + pack.images.length;
-    
+
     var songList = this.packView.songList;
     var imageList = this.packView.imageList;
     while (songList.firstElementChild) {
         songList.removeChild(songList.firstElementChild);
-    }    
+    }
     while (imageList.firstElementChild) {
         imageList.removeChild(imageList.firstElementChild);
     }
-    
+
     for(var i = 0; i < pack.songs.length; i++) {
         var song = pack.songs[i];
         this.appendListItem("songs", song.title, "song" + i, songList,
@@ -582,7 +582,7 @@ Resources.prototype.selectPack = function(id) {
             this.clickResourceCallback(song, true),
             song.enabled);
     }
-    
+
     for(var i = 0; i < pack.images.length; i++) {
         var image = pack.images[i];
         this.appendListItem("images", image.name, "image" + i, imageList,
@@ -644,7 +644,7 @@ Resources.prototype.enableAll = function() {
     for(var i = 0; i < tab.arr.length; i++) {
         tab.arr[i].enabled = true;
         document.getElementById(tab.elName + i).checked = true;
-    }    
+    }
     this.rebuildEnabled();
 };
 
@@ -655,7 +655,7 @@ Resources.prototype.disableAll = function() {
     for(var i = 0; i < tab.arr.length; i++) {
         tab.arr[i].enabled = false;
         document.getElementById(tab.elName + i).checked = false;
-    }    
+    }
     this.rebuildEnabled();
 };
 
@@ -666,7 +666,7 @@ Resources.prototype.invert = function() {
     for(var i = 0; i < tab.arr.length; i++) {
         tab.arr[i].enabled = !tab.arr[i].enabled;
         document.getElementById(tab.elName + i).checked = tab.arr[i].enabled;
-    }    
+    }
     this.rebuildEnabled();
 };
 
@@ -701,7 +701,7 @@ Resources.prototype.loadRemotes = function() {
         remoteList.removeChild(remoteList.firstElementChild);
     }
     var item = this.appendSimpleListItem("Loading...", remoteList);
-    
+
     var req = new XMLHttpRequest();
     req.open('GET', packsURL, true);
     req.responseType = 'json';
@@ -739,7 +739,7 @@ Resources.prototype.getRemoteCallback = function(index) {
 Resources.prototype.selectRemotePack = function(id) {
     var pack = this.remotes[id];
     this.packView.pack = pack;
-    
+
     this.packView.packButtons.className = "res-buttons hidden";
     this.packsView.loadRemote.className = "res-button";
     if(pack.loaded) {
@@ -748,7 +748,7 @@ Resources.prototype.selectRemotePack = function(id) {
     } else {
         this.packsView.loadRemote.textContent = "LOAD REMOTE";
     }
-    
+
     this.packView.name.textContent = pack.name;
     this.packView.creator.textContent = pack.author;
     this.packView.creator.href = pack.link ? pack.link : "";
@@ -761,21 +761,21 @@ Resources.prototype.selectRemotePack = function(id) {
     this.packView.desc.textContent = pack.description;
     this.packView.songCount.textContent = "Songs: " + pack.songcount;
     this.packView.imageCount.textContent = "Images: " + pack.imagecount;
-    
+
     var songList = this.packView.songList;
     var imageList = this.packView.imageList;
     while (songList.firstElementChild) {
         songList.removeChild(songList.firstElementChild);
-    }    
+    }
     while (imageList.firstElementChild) {
         imageList.removeChild(imageList.firstElementChild);
     }
-    
+
     for(var i = 0; i < pack.songs.length; i++) {
         var song = pack.songs[i];
         this.appendSimpleListItem(song, songList);
     }
-    
+
     for(var i = 0; i < pack.images.length; i++) {
         var image = pack.images[i];
         this.appendSimpleListItem(image, imageList);
@@ -785,12 +785,12 @@ Resources.prototype.selectRemotePack = function(id) {
 Resources.prototype.loadCurrentRemote = function() {
     var pack = this.packView.pack;
     var that = this;
-    
+
     // Not actually a remote, ignore. How did you press this :<
     if(pack.loaded === undefined || pack.loaded) {
         return;
     }
-    
+
     // TODO Error checking on failure
     pack.loaded = true;
     that.packsView.loadRemote.className = "res-button loaded";
@@ -822,7 +822,7 @@ Resources.prototype.remoteComplete = function(progress) {
     progStat.textContent = "Complete";
     window.setTimeout(function() {progStat.textContent = "Idle";}, 2000);
     this.packsView.loadRemote.textContent = "LOADED";
-    
+
     this.packsView.progressBar.style.width = "100%";
     this.packsView.progressCurrent.textContent = "0b";
     this.packsView.progressTop.textContent = "0b";

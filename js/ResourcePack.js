@@ -31,7 +31,7 @@ function Respack(url) {
     this.songQueue = [];
     this.images = [];
     this.imageQueue = [];
-    
+
     this.name = "<no name>";
     this.author = "<unknown>";
     this.description = "<no description>";
@@ -55,7 +55,7 @@ function Respack(url) {
     this.filesToLoad = 0;
     this.filesLoaded = 0;
     this.loadedFromURL = false;
-    
+
     if(url)
         this.loadFromURL(url);
 }
@@ -76,9 +76,9 @@ Respack.prototype.updateProgress = function() {
 
 Respack.prototype.loadFromURL = function(url, callback, progress) {
     var that = this;
-    
+
     this.loadedFromURL = true;
-    
+
     var req = new XMLHttpRequest();
     req.open('GET', url, true);
     req.responseType = 'blob';
@@ -119,28 +119,28 @@ Respack.prototype.loadBlob = function(blob, callback, progress, errorCallback) {
             if(errorCallback) {
                 errorCallback(error.toString());
             }
-        } 
+        }
     );
 };
 
 Respack.prototype.parseWholeZip = function() {
     // TODO might break on bad file
     console.log("Loading new respack: " + this.file.root.children[0].name);
-    
+
     var entries = this.file.entries;
-    
+
     this.totalFiles = 0;
     // Progress events
     this.filesToLoad = 0;
     this.filesLoaded = 0;
-    
+
     for(var i = 0; i < entries.length; i++) {
         if(!entries[i].directory && entries[i].name) {
             this.totalFiles++;
             this.parseFile(entries[i]);
         }
     }
-    
+
     debug("ZIP loader: trying to finish");
     this.tryFinish();
 };
@@ -180,7 +180,7 @@ Respack.prototype.parseImage = function(file) {
 
 Respack.prototype.parseXML = function() {
     var that = this;
-    
+
     if (this._infoFile) {
         this._infoFile.getText(function(text) {
             text = text.replace(/&amp;/g, '&');
@@ -219,10 +219,10 @@ Respack.prototype.parseXML = function() {
         });
         return;
     }
-    
+
     // Finally done!
     this.file = null;
-    console.log("Loaded", this.name, "successfully with", this.songs.length, 
+    console.log("Loaded", this.name, "successfully with", this.songs.length,
                 "songs and", this.images.length, "images.");
     if(this._completionCallback) {
         this._completionCallback();
@@ -237,14 +237,14 @@ Element.prototype.getTag = function(tag, def) {
 
 Respack.prototype.parseSongFile = function(text) {
     debug(" - Parsing songFile");
-    
+
     var oParser = new DOMParser();
     var oDOM = oParser.parseFromString(text, "text/xml");
     if(oDOM.documentElement.nodeName !== "songs"){
         console.log("songs.xml error, corrupt file?");
         return;
     }
-    
+
     var newSongs = [];
     // Not supported in mobile safari
     // var songsXML = oDOM.documentElement.children;
@@ -257,13 +257,13 @@ Respack.prototype.parseSongFile = function(text) {
                 song.title = "<no name>";
                 debug("  WARNING!", song.name, "has no title!");
             }
-            
+
             song.rhythm = el.getTag("rhythm");
             if(!song.rhythm) {
                 song.rhythm = "..no..rhythm..";
                 debug("  WARNING!!", song.name, "has no rhythm!!");
             }
-            
+
             song.startSilence = el.getTag("startSilence");
             song.endSilence = el.getTag("endSilence");
             song.buildupLength = el.getTag("buildupLength");
@@ -283,11 +283,11 @@ Respack.prototype.parseSongFile = function(text) {
                     debug("  WARNING!", "Didn't find a buildup '" + song.buildup + "'!");
                 }
             }
-            
+
             song.buildupRhythm = el.getTag("buildupRhythm");
             song.source = el.getTag("source");
             song.charsPerBeat = parseFloat(el.getTag("charsPerBeat"));
-            
+
             // Because PackShit breaks everything
             if(this.name == "PackShit") {
                 song.forceTrim  = true;
@@ -295,7 +295,7 @@ Respack.prototype.parseSongFile = function(text) {
             newSongs.push(song);
             debug("  [I] " + song.name, ": '" + song.title + "' added to songs");
         } else {
-            debug("  WARNING!", "songs.xml: <song> element", i + 1, 
+            debug("  WARNING!", "songs.xml: <song> element", i + 1,
                 "- no song '" + el.attributes[0].value + "' found");
         }
     }
@@ -309,7 +309,7 @@ Respack.prototype.parseSongFile = function(text) {
 
 Respack.prototype.parseInfoFile = function(text) {
     debug(" - Parsing infoFile");
-    
+
     var oParser = new DOMParser();
     var oDOM = oParser.parseFromString(text, "text/xml");
     var info = oDOM.documentElement;
@@ -317,7 +317,7 @@ Respack.prototype.parseInfoFile = function(text) {
         console.log("info.xml error, corrupt file?");
         return;
     }
-    
+
     // self reference strings to avoid changing strings twice in future
     this.name = info.getTag("name", this.name);
     this.author = info.getTag("author", this.author);
@@ -327,14 +327,14 @@ Respack.prototype.parseInfoFile = function(text) {
 
 Respack.prototype.parseImageFile = function(text) {
     debug(" - Parsing imagefile");
-    
+
     var oParser = new DOMParser();
     var oDOM = oParser.parseFromString(text, "text/xml");
     if(oDOM.documentElement.nodeName !== "images"){
         console.log("images.xml error, corrupt file?");
         return;
     }
-    
+
     var newImages = [];
     // not in mobile safari
     // var imagesXML = oDOM.documentElement.children;
@@ -350,6 +350,7 @@ Respack.prototype.parseImageFile = function(text) {
             // self reference defaults to avoid changing strings twice in future
             image.align = el.getTag("align", image.align);
             image.beatsPerAnim = parseFloat(el.getTag("beatsPerAnim"));
+            image.syncOffset = parseFloat(el.getTag("syncOffset"));
             var frameDur = el.getTag("frameDuration");
             if(frameDur) {
                 image.frameDurations = [];
@@ -370,7 +371,7 @@ Respack.prototype.parseImageFile = function(text) {
                 debug("  WARNING!!", "Image", image.name, "has no bitmap nor animation frames!");
             }
         } else {
-            debug("  WARNING!", "images.xml: <image> element", 
+            debug("  WARNING!", "images.xml: <image> element",
                 i + 1, "- no image '" + el.attributes[0].value + "' found");
         }
     }
@@ -417,7 +418,7 @@ Respack.prototype.parseSongQueue = function() {
     var that = this;
     var songFile = this.songQueue.shift();
     var name = songFile.name.replace(this.audioExtensions, "");
-    
+
     debug("parsing song: " + name);
     if (this.containsSong(name)) {
         var oldSong = this.getSong(name);
@@ -463,7 +464,7 @@ Respack.prototype.parseSongQueue = function() {
 Respack.prototype.parseImageQueue = function() {
     var imgFile = this.imageQueue.shift();
     var name = imgFile.name.replace(this.imageExtensions, "");
-    
+
     if((match = name.match(new RegExp("^(.*)_(\\d+)$")))) {
         var anim = this.getImage(match[1]);
         if(!anim) { // make a fresh one

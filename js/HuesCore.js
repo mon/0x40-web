@@ -22,7 +22,7 @@
 /* We don't  want localstorage variables optimised to different identifiers*/
 /*jshint -W069 */
 
-HuesCore = function(defaults) {
+function HuesCore(defaults) {
     // Bunch-o-initialisers
     this.version = "0x01";
     this.beatIndex = 0;
@@ -39,14 +39,14 @@ HuesCore = function(defaults) {
     this.loadedFiles=0;
     this.doBuildup=true;
     this.userInterface = null;
-    
+
     var that = this;
     window.onerror = function(msg, url, line, col, error) {
         that.error(msg);
         // Get more info in console
         return false;
     };
-    
+
     console.log("0x40 Hues - start your engines!");
     this.colours = this.oldColours;
     this.uiArray = [];
@@ -61,13 +61,13 @@ HuesCore = function(defaults) {
         return;
     }
     this.renderer = new HuesCanvas("waifu", this.soundManager.context, this);
-    
+
     this.uiArray.push(new RetroUI(), new WeedUI(), new ModernUI(), new XmasUI());
     this.settings.connectCore(this);
     // Update with merged
     defaults = this.settings.defaults;
     this.setColour(this.colourIndex);
-    
+
     if(defaults.load) {
         this.resourceManager.addAll(defaults.respacks, function() {
             document.getElementById("preloadHelper").className = "loaded";
@@ -99,9 +99,9 @@ HuesCore = function(defaults) {
         var key = e.keyCode || e.which;
         return that.keyHandler(key);
     };
-    
+
     this.animationLoop();
-};
+}
 
 HuesCore.prototype.animationLoop = function() {
     var that = this;
@@ -381,6 +381,7 @@ HuesCore.prototype.beater = function(beat) {
             if(this.isFullAuto) {
                 this.randomImage();
             }
+            /* falls through */
         case '~':
             // case: fade in build, not in rhythm. Must max out fade timer.
             var maxSearch = this.currentSong.rhythm.length;
@@ -652,7 +653,7 @@ HuesCore.prototype.error = function(message) {
     document.getElementById("preMain").style.color = "#F00";
 };
 
-HuesCore.prototype.oldColours = 
+HuesCore.prototype.oldColours =
    [{'c': 0x000000, 'n': 'black'},
     {'c': 0x550000, 'n': 'brick'},
     {'c': 0xAA0000, 'n': 'crimson'},
@@ -717,7 +718,7 @@ HuesCore.prototype.oldColours =
     {'c': 0x55FFFF, 'n': 'turquoise'},
     {'c': 0xAAFFFF, 'n': 'powder'},
     {'c': 0xFFFFFF, 'n': 'white'}];
-HuesCore.prototype.pastelColours = 
+HuesCore.prototype.pastelColours =
    [{'c': 0xCD4A4A, 'n': 'Mahogany'},
     {'c': 0xFAE7B5, 'n': 'Banana Mania'},
     {'c': 0x9F8170, 'n': 'Beaver'},
@@ -782,7 +783,7 @@ HuesCore.prototype.pastelColours =
     {'c': 0xFCE883, 'n': 'Yellow'},
     {'c': 0xC5E384, 'n': 'Yellow Green'},
     {'c': 0xFFB653, 'n': 'Yellow Orange'}];
-HuesCore.prototype.weedColours = 
+HuesCore.prototype.weedColours =
    [{'c': 0x00FF00, 'n': 'Green'},
     {'c': 0x5A6351, 'n': 'Lizard'},
     {'c': 0x636F57, 'n': 'Cactus'},

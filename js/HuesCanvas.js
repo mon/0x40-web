@@ -66,7 +66,7 @@ function HuesCanvas(element, aContext, core) {
     this.canvas = document.getElementById(element).getContext("2d");
     window.addEventListener('resize', this.resizeHandler(this));
     this.resize();
-    
+
     this.snowing = false;
     this.maxSnow = 30;
     this.snowAngle = 0;
@@ -270,9 +270,12 @@ HuesCanvas.prototype.syncAnim = function() {
     }
     // This loops A-OK because the core's beatIndex never rolls over for a new loop
     var beatLoc = (index / song.charsPerBeat) % this.image.beatsPerAnim;
-    
+
     var aLen = this.image.bitmaps.length;
     this.animFrame = Math.floor(aLen * (beatLoc / this.image.beatsPerAnim));
+    if(this.image.syncOffset) {
+        this.animFrame += this.image.syncOffset;
+    }
     // Because negative mods are different in JS
     this.animFrame = ((this.animFrame % aLen) + aLen) % aLen;
 };
@@ -368,7 +371,7 @@ HuesCanvas.prototype.setBlurDecay = function(decay) {
 };
 
 HuesCanvas.prototype.setBlurQuality = function(quality) {
-    this.blurIterations = {"low" : 3, "medium" : 11, "high" : 19, "extreme" : 35}[quality];
+    this.blurIterations = {"low" : -1, "medium" : 11, "high" : 19, "extreme" : 35}[quality];
     this.blurDelta = 1 / (this.blurIterations/2);
     this.blurAlpha = 1 / (this.blurIterations/2);
 };
@@ -428,7 +431,7 @@ HuesCanvas.prototype.drawSnow = function() {
         ctx.arc(p.x, p.y, p.r, 0, Math.PI*2, true);
     }
     ctx.fill();
-    
+
     this.snowAngle += delta / 6;
     for(var i = 0; i < this.maxSnow; i++) {
         var p = this.snowflakes[i];
@@ -438,7 +441,7 @@ HuesCanvas.prototype.drawSnow = function() {
         //Lets make it more random by adding in the radius
         p.y += Math.cos(this.snowAngle+p.d) + 1 + p.r/2;
         p.x += Math.sin(this.snowAngle) * 2;
-        
+
         //Sending flakes back from the top when it exits
         //Lets make it a bit more organic and let flakes enter from the left and right also.
         if(p.x > W+5 || p.x < -5 || p.y > H) {
