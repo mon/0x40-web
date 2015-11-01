@@ -33,6 +33,7 @@ function HuesCore(defaults) {
     this.colourIndex=0x3f;
     this.imageIndex=-1;
     this.isFullAuto = true;
+    this.invert = false;
     this.loopCount=0;
     this.fadeOut=false;
     this.fadeDirection=false;
@@ -195,6 +196,7 @@ HuesCore.prototype.setSong = function(index) {
             break;
         }
     }
+    this.setInvert(false);
     var that = this;
     this.soundManager.playSong(this.currentSong, this.doBuildup, function() {
         that.resetAudio();
@@ -398,11 +400,19 @@ HuesCore.prototype.beater = function(beat) {
             this.renderer.doColourFade(fadeLen * this.beatLength);
             this.randomColour(true);
             break;
+        case 'I':
+            if (this.isFullAuto) {
+                this.randomImage();
+            }
+            /* falls through */
+        case 'i':
+            this.toggleInvert();
+            break;
         }
         if ([".", "+", "|", "¤"].indexOf(beat) == -1) {
             this.renderer.clearBlackout();
         }
-        if([".", "+", ":", "*", "X", "O", "~", "="].indexOf(beat) == -1) {
+        if([".", "+", ":", "*", "X", "O", "~", "=", "i", "I"].indexOf(beat) == -1) {
             this.randomColour();
             if (this.isFullAuto) {
                 this.randomImage();
@@ -440,6 +450,21 @@ HuesCore.prototype.setIsFullAuto = function(auto) {
 HuesCore.prototype.toggleFullAuto = function() {
     this.setIsFullAuto(!this.isFullAuto);
 };
+
+HuesCore.prototype.setInvert = function(invert) {
+    this.invert = invert;
+    if(invert) {
+        document.documentElement.style.filter = "invert(100%)";
+        document.documentElement.style.webkitFilter = "invert(100%)";
+    } else {
+        document.documentElement.style.filter = "";
+        document.documentElement.style.webkitFilter = "";
+    }
+}
+
+HuesCore.prototype.toggleInvert = function() {
+    this.setInvert(!this.invert);
+}
 
 /*HuesCore.prototype.enterFrame = function() {
     this.setTexts();
