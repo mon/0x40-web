@@ -6,7 +6,7 @@ all: minify pack
 minify:
 	cd ./js ; java -jar ../compiler.jar --js $(JS) --js_output_file hues-min.js
 	-rm ./css/hues-min.css
-	cd ./css ; java -jar ../$(YUI) --type css -o hues-h-min.css hues-h.css
+	cd ./css ; java -jar ../$(YUI) --type css -o hues-s-min.css hues-h.css
 	cd ./css ; java -jar ../$(YUI) --type css -o hues-m-min.css hues-m.css
 	cd ./css ; java -jar ../$(YUI) --type css -o hues-r-min.css hues-r.css
 	cd ./css ; java -jar ../$(YUI) --type css -o hues-w-min.css hues-w.css
