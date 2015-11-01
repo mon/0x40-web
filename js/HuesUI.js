@@ -541,6 +541,7 @@ ModernUI.prototype.initUI = function() {
 
     var volBar = document.createElement("div");
     volBar.className = "hues-m-vol-bar";
+    this.volBar = volBar;
     volCluster.appendChild(volBar);
 
     var label = document.createElement("div");
@@ -552,13 +553,13 @@ ModernUI.prototype.initUI = function() {
     volBar.appendChild(label);
     this.volLabel = label;
 
-    var infoToggle = document.createElement("div");
-    infoToggle.innerHTML = '?';
-    infoToggle.className = "hues-m-question";
-    infoToggle.onclick = function() {
+    this.infoToggle = document.createElement("div");
+    this.infoToggle.innerHTML = '?';
+    this.infoToggle.className = "hues-m-question";
+    this.infoToggle.onclick = function() {
         that.core.settings.showInfo();
     };
-    volCluster.appendChild(infoToggle);
+    volCluster.appendChild(this.infoToggle);
 
     var input = document.createElement("input");
     input.type = "range";
@@ -579,19 +580,20 @@ ModernUI.prototype.initUI = function() {
     //Song/image controls
     var songs = document.createElement("div");
     songs.className = "hues-m-controlblock";
+    this.songBlock = songs;
     this.songList.className = "hues-m-songbutton";
 
     var songControls = document.createElement("div");
     songControls.className = "hues-m-controlbuttons";
     this.songPrev.className = "hues-m-prevbutton";
     this.songNext.className = "hues-m-nextbutton";
-    var songShuffle = document.createElement("div");
-    songShuffle.innerHTML = '<i class="fa fa-random"></i>';
-    songShuffle.className = "hues-m-actbutton";
-    songShuffle.onclick = function() {that.core.randomSong();};
+    this.songShuffle = document.createElement("div");
+    this.songShuffle.innerHTML = '<i class="fa fa-random"></i>';
+    this.songShuffle.className = "hues-m-actbutton";
+    this.songShuffle.onclick = function() {that.core.randomSong();};
     songs.appendChild(this.songList);
     songControls.appendChild(this.songPrev);
-    songControls.appendChild(songShuffle);
+    songControls.appendChild(this.songShuffle);
     songControls.appendChild(this.songNext);
     songs.appendChild(songControls);
     rightBox.appendChild(songs);
@@ -599,6 +601,7 @@ ModernUI.prototype.initUI = function() {
     var images = document.createElement("div");
     images.className = "hues-m-controlblock";
     this.imageList.className = "hues-m-songbutton";
+    this.imageBlock = images;
 
     var imageControls = document.createElement("div");
     imageControls.className = "hues-m-controlbuttons";
@@ -661,18 +664,19 @@ ModernUI.prototype.initUI = function() {
 };
 
 ModernUI.prototype.toggleHide = function() {
-    this.beatBar.className = "hues-m-beatbar";
-    this.beatCenter.className = "hues-m-beatcenter";
-    this.controls.className = "hues-m-controls";
-    this.hideRestore.className = "hues-m-hiderestore";
+    // classList is new-ish, but if you have web audio you'll have this
+    this.beatBar.classList.remove("hidden");
+    this.beatCenter.classList.remove("hidden");
+    this.controls.classList.remove("hidden");
+    this.hideRestore.classList.remove("hidden");
     switch(this.hidden) {
         case 1:
-            this.beatBar.className = "hues-m-beatbar hidden";
-            this.beatCenter.className = "hues-m-beatcenter hidden";
+            this.beatBar.classList.add("hidden");
+            this.beatCenter.classList.add("hidden");
             /* falls through */
         case 0:
-            this.controls.className = "hues-m-controls hidden";
-            this.hideRestore.className = "hues-m-hiderestore hidden";
+            this.controls.classList.add("hidden");
+            this.hideRestore.classList.add("hidden");
     }
     this.hidden = (this.hidden+1) % 3;
 };
@@ -773,8 +777,8 @@ function XmasUI() {
     this.yBlur = null;
     this.timer = null;
 
-    this.controls.className = "hues-x-controls";
-    this.beatBar.className = "hues-x-beatbar";
+    this.controls.className += " hues-x-controls";
+    this.beatBar.className += " hues-x-beatbar";
 
     this.lights = [];
 
@@ -901,24 +905,74 @@ XmasUI.prototype.beat = function() {
     }
 };
 
-XmasUI.prototype.toggleHide = function() {
-    this.beatBar.className = "hues-x-beatbar";
-    this.beatCenter.className = "hues-m-beatcenter";
-    this.controls.className = "hues-x-controls";
-    switch(this.hidden) {
-        case 1:
-            this.beatBar.className = "hues-x-beatbar hidden";
-            this.beatCenter.className = "hues-m-beatcenter hidden";
-            /* falls through */
-        case 0:
-            this.controls.className = "hues-x-controls hidden";
-    }
-    this.hidden = (this.hidden+1) % 3;
-};
-
 XmasUI.prototype.setColourText = function(colour) {};
 XmasUI.prototype.blurUpdated = function(x, y) {};
 XmasUI.prototype.updateTime = function(time) {};
+
+function HalloweenUI() {
+    ModernUI.call(this);
+}
+
+HalloweenUI.prototype = Object.create(ModernUI.prototype);
+HalloweenUI.prototype.constructor = HalloweenUI;
+
+HalloweenUI.prototype.initUI = function() {
+    ModernUI.prototype.initUI.call(this);
+    
+    this.controls.className += " hues-h-controls";
+    this.beatBar.className += " hues-h-beatbar";
+    this.leftBox.className += " hues-h-leftbox";
+    this.rightBox.className += " hues-h-rightbox";
+    this.volBar.className += " hues-h-vol-bar";
+    
+    this.beatLeft.className += " hues-h-text";
+    this.beatRight.className += " hues-h-text";
+    this.beatCenter.className += " hues-h-text";
+    this.songShuffle.className += " hues-h-text";
+    this.songNext.className += " hues-h-text";
+    this.songPrev.className += " hues-h-text";
+    this.songList.className += " hues-h-text";
+    this.songName.className += " hues-h-text";
+    this.imageMode.className += " hues-h-text";
+    this.imageNext.className += " hues-h-text";
+    this.imagePrev.className += " hues-h-text";
+    this.imageList.className += " hues-h-text";
+    this.imageName.className += " hues-h-text";
+    this.hueName.className += " hues-h-text";
+    
+    this.settingsToggle.className += " hues-h-text";
+    this.hideToggle.className += " hues-h-text";
+    this.infoToggle.className += " hues-h-text";
+    this.volLabel.className += " hues-h-text";
+    
+    this.timer.className = "hues-h-textfade";
+    this.beatCount.className = "hues-h-textfade";
+    this.xBlur.className = "hues-h-textfade";
+    this.yBlur.className = "hues-h-textfade";
+    
+    var leftBoxTomb = document.createElement("div");
+    leftBoxTomb.className = "hues-h-tombstone";
+    this.leftBox.appendChild(leftBoxTomb);
+    
+    var songTomb = document.createElement("div");
+    songTomb.className = "hues-h-tombstone";
+    this.songBlock.insertBefore(songTomb,this.songBlock.firstChild);
+    
+    var imageTomb = document.createElement("div");
+    imageTomb.className = "hues-h-tombstone";
+    this.imageBlock.insertBefore(imageTomb,this.imageBlock.firstChild);
+    
+    var topLeft = document.createElement("div");
+    topLeft.className = "hues-h-topleft";
+    var topRight = document.createElement("div");
+    topRight.className = "hues-h-topright";
+    var bottomRight = document.createElement("div");
+    bottomRight.className = "hues-h-bottomright";
+    
+    this.root.appendChild(topLeft);
+    this.root.appendChild(topRight);
+    this.root.appendChild(bottomRight);
+}
 
 // Positions and angles for the Xmas lights
 var xleft = [

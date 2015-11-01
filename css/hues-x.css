@@ -2,53 +2,24 @@
     font-family: 'PetMe64Web';
 }
 
-.hues-x-controls {
-    position: absolute;
-    bottom: 0;
-    max-width: 992px;
+.hues-m-controls.hues-x-controls {
     height: 50px;
-    margin: 0 auto;
-    overflow: hidden;
-    left: 8px;
-    right: 8px;
-    color: rgba(255,255,255,0.7);
     z-index: 1;
+    background: none;
+    border-style: none;
 }
 
-.hues-x-beatbar {
-  position: absolute;
-  top: 0;
-  max-width: 992px;
-  height: 30px;
-  margin: 0 auto;
-  overflow: hidden;
-  left: 8px;
-  right: 8px;
-  color: white;
+.hues-x-controls > .hues-m-songtitle {
+    bottom: 5px;
 }
 
-.hues-x-beatbar{
-    transform: translateY(0px);
-    -webkit-transform: translateY(0px);
-    transition: transform 1s ease-out;
-    -webkit-transition: -webkit-transform 1s ease-out;
+.hues-x-controls > .hues-m-imagename {
+    bottom: 29px;
 }
 
-.hues-x-controls {
-    transform: translateY(0px);
-    -webkit-transform: translateY(0px);
-    transition: transform 1s ease-out;
-    -webkit-transition: -webkit-transform 1s ease-out;
-}
-
-.hues-x-beatbar.hidden{
-    transform: translateY(-40px);   
-    -webkit-transform: translateY(-40px);
-}
-
-.hues-x-controls.hidden {
-    transform: translateY(104px);
-    -webkit-transform: translateY(104px);
+.hues-m-beatbar.hues-x-beatbar {
+    background: none;
+    border-style: none;
 }
 
 .hues-x-light {

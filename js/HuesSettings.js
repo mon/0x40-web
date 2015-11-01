@@ -99,7 +99,7 @@ HuesSettings.prototype.settingsOptions = {
     },
     currentUI : {
         name : "User Interface",
-        options : ["retro", "v4.20", "modern", "xmas"]
+        options : ["retro", "v4.20", "modern", "xmas", "hlwn"]
     },
     colourSet : {
         name : "Colour Set",

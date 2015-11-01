@@ -1,0 +1,149 @@
+.HalloweenUI {
+    font-family: 'PetMe64Web';
+}
+
+.hues-h-text {
+    color: #ff3300;
+}
+
+.hues-h-textfade {
+    color: rgba(255, 51, 0, 0.6);
+}
+
+.hues-m-beatbar.hues-h-beatbar {
+    border-style: none;
+    background: none;
+}
+
+.hues-m-controls.hues-h-controls {
+    background: none;
+    border-style: none;
+    padding-top: 8px;
+    z-index: 1;
+}
+
+.hues-m-songtitle.hues-h-text, .hues-m-imagename.hues-h-text {
+    padding: 4px 0px;
+    margin: 0px 5px;
+    background: none;
+    border-style: solid;
+    border-width: 0px 19px 0px 18px;
+    -moz-border-image: url(../img/bones.png) 0 19 0 18 repeat stretch;
+    -webkit-border-image: url(../img/bones.png) 0 19 0 18 repeat stretch;
+    -o-border-image: url(../img/bones.png) 0 19 0 18 repeat stretch;
+    border-image: url(../img/bones.png) 0 19 0 18 fill repeat stretch;
+}
+
+.hues-m-huename.hues-h-text {
+    border: none;
+    background: none;
+    left: 38px;
+    right: 38px;
+    bottom: 2px;
+}
+
+.hues-m-vol-bar.hues-h-vol-bar {
+    bottom: 13px;
+}
+
+.hues-m-vol-label.hues-h-text {
+    bottom: 12px;
+}
+
+.hues-m-hide.hues-h-text {
+    top: 40px;
+}
+
+.hues-m-cog.hues-h-text {
+    top: 20px;
+}
+
+.hues-m-question.hues-h-text {
+    top: 25px;
+}
+
+.hues-m-songbutton.hues-h-text, .hues-m-imagebutton.hues-h-text {
+    margin-top: 17px;
+}
+
+.hues-m-songbutton.hues-h-text + div, .hues-m-imagebutton.hues-h-text + div{
+    top: -8px;
+}
+
+.hues-m-prevbutton.hues-h-text, .hues-m-nextbutton.hues-h-text, .hues-m-actbutton.hues-h-text {
+    background: none;
+}
+
+.hues-h-controls > .hues-m-leftinfo, .hues-h-controls > .hues-m-rightinfo {
+    margin-bottom: 5px;
+}
+
+.hues-h-tombstone {
+    border-style: solid;
+    border-width: 22px 40px 0px 42px;
+    -moz-border-image: url(../img/tombstone.png) 22 42 0 42 repeat;
+    -webkit-border-image: url(../img/tombstone.png) 22 42 0 42 repeat;
+    -o-border-image: url(../img/tombstone.png) 22 42 0 42 repeat;
+    border-image: url(../img/tombstone.png) 22 42 0 42 fill repeat;
+    height: 36px;
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: -10;
+}
+
+.hues-h-text + input[type=range]::-webkit-slider-runnable-track {
+    background: #ff3300;
+}
+
+.hues-h-text + input[type=range]::-webkit-slider-thumb {
+    background: #ff3300;
+}
+
+.hues-h-text + input[type=range]::-moz-range-track {
+    background: #ff3300;
+}
+
+.hues-h-text + input[type=range]::-moz-range-thumb {
+    background: #ff3300;
+}
+
+.hues-h-text + input[type=range]::-ms-fill-lower {
+    background: #ff3300;
+}
+.hues-h-text + input[type=range]::-ms-thumb {
+    background: #ff3300;
+}
+
+.hues-h-topleft, .hues-h-topright, .hues-h-bottomright {
+    position: absolute;
+    background-repeat: no-repeat;
+}
+
+.hues-h-topleft, .hues-h-topright {
+    top: 0px;
+}
+
+.hues-h-bottomright, .hues-h-topright {
+    right: 0px;
+}
+
+.hues-h-topleft {
+    background-image: url("../img/web-topleft.png");
+    width: 269px;
+    height: 237px;
+}
+
+.hues-h-topright {
+    background-image: url("../img/web-topright.png");
+    width: 215px;
+    height: 220px;
+}
+
+.hues-h-bottomright {
+    background-image: url("../img/web-bottomright.png");
+    bottom: 0px;
+    width:358px;
+    height: 284px;
+}

@@ -61,7 +61,7 @@
     font-size: 10px;
     text-align: center;
     color: rgba(255,255,255, 0.7);
-    bottom: 29px;
+    bottom: 79px;
     width: 100px;
 }
 
@@ -184,10 +184,10 @@
     right: 8px;
 }
 .hues-m-songtitle {
-    bottom: 5px;
+    bottom: 55px;
 }
 .hues-m-imagename {
-    bottom: 29px;
+    bottom: 79px;
     left: 108px;
     right: 108px;
 }
@@ -207,7 +207,7 @@
 
 .hues-m-leftbox {
     position: absolute;
-    bottom: 50px;
+    bottom: 0;
     left: 0;
     right: 50%;
     height: 54px;
@@ -215,7 +215,7 @@
 
 .hues-m-rightbox {
     position: absolute;
-    bottom: 50px;
+    bottom: 0;
     left: 50%;
     right: 0;
     height: 54px;
@@ -231,8 +231,10 @@
     user-select: none;
     font-size: 12px;
     width: 50%;
+    height: 100%;
     margin: 3px auto;
     float: left;
+    position: relative;
 }
 
 .hues-m-controlbuttons {
@@ -463,10 +465,12 @@ input[type=range]::-ms-thumb {
   .hues-m-imagename {
     left: 300px;
     right: 300px;
+    bottom: 29px;
   }
   .hues-m-songtitle {
     left: 192px;
     right: 192px;
+    bottom: 5px;
   }
   .hues-m-leftinfo {
     left: 200px;
@@ -474,15 +478,16 @@ input[type=range]::-ms-thumb {
   .hues-m-rightinfo {
     right: 200px;
   }
+  .hues-m-leftinfo, .hues-m-rightinfo {
+    bottom: 29px;
+  }
   .hues-m-leftbox {
-    bottom: 0;
     left: 0;
     right: auto;
     width: 192px;
     height: 54px;
     }
   .hues-m-rightbox {
-    bottom: 0;
     left: auto;
     right: 0;
     width: 192px;

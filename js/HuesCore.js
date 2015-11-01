@@ -63,7 +63,7 @@ function HuesCore(defaults) {
     }
     this.renderer = new HuesCanvas("waifu", this.soundManager.context, this);
 
-    this.uiArray.push(new RetroUI(), new WeedUI(), new ModernUI(), new XmasUI());
+    this.uiArray.push(new RetroUI(), new WeedUI(), new ModernUI(), new XmasUI(), new HalloweenUI());
     this.settings.connectCore(this);
     // Update with merged
     defaults = this.settings.defaults;
@@ -539,6 +539,9 @@ HuesCore.prototype.settingsUpdated = function() {
     case "xmas":
         this.changeUI(3);
         break;
+    case "hlwn":
+        this.changeUI(4);
+        break;
     }
     switch (localStorage["colourSet"]) {
     case "normal":
@@ -654,6 +657,9 @@ HuesCore.prototype.keyHandler = function(key) {
         break;
     case 52: // NUMBER_4
         this.settings.set("currentUI", "xmas");
+        break;
+    case 53: // NUMBER_5
+        this.settings.set("currentUI", "hlwn");
         break;
     case 67: // C
         this.toggleImageList();
