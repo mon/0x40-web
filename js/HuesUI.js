@@ -972,6 +972,23 @@ HalloweenUI.prototype.initUI = function() {
     this.root.appendChild(topLeft);
     this.root.appendChild(topRight);
     this.root.appendChild(bottomRight);
+    
+    var leftHand = document.createElement("div");
+    leftHand.className = "hues-h-left-hand";
+    this.beatBar.appendChild(leftHand);
+    var rightHand = document.createElement("div");
+    rightHand.className = "hues-h-right-hand";
+    this.beatBar.appendChild(rightHand);
+}
+
+HalloweenUI.prototype.beat = function() {
+    ModernUI.prototype.beat.call(this);
+    
+    if (this.currentBeat != ".") {
+        var eyes = this.beatCenter.ownerDocument.createElement("div");
+        eyes.className = "hues-m-beatcenter hues-h-eyes";
+        this.beatCenter.appendChild(eyes);
+    }
 }
 
 // Positions and angles for the Xmas lights

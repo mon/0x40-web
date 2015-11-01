@@ -13,6 +13,56 @@
 .hues-m-beatbar.hues-h-beatbar {
     border-style: none;
     background: none;
+    overflow: inherit;
+}
+
+.hues-m-beatcenter.hues-h-text {
+    background: none;
+    background-image: url('../img/skull.png');
+    top: 0px;
+    width: 42px;
+    height: 43px;
+    box-shadow: none;
+    padding-top: 21px;
+}
+
+.hues-m-beatcenter.hues-h-text > span {
+    font-size: 13px;
+}
+
+.hues-h-eyes {
+    background: none;
+    background-image: url('../img/skull-eyes.png');
+    top: 0px;
+    width: 42px;
+    height: 64px;
+    box-shadow: none;
+    
+    -moz-animation-duration: 150ms;
+    -webkit-animation-duration: 150ms;
+    animation-duration: 150ms;
+    -moz-animation-name: hues-m-beatcenter;
+    -webkit-animation-name: hues-m-beatcenter;
+    animation-name: hues-m-beatcenter;
+    -moz-animation-fill-mode: forwards;
+    -webkit-animation-fill-mode: forwards;
+    animation-fill-mode: forwards;
+}
+
+.hues-h-left-hand, .hues-h-right-hand {
+    width: 63px;
+    height: 42px;
+    position: absolute;
+}
+
+.hues-h-left-hand {
+    background: url('../img/left-hand.png');
+    left: -15px;
+}
+
+.hues-h-right-hand {
+    background: url('../img/right-hand.png');
+    right: -15px;
 }
 
 .hues-m-controls.hues-h-controls {
