@@ -53,13 +53,6 @@
     animation-fill-mode: forwards;
 }
 
-.hues-h-left-hand, .hues-h-right-hand {
-    width: 63px;
-    height: 42px;
-    position: absolute;
-    background-repeat: no-repeat;
-}
-
 .hues-h-left-hand {
     background: url('../img/left-hand.png');
     left: -15px;
@@ -68,6 +61,13 @@
 .hues-h-right-hand {
     background: url('../img/right-hand.png');
     right: -15px;
+}
+
+.hues-h-left-hand, .hues-h-right-hand {
+    width: 63px;
+    height: 42px;
+    position: absolute;
+    background-repeat: no-repeat;
 }
 
 .hues-m-controls.hues-h-controls {
