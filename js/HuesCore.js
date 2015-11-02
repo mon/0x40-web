@@ -460,6 +460,7 @@ HuesCore.prototype.setInvert = function(invert) {
         document.documentElement.style.filter = "";
         document.documentElement.style.webkitFilter = "";
     }
+    this.userInterface.invert(invert);
 }
 
 HuesCore.prototype.toggleInvert = function() {

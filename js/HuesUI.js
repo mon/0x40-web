@@ -188,6 +188,7 @@ HuesUI.prototype.resize = function() {};
 HuesUI.prototype.modeUpdated = function() {};
 HuesUI.prototype.beat = function() {};
 HuesUI.prototype.updateVolume = function(vol) {};
+HuesUI.prototype.invert = function(invert) {};
 
 HuesUI.prototype.setSongText = function() {
     var song = this.core.currentSong;
@@ -979,6 +980,10 @@ HalloweenUI.prototype.initUI = function() {
     var rightHand = document.createElement("div");
     rightHand.className = "hues-h-right-hand";
     this.beatBar.appendChild(rightHand);
+    
+    this.vignette = document.createElement("div");
+    this.vignette.className = "hues-h-vignette";
+    this.root.appendChild(this.vignette);
 }
 
 HalloweenUI.prototype.beat = function() {
@@ -990,6 +995,16 @@ HalloweenUI.prototype.beat = function() {
         this.beatCenter.appendChild(eyes);
     }
 }
+
+HalloweenUI.prototype.invert = function(invert) {
+    if(invert) {
+        this.vignette.style.filter = "invert(100%)";
+        this.vignette.style.webkitFilter = "invert(100%)";
+    } else {
+        this.vignette.style.filter = "";
+        this.vignette.style.webkitFilter = "";
+    }
+};
 
 // Positions and angles for the Xmas lights
 var xleft = [

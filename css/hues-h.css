@@ -197,3 +197,11 @@
     width:358px;
     height: 284px;
 }
+
+.hues-h-vignette {
+    background-image: url("../img/vignette.png");
+    background-size: 100% 100%;
+    width: 100%;
+    height: 100%;
+    position: absolute;
+}
