@@ -135,12 +135,24 @@ HuesCanvas.prototype.redraw = function() {
             this.canvas.globalAlpha = this.blurAlpha;
         }
         if(this.xBlur) {
-            for(var i=-1; i<=1; i+= this.blurDelta) {
-                this.canvas.drawImage(bitmap, Math.floor(this.blurDistance * i) + offset, 0);
+            if(this.blurIterations < 0) {
+                this.canvas.globalAlpha = 1;
+                this.canvas.drawImage(bitmap, Math.floor(offset - this.blurDistance/2), 0,
+                    bitmap.width + this.blurDistance, bitmap.height);
+            } else {
+                for(var i=-1; i<=1; i+= this.blurDelta) {
+                    this.canvas.drawImage(bitmap, Math.floor(this.blurDistance * i) + offset, 0);
+                }
             }
         } else if(this.yBlur) {
-            for(var i=-1; i<=1; i+= this.blurDelta) {
-                this.canvas.drawImage(bitmap, offset, Math.floor(this.blurDistance * i));
+            if(this.blurIterations < 0) {
+                this.canvas.globalAlpha = 1;
+                this.canvas.drawImage(bitmap, offset, Math.floor(-this.blurDistance/2),
+                    bitmap.width, bitmap.height + this.blurDistance);
+            } else {
+                for(var i=-1; i<=1; i+= this.blurDelta) {
+                    this.canvas.drawImage(bitmap, offset, Math.floor(this.blurDistance * i));
+                }
             }
         } else {
             this.canvas.globalAlpha = 1;
