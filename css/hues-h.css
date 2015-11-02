@@ -6,6 +6,10 @@
     color: #ff3300;
 }
 
+#preloadHelper.hues-h-text {
+    background-color: black;
+}
+
 .hues-h-textfade {
     color: rgba(255, 51, 0, 0.6);
 }

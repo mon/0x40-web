@@ -71,7 +71,7 @@ function HuesCore(defaults) {
 
     if(defaults.load) {
         this.resourceManager.addAll(defaults.respacks, function() {
-            document.getElementById("preloadHelper").className = "loaded";
+            document.getElementById("preloadHelper").classList.add("loaded");
             that.setImage(0);
             if(defaults.autoplay) {
                 if(defaults.firstSong) {

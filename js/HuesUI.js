@@ -1006,6 +1006,18 @@ HalloweenUI.prototype.invert = function(invert) {
     }
 };
 
+HalloweenUI.prototype.connectCore = function(core) {
+    ModernUI.prototype.connectCore.call(this, core);
+    
+    document.getElementById("preloadHelper").classList.add("hues-h-text");
+}
+
+HalloweenUI.prototype.disconnect = function() {
+    ModernUI.prototype.disconnect.call(this, core);
+    
+    document.getElementById("preloadHelper").classList.remove("hues-h-text");
+};
+
 // Positions and angles for the Xmas lights
 var xleft = [
     {"angle": 122.529582194, "x": 19.4, "y": -19.35},
