@@ -57,6 +57,7 @@
     width: 63px;
     height: 42px;
     position: absolute;
+    background-repeat: no-repeat;
 }
 
 .hues-h-left-hand {
