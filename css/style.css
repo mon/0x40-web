@@ -85,6 +85,15 @@ h1, h2, h3 {
     display: none;
 }
 
+#visualiser {
+    position:absolute;
+    z-index: -1;
+}
+
+#visualiser.hidden {
+    display: none;
+}
+
 #preloadHelper {
     background-color: #FFF; 
     width: 100%;
@@ -205,6 +214,9 @@ input.tab-input[type="radio"]:checked + label {
 
 .settings-category {
     font-size: 12pt;
+    width: 50%;
+    float: left;
+    margin-bottom: 10px;
 }
 
 .settings-individual{

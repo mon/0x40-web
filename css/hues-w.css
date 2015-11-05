@@ -91,3 +91,7 @@
     from {-webkit-transform: rotate(0deg) translate(0px, 0px);
           opacity: 1;}
 }
+
+.hues-r-visualisercontainer.hues-w-visualisercontainer {
+    top: 17px;
+}

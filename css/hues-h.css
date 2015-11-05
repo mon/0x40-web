@@ -34,6 +34,11 @@
     font-size: 13px;
 }
 
+.hues-m-beatcenter.hues-h-text.hidden{
+    transform: translateY(-80px);   
+    -webkit-transform: translateY(-80px);
+}
+
 .hues-h-eyes {
     background: none;
     background-image: url('../img/skull-eyes.png');
@@ -75,6 +80,13 @@
     border-style: none;
     padding-top: 8px;
     z-index: 1;
+}
+
+@media (min-width: 768px) {
+  .hues-m-controls.hues-h-controls.hidden {
+    transform: translateY(64px);
+    -webkit-transform: translateY(64px);
+  }
 }
 
 .hues-m-songtitle.hues-h-text, .hues-m-imagename.hues-h-text {
@@ -210,4 +222,5 @@
     width: 100%;
     height: 100%;
     position: absolute;
+    z-index: -1;
 }

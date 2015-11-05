@@ -46,7 +46,8 @@ HuesSettings.prototype.defaultSettings = {
     colourSet: "normal",
     blackoutUI: "off",
     playBuildups: "on",
-    volume : 0.7
+    volume: 0.7,
+    visualiser: "on"
 };
 
 // Don't get saved to localStorage
@@ -73,7 +74,8 @@ HuesSettings.prototype.settingsCategories = {
     "UI Settings" : [
         "currentUI",
         "colourSet",
-        "blackoutUI"
+        "blackoutUI",
+        "visualiser"
     ],
     "Audio Settings" : [
         "playBuildups"
@@ -96,6 +98,10 @@ HuesSettings.prototype.settingsOptions = {
     blurQuality : {
         name : "Blur Quality",
         options : ["low", "medium", "high", "extreme"]
+    },
+    visualiser : {
+        name : "Spectrum analyser",
+        options : ["on", "off"]
     },
     currentUI : {
         name : "User Interface",

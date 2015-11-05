@@ -113,3 +113,13 @@
     right: 35px;
     bottom: 45px;
 }
+
+.hues-r-visualisercontainer {
+    transform: scaleY(-1);
+    -webkit-transform: scaleY(-1);
+    position: absolute;
+    width: 100%;
+    height: 64px;
+    top: 0;
+    left: 0;
+}

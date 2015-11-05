@@ -40,6 +40,18 @@ function SoundManager(core) {
     this.gainNode = null;
     this.mute = false;
     this.lastVol = 1;
+    
+    // Visualiser
+    this.vReady = false;
+    this.vBars = 0;
+    this.splitter = null;
+    this.analysers = [];
+    this.analyserArrays = [];
+    this.logArrays = [];
+    this.binCutoffs = [];
+    this.linBins = 0;
+    this.logBins = 0;
+    this.maxBinLin = 0;
 
     // For concatenating our files
     this.leftToLoad = 0;
@@ -124,9 +136,9 @@ SoundManager.prototype.playSong = function(song, playBuild, callback) {
                         that.startTime = that.context.currentTime;
                     }
                     that.context.resume().then(function() {
+                        that.playing = true;
                         if(callback)
                             callback();
-                        that.playing = true;
                     });
                 });
             } else {
@@ -138,9 +150,9 @@ SoundManager.prototype.playSong = function(song, playBuild, callback) {
                     that.bufSource.start(0, that.loopStart);
                     that.startTime = that.context.currentTime;
                 }
+                that.playing = true;
                 if(callback)
                     callback();
-                that.playing = true;
             }
         }
     });
@@ -152,6 +164,7 @@ SoundManager.prototype.stop = function() {
         this.bufSource.stop(0);
         this.bufSource.disconnect(); // TODO needed?
         this.bufSource = null;
+        this.vReady = false;
         this.playing = false;
         this.startTime = 0;
         this.loopStart = 0;
@@ -301,6 +314,118 @@ SoundManager.prototype.concatenateAudioBuffers = function(buffer1, buffer2) {
     }
     return tmp;
 };
+
+
+SoundManager.prototype.initVisualiser = function(bars) {
+    if(!bars) {
+        return;
+    }
+    this.vReady = false;
+    this.vBars = bars;
+    for(var i = 0; i < this.analysers.length; i++) {
+        this.analysers[i].disconnect();
+    }
+    if(this.splitter) {
+        this.splitter.disconnect();
+        this.splitter = null;
+    }
+    this.analysers = [];
+    this.analyserArrays = [];
+    this.logArrays = [];
+    this.binCutoffs = [];
+    
+    this.linBins = 0;
+    this.logBins = 0;
+    this.maxBinLin = 0;
+    
+    this.attachVisualiser();
+}
+
+SoundManager.prototype.attachVisualiser = function() {
+    if(!this.playing || this.vReady) {
+        return;
+    }
+
+    var channels = this.bufSource.channelCount;
+    // In case channel counts change, this is changed each time
+    this.splitter = this.context.createChannelSplitter(channels);
+    this.bufSource.connect(this.splitter);
+    // Split display up into each channel
+    this.vBars = Math.floor(this.vBars/channels);
+    
+    for(var i = 0; i < channels; i++) {
+        var analyser = this.context.createAnalyser();
+        // big fft buffers are new-ish
+        try {
+            analyser.fftSize = 8192;
+        } catch(err) {
+            analyser.fftSize = 2048;
+        }
+        // Chosen because they look nice, no maths behind it
+        analyser.smoothingTimeConstant = 0.6;
+        analyser.minDecibels = -70;
+        analyser.maxDecibels = -25;
+        this.analyserArrays.push(new Uint8Array(analyser.frequencyBinCount));
+        analyser.getByteTimeDomainData(this.analyserArrays[i]);
+        this.splitter.connect(analyser, i);   
+        this.analysers.push(analyser);
+        this.logArrays.push(new Uint8Array(this.vBars));
+    }
+    var binCount = this.analysers[0].frequencyBinCount;
+    var binWidth = this.bufSource.buffer.sampleRate / binCount;
+    // first 2kHz are linear
+    this.maxBinLin = Math.floor(2000/binWidth);
+    // Don't stretch the first 2kHz, it looks awful
+    this.linBins = Math.min(this.maxBinLin, Math.floor(this.vBars/2));
+    // Only go up to 22KHz
+    var maxBinLog = Math.floor(22000/binWidth);
+    var logBins = this.vBars - this.linBins;
+    console.log("Going to compress", this.maxBinLin, 
+        "bins into", this.linBins, "linear bins");
+    console.log("Going to compress", maxBinLog-this.linBins, 
+        "bins into", logBins, "logarithmic bins");
+
+    var logLow = Math.log2(2000);
+    var logDiff = Math.log2(22000) - logLow;
+    for(var i = 0; i < logBins; i++) {
+        var cutoff = i * (logDiff/logBins) + logLow;
+        var freqCutoff = Math.pow(2, cutoff);
+        var binCutoff = Math.floor(freqCutoff / binWidth);
+        this.binCutoffs.push(binCutoff);
+    }
+    this.vReady = true;
+}
+
+SoundManager.prototype.sumArray = function(array, low, high) {
+    var total = 0;
+    for(var i = low; i <= high; i++) {
+        total += array[i];
+    }
+    return total/(high-low+1);
+}
+
+SoundManager.prototype.getVisualiserData = function() {
+    if(!this.vReady) {
+        return null;
+    }
+    for(var a = 0; a < this.analyserArrays.length; a++) {
+        var data = this.analyserArrays[a];
+        var result = this.logArrays[a];
+        this.analysers[a].getByteFrequencyData(data);
+        
+        for(var i = 0; i < this.linBins; i++) {
+            var scaled = Math.round(i * this.maxBinLin / this.linBins);
+            result[i] = data[scaled];
+        }
+        result[this.linBins] = data[this.binCutoffs[0]];
+        for(var i = this.linBins+1; i < this.vBars; i++) {
+            var cutoff = i - this.linBins;
+            result[i] = this.sumArray(data, this.binCutoffs[cutoff-1], 
+                                            this.binCutoffs[cutoff]);
+        }
+    }
+    return this.logArrays;
+}
 
 SoundManager.prototype.setMute = function(mute) {
     if(!this.mute && mute) { // muting
