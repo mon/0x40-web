@@ -29,6 +29,8 @@ HuesSettings.prototype.defaultSettings = {
     overwriteLocal : false,
     // If set, will attempt to play the named song first
     firstSong: null,
+    // If set, will attempt to set the named image first
+    firstImage: null,
     // If set, will disable the remote resources menu. For custom pages.
     disableRemoteResources: false,
     // Preloader customisation

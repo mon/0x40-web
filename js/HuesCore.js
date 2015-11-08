@@ -77,7 +77,11 @@ function HuesCore(defaults) {
     if(defaults.load) {
         this.resourceManager.addAll(defaults.respacks, function() {
             document.getElementById("preloadHelper").classList.add("loaded");
-            that.setImage(0);
+            if(defaults.firstImage) {
+                that.setImageByName(defaults.firstImage);
+            } else {
+                that.setImage(0);
+            }
             if(defaults.autoplay) {
                 if(defaults.firstSong) {
                     that.setSongByName(defaults.firstSong);
@@ -355,6 +359,17 @@ HuesCore.prototype.setImage = function(index) {
     }
     this.renderer.setImage(this.currentImage);
     this.userInterface.setImageText();
+};
+
+HuesCore.prototype.setImageByName = function(name) {
+    var images = this.resourceManager.enabledImages;
+    for(var i = 0; i < images.length; i++) {
+        if(images[i].name == name || images[i].fullname == name) {
+            this.setImage(i);
+            return;
+        }
+    }
+    this.setImage(0); // fallback
 };
 
 HuesCore.prototype.nextImage = function() {
