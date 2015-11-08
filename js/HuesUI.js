@@ -151,7 +151,9 @@ HuesUI.prototype.initUI = function() {
 HuesUI.prototype.connectCore = function(core) {
     this.core = core;
     this.root.style.display = "block";
-    this.listContainer.appendChild(core.resourceManager.listView);
+    if(core.resourceManager.hasUI) {
+        this.listContainer.appendChild(core.resourceManager.listView);
+    }
     this.visualiserContainer.appendChild(this.core.visualiser);
 
     window.addEventListener('resize', this.resizeHandler);

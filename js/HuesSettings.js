@@ -33,6 +33,10 @@ HuesSettings.prototype.defaultSettings = {
     firstImage: null,
     // If set, will disable the remote resources menu. For custom pages.
     disableRemoteResources: false,
+    // You will rarely want this. Disables the generated UI elements in the tab box
+    noUI: false,
+    // Whether to show the info window on page load
+    showInfo: false,
     // Preloader customisation
     preloadPrefix: "0x",
     preloadBase: 16,
@@ -62,7 +66,9 @@ HuesSettings.prototype.ephemeralSettings = [
     "disableRemoteResources",
     "preloadPrefix",
     "preloadBase",
-    "preloadMax"
+    "preloadMax",
+    "noUI",
+    "showInfo"
 ];
 
 // To dynamically build the UI like the cool guy I am
@@ -126,9 +132,9 @@ HuesSettings.prototype.settingsOptions = {
 
 function HuesSettings(defaults) {
     this.core = null;
+    this.hasUI = false;
     this.root = document.getElementById("huesSettings");
     this.window = document.getElementById("settingsHelper");
-    this.hide();
 
     for(var attr in this.defaultSettings) {
       if(this.defaultSettings.hasOwnProperty(attr)) {
@@ -150,8 +156,19 @@ function HuesSettings(defaults) {
     }
 
     this.defaults = defaults;
+    
+    if(this.defaults.showInfo) {
+        this.show();
+    } else {
+        this.hide();
+    }
 
-    this.initUI();
+    // because we still care about the main window
+    var that = this;
+    document.getElementById("closeButton").onclick = function() {that.hide();};
+    if(!this.defaults.noUI) {
+        this.initUI();
+    }
 }
 
 HuesSettings.prototype.connectCore = function(core) {
@@ -198,7 +215,6 @@ HuesSettings.prototype.initUI = function() {
     var doc = this.root.ownerDocument;
 
     var that = this;
-    document.getElementById("closeButton").onclick = function() {that.hide();};
 
     // To order things nicely
     for(var cat in this.settingsCategories) {
@@ -243,6 +259,7 @@ HuesSettings.prototype.initUI = function() {
             this.root.appendChild(catContainer);
         }
     }
+    this.hasUI = true;
 };
 
 // Set a named index to its named value, returns false if name doesn't exist

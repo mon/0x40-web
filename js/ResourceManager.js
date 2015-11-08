@@ -24,6 +24,7 @@ var packsURL = "http://cdn.0x40hu.es/getRespacks.php";
 
 function Resources(core) {
     this.core = core;
+    this.hasUI = false;
 
     this.resourcePacks = [];
 
@@ -71,7 +72,9 @@ function Resources(core) {
     this.fileInput = null;
     this.fileParseQueue = [];
     this.currentlyParsing = false;
-    this.initUI();
+    if(!core.settings.defaults.noUI) {
+        this.initUI();
+    }
 }
 
 // Array of URLs to load, and a callback for when we're done
@@ -179,22 +182,23 @@ Resources.prototype.rebuildEnabled = function() {
             }
         }
     }
-
-    var songList = this.enabledSongList;
-    while(songList.firstElementChild) {
-        songList.removeChild(songList.firstElementChild);
-    }
-    var imageList = this.enabledImageList;
-    while(imageList.firstElementChild) {
-        imageList.removeChild(imageList.firstElementChild);
-    }
-    for(var i = 0; i < this.enabledSongs.length; i++) {
-        var song = this.enabledSongs[i];
-        this.appendSimpleListItem(song.title, songList, this.playSongCallback(i));
-    }
-    for(var i = 0; i < this.enabledImages.length; i++) {
-        var image = this.enabledImages[i];
-        this.appendSimpleListItem(image.name, imageList, this.selectImageCallback(i));
+    if(this.hasUI) {
+        var songList = this.enabledSongList;
+        while(songList.firstElementChild) {
+            songList.removeChild(songList.firstElementChild);
+        }
+        var imageList = this.enabledImageList;
+        while(imageList.firstElementChild) {
+            imageList.removeChild(imageList.firstElementChild);
+        }
+        for(var i = 0; i < this.enabledSongs.length; i++) {
+            var song = this.enabledSongs[i];
+            this.appendSimpleListItem(song.title, songList, this.playSongCallback(i));
+        }
+        for(var i = 0; i < this.enabledImages.length; i++) {
+            var image = this.enabledImages[i];
+            this.appendSimpleListItem(image.name, imageList, this.selectImageCallback(i));
+        }
     }
     this.updateTotals();
 };
@@ -268,6 +272,7 @@ Resources.prototype.parseLocalQueue = function(recursing) {
 };
 
 Resources.prototype.localProgress = function(progress, respack) {
+    if(!this.hasUI) {return;}
     this.packsView.progressStatus.textContent = "Processing...";
 
     this.packsView.progressBar.style.width = (progress * 100) + "%";
@@ -510,14 +515,18 @@ Resources.prototype.initUI = function() {
 
     this.listView.appendChild(this.enabledSongList);
     this.listView.appendChild(this.enabledImageList);
+    
+    this.hasUI = true;
 };
 
 Resources.prototype.hideLists = function() {
+    if(!this.hasUI) {return;}
     this.enabledSongList.className = "hidden";
     this.enabledImageList.className = "hidden";
 };
 
 Resources.prototype.toggleSongList = function() {
+    if(!this.hasUI) {return;}
     if(this.enabledSongList.className == "hidden") {
         this.enabledSongList.className = "res-list";
     } else {
@@ -527,6 +536,7 @@ Resources.prototype.toggleSongList = function() {
 };
 
 Resources.prototype.toggleImageList = function() {
+    if(!this.hasUI) {return;}
     if(this.enabledImageList.className == "hidden") {
         this.enabledImageList.className = "res-list";
     } else {
@@ -536,6 +546,7 @@ Resources.prototype.toggleImageList = function() {
 };
 
 Resources.prototype.updateTotals = function() {
+    if(!this.hasUI) {return;}
     this.packView.totalSongs.textContent =
             this.enabledSongs.length + "/" + this.allSongs.length;
     this.packView.totalImages.textContent =
@@ -671,6 +682,7 @@ Resources.prototype.invert = function() {
 };
 
 Resources.prototype.appendListItem = function(name, value, id, root, oncheck, onclick, checked) {
+    if(!this.hasUI) {return;}
     if(checked === undefined) {
         checked = true;
     }
