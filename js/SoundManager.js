@@ -380,10 +380,6 @@ SoundManager.prototype.attachVisualiser = function() {
     // Only go up to 22KHz
     var maxBinLog = Math.floor(22000/binWidth);
     var logBins = this.vBars - this.linBins;
-    console.log("Going to compress", this.maxBinLin, 
-        "bins into", this.linBins, "linear bins");
-    console.log("Going to compress", maxBinLog-this.linBins, 
-        "bins into", logBins, "logarithmic bins");
 
     var logLow = Math.log2(2000);
     var logDiff = Math.log2(22000) - logLow;
