@@ -104,7 +104,6 @@
     -webkit-transform: scaleY(-1);
     position: absolute;
     width: 100%;
-    height: 64px;
     top: 25px;
     left: 0;
 }

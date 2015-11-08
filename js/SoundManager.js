@@ -415,9 +415,9 @@ SoundManager.prototype.getVisualiserData = function() {
         
         for(var i = 0; i < this.linBins; i++) {
             var scaled = Math.round(i * this.maxBinLin / this.linBins);
-            result[i] = data[scaled];
+            result[i] = data[scaled+2];
         }
-        result[this.linBins] = data[this.binCutoffs[0]];
+        result[this.linBins] = data[this.binCutoffs[0]+2];
         for(var i = this.linBins+1; i < this.vBars; i++) {
             var cutoff = i - this.linBins;
             result[i] = this.sumArray(data, this.binCutoffs[cutoff-1], 

@@ -58,8 +58,6 @@ function HuesUI(parent) {
 
     // Put this near the links to song/image lists/ Bottom right alignment
     this.listContainer = null;
-    // Must be dynamic width, 64 pixels high. Will be filled with visualiser
-    this.visualiserContainer = null;
 
     this.hidden = false;
 
@@ -141,8 +139,7 @@ HuesUI.prototype.initUI = function() {
     };
 
     this.listContainer = document.createElement("div");
-    this.visualiserContainer = document.createElement("div");
-
+    
     this.resizeHandler = function() {
         that.resize();
     };
@@ -152,7 +149,6 @@ HuesUI.prototype.connectCore = function(core) {
     this.core = core;
     this.root.style.display = "block";
     this.listContainer.appendChild(core.resourceManager.listView);
-    this.visualiserContainer.appendChild(this.core.visualiser);
 
     window.addEventListener('resize', this.resizeHandler);
     this.resizeHandler();
@@ -163,9 +159,6 @@ HuesUI.prototype.disconnect = function() {
     this.root.style.display = "none";
     while (this.listContainer.firstElementChild) {
         this.listContainer.removeChild(this.listContainer.firstElementChild);
-    }
-    while (this.visualiserContainer.firstElementChild) {
-        this.visualiserContainer.removeChild(this.visualiserContainer.firstElementChild);
     }
 
     window.removeEventListener('resize', this.resizeHandler);
@@ -352,9 +345,6 @@ RetroUI.prototype.initUI = function() {
 
     this.listContainer.className = "hues-r-listcontainer";
     this.root.appendChild(this.listContainer);
-    
-    this.visualiserContainer.className = "hues-r-visualisercontainer";
-    this.root.appendChild(this.visualiserContainer);
 };
 
 RetroUI.prototype.toggleHide = function(stylename) {
@@ -410,11 +400,6 @@ RetroUI.prototype.beat = function() {
     this.beatCount.textContent = "B=" + this.intToHex3(this.core.getSafeBeatIndex());
 };
 
-RetroUI.prototype.resize = function() {
-    this.core.visualiser.width = this.visualiserContainer.offsetWidth;
-    this.core.resizeVisualiser();
-};
-
 function WeedUI() {
     RetroUI.call(this);
 
@@ -450,8 +435,6 @@ WeedUI.prototype.initUI = function() {
 
     this.imageModeManual.textContent = "ONE";
     this.imageModeAuto.textContent = "MANY";
-    
-    this.visualiserContainer.className += " hues-w-visualisercontainer";
 };
 
 WeedUI.prototype.toggleHide = function() {
@@ -650,9 +633,6 @@ ModernUI.prototype.initUI = function() {
     controls.appendChild(leftInfo);
     controls.appendChild(rightInfo);
     
-    this.visualiserContainer.className = "hues-m-visualisercontainer";
-    controls.appendChild(this.visualiserContainer);
-
     var beatBar = document.createElement("div");
     beatBar.className = "hues-m-beatbar";
     this.root.appendChild(beatBar);
@@ -741,10 +721,9 @@ ModernUI.prototype.beat = function() {
 };
 
 ModernUI.prototype.resize = function() {
+    HuesUI.prototype.resize.call(this);
     this.resizeSong();
     this.resizeImage();
-    this.core.visualiser.width = this.controls.offsetWidth;
-    this.core.resizeVisualiser();
 };
 
 ModernUI.prototype.resizeElement = function(el, parent) {
@@ -845,10 +824,6 @@ function XmasUI() {
     bottomHelper.appendChild(bottom);
     wires.appendChild(bottomHelper);
     this.root.appendChild(wires);
-    
-    this.visualiserContainer.className = "hues-x-visualisercontainer";
-    this.controls.removeChild(this.visualiserContainer);
-    this.beatBar.appendChild(this.visualiserContainer);
 }
 
 XmasUI.prototype = Object.create(ModernUI.prototype);

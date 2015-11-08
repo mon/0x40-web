@@ -62,11 +62,6 @@ function HuesCore(defaults) {
         return;
     }
     this.renderer = new HuesCanvas("waifu", this.soundManager.context, this);
-    
-    this.visualiser = document.createElement("canvas");
-    this.visualiser.id = "visualiser";
-    this.visualiser.height = "64";
-    this.vCtx = this.visualiser.getContext("2d");
 
     this.uiArray.push(new RetroUI(), new WeedUI(), new ModernUI(), new XmasUI(), new HalloweenUI());
     this.settings.connectCore(this);
@@ -113,55 +108,12 @@ function HuesCore(defaults) {
     this.animationLoop();
 }
 
-HuesCore.prototype.resizeVisualiser = function() {
-    this.soundManager.initVisualiser(this.visualiser.width/2);
-}
-
-HuesCore.prototype.updateVisualiser = function() {
-    if(localStorage["visualiser"] != "on") {
-        return;
-    }
-    
-    var logArrays = this.soundManager.getVisualiserData();
-    if(!logArrays) {
-        return;
-    }
-
-    this.vCtx.clearRect(0, 0, this.vCtx.canvas.width, this.vCtx.canvas.height);
-    
-    var gradient=this.vCtx.createLinearGradient(0,64,0,0);
-    gradient.addColorStop(1,"rgba(255,255,255,0.6)");
-    gradient.addColorStop(0,"rgba(20,20,20,0.6)");
-    this.vCtx.fillStyle = gradient;
-    
-    var barWidth = 2;
-    var barHeight;
-    var x = 0;
-    for(var a = 0; a < logArrays.length; a++) {
-        var vals = logArrays[a];
-        for(var i = 0; i < vals.length; i++) {
-            var index = 0;
-            if(logArrays.length == 2 && a == 0) {
-                index = vals.length - i - 1;
-            } else {
-                index = i;
-            }
-            barHeight = vals[index]/4;
-            
-            this.vCtx.fillRect(x,this.vCtx.canvas.height-barHeight,barWidth,barHeight);
-
-            x += barWidth;
-        }
-    }
-}
-
 HuesCore.prototype.animationLoop = function() {
     var that = this;
     if(!this.soundManager.playing) {
         requestAnimationFrame(function() {that.animationLoop();});
         return;
     }
-    this.updateVisualiser();
     var now = this.soundManager.currentTime();
     if(now < 0) {
         this.userInterface.updateTime(0);
@@ -323,9 +275,6 @@ HuesCore.prototype.songDataUpdated = function() {
 HuesCore.prototype.resetAudio = function() {
     this.beatIndex = 0;
     this.songDataUpdated();
-    if(localStorage["visualiser"] == "on") {
-        this.soundManager.initVisualiser(this.visualiser.width/2);
-    }
 };
 
 HuesCore.prototype.randomImage = function() {
@@ -628,17 +577,6 @@ HuesCore.prototype.settingsUpdated = function() {
     case "on":
         if(this.renderer.blackout) {
             this.userInterface.hide();
-        }
-        break;
-    }
-    switch (localStorage["visualiser"]) {
-    case "off":
-        document.getElementById("visualiser").className = "hidden";
-        break;
-    case "on":
-        document.getElementById("visualiser").className = "";
-        if(!this.soundManager.vReady) {
-            this.soundManager.initVisualiser(this.visualiser.width/2);
         }
         break;
     }

@@ -73,6 +73,8 @@ function HuesCanvas(element, aContext, core) {
     this.lastSnow = 0;
     this.snowflakes = [];
 
+    this.vBarWidth = 10;
+
     this.animating = true;
     requestAnimationFrame(this.getAnimLoop());
 }
@@ -87,6 +89,7 @@ HuesCanvas.prototype.resize = function() {
     this.canvas.canvas.width = Math.ceil(720 * ratio);
     var snow = document.getElementById("snow").getContext("2d");
     snow.canvas.width = Math.ceil(720 * ratio);
+    this.core.soundManager.initVisualiser(this.canvas.canvas.width/this.vBarWidth);
     this.needsRedraw = true;
 };
 
@@ -108,11 +111,10 @@ HuesCanvas.prototype.redraw = function() {
             this.needsRedraw = false;
             return;
         }
-    } else {
-        this.canvas.fillStyle = "#FFF";
-        this.canvas.fillRect(0,0,width,720);
     }
-
+    
+    this.canvas.clearRect(0,0,width,720);
+    
     if(this.image && (this.image.bitmap || this.image.bitmaps)) {
         var bitmap = this.image.animated ?
             this.image.bitmaps[this.animFrame] : this.image.bitmap;
@@ -159,9 +161,17 @@ HuesCanvas.prototype.redraw = function() {
             this.canvas.drawImage(bitmap, offset, 0);
         }
     }
+    this.canvas.globalCompositeOperation = "source-atop";
+    this.canvas.globalAlpha = 1;
+    this.updateVisualiser();
+    
+    this.canvas.globalCompositeOperation = "source-out";
+    this.canvas.fillStyle = "#FFF";
+    //this.canvas.fillRect(0,0,width,720);
+    
+    this.canvas.globalCompositeOperation = this.blendMode;
     this.canvas.globalAlpha = 0.7;
     this.canvas.fillStyle = this.intToHex(this.colour);
-    this.canvas.globalCompositeOperation = this.blendMode;
     this.canvas.fillRect(0,0,width,720);
     if(this.blackout) {
         this.canvas.globalAlpha = bOpacity;
@@ -237,7 +247,7 @@ HuesCanvas.prototype.animationLoop = function() {
         this.redraw();
     } else if(this.blurStart) {
         this.redraw();
-    } else if(this.needsRedraw){
+    } else if(localStorage["visualiser"]){
         this.redraw();
     }
     if(this.snowing) {
@@ -291,6 +301,48 @@ HuesCanvas.prototype.syncAnim = function() {
     // Because negative mods are different in JS
     this.animFrame = ((this.animFrame % aLen) + aLen) % aLen;
 };
+
+HuesCanvas.prototype.updateVisualiser = function() {
+    if(localStorage["visualiser"] != "on") {
+        return;
+    }
+    
+    var width = this.canvas.canvas.width;
+    var height = this.canvas.canvas.height;
+    
+    if(!this.core.soundManager.vReady) {
+        this.core.soundManager.initVisualiser(width/this.vBarWidth);
+    }
+    
+    var logArrays = this.core.soundManager.getVisualiserData();
+    if(!logArrays) {
+        return;
+    }
+    
+    var gradient=this.canvas.createLinearGradient(0,height/2.5,0,0);
+    gradient.addColorStop(1,"rgb(255,255,255)");
+    gradient.addColorStop(0,"rgb(20,20,20)");
+    this.canvas.fillStyle = "#444";//gradient;
+
+    var barHeight;
+    var x = 0;
+    for(var a = 0; a < logArrays.length; a++) {
+        var vals = logArrays[a];
+        for(var i = 0; i < vals.length; i++) {
+            var index = 0;
+            if(logArrays.length == 2 && a == 0) {
+                index = vals.length - i - 1;
+            } else {
+                index = i;
+            }
+            barHeight = vals[index]/255*height;
+            
+            this.canvas.fillRect(x,height-barHeight,this.vBarWidth,barHeight);
+
+            x += this.vBarWidth;
+        }
+    }
+}
 
 HuesCanvas.prototype.setColour = function(colour, isFade) {
     if(isFade) {
