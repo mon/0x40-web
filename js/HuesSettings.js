@@ -49,7 +49,7 @@ HuesSettings.prototype.defaultSettings = {
     blackoutUI: "off",
     playBuildups: "on",
     volume: 0.7,
-    visualiser: "on"
+    visualiser: "off"
 };
 
 // Don't get saved to localStorage
