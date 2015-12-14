@@ -51,10 +51,11 @@ HuesSettings.prototype.defaultSettings = {
     colourSet: "normal",
     blackoutUI: "off",
     playBuildups: "on",
-    volume: 0.7,
     visualiser: "off",
     autoSong: "off",
-    autoSongShuffle: "on"
+    autoSongDelay: 5, // loops or minutes depending on autoSong value
+    autoSongShuffle: "on",
+    volume: 0.7
 };
 
 // Don't get saved to localStorage
@@ -64,6 +65,7 @@ HuesSettings.prototype.ephemeralSettings = [
     "overwriteLocal",
     "respacks",
     "firstSong",
+    "firstImage",
     "disableRemoteResources",
     "preloadPrefix",
     "preloadBase",
@@ -134,7 +136,35 @@ HuesSettings.prototype.settingsOptions = {
     },
     autoSong : {
         name : "AutoSong",
-        options : ["off", "loop", "time"]
+        options : ["off", "loop", "time", 
+            {type:"varText", text:function() {
+                // only display if autosong is on
+                return localStorage["autoSong"] == "off" ? "" : "after";
+            }}, 
+            {type:"input", variable:"autoSongDelay", inputType:"int",
+                visiblity:function() {
+                    return localStorage["autoSong"] != "off";
+                }
+            },
+            {type:"varText", text:function() {
+                var ret = "";
+                switch(localStorage["autoSong"]) {
+                    case "loop":
+                        ret = "loop";
+                        break;
+                    case "time":
+                        ret = "min";
+                        break;
+                    case "off":
+                    default:
+                        return "";
+                }
+                if(localStorage["autoSongDelay"] > 1) {
+                    ret += "s";
+                }
+                return ret;
+            }}
+        ]
     },
     autoSongShuffle : {
         name : "AutoSong shuffle",
@@ -147,6 +177,9 @@ function HuesSettings(defaults) {
     this.hasUI = false;
     this.root = document.getElementById("huesSettings");
     this.window = document.getElementById("settingsHelper");
+    
+    this.textCallbacks = [];
+    this.visCallbacks = [];
 
     for(var attr in this.defaultSettings) {
       if(this.defaultSettings.hasOwnProperty(attr)) {
@@ -245,25 +278,61 @@ HuesSettings.prototype.initUI = function() {
                 buttonContainer.className = "settings-buttons";
                 for(var j = 0; j < setting.options.length; j++) {
                     var option = setting.options[j];
-                    var checkbox = doc.createElement("input");
-                    checkbox.className = "settings-checkbox";
-                    checkbox.type = "radio";
-                    checkbox.name = setName;
-                    checkbox.value = option;
-                    checkbox.id = setName + "-" + option;
-                    if(localStorage[setName] == option) {
-                        checkbox.checked = true;
+                    if(typeof option === "string") {
+                        var checkbox = doc.createElement("input");
+                        checkbox.className = "settings-checkbox";
+                        checkbox.type = "radio";
+                        checkbox.name = setName;
+                        checkbox.value = option;
+                        checkbox.id = setName + "-" + option;
+                        if(localStorage[setName] == option) {
+                            checkbox.checked = true;
+                        }
+                        checkbox.onclick = function() {
+                            that.set(this.name, this.value);
+                        };
+                        buttonContainer.appendChild(checkbox);
+                        // So we can style this nicely
+                        var label = doc.createElement("label");
+                        label.className = "settings-label";
+                        label.htmlFor = checkbox.id;
+                        label.textContent = option.toUpperCase();
+                        buttonContainer.appendChild(label);
+                    } else { // special option
+                        if(option.type == "varText") {
+                            var text = doc.createElement("span");
+                            text.textContent = option.text();
+                            buttonContainer.appendChild(text);
+                            this.textCallbacks.push({func:option.text, element:text});
+                        } else if(option.type == "input") {
+                            var input = doc.createElement("input");
+                            input.setAttribute("type", "text");
+                            input.className = "settings-input";
+                            input.value = localStorage[option.variable];
+                            // TODO: support more than just positive ints when the need arises
+                            if(option.inputType == "int") {
+                                input.oninput = (function(variable) {
+                                    return function() {
+                                        this.value = this.value.replace(/\D/g,'');
+                                        if(this.value == "" || this.value < 1) {
+                                            this.value = "";
+                                            return;
+                                        }
+                                        localStorage[variable] = this.value;
+                                        that.updateConditionals();
+                                        that.core.settingsUpdated();
+                                    }
+                                })(option.variable);
+                            }
+                            input.autofocus = false;
+                            buttonContainer.appendChild(input);
+                            if(option.visiblity) {
+                                this.visCallbacks.push({func:option.visiblity, element:input});
+                                input.style.visibility = option.visiblity() ? "visible" : "hidden";
+                            }
+                        }
                     }
-                    checkbox.onclick = function() {
-                        that.set(this.name, this.value);
-                    };
-                    buttonContainer.appendChild(checkbox);
-                    // So we can style this nicely
-                    var label = doc.createElement("label");
-                    label.className = "settings-label";
-                    label.htmlFor = checkbox.id;
-                    label.textContent = option.toUpperCase();
-                    buttonContainer.appendChild(label);
+
                 }
                 setContainer.appendChild(buttonContainer);
                 catContainer.appendChild(setContainer);
@@ -287,9 +356,22 @@ HuesSettings.prototype.set = function(setting, value) {
         document.getElementById(setting + "-" + value).checked = true;
     } catch(e) {}
     localStorage[setting] = value;
-    core.settingsUpdated();
+    this.updateConditionals();
+    this.core.settingsUpdated();
     return true;
 };
+
+HuesSettings.prototype.updateConditionals = function() {
+    // update any conditionally formatted settings text
+    for(var i = 0; i < this.textCallbacks.length; i++) {
+        var text = this.textCallbacks[i];
+        text.element.textContent = text.func();
+    }
+    for(var i = 0; i < this.visCallbacks.length; i++) {
+        var callback = this.visCallbacks[i];
+        callback.element.style.visibility = callback.func() ? "visible" : "hidden";
+    }
+}
 
 // Note: This is not defaults as per defaultSettings, but those merged with
 // the defaults given in the initialiser

@@ -19,7 +19,7 @@
  * THE SOFTWARE.
  */
 
-/* We don't  want localstorage variables optimised to different identifiers*/
+/* We don't  want localstorage variables 'optimised' to different identifiers*/
 /*jshint -W069 */
 
 function HuesCore(defaults) {
@@ -104,6 +104,11 @@ function HuesCore(defaults) {
         // Ignore modifiers so we don't steal other events
         // Shift is actually used, and is thus ignored here
         if (e.altKey || e.ctrlKey || e.metaKey) {
+            return true;
+        }
+        // If we've focused a text input, let the input go through!
+        if(document.activeElement.tagName.toLowerCase() == "input" &&
+                document.activeElement.type == "text") {
             return true;
         }
         var key = e.keyCode || e.which;
