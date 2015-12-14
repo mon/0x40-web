@@ -43,7 +43,6 @@ HuesSettings.prototype.defaultSettings = {
     preloadMax: 0x40,
 
     // UI accessible config
-    // Autosong stuff is a todo, becuase why even implement that
     smartAlign: "on",
     blurAmount: "medium",
     blurDecay: "fast",
@@ -53,7 +52,9 @@ HuesSettings.prototype.defaultSettings = {
     blackoutUI: "off",
     playBuildups: "on",
     volume: 0.7,
-    visualiser: "off"
+    visualiser: "off",
+    autoSong: "off",
+    autoSongShuffle: "on"
 };
 
 // Don't get saved to localStorage
@@ -73,61 +74,72 @@ HuesSettings.prototype.ephemeralSettings = [
 
 // To dynamically build the UI like the cool guy I am
 HuesSettings.prototype.settingsCategories = {
-    "Image Settings" : [
-        "smartAlign",
-        "blurAmount",
-        "blurDecay",
-        "blurQuality"
+    "Functionality" : [
+        "autoSong",
+        "autoSongShuffle",
+        "smartAlign"
     ],
-    "UI Settings" : [
+    "Interface" : [
         "currentUI",
         "colourSet",
         "blackoutUI",
         "visualiser"
     ],
-    "Audio Settings" : [
+    "Graphics" : [
+        "blurAmount",
+        "blurDecay",
+        "blurQuality"
+    ],
+    "Audio" : [
         "playBuildups"
     ]
 };
 
 HuesSettings.prototype.settingsOptions = {
     smartAlign : {
-        name : "Smart Align Images",
-        options : ["on", "off"]
+        name : "Smart Align images",
+        options : ["off", "on"]
     },
     blurAmount : {
-        name : "Blur Amount",
+        name : "Blur amount",
         options : ["low", "medium", "high"]
     },
     blurDecay : {
-        name : "Blur Decay",
+        name : "Blur decay",
         options : ["slow", "medium", "fast", "faster!"]
     },
     blurQuality : {
-        name : "Blur Quality",
+        name : "Blur quality",
         options : ["low", "medium", "high", "extreme"]
     },
     visualiser : {
         name : "Spectrum analyser",
-        options : ["on", "off"]
+        options : ["off", "on"]
     },
     currentUI : {
-        name : "User Interface",
+        name : "UI style",
         options : ["retro", "v4.20", "modern", "xmas", "hlwn"]
     },
     colourSet : {
-        name : "Colour Set",
+        name : "Colour set",
         options : ["normal", "pastel", "v4.20"]
     },
     blackoutUI : {
         name : "Blackout affects UI",
-        options : ["on", "off"]
+        options : ["off", "on"]
     },
     playBuildups : {
         name : "Play buildups",
         options : ["off", "once", "on"]
+    },
+    autoSong : {
+        name : "AutoSong",
+        options : ["off", "loop", "time"]
+    },
+    autoSongShuffle : {
+        name : "AutoSong shuffle",
+        options : ["off", "on"]
     }
-
 };
 
 function HuesSettings(defaults) {
