@@ -32,21 +32,26 @@
     background-image: url("../img/lightbase.png");
 }
 
-.hues-x-light > div > img {
-    position: absolute;
-}
-
 .hues-x-fade{
     transition: opacity 0.1s linear;
     -webkit-transition: opacity 0.1s linear;
 }
 
+.hues-x-lighton, .hues-x-lightoff {
+    position: absolute;
+    width: 68px;
+    height: 113px;
+    background-repeat: no-repeat;
+}
+
 .hues-x-lighton {
     opacity: 1;
+    background-image: url("../img/lighton.png");
 }
 
 .hues-x-lightoff {
     opacity: 0;
+    background-image: url("../img/lightoff.png");
 }
 
 .hues-x-lighton.off{

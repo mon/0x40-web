@@ -899,10 +899,8 @@ XmasUI.prototype.newLight = function(l, parent) {
     var light = document.createElement("div");
     light.className = "hues-x-light";
     var bulb = document.createElement("div");
-    var on = document.createElement("img");
-    on.src = "./img/lighton.png";
-    var off = document.createElement("img");
-    off.src = "./img/lightoff.png";
+    var on = document.createElement("div");
+    var off = document.createElement("div");
     bulb.appendChild(on);
     bulb.appendChild(off);
     light.appendChild(bulb);
