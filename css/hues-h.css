@@ -79,7 +79,6 @@
     background: none;
     border-style: none;
     padding-top: 8px;
-    z-index: 1;
 }
 
 @media (min-width: 768px) {
