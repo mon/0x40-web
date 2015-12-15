@@ -24,7 +24,7 @@
 
 function HuesCore(defaults) {
     // Bunch-o-initialisers
-    this.version = "0x01";
+    this.version = "0x0A";
     this.beatIndex = 0;
     this.beatLength = -1;
     this.currentSong = null;
