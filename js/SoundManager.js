@@ -109,6 +109,11 @@ SoundManager.prototype.playSong = function(song, playBuild, callback) {
     if(!song || (!song.sound)) { // null song
         return;
     }
+    
+    // if there's a fadeout happening from AutoSong, kill it
+    this.gainNode.gain.cancelScheduledValues(0);
+    // Reset original volume
+    this.setVolume(this.lastVol);
 
     this.loadBuffer(song, function() {
         // To prevent race condition if you press "next" twice fast
@@ -442,18 +447,24 @@ SoundManager.prototype.toggleMute = function() {
 SoundManager.prototype.decreaseVolume = function() {
     this.setMute(false);
     var val = Math.max(this.gainNode.gain.value - 0.1, 0);
-    this.gainNode.gain.value = val;
-    this.core.userInterface.updateVolume(val);
+    this.setVolume(val);
 };
 
 SoundManager.prototype.increaseVolume = function() {
     this.setMute(false);
     var val = Math.min(this.gainNode.gain.value + 0.1, 1);
-    this.gainNode.gain.value = val;
-    this.core.userInterface.updateVolume(val);
+    this.setVolume(val);
 };
 
 SoundManager.prototype.setVolume = function(vol) {
     this.gainNode.gain.value = vol;
+    this.lastVol = vol;
     this.core.userInterface.updateVolume(vol);
 };
+
+SoundManager.prototype.fadeOut = function(callback) {
+    // Firefox hackery
+    this.gainNode.gain.setValueAtTime(this.lastVol, this.context.currentTime);
+    this.gainNode.gain.exponentialRampToValueAtTime(0.01, this.context.currentTime + 2);
+    setTimeout(callback, 2000);
+}

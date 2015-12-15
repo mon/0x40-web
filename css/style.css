@@ -258,6 +258,7 @@ label.settings-label:hover {
     font-family: 'PetMe64Web';
     font-size: 7pt;
     padding: 3px;
+    margin: -6px 0;
     background: rgba(127,127,127, 0.5);
     border-color: rgb(0,0,0);
     border-width: 1px;

@@ -55,6 +55,7 @@ HuesSettings.prototype.defaultSettings = {
     autoSong: "off",
     autoSongDelay: 5, // loops or minutes depending on autoSong value
     autoSongShuffle: "on",
+    autoSongFadeout: "on",
     volume: 0.7
 };
 
@@ -79,6 +80,7 @@ HuesSettings.prototype.settingsCategories = {
     "Functionality" : [
         "autoSong",
         "autoSongShuffle",
+        "autoSongFadeout",
         "smartAlign"
     ],
     "Interface" : [
@@ -168,6 +170,10 @@ HuesSettings.prototype.settingsOptions = {
     },
     autoSongShuffle : {
         name : "AutoSong shuffle",
+        options : ["off", "on"]
+    },
+    autoSongFadeout : {
+        name : "AutoSong fade out",
         options : ["off", "on"]
     }
 };

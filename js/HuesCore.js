@@ -26,19 +26,16 @@ function HuesCore(defaults) {
     // Bunch-o-initialisers
     this.version = "0x01";
     this.beatIndex = 0;
-    this.beatLength=-1;
+    this.beatLength = -1;
     this.currentSong = null;
     this.currentImage = null;
-    this.songIndex=-1;
-    this.colourIndex=0x3f;
-    this.imageIndex=-1;
+    this.songIndex = -1;
+    this.colourIndex = 0x3f;
+    this.imageIndex = -1;
     this.isFullAuto = true;
     this.invert = false;
-    this.loopCount=0;
-    this.fadeOut=false;
-    this.fadeDirection=false;
-    this.loadedFiles=0;
-    this.doBuildup=true;
+    this.loopCount = 0;
+    this.doBuildup = true;
     this.userInterface = null;
 
     var that = this;
@@ -54,7 +51,7 @@ function HuesCore(defaults) {
     this.lastSongArray = [];
     this.lastImageArray = [];
     this.settings = new HuesSettings(defaults);
-    //this.autoSong = this.settings.autosong;
+    this.autoSong = localStorage["autoSong"];
     this.resourceManager = new Resources(this);
     this.soundManager = new SoundManager(this);
     if(!this.soundManager.canUse) {
@@ -181,6 +178,9 @@ HuesCore.prototype.animationLoop = function() {
         var beat = this.getBeat(this.beatIndex);
         this.beater(beat);
     }
+    if(Math.floor(now / this.soundManager.loopLength) > this.loopCount) {
+        this.onLoop();
+    }
     requestAnimationFrame(function() {that.animationLoop();});
 };
 
@@ -230,6 +230,7 @@ HuesCore.prototype.setSong = function(index) {
     if(this.currentSong == this.resourceManager.enabledSongs[index]) {
         return;
     }
+    this.lastSongArray.push(index);
     this.songIndex = index;
     this.currentSong = this.resourceManager.enabledSongs[this.songIndex];
     if (this.currentSong === undefined) {
@@ -284,37 +285,48 @@ HuesCore.prototype.randomSong = function() {
     } else {
         console.log("Randoming a song!");
         this.setSong(index);
-        this.lastSongArray.push(index);
         var noRepeat = Math.min(5, Math.floor((this.resourceManager.enabledSongs.length / 2)));
         while (this.lastSongArray.length > noRepeat && noRepeat >= 0) {
             this.lastSongArray.shift();
         }
     }
 };
-/*
+
 HuesCore.prototype.onLoop = function() {
-    this.loopCount = this.loopCount + 1;
-    switch (this.settings.autosong) {
+    this.loopCount++;
+    switch (localStorage["autoSong"]) {
     case "loop":
         console.log("Checking loops");
-        if (this.loopCount >= this.settings.autosongDelay) {
-            this.startSongChangeFade();
+        if (this.loopCount >= localStorage["autoSongDelay"]) {
+            this.doAutoSong();
         }
         break;
     case "time":
         console.log("Checking times");
-        if (this.currentSong.sound && this.calculateSongLength(this.currentSong.sound) / 1000 * this.loopCount >= this.settings.autosongDelay * 60) {
-            this.startSongChangeFade();
+        if (this.soundManager.loopLength * this.loopCount >= localStorage["autoSongDelay"] * 60) {
+            this.doAutoSong();
         }
         break;
     }
 }
 
-HuesCore.prototype.startSongChangeFade = function() {
-    this.fadeDirection = true;
-    this.fadeOut = true;
+HuesCore.prototype.doAutoSong = function() {
+    var func = null;
+    var that = this;
+    if(localStorage["autoSongShuffle"] == "on") {
+        func = this.randomSong;
+    } else {
+        func = this.nextSong;
+    }
+    if(localStorage["autoSongFadeout"] == "on") {
+        this.soundManager.fadeOut(function() {
+            func.call(that);
+        });
+    } else {
+        func.call(that);
+    }
 }
-*/
+
 HuesCore.prototype.songDataUpdated = function() {
     if (this.currentSong) {
         this.beatLength = 0;
@@ -538,45 +550,9 @@ HuesCore.prototype.toggleInvert = function() {
     this.setInvert(!this.invert);
 }
 
-/*HuesCore.prototype.enterFrame = function() {
-    this.setTexts();
-    if (this.fadeOut) {
-        // 30fps frame locked, TODO
-        delta = this.fadeDirection ? -2 : 2;
-        if (this.soundChannel) {
-            fadeTo = Math.max(0, Math.min(this.currentVolume, soundManager.volume + delta));
-            this.soundManager.setVolume(fadeTo);
-            if (fadeTo == 0) {
-                this.fadeOut = false;
-                this.fadeDirection = false;
-                if (this.settings.autosongShuffle) {
-                    this.randomSong();
-                } else {
-                    this.nextSong();
-                }
-            }
-        }
-    }
-}*/
-
 HuesCore.prototype.respackLoaded = function() {
     this.init();
 };
-
-/*HuesCore.prototype.rightClickListener = function(event) {
-    switch (event) {
-    case flash.events.MouseEvent.RIGHT_CLICK:
-        this.toggleSettingsWindow();
-        break;
-    case flash.events.MouseEvent.MOUSE_WHEEL:
-        if (event.delta > 0) {
-            this.soundManager.increaseVolume();
-        } else {
-            this.soundManager.decreaseVolume();
-        }
-        break;
-    }
-}*/
 
 HuesCore.prototype.changeUI = function(index) {
     if (index >= 0 && this.uiArray.length > index && this.userInterface != this.uiArray[index]) {
@@ -647,11 +623,11 @@ HuesCore.prototype.settingsUpdated = function() {
         }
         break;
     }
-    /*if (this.autoSong == "off" && !(this.settings.autosong == "off")) {
+    if (this.autoSong == "off" && localStorage["autoSong"] != "off") {
         console.log("Resetting loopCount since AutoSong was enabled");
         this.loopCount = 0;
-        this.autoSong = this.settings.autosong;
-    }*/
+    }
+    this.autoSong = localStorage["autoSong"];
 };
 
 HuesCore.prototype.enabledChanged = function() {
