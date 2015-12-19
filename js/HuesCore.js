@@ -58,6 +58,9 @@ function HuesCore(defaults) {
         this.error(this.soundManager.errorMsg);
         return;
     }
+    setInterval(function() {
+        that.loopCheck();
+    }, 1000);
     this.renderer = new HuesCanvas("waifu", this.soundManager.context, this);
     
     this.visualiser = document.createElement("canvas");
@@ -178,9 +181,6 @@ HuesCore.prototype.animationLoop = function() {
         var beat = this.getBeat(this.beatIndex);
         this.beater(beat);
     }
-    if(Math.floor(now / this.soundManager.loopLength) > this.loopCount) {
-        this.onLoop();
-    }
     requestAnimationFrame(function() {that.animationLoop();});
 };
 
@@ -291,6 +291,16 @@ HuesCore.prototype.randomSong = function() {
         }
     }
 };
+
+/* This is its own function because requestAnimationFrame is called very very
+   rarely when the tab is backgrounded. As autoSong is often used to chill with
+   music, it's important to keep checking the loop so songs don't go for too
+   long. */
+HuesCore.prototype.loopCheck = function() {
+    if(Math.floor(this.soundManager.currentTime() / this.soundManager.loopLength) > this.loopCount) {
+        this.onLoop();
+    }
+}
 
 HuesCore.prototype.onLoop = function() {
     this.loopCount++;
