@@ -56,6 +56,7 @@ HuesSettings.prototype.defaultSettings = {
     autoSongDelay: 5, // loops or minutes depending on autoSong value
     autoSongShuffle: "on",
     autoSongFadeout: "on",
+    trippyMode: "off",
     volume: 0.7
 };
 
@@ -92,7 +93,8 @@ HuesSettings.prototype.settingsCategories = {
     "Graphics" : [
         "blurAmount",
         "blurDecay",
-        "blurQuality"
+        "blurQuality",
+        "trippyMode"
     ],
     "Audio" : [
         "playBuildups"
@@ -174,6 +176,10 @@ HuesSettings.prototype.settingsOptions = {
     },
     autoSongFadeout : {
         name : "AutoSong fade out",
+        options : ["off", "on"]
+    },
+    trippyMode : {
+        name : "Trippy Mode",
         options : ["off", "on"]
     }
 };

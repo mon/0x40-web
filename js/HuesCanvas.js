@@ -47,6 +47,9 @@ function HuesCanvas(element, aContext, core) {
     this.blurDistance = 0;
     this.xBlur = false;
     this.yBlur = false;
+    
+    this.trippyStart = 0;
+    this.xLast = false;
 
     this.blackout = false;
     this.blackoutColour = "#000"; // for the whiteout case we must store this
@@ -64,6 +67,8 @@ function HuesCanvas(element, aContext, core) {
     this.setBlurQuality("high");
     this.setBlurDecay("fast");
     this.canvas = document.getElementById(element).getContext("2d");
+    this.offscreenCanvas = document.createElement('canvas').getContext('2d');
+    this.offscreenCanvas.globalCompositeOperation = "source-over";
     window.addEventListener('resize', this.resizeHandler(this));
     this.resize();
 
@@ -85,6 +90,8 @@ HuesCanvas.prototype.resize = function() {
     // height is constant 720px, we expand width to suit
     var ratio = window.innerWidth / window.innerHeight;
     this.canvas.canvas.width = Math.ceil(720 * ratio);
+    this.offscreenCanvas.canvas.height = this.canvas.canvas.height;
+    this.offscreenCanvas.canvas.width = this.canvas.canvas.width;
     var snow = document.getElementById("snow").getContext("2d");
     snow.canvas.width = Math.ceil(720 * ratio);
     this.needsRedraw = true;
@@ -159,10 +166,28 @@ HuesCanvas.prototype.redraw = function() {
             this.canvas.drawImage(bitmap, offset, 0);
         }
     }
+    this.offscreenCanvas.fillStyle = this.intToHex(0xFFFFFF ^ this.colour);
+    this.offscreenCanvas.fillRect(0,0,width,720);
+    
+    if(this.trippyStart && localStorage["trippyMode"] == "on") {
+        var larger = Math.max(width, this.canvas.canvas.height) / 2;
+        var radius = Math.floor((cTime - this.trippyStart) * larger) * 2;
+        if(radius > larger) {
+            this.trippyStart = 0;
+        } else {
+            this.offscreenCanvas.fillStyle = this.intToHex(this.colour);
+            this.offscreenCanvas.beginPath();
+            if(this.xLast) {
+                radius = larger - radius;
+            }
+            this.offscreenCanvas.arc(width/2, this.canvas.canvas.height/2, radius, 0, 2 * Math.PI, false);
+            this.offscreenCanvas.fill();
+            this.offscreenCanvas.closePath();
+        }
+    }
     this.canvas.globalAlpha = 0.7;
-    this.canvas.fillStyle = this.intToHex(this.colour);
     this.canvas.globalCompositeOperation = this.blendMode;
-    this.canvas.fillRect(0,0,width,720);
+    this.canvas.drawImage(this.offscreenCanvas.canvas, 0, 0);
     if(this.blackout) {
         this.canvas.globalAlpha = bOpacity;
         this.canvas.fillStyle = this.blackoutColour;
@@ -235,7 +260,7 @@ HuesCanvas.prototype.animationLoop = function() {
         this.blurStart = 0;
         this.xBlur = this.yBlur = false;
         this.redraw();
-    } else if(this.blurStart) {
+    } else if(this.blurStart || this.trippyStart) {
         this.redraw();
     } else if(this.needsRedraw){
         this.redraw();
@@ -364,6 +389,8 @@ HuesCanvas.prototype.mixColours = function(percent) {
 
 HuesCanvas.prototype.doXBlur = function() {
     this.blurStart = this.aContext.currentTime;
+    this.trippyStart = this.blurStart;
+    this.xLast = true;
     this.blurDistance = this.blurAmount;
     this.xBlur = true;
     this.yBlur = false;
@@ -372,6 +399,8 @@ HuesCanvas.prototype.doXBlur = function() {
 
 HuesCanvas.prototype.doYBlur = function() {
     this.blurStart = this.aContext.currentTime;
+    this.trippyStart = this.blurStart;
+    this.xLast = false;
     this.blurDistance = this.blurAmount;
     this.xBlur = false;
     this.yBlur = true;
