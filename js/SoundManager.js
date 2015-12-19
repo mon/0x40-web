@@ -114,6 +114,9 @@ SoundManager.prototype.playSong = function(song, playBuild, callback) {
     this.gainNode.gain.cancelScheduledValues(0);
     // Reset original volume
     this.setVolume(this.lastVol);
+    if(this.mute) {
+        this.setMute(true);
+    }
 
     this.loadBuffer(song, function() {
         // To prevent race condition if you press "next" twice fast
@@ -431,8 +434,10 @@ SoundManager.prototype.getVisualiserData = function() {
 SoundManager.prototype.setMute = function(mute) {
     if(!this.mute && mute) { // muting
         this.lastVol = this.gainNode.gain.value;
+    }
+    if(mute) {
         this.gainNode.gain.value = 0;
-    } else if(this.mute && !mute) { // unmuting
+    } else {
         this.gainNode.gain.value = this.lastVol;
     }
     this.core.userInterface.updateVolume(this.gainNode.gain.value);
@@ -463,8 +468,10 @@ SoundManager.prototype.setVolume = function(vol) {
 };
 
 SoundManager.prototype.fadeOut = function(callback) {
-    // Firefox hackery
-    this.gainNode.gain.setValueAtTime(this.lastVol, this.context.currentTime);
-    this.gainNode.gain.exponentialRampToValueAtTime(0.01, this.context.currentTime + 2);
+    if(!this.mute) {
+        // Firefox hackery
+        this.gainNode.gain.setValueAtTime(this.lastVol, this.context.currentTime);
+        this.gainNode.gain.exponentialRampToValueAtTime(0.01, this.context.currentTime + 2);
+    }
     setTimeout(callback, 2000);
 }
