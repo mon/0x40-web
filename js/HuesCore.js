@@ -37,6 +37,60 @@ function HuesCore(defaults) {
     this.loopCount = 0;
     this.doBuildup = true;
     this.userInterface = null;
+    
+    this.eventListeners = {
+        /* callback time(hundredths)
+         *
+         * When the song time is updated - 0 for buildup, integer 10ths
+         * of a second otherwise
+         */
+        time : [],
+        /* callback blurUpdate(xPercent, yPercent)
+         *
+         * The current blur amounts, in percent of full blur
+         */
+        blurupdate : [],
+        
+        /* callback newsong(song)
+         *
+         * Called on song change, whether user triggered or autosong.
+         * Song object is passed.
+         */
+        newsong : [],
+        /* callback newimage(image)
+         *
+         * Called on image change, whether user triggered or FULL AUTO mode.
+         * Image object is passed.
+         */
+        newimage : [],
+        /* callback newimage(image)
+         *
+         * Called on colour change.
+         * Colour object is passed.
+         */
+        newcolour : [],
+        /* callback newmode(mode)
+         *
+         * Called on mode change.
+         * Mode is passed as a boolean.
+         */
+        newmode : [],
+        /* callback beat(beatString, beatIndex)
+         *
+         * Called on every new beat.
+         * beatString is a 256 char long array of current and upcoming beat chars
+         * beatIndex is a "safe to display" beat index. 0 during buildups,
+         * index % beatmap length otherwise.
+         */
+        beat : [],
+        /* callback invert(isInverted)
+         *
+         * Called whenever the invert state changes.
+         * Invert state is passed as a boolean.
+         */
+        invert : []
+        
+    };
 
     var that = this;
     window.onerror = function(msg, url, line, col, error) {
@@ -118,6 +172,33 @@ function HuesCore(defaults) {
     this.animationLoop();
 }
 
+HuesCore.prototype.callEventListeners = function(ev) {
+    var args = Array.prototype.slice.call(arguments, 1);
+    this.eventListeners[ev].forEach(function(callback) {
+        callback.apply(null, args);
+    });
+}
+
+HuesCore.prototype.addEventListener = function(ev, callback) {
+    ev = ev.toLowerCase();
+    if (typeof(this.eventListeners[ev]) !== "undefined") {
+        this.eventListeners[ev].push(callback);
+    } else {
+        throw Error("Unknown event: " + ev);
+    }
+};
+
+HuesCore.prototype.removeEventListener = function(ev, callback) {
+    ev = ev.toLowerCase();
+    if (typeof(this.eventListeners[ev]) !== "undefined") {
+        this.eventListeners[ev] = this.eventListeners[ev].filter(function(a) {
+            return (a !== callback);
+        });
+    } else {
+        throw Error("Unknown event: " + ev);
+    }
+};
+
 HuesCore.prototype.resizeVisualiser = function() {
     this.soundManager.initVisualiser(this.visualiser.width/2);
 }
@@ -169,9 +250,9 @@ HuesCore.prototype.animationLoop = function() {
     this.updateVisualiser();
     var now = this.soundManager.currentTime();
     if(now < 0) {
-        this.userInterface.updateTime(0);
+        this.callEventListeners("time", 0);
     } else {
-        this.userInterface.updateTime(this.soundManager.displayableTime());
+        this.callEventListeners("time", this.soundManager.displayableTime());
         if(this.doBuildup) {
             this.currentSong.buildupPlayed = true;
         }
@@ -182,10 +263,6 @@ HuesCore.prototype.animationLoop = function() {
         this.beater(beat);
     }
     requestAnimationFrame(function() {that.animationLoop();});
-};
-
-HuesCore.prototype.getCurrentMode = function() {
-    return this.isFullAuto ? "FULL AUTO" : "NORMAL";
 };
 
 HuesCore.prototype.getSafeBeatIndex = function() {
@@ -200,7 +277,7 @@ HuesCore.prototype.getSafeBeatIndex = function() {
 };
 
 HuesCore.prototype.blurUpdated = function(x, y) {
-    this.userInterface.blurUpdated(x, y);
+    this.callEventListeners("blurupdate", x, y);
 };
 
 HuesCore.prototype.nextSong = function() {
@@ -237,7 +314,7 @@ HuesCore.prototype.setSong = function(index) {
         this.currentSong = {"name":"None", "title":"None", "rhythm":".", "source":null, "crc":"none", "sound":null, "enabled":true, "filename":"none"};
     }
     console.log("Next song:", this.songIndex, this.currentSong);
-    this.userInterface.setSongText();
+    this.callEventListeners("newsong", this.currentSong);
     this.loopCount = 0;
     if (this.currentSong.buildup) {
         switch (localStorage["playBuildups"]) {
@@ -340,8 +417,8 @@ HuesCore.prototype.doAutoSong = function() {
 HuesCore.prototype.songDataUpdated = function() {
     if (this.currentSong) {
         this.beatLength = 0;
-        this.userInterface.setSongText();
-        this.userInterface.setImageText();
+        this.callEventListeners("newsong", this.currentSong);
+        this.callEventListeners("newimage", this.currentImage);
     } else {
         this.beatLength = -1;
     }
@@ -385,7 +462,7 @@ HuesCore.prototype.setImage = function(index) {
         this.lastImageArray = [];
     }
     this.renderer.setImage(this.currentImage);
-    this.userInterface.setImageText();
+    this.callEventListeners("newimage", this.currentImage);
 };
 
 HuesCore.prototype.setImageByName = function(name) {
@@ -428,8 +505,9 @@ HuesCore.prototype.randomColour = function(isFade) {
 
 HuesCore.prototype.setColour = function(index, isFade) {
     this.colourIndex = index;
-    this.renderer.setColour(this.colours[this.colourIndex].c, isFade);
-    this.userInterface.setColourText();
+    var colour = this.colours[this.colourIndex];
+    this.renderer.setColour(colour.c, isFade);
+    this.callEventListeners("newcolour", colour);
 };
 
 HuesCore.prototype.getBeat = function(index) {
@@ -441,7 +519,7 @@ HuesCore.prototype.getBeat = function(index) {
 };
 
 HuesCore.prototype.beater = function(beat) {
-    this.userInterface.beat();
+    this.callEventListeners("beat", this.getBeatString(), this.getSafeBeatIndex());
     this.renderer.beat();
     switch(beat) {
         case 'X':
@@ -536,7 +614,7 @@ HuesCore.prototype.getBeatString = function(length) {
 HuesCore.prototype.setIsFullAuto = function(auto) {
     this.isFullAuto = auto;
     if (this.userInterface) {
-        this.userInterface.modeUpdated();
+        this.callEventListeners("newmode", this.isFullAuto);
     }
 };
 
@@ -553,7 +631,7 @@ HuesCore.prototype.setInvert = function(invert) {
         document.documentElement.style.filter = "";
         document.documentElement.style.webkitFilter = "";
     }
-    this.userInterface.invert(invert);
+    this.callEventListeners("invert", invert);
 }
 
 HuesCore.prototype.toggleInvert = function() {
@@ -567,15 +645,16 @@ HuesCore.prototype.respackLoaded = function() {
 HuesCore.prototype.changeUI = function(index) {
     if (index >= 0 && this.uiArray.length > index && this.userInterface != this.uiArray[index]) {
         this.hideLists();
-        if(this.userInterface)
+        if(this.userInterface) {
             this.userInterface.disconnect();
+        }
         this.userInterface = this.uiArray[index];
         this.userInterface.connectCore(this);
-        this.userInterface.setSongText();
-        this.userInterface.setImageText();
-        this.userInterface.setColourText(this.colourIndex);
-        this.userInterface.beat();
-        this.userInterface.modeUpdated();
+        this.callEventListeners("newmode", this.isFullAuto);
+        this.callEventListeners("newsong", this.currentSong);
+        this.callEventListeners("newimage", this.currentImage);
+        this.callEventListeners("newcolour", this.colours[this.colourIndex]);
+        this.callEventListeners("beat", this.getBeatString(), this.getSafeBeatIndex());
     }
 };
 

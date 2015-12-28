@@ -55,6 +55,11 @@ function HuesUI(parent) {
 
     this.settingsToggle = null;
     this.hideToggle = null;
+    
+    // To deregister on UI hide we need to keep track of these
+    // Each callback is { name : "callbackname", func : function }
+    // Add using this.addCoreCallback
+    this.callbacks = [];
 
     // Put this near the links to song/image lists/ Bottom right alignment
     this.listContainer = null;
@@ -64,6 +69,10 @@ function HuesUI(parent) {
     this.hidden = false;
 
     this.initUI();
+}
+
+HuesUI.prototype.addCoreCallback = function(name, func) {
+    this.callbacks.push({name : name, func : func});
 }
 
 HuesUI.prototype.initUI = function() {
@@ -119,7 +128,7 @@ HuesUI.prototype.initUI = function() {
     this.timer.textContent = "T=$0x0000";
 
     this.beatCount = document.createElement("div");
-    this.beatCount.textContent = "B=$0x000";
+    this.beatCount.textContent = "B=$0x0000";
 
     this.xBlur = document.createElement("div");
     this.xBlur.textContent = "X=$0x00";
@@ -143,9 +152,12 @@ HuesUI.prototype.initUI = function() {
     this.listContainer = document.createElement("div");
     this.visualiserContainer = document.createElement("div");
 
-    this.resizeHandler = function() {
-        that.resize();
-    };
+    this.addCoreCallback("newsong", this.newSong.bind(this));
+    this.addCoreCallback("newimage", this.newImage.bind(this));
+    this.addCoreCallback("newcolour", this.newColour.bind(this));
+    this.addCoreCallback("blurupdate", this.blurUpdated.bind(this));
+    this.addCoreCallback("time", this.updateTime.bind(this));
+    this.resizeHandler = this.resize.bind(this);
 };
 
 HuesUI.prototype.connectCore = function(core) {
@@ -156,6 +168,9 @@ HuesUI.prototype.connectCore = function(core) {
     }
     this.visualiserContainer.appendChild(this.core.visualiser);
 
+    this.callbacks.forEach(function(callback) {
+        core.addEventListener(callback.name, callback.func);
+    });
     window.addEventListener('resize', this.resizeHandler);
     this.resizeHandler();
 };
@@ -169,7 +184,10 @@ HuesUI.prototype.disconnect = function() {
     while (this.visualiserContainer.firstElementChild) {
         this.visualiserContainer.removeChild(this.visualiserContainer.firstElementChild);
     }
-
+    
+    this.callbacks.forEach(function(callback) {
+        core.removeEventListener(callback.name, callback.func);
+    });
     window.removeEventListener('resize', this.resizeHandler);
 };
 
@@ -192,16 +210,10 @@ HuesUI.prototype.toggleHide = function() {
     }
 };
 
-// May do nothing, may scale elements if needed etc etc
 HuesUI.prototype.resize = function() {};
-HuesUI.prototype.modeUpdated = function() {};
-HuesUI.prototype.beat = function() {};
 HuesUI.prototype.updateVolume = function(vol) {};
-HuesUI.prototype.invert = function(invert) {};
 
-HuesUI.prototype.setSongText = function() {
-    var song = this.core.currentSong;
-
+HuesUI.prototype.newSong = function(song) {
     if(!song) {
         return;
     }
@@ -210,9 +222,7 @@ HuesUI.prototype.setSongText = function() {
     this.songLink.href = song.source;
 };
 
-HuesUI.prototype.setImageText = function() {
-    var image = this.core.currentImage;
-
+HuesUI.prototype.newImage = function(image) {
     if(!image) {
         return;
     }
@@ -223,9 +233,7 @@ HuesUI.prototype.setImageText = function() {
     this.imageLink.href = image.source ? image.source : "";
 };
 
-HuesUI.prototype.setColourText = function() {
-    var colour = this.core.colours[this.core.colourIndex];
-
+HuesUI.prototype.newColour = function(colour) {
     this.hueName.textContent = colour.n.toUpperCase();
 };
 
@@ -357,6 +365,9 @@ RetroUI.prototype.initUI = function() {
     
     this.visualiserContainer.className = "hues-r-visualisercontainer";
     this.root.appendChild(this.visualiserContainer);
+    
+    this.addCoreCallback("beat", this.beat.bind(this));
+    this.addCoreCallback("newmode", this.newMode.bind(this));
 };
 
 RetroUI.prototype.toggleHide = function(stylename) {
@@ -379,16 +390,13 @@ RetroUI.prototype.connectCore = function(core) {
     HuesUI.prototype.connectCore.call(this, core);
 
     this.version.textContent = "V=$" + core.version;
-    this.modeUpdated();
 };
 
-RetroUI.prototype.modeUpdated = function() {
-    this.mode.textContent = "M=" + this.core.getCurrentMode();
+RetroUI.prototype.newMode = function(isAuto) {
+    this.mode.textContent = "M=" + (isAuto ? "FULL AUTO" : "NORMAL");
 };
 
-RetroUI.prototype.setImageText = function() {
-    var image = this.core.currentImage;
-
+RetroUI.prototype.newImage = function(image) {
     if(!image) {
         return;
     }
@@ -397,19 +405,16 @@ RetroUI.prototype.setImageText = function() {
     this.imageLink.href = image.source;
 };
 
-RetroUI.prototype.setColourText = function(colour) {
-    HuesUI.prototype.setColourText.call(this, colour);
+RetroUI.prototype.newColour = function(colour) {
+    HuesUI.prototype.newColour.call(this, colour);
 
     this.colourIndex.textContent = "C=" + this.intToHex2(this.core.colourIndex);
 };
 
-RetroUI.prototype.beat = function() {
-    var beats = this.core.getBeatString();
+RetroUI.prototype.beat = function(beats, index) {
     var rest = beats.slice(1);
-
     this.beatBar.textContent = ">>" + rest;
-
-    this.beatCount.textContent = "B=" + this.intToHex3(this.core.getSafeBeatIndex());
+    this.beatCount.textContent = "B=" + this.intToHex3(index);
 };
 
 RetroUI.prototype.resize = function() {
@@ -465,14 +470,13 @@ WeedUI.prototype.toggleHide = function() {
     RetroUI.prototype.toggleHide.call(this, 'w');
 };
 
-WeedUI.prototype.beat = function() {
-    var beats = this.core.getBeatString();
+WeedUI.prototype.beat = function(beats, index) {
     var rest = beats.slice(1);
 
     this.beatLeft.textContent = rest;
     this.beatRight.textContent = rest;
 
-    this.beatCount.textContent = "B=" + this.intToHex3(this.core.getSafeBeatIndex());
+    this.beatCount.textContent = "B=" + this.intToHex3(index);
 
     if(["x", "o", "X", "O"].indexOf(beats[0]) != -1) {
         var beatCenter = document.createElement("div");
@@ -684,6 +688,9 @@ ModernUI.prototype.initUI = function() {
 
     this.listContainer.className = "hues-m-listcontainer";
     this.root.appendChild(this.listContainer);
+    
+    this.addCoreCallback("beat", this.beat.bind(this));
+    this.addCoreCallback("newmode", this.newMode.bind(this));
 };
 
 ModernUI.prototype.toggleHide = function() {
@@ -713,17 +720,15 @@ ModernUI.prototype.updateVolume = function(vol) {
     }
 };
 
-ModernUI.prototype.modeUpdated = function() {
-    if(this.core.isFullAuto) {
+ModernUI.prototype.newMode = function(isAuto) {
+    if(isAuto) {
         this.imageMode.innerHTML = '<i class="fa fa-pause"></i>'; // PAUSE;
     } else {
         this.imageMode.innerHTML = "&#9654;"; // PLAY
     }
 };
 
-ModernUI.prototype.beat = function() {
-    var beats = this.core.getBeatString();
-
+ModernUI.prototype.beat = function(beats, index) {
     this.currentBeat = beats[0];
     var rest = beats.slice(1);
 
@@ -739,7 +744,7 @@ ModernUI.prototype.beat = function() {
         span.textContent = this.currentBeat;
         this.beatCenter.appendChild(span);
     }
-    this.beatCount.textContent = "B=" + this.intToHex4(this.core.getSafeBeatIndex());
+    this.beatCount.textContent = "B=" + this.intToHex4(index);
 };
 
 ModernUI.prototype.resize = function() {
@@ -767,20 +772,20 @@ ModernUI.prototype.resizeImage = function() {
     this.resizeElement(this.imageLink, this.imageName);
 };
 
-ModernUI.prototype.setSongText = function() {
-    HuesUI.prototype.setSongText.call(this);
+ModernUI.prototype.newSong = function(song) {
+    HuesUI.prototype.newSong.call(this, song);
 
-    if(!this.core.currentSong) {
+    if(!song) {
         return;
     }
 
     this.resizeSong();
 };
 
-ModernUI.prototype.setImageText = function() {
-    HuesUI.prototype.setImageText.call(this);
+ModernUI.prototype.newImage = function(image) {
+    HuesUI.prototype.newImage.call(this, image);
 
-    if(!this.core.currentImage) {
+    if(!image) {
         return;
     }
 
@@ -913,8 +918,8 @@ XmasUI.prototype.newLight = function(l, parent) {
     return light;
 };
 
-XmasUI.prototype.beat = function() {
-    ModernUI.prototype.beat.call(this);
+XmasUI.prototype.beat = function(beats, index) {
+    ModernUI.prototype.beat.call(this, beats, index);
     if(this.currentBeat != ".") {
         this.lights.forEach(function(light, i, a) {
             switch(this.currentBeat) {
@@ -932,7 +937,7 @@ XmasUI.prototype.beat = function() {
     }
 };
 
-XmasUI.prototype.setColourText = function(colour) {};
+XmasUI.prototype.newColour = function(colour) {};
 XmasUI.prototype.blurUpdated = function(x, y) {};
 XmasUI.prototype.updateTime = function(time) {};
 
@@ -1012,8 +1017,8 @@ HalloweenUI.prototype.initUI = function() {
     this.root.appendChild(this.vignette);
 }
 
-HalloweenUI.prototype.beat = function() {
-    ModernUI.prototype.beat.call(this);
+HalloweenUI.prototype.beat = function(beats, index) {
+    ModernUI.prototype.beat.call(this, beats, index);
     
     if (this.currentBeat != ".") {
         var eyes = this.beatCenter.ownerDocument.createElement("div");
