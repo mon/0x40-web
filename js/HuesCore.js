@@ -88,8 +88,18 @@ function HuesCore(defaults) {
          * Called whenever the invert state changes.
          * Invert state is passed as a boolean.
          */
-        invert : []
-        
+        invert : [],
+        /* callback frame()
+         *
+         * Called on each new frame, at the end of all other frame processing
+         */
+        frame : [],
+        /* callback songstarted()
+         *
+         * Called when the song actually begins to play, not just when the
+         * new song processing begins
+         */
+        songstarted : []
     };
 
     var that = this;
@@ -243,8 +253,9 @@ HuesCore.prototype.updateVisualiser = function() {
 
 HuesCore.prototype.animationLoop = function() {
     var that = this;
+    requestAnimationFrame(function() {that.animationLoop();});
     if(!this.soundManager.playing) {
-        requestAnimationFrame(function() {that.animationLoop();});
+        this.callEventListeners("frame");
         return;
     }
     this.updateVisualiser();
@@ -262,7 +273,7 @@ HuesCore.prototype.animationLoop = function() {
         var beat = this.getBeat(this.beatIndex);
         this.beater(beat);
     }
-    requestAnimationFrame(function() {that.animationLoop();});
+    this.callEventListeners("frame");
 };
 
 HuesCore.prototype.getSafeBeatIndex = function() {
@@ -336,6 +347,7 @@ HuesCore.prototype.setSong = function(index) {
     this.soundManager.playSong(this.currentSong, this.doBuildup, function() {
         that.resetAudio();
         that.fillBuildup();
+        that.callEventListeners("songstarted");
     });
 };
 
