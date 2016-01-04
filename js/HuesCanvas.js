@@ -25,6 +25,9 @@
 function HuesCanvas(element, aContext, core) {
     'use strict';
     this.aContext = aContext;
+    core.addEventListener("newimage", this.setImage.bind(this));
+    core.addEventListener("newcolour", this.setColour.bind(this));
+    core.addEventListener("beat", this.beat.bind(this));
     this.core = core;
 
     this.needsRedraw = false;
@@ -64,7 +67,7 @@ function HuesCanvas(element, aContext, core) {
     this.setBlurQuality("high");
     this.setBlurDecay("fast");
     this.canvas = document.getElementById(element).getContext("2d");
-    window.addEventListener('resize', this.resizeHandler(this));
+    window.addEventListener('resize', this.resize.bind(this));
     this.resize();
 
     this.snowing = false;
@@ -74,12 +77,15 @@ function HuesCanvas(element, aContext, core) {
     this.snowflakes = [];
 
     this.animating = true;
-    requestAnimationFrame(this.getAnimLoop());
+    requestAnimationFrame(this.animationLoop.bind(this));
 }
 
-HuesCanvas.prototype.resizeHandler = function(that) {
-    return function() {that.resize();};
-};
+HuesCanvas.prototype.settingsUpdated = function() {
+    this.setSmartAlign(localStorage["smartAlign"]);
+    this.setBlurAmount(localStorage["blurAmount"]);
+    this.setBlurDecay(localStorage["blurDecay"]);
+    this.setBlurQuality(localStorage["blurQuality"]);
+}
 
 HuesCanvas.prototype.resize = function() {
     // height is constant 720px, we expand width to suit
@@ -180,11 +186,6 @@ HuesCanvas.prototype.intToHex = function(num) {
     return '#' + ("00000"+num.toString(16)).slice(-6);
 };
 
-HuesCanvas.prototype.getAnimLoop = function() {
-    var that = this;
-    return function() {that.animationLoop();};
-};
-
 HuesCanvas.prototype.animationLoop = function() {
     if (this.colourFade) {
         var delta = this.aContext.currentTime - this.colourFadeStart;
@@ -244,11 +245,14 @@ HuesCanvas.prototype.animationLoop = function() {
         this.drawSnow();
     }
     if(this.animating) {
-        requestAnimationFrame(this.getAnimLoop());
+        requestAnimationFrame(this.animationLoop.bind(this));
     }
 };
 
 HuesCanvas.prototype.setImage = function(image) {
+    if(this.image == image) {
+        return;
+    }
     this.needsRedraw = true;
     this.image = image;
     // Null images don't need anything interesting done to them
@@ -293,11 +297,14 @@ HuesCanvas.prototype.syncAnim = function() {
 };
 
 HuesCanvas.prototype.setColour = function(colour, isFade) {
+    if(colour.c == this.colour) {
+        return;
+    }
     if(isFade) {
-        this.newColour = colour;
+        this.newColour = colour.c;
     } else {
         this.stopFade();
-        this.colour = colour;
+        this.colour = colour.c;
     }
     this.needsRedraw = true;
 };

@@ -63,10 +63,11 @@ function HuesCore(defaults) {
          * Image object is passed.
          */
         newimage : [],
-        /* callback newimage(image)
+        /* callback newcolour(colour, isFade)
          *
          * Called on colour change.
-         * Colour object is passed.
+         * colour: colour object.
+         * isFade: if the colour is fading from the previous value
          */
         newcolour : [],
         /* callback newmode(mode)
@@ -99,7 +100,12 @@ function HuesCore(defaults) {
          * Called when the song actually begins to play, not just when the
          * new song processing begins
          */
-        songstarted : []
+        songstarted : [],
+        /* callback settingsupdated()
+         *
+         * Called when settings are updated and should be re-read from localStorage
+         */
+        settingsupdated : []
     };
 
     var that = this;
@@ -473,7 +479,6 @@ HuesCore.prototype.setImage = function(index) {
         this.imageIndex = -1;
         this.lastImageArray = [];
     }
-    this.renderer.setImage(this.currentImage);
     this.callEventListeners("newimage", this.currentImage);
 };
 
@@ -518,8 +523,7 @@ HuesCore.prototype.randomColour = function(isFade) {
 HuesCore.prototype.setColour = function(index, isFade) {
     this.colourIndex = index;
     var colour = this.colours[this.colourIndex];
-    this.renderer.setColour(colour.c, isFade);
-    this.callEventListeners("newcolour", colour);
+    this.callEventListeners("newcolour", colour, isFade);
 };
 
 HuesCore.prototype.getBeat = function(index) {
@@ -532,7 +536,6 @@ HuesCore.prototype.getBeat = function(index) {
 
 HuesCore.prototype.beater = function(beat) {
     this.callEventListeners("beat", this.getBeatString(), this.getSafeBeatIndex());
-    this.renderer.beat();
     switch(beat) {
         case 'X':
         case 'x':
@@ -579,7 +582,6 @@ HuesCore.prototype.beater = function(beat) {
                     break;
                 }
             }
-            this.renderer.stopFade();
             this.renderer.doColourFade(fadeLen * this.beatLength);
             this.randomColour(true);
             break;
@@ -665,16 +667,13 @@ HuesCore.prototype.changeUI = function(index) {
         this.callEventListeners("newmode", this.isFullAuto);
         this.callEventListeners("newsong", this.currentSong);
         this.callEventListeners("newimage", this.currentImage);
-        this.callEventListeners("newcolour", this.colours[this.colourIndex]);
+        this.callEventListeners("newcolour", this.colours[this.colourIndex], false);
         this.callEventListeners("beat", this.getBeatString(), this.getSafeBeatIndex());
     }
 };
 
 HuesCore.prototype.settingsUpdated = function() {
-    this.renderer.setSmartAlign(localStorage["smartAlign"]);
-    this.renderer.setBlurAmount(localStorage["blurAmount"]);
-    this.renderer.setBlurDecay(localStorage["blurDecay"]);
-    this.renderer.setBlurQuality(localStorage["blurQuality"]);
+    this.callEventListeners("settingsupdated");
     switch (localStorage["currentUI"]) {
     case "retro":
         this.changeUI(0);
