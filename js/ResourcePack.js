@@ -75,51 +75,48 @@ Respack.prototype.updateProgress = function() {
 };
 
 Respack.prototype.loadFromURL = function(url, callback, progress) {
-    var that = this;
-
     this.loadedFromURL = true;
 
     var req = new XMLHttpRequest();
     req.open('GET', url, true);
     req.responseType = 'blob';
     req.onload = function() {
-        that.loadBlob(req.response, callback, progress);
-    };
+        this.loadBlob(req.response, callback, progress);
+    }.bind(this);
     req.onerror = function() {
         console.log("Could not load respack at URL", url);
     };
     req.onprogress = function(event) {
         if (event.lengthComputable) {
-            that.size = event.total;
-            that.downloaded = event.loaded;
+            this.size = event.total;
+            this.downloaded = event.loaded;
             var percent = event.loaded / event.total;
             if(progress) {
-                progress(percent / 2, that); // because of processing too
+                progress(percent / 2, this); // because of processing too
             }
         } else {
             // Unable to compute progress information since the total size is unknown
         }
-    };
+    }.bind(this);
     req.send();
 };
 
 Respack.prototype.loadBlob = function(blob, callback, progress, errorCallback) {
     this._completionCallback = callback;
     this.progressCallback = progress;
-    var that = this;
     this.size = blob.size;
     this.file = new zip.fs.FS();
     this.file.importBlob(blob,
         function() { // success
-            that.parseWholeZip();
-        },
+            this.parseWholeZip();
+        }.bind(this),
         function(error) {   // failure
             console.log("Error loading respack :", error.toString());
-            that.file = null;
+            this.file = null;
             if(errorCallback) {
                 errorCallback(error.toString());
             }
-        }
+        }.bind(this)
     );
 };
 
@@ -179,16 +176,14 @@ Respack.prototype.parseImage = function(file) {
 };
 
 Respack.prototype.parseXML = function() {
-    var that = this;
-
     if (this._infoFile) {
         this._infoFile.getText(function(text) {
             text = text.replace(/&amp;/g, '&');
             text = text.replace(/&/g, '&amp;');
-            that.parseInfoFile(text);
-            that._infoFile = null;
-            that.parseXML();
-        });
+            this.parseInfoFile(text);
+            this._infoFile = null;
+            this.parseXML();
+        }.bind(this));
         return;
     }
     if (this.songs.length > 0) {
@@ -197,12 +192,12 @@ Respack.prototype.parseXML = function() {
                 //XML parser will complain about a bare '&', but some respacks use &amp
                 text = text.replace(/&amp;/g, '&');
                 text = text.replace(/&/g, '&amp;');
-                that.parseSongFile(text);
+                this.parseSongFile(text);
                 // Go to next in series
-                that._songFile = null;
-                that._songFileParsed = true;
-                that.parseXML();
-            });
+                this._songFile = null;
+                this._songFileParsed = true;
+                this.parseXML();
+            }.bind(this));
             return;
         } else if(!this._songFileParsed) {
             console.log("!!!", "Got songs but no songs.xml!");
@@ -213,10 +208,10 @@ Respack.prototype.parseXML = function() {
         this._imageFile.getText(function(text) {
             text = text.replace(/&amp;/g, '&');
             text = text.replace(/&/g, '&amp;');
-            that.parseImageFile(text);
-            that._imageFile = null;
-            that.parseXML();
-        });
+            this.parseImageFile(text);
+            this._imageFile = null;
+            this.parseXML();
+        }.bind(this));
         return;
     }
 
@@ -415,7 +410,6 @@ Respack.prototype.getImage = function(name) {
 };
 
 Respack.prototype.parseSongQueue = function() {
-    var that = this;
     var songFile = this.songQueue.shift();
     var name = songFile.name.replace(this.audioExtensions, "");
 
@@ -449,14 +443,14 @@ Respack.prototype.parseSongQueue = function() {
         songFile.getBlob(mime, function(sound) {
             // Because blobs are crap
             var fr = new FileReader();
-            fr.onload = function() {
+            fr.onload = function(self) {
                 newSong.sound = this.result;
-                that.filesLoaded++;
-                that.updateProgress();
-                that.tryFinish();
-            };
+                self.filesLoaded++;
+                self.updateProgress();
+                self.tryFinish();
+            }.bind(fr, this);
             fr.readAsArrayBuffer(sound);
-        });
+        }.bind(this));
         this.songs.push(newSong);
     }
 };
@@ -500,7 +494,6 @@ Respack.prototype.parseImageQueue = function() {
 };
 
 Respack.prototype.imageLoadStart = function(imgFile, imageObj) {
-    var that = this;
     var extension = imgFile.name.split('.').pop().toLowerCase();
     var mime = "";
     switch(extension) {
@@ -518,8 +511,8 @@ Respack.prototype.imageLoadStart = function(imgFile, imageObj) {
             mime = "application/octet-stream";
     }
     imgFile.getData64URI(mime, function(image) {
-        that.imageLoadComplete(image, imageObj);
-    });
+        this.imageLoadComplete(image, imageObj);
+    }.bind(this));
 };
 
 Respack.prototype.imageLoadComplete = function(imageBmp, imageObj) {

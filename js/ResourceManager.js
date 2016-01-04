@@ -80,7 +80,6 @@ function Resources(core) {
 // Array of URLs to load, and a callback for when we're done
 // Preserves order of URLs being loaded
 Resources.prototype.addAll = function(urls, callback, progressCallback) {
-    var that = this;
     this.toLoad += urls.length;
     if(progressCallback) {
         this.progressCallback = progressCallback;
@@ -93,29 +92,24 @@ Resources.prototype.addAll = function(urls, callback, progressCallback) {
         var r = new Respack();
         this.rToLoad.push(r);
         r.loadFromURL(urls[i], function() {
-            that.toLoad--;
-            if(that.toLoad <= 0) {
+            this.toLoad--;
+            if(this.toLoad <= 0) {
                 // could use a while() and shift(), but it'd be slower
-                for(var i = 0; i < that.rToLoad.length; i++) {
-                    that.addPack(that.rToLoad[i]);
+                for(var i = 0; i < this.rToLoad.length; i++) {
+                    this.addPack(this.rToLoad[i]);
                 }
-                that.rToLoad = [];
-                if(that.loadFinishCallback) {
-                    that.loadFinishCallback();
-                    that.loadFinishCallback = null;
+                this.rToLoad = [];
+                if(this.loadFinishCallback) {
+                    this.loadFinishCallback();
+                    this.loadFinishCallback = null;
                 }
-                that.progressCallback = null;
+                this.progressCallback = null;
             }
-        }, this.createProgCallback(i));
+        }.bind(this), function(index, progress, pack) {
+            this.progressState[index] = progress;
+            this.updateProgress(pack);
+        }.bind(this, i));
     }
-};
-
-Resources.prototype.createProgCallback = function(i) {
-    var that = this;
-    return function(progress, pack) {
-        that.progressState[i] = progress;
-        that.updateProgress(pack);
-    };
 };
 
 Resources.prototype.updateProgress = function(pack) {
@@ -129,19 +123,20 @@ Resources.prototype.updateProgress = function(pack) {
 
 Resources.prototype.addPack = function(pack) {
     console.log("Added", pack.name, "to respacks");
-    var that = this;
     var id = this.resourcePacks.length;
     this.resourcePacks.push(pack);
     this.addResourcesToArrays(pack);
     this.rebuildEnabled();
     this.updateTotals();
 
+    var self = this;
     this.appendListItem("respacks", pack.name, "res" + id, this.packsView.respackList,
         function() {
             pack.enabled = this.checked;
-            that.rebuildEnabled();
-        },
-        this.selectPackCallback(id)
+            self.rebuildEnabled();
+        }, function(id) {
+            this.selectPack(id);
+        }.bind(this, id)
     );
 };
 
@@ -193,29 +188,19 @@ Resources.prototype.rebuildEnabled = function() {
         }
         for(var i = 0; i < this.enabledSongs.length; i++) {
             var song = this.enabledSongs[i];
-            this.appendSimpleListItem(song.title, songList, this.playSongCallback(i));
+            this.appendSimpleListItem(song.title, songList, function(index) {
+                this.core.setSong(index);
+            }.bind(this, i));
         }
         for(var i = 0; i < this.enabledImages.length; i++) {
             var image = this.enabledImages[i];
-            this.appendSimpleListItem(image.name, imageList, this.selectImageCallback(i));
+            this.appendSimpleListItem(image.name, imageList, function(index) {
+                this.core.setImage(index);
+                this.core.setIsFullAuto(false);
+            }.bind(this, i));
         }
     }
     this.updateTotals();
-};
-
-Resources.prototype.playSongCallback = function(index) {
-    var that = this;
-    return function() {
-        that.core.setSong(index);
-    };
-};
-
-Resources.prototype.selectImageCallback = function(index) {
-    var that = this;
-    return function() {
-        that.core.setImage(index);
-        that.core.setIsFullAuto(false);
-    };
 };
 
 Resources.prototype.removePack = function(pack) {
@@ -249,7 +234,6 @@ Resources.prototype.loadLocal = function() {
 };
 
 Resources.prototype.parseLocalQueue = function(recursing) {
-    var that = this;
     // avoid race conditions
     if(this.currentlyParsing && !recursing) {
         return;
@@ -259,12 +243,12 @@ Resources.prototype.parseLocalQueue = function(recursing) {
         var r = new Respack();
         r.loadBlob(this.fileParseQueue.shift(),
             function() {
-                that.addPack(r);
-                that.localComplete();
-                that.parseLocalQueue(true);
-            },
-            function(progress, respack) {that.localProgress(progress, respack);},
-            function() {that.parseLocalQueue(true);});
+                this.addPack(r);
+                this.localComplete();
+                this.parseLocalQueue(true);
+            }.bind(this),
+            function(progress, respack) {this.localProgress(progress, respack);}.bind(this),
+            function() {this.parseLocalQueue(true);}.bind(this));
     } else {
         console.log("Local respack parsing complete");
         this.currentlyParsing = false;
@@ -294,7 +278,6 @@ Resources.prototype.localComplete = function(progress) {
 
 Resources.prototype.initUI = function() {
     this.root = document.getElementById("huesResources");
-    var that = this;
 
     var packsContainer = document.createElement("div");
     packsContainer.className = "res-packscontainer";
@@ -318,7 +301,7 @@ Resources.prototype.initUI = function() {
         remoteList.className = "res-list";
         remoteList.id = "res-remotelist";
         this.appendSimpleListItem("Click to load the list", remoteList,
-            function() {that.loadRemotes();});
+            function() {this.loadRemotes();}.bind(this));
         this.packsView.remoteList = remoteList;
     } else {
         packList.className += " noremotes";
@@ -329,11 +312,11 @@ Resources.prototype.initUI = function() {
     var loadRemote = document.createElement("div");
     loadRemote.className = "res-button hidden";
     loadRemote.textContent = "LOAD REMOTE";
-    loadRemote.onclick = function() {that.loadCurrentRemote();};
+    loadRemote.onclick = function() {this.loadCurrentRemote();}.bind(this);
     var loadLocal = document.createElement("div");
     loadLocal.className = "res-button";
     loadLocal.textContent = "LOAD ZIPS";
-    loadLocal.onclick = function() {that.fileInput.click();};
+    loadLocal.onclick = function() {this.fileInput.click();}.bind(this);
     buttons.appendChild(loadLocal);
     buttons.appendChild(loadRemote);
     this.packsView.loadRemote = loadRemote;
@@ -342,7 +325,7 @@ Resources.prototype.initUI = function() {
     this.fileInput.type ="file";
     this.fileInput.accept="application/zip";
     this.fileInput.multiple = true;
-    this.fileInput.onchange = function() {that.loadLocal();};
+    this.fileInput.onchange = function() {this.loadLocal();}.bind(this);
 
     var progressContainer = document.createElement("div");
     progressContainer.id = "res-progress-container";
@@ -448,15 +431,15 @@ Resources.prototype.initUI = function() {
     var enableAll = document.createElement("div");
     enableAll.textContent = "ENABLE ALL";
     enableAll.className = "res-button";
-    enableAll.onclick = function() {that.enableAll();};
+    enableAll.onclick = function() {this.enableAll();}.bind(this);
     var invert = document.createElement("div");
     invert.textContent = "INVERT";
     invert.className = "res-button";
-    invert.onclick = function() {that.invert();};
+    invert.onclick = function() {this.invert();}.bind(this);
     var disableAll = document.createElement("div");
     disableAll.textContent = "DISABLE ALL";
     disableAll.className = "res-button";
-    disableAll.onclick = function() {that.disableAll();};
+    disableAll.onclick = function() {this.disableAll();}.bind(this);
     packButtons.appendChild(enableAll);
     packButtons.appendChild(invert);
     packButtons.appendChild(disableAll);
@@ -590,7 +573,7 @@ Resources.prototype.selectPack = function(id) {
         var song = pack.songs[i];
         this.appendListItem("songs", song.title, "song" + i, songList,
             this.selectResourceCallback(song),
-            this.clickResourceCallback(song, true),
+            this.clickResourceCallback.bind(this, song, true),
             song.enabled);
     }
 
@@ -598,40 +581,32 @@ Resources.prototype.selectPack = function(id) {
         var image = pack.images[i];
         this.appendListItem("images", image.name, "image" + i, imageList,
             this.selectResourceCallback(image),
-            this.clickResourceCallback(image, false),
+            this.clickResourceCallback.bind(this, image, false),
             image.enabled);
     }
 };
 
-Resources.prototype.selectPackCallback = function(id) {
-    var that = this;
-    return function() {that.selectPack(id);};
-};
-
 Resources.prototype.selectResourceCallback = function(res) {
-    var that = this;
+    var self = this;
     return function() {
         res.enabled = this.checked;
-        that.rebuildEnabled();
+        self.rebuildEnabled();
     };
 };
 
 Resources.prototype.clickResourceCallback = function(res, isSong) {
-    var that = this;
-    return function() {
-        if(!res.enabled) {
-            res.enabled = true;
-            that.rebuildEnabled();
-            // rebuild display
-            that.selectPack(that.resourcePacks.indexOf(that.packView.pack));
-        }
-        if(isSong) {
-            that.core.setSong(that.enabledSongs.indexOf(res));
-        } else {
-            that.core.setImage(that.enabledImages.indexOf(res));
-            that.core.setIsFullAuto(false);
-        }
-    };
+    if(!res.enabled) {
+        res.enabled = true;
+        this.rebuildEnabled();
+        // rebuild display
+        this.selectPack(this.resourcePacks.indexOf(this.packView.pack));
+    }
+    if(isSong) {
+        this.core.setSong(this.enabledSongs.indexOf(res));
+    } else {
+        this.core.setImage(this.enabledImages.indexOf(res));
+        this.core.setIsFullAuto(false);
+    }
 };
 
 Resources.prototype.getEnabledTabContents = function() {
@@ -707,7 +682,6 @@ Resources.prototype.appendListItem = function(name, value, id, root, oncheck, on
 };
 
 Resources.prototype.loadRemotes = function() {
-    var that = this;
     var remoteList = this.packsView.remoteList;
     while(remoteList.firstElementChild) {
         remoteList.removeChild(remoteList.firstElementChild);
@@ -721,13 +695,13 @@ Resources.prototype.loadRemotes = function() {
         if(!req.response) {
             req.onerror();
         }
-        that.remotes = req.response;
-        that.populateRemotes();
-    };
+        this.remotes = req.response;
+        this.populateRemotes();
+    }.bind(this);
     req.onerror = function() {
         item.textContent = "Could not load list! Click to try again";
-        item.onclick = function() {that.loadRemotes();};
-    };
+        item.onclick = function() {this.loadRemotes();}.bind(this);
+    }.bind(this);
     req.send();
 };
 
@@ -739,13 +713,10 @@ Resources.prototype.populateRemotes = function() {
     for(var i = 0; i < this.remotes.length; i++) {
         this.remotes[i].loaded = false;
         this.appendSimpleListItem(this.remotes[i].name, remoteList,
-            this.getRemoteCallback(i));
+            function(index) {
+                this.selectRemotePack(index);
+            }.bind(this, i));
     }
-};
-
-Resources.prototype.getRemoteCallback = function(index) {
-    var that = this;
-    return function() {that.selectRemotePack(index);};
 };
 
 Resources.prototype.selectRemotePack = function(id) {
@@ -796,7 +767,6 @@ Resources.prototype.selectRemotePack = function(id) {
 
 Resources.prototype.loadCurrentRemote = function() {
     var pack = this.packView.pack;
-    var that = this;
 
     // Not actually a remote, ignore. How did you press this :<
     if(pack.loaded === undefined || pack.loaded) {
@@ -805,11 +775,14 @@ Resources.prototype.loadCurrentRemote = function() {
 
     // TODO Error checking on failure
     pack.loaded = true;
-    that.packsView.loadRemote.className = "res-button loaded";
-    that.packsView.loadRemote.textContent = "LOADING";
+    this.packsView.loadRemote.className = "res-button loaded";
+    this.packsView.loadRemote.textContent = "LOADING";
     this.addAll([pack.url], function() {
-            that.remoteComplete();
-        }, function(progress, respack) {that.remoteProgress(progress, respack);}
+            this.remoteComplete();
+        }.bind(this), 
+        function(progress, respack) {
+            this.remoteProgress(progress, respack);
+        }.bind(this)
     );
 };
 

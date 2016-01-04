@@ -215,8 +215,9 @@ function HuesSettings(defaults) {
     }
 
     // because we still care about the main window
-    var that = this;
-    document.getElementById("closeButton").onclick = function() {that.hide();};
+    document.getElementById("closeButton").onclick = function() {
+        this.hide();
+    }.bind(this);
     if(!this.defaults.noUI) {
         this.initUI();
     }
@@ -265,8 +266,6 @@ HuesSettings.prototype.showInfo = function() {
 HuesSettings.prototype.initUI = function() {
     var doc = this.root.ownerDocument;
 
-    var that = this;
-
     // To order things nicely
     for(var cat in this.settingsCategories) {
             if(this.settingsCategories.hasOwnProperty(cat)) {
@@ -294,9 +293,9 @@ HuesSettings.prototype.initUI = function() {
                         if(localStorage[setName] == option) {
                             checkbox.checked = true;
                         }
-                        checkbox.onclick = function() {
-                            that.set(this.name, this.value);
-                        };
+                        checkbox.onclick = function(self) {
+                            self.set(this.name, this.value);
+                        }.bind(checkbox, this);
                         buttonContainer.appendChild(checkbox);
                         // So we can style this nicely
                         var label = doc.createElement("label");
@@ -317,18 +316,16 @@ HuesSettings.prototype.initUI = function() {
                             input.value = localStorage[option.variable];
                             // TODO: support more than just positive ints when the need arises
                             if(option.inputType == "int") {
-                                input.oninput = (function(variable) {
-                                    return function() {
-                                        this.value = this.value.replace(/\D/g,'');
-                                        if(this.value == "" || this.value < 1) {
-                                            this.value = "";
-                                            return;
-                                        }
-                                        localStorage[variable] = this.value;
-                                        that.updateConditionals();
-                                        that.core.settingsUpdated();
+                                input.oninput = (function(self, variable) {
+                                    this.value = this.value.replace(/\D/g,'');
+                                    if(this.value == "" || this.value < 1) {
+                                        this.value = "";
+                                        return;
                                     }
-                                })(option.variable);
+                                    localStorage[variable] = this.value;
+                                    self.updateConditionals();
+                                    self.core.settingsUpdated();
+                                }.bind(input, this, option.variable));
                             }
                             input.autofocus = false;
                             buttonContainer.appendChild(input);

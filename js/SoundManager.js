@@ -83,24 +83,22 @@ function SoundManager(core) {
         return;
     }
 
-    var that = this;
     window.addEventListener('touchend', function() {
         // create empty buffer
-        var buffer = that.context.createBuffer(1, 1, 22050);
-        var source =  that.context.createBufferSource();
+        var buffer = this.context.createBuffer(1, 1, 22050);
+        var source =  this.context.createBufferSource();
         source.buffer = buffer;
 
         // connect to output (your speakers)
-        source.connect( that.context.destination);
+        source.connect( this.context.destination);
 
         // play the file
         source.start(0);
 
-    }, false);
+    }.bind(this), false);
 }
 
 SoundManager.prototype.playSong = function(song, playBuild, callback) {
-    var that = this;
     if(this.song == song) {
         return;
     }
@@ -120,50 +118,50 @@ SoundManager.prototype.playSong = function(song, playBuild, callback) {
 
     this.loadBuffer(song, function() {
         // To prevent race condition if you press "next" twice fast
-        if(song == that.song) {
+        if(song == this.song) {
             // more racing than the Melbourne Cup
             try {
-                that.bufSource.stop(0);
+                this.bufSource.stop(0);
             } catch(err) {}
-            that.bufSource = that.context.createBufferSource();
-            that.bufSource.buffer = that.buffer;
-            that.bufSource.loop = true;
-            that.bufSource.loopStart = that.loopStart;
-            that.bufSource.loopEnd = that.buffer.duration;
-            that.bufSource.connect(that.gainNode);
+            this.bufSource = this.context.createBufferSource();
+            this.bufSource.buffer = this.buffer;
+            this.bufSource.loop = true;
+            this.bufSource.loopStart = this.loopStart;
+            this.bufSource.loopEnd = this.buffer.duration;
+            this.bufSource.connect(this.gainNode);
 
             // This fixes sync issues on Firefox and slow machines.
-            if(that.context.suspend && that.context.resume) {
-                that.context.suspend().then(function() {
+            if(this.context.suspend && this.context.resume) {
+                this.context.suspend().then(function() {
                     if(playBuild) {
                         // mobile webkit requires offset, even if 0
-                        that.bufSource.start(0);
-                        that.startTime = that.context.currentTime + that.loopStart;
+                        this.bufSource.start(0);
+                        this.startTime = this.context.currentTime + this.loopStart;
                     } else {
-                        that.bufSource.start(0, that.loopStart);
-                        that.startTime = that.context.currentTime;
+                        this.bufSource.start(0, this.loopStart);
+                        this.startTime = this.context.currentTime;
                     }
-                    that.context.resume().then(function() {
-                        that.playing = true;
+                    this.context.resume().then(function() {
+                        this.playing = true;
                         if(callback)
                             callback();
-                    });
-                });
+                    }.bind(this));
+                }.bind(this));
             } else {
                 if(playBuild) {
                     // mobile webkit requires offset, even if 0
-                    that.bufSource.start(0);
-                    that.startTime = that.context.currentTime + that.loopStart;
+                    this.bufSource.start(0);
+                    this.startTime = this.context.currentTime + this.loopStart;
                 } else {
-                    that.bufSource.start(0, that.loopStart);
-                    that.startTime = that.context.currentTime;
+                    this.bufSource.start(0, this.loopStart);
+                    this.startTime = this.context.currentTime;
                 }
-                that.playing = true;
+                this.playing = true;
                 if(callback)
                     callback();
             }
         }
-    });
+    }.bind(this));
 };
 
 SoundManager.prototype.stop = function() {
@@ -223,7 +221,6 @@ SoundManager.prototype.loadAudioFile = function(song, isBuild) {
 /* decodeAudioData nukes our original MP3 array, but we want to keep it around
   for memory saving purposes, so we must duplicate it locally here */
 SoundManager.prototype.getAudioCallback = function(song, isBuild) {
-    var that = this;
     var current = isBuild ? song.buildup : song.sound;
     var copy = current.slice(0);
     return function(buffer) {
@@ -234,16 +231,16 @@ SoundManager.prototype.getAudioCallback = function(song, isBuild) {
             song.sound = copy;
         }
         // race condition prevention
-        if(that.song != song) {
+        if(this.song != song) {
             return;
         }
         if(isBuild) {
-            that.tmpBuild = that.trimMP3(buffer, song.forceTrim, song.noTrim);
+            this.tmpBuild = this.trimMP3(buffer, song.forceTrim, song.noTrim);
         } else {
-            that.tmpBuffer = that.trimMP3(buffer, song.forceTrim, song.noTrim);
+            this.tmpBuffer = this.trimMP3(buffer, song.forceTrim, song.noTrim);
         }
-        that.onSongLoad(song);
-    };
+        this.onSongLoad(song);
+    }.bind(this);
 };
 
 SoundManager.prototype.onSongLoad = function(song) {

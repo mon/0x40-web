@@ -108,12 +108,11 @@ function HuesCore(defaults) {
         settingsupdated : []
     };
 
-    var that = this;
     window.onerror = function(msg, url, line, col, error) {
-        that.error(msg);
+        this.error(msg);
         // Get more info in console
         return false;
-    };
+    }.bind(this);
 
     console.log("0x40 Hues - start your engines!");
     this.colours = this.oldColours;
@@ -129,8 +128,8 @@ function HuesCore(defaults) {
         return;
     }
     setInterval(function() {
-        that.loopCheck();
-    }, 1000);
+        this.loopCheck();
+    }.bind(this), 1000);
     this.renderer = new HuesCanvas("waifu", this.soundManager.context, this);
     
     this.visualiser = document.createElement("canvas");
@@ -148,18 +147,18 @@ function HuesCore(defaults) {
         this.resourceManager.addAll(defaults.respacks, function() {
             document.getElementById("preloadHelper").classList.add("loaded");
             if(defaults.firstImage) {
-                that.setImageByName(defaults.firstImage);
+                this.setImageByName(defaults.firstImage);
             } else {
-                that.setImage(0);
+                this.setImage(0);
             }
             if(defaults.autoplay) {
                 if(defaults.firstSong) {
-                    that.setSongByName(defaults.firstSong);
+                    this.setSongByName(defaults.firstSong);
                 } else {
-                    that.setSong(0);
+                    this.setSong(0);
                 }
             }
-        }, function(progress) {
+        }.bind(this), function(progress) {
             var prog = document.getElementById("preMain");
             var scale = Math.floor(progress * defaults.preloadMax);
             var padding = defaults.preloadMax.toString(defaults.preloadBase).length;
@@ -182,8 +181,8 @@ function HuesCore(defaults) {
             return true;
         }
         var key = e.keyCode || e.which;
-        return that.keyHandler(key);
-    };
+        return this.keyHandler(key);
+    }.bind(this);
 
     this.animationLoop();
 }
@@ -258,8 +257,7 @@ HuesCore.prototype.updateVisualiser = function() {
 }
 
 HuesCore.prototype.animationLoop = function() {
-    var that = this;
-    requestAnimationFrame(function() {that.animationLoop();});
+    requestAnimationFrame(this.animationLoop.bind(this));
     if(!this.soundManager.playing) {
         this.callEventListeners("frame");
         return;
@@ -349,12 +347,11 @@ HuesCore.prototype.setSong = function(index) {
         }
     }
     this.setInvert(false);
-    var that = this;
     this.soundManager.playSong(this.currentSong, this.doBuildup, function() {
-        that.resetAudio();
-        that.fillBuildup();
-        that.callEventListeners("songstarted");
-    });
+        this.resetAudio();
+        this.fillBuildup();
+        this.callEventListeners("songstarted");
+    }.bind(this));
 };
 
 HuesCore.prototype.fillBuildup = function() {
@@ -417,7 +414,6 @@ HuesCore.prototype.onLoop = function() {
 
 HuesCore.prototype.doAutoSong = function() {
     var func = null;
-    var that = this;
     if(localStorage["autoSongShuffle"] == "on") {
         func = this.randomSong;
     } else {
@@ -425,10 +421,10 @@ HuesCore.prototype.doAutoSong = function() {
     }
     if(localStorage["autoSongFadeout"] == "on") {
         this.soundManager.fadeOut(function() {
-            func.call(that);
-        });
+            func.call(this);
+        }.bind(this));
     } else {
-        func.call(that);
+        func.call(this);
     }
 }
 
