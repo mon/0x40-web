@@ -28,6 +28,7 @@ function HuesCanvas(element, aContext, core) {
     core.addEventListener("newimage", this.setImage.bind(this));
     core.addEventListener("newcolour", this.setColour.bind(this));
     core.addEventListener("beat", this.beat.bind(this));
+    core.addEventListener("settingsupdated", this.settingsUpdated.bind(this));
     this.core = core;
 
     this.needsRedraw = false;
