@@ -370,7 +370,16 @@ HuesCore.prototype.fillBuildup = function() {
         }
     }
     console.log("Buildup length:", buildBeats);
-    this.beatIndex = this.doBuildup ? -this.currentSong.buildupRhythm.length : 0;
+    if(this.doBuildup) {
+        this.beatIndex = -this.currentSong.buildupRhythm.length;
+    } else {
+        this.beatIndex = 0;
+        // If there's an odd amount of inverts in the build, invert our display
+        var invertCount = (this.currentSong.buildupRhythm.match(/i|I/g)||[]).length
+        if(invertCount % 2) {
+            this.setInvert(true);
+        }
+    }
 };
 
 HuesCore.prototype.randomSong = function() {
