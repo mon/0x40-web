@@ -99,8 +99,8 @@ HuesSettings.prototype.settingsCategories = {
     ],
     "Interface" : [
         "currentUI",
-        "blackoutUI",
-    ],
+        "blackoutUI"
+    ]
 };
 
 HuesSettings.prototype.settingsOptions = {
