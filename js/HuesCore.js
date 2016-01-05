@@ -459,17 +459,22 @@ HuesCore.prototype.resetAudio = function() {
 };
 
 HuesCore.prototype.randomImage = function() {
-    var len = this.resourceManager.enabledImages.length;
-    var index = Math.floor(Math.random() * len);
-    if ((index == this.imageIndex || this.lastImageArray.indexOf(index) != -1) && len > 1) {
-        this.randomImage();
-    } else {
-        this.setImage(index);
-        this.lastImageArray.push(index);
-        var cull = Math.min(20, Math.floor((len / 2)));
-        while (this.lastImageArray.length > cull && cull >= 0) {
-            this.lastImageArray.shift();
+    if(localStorage["shuffleImages"] == "on") {
+        var len = this.resourceManager.enabledImages.length;
+        var index = Math.floor(Math.random() * len);
+        if ((index == this.imageIndex || this.lastImageArray.indexOf(index) != -1) && len > 1) {
+            this.randomImage();
+        } else {
+            this.setImage(index);
+            this.lastImageArray.push(index);
+            var cull = Math.min(20, Math.floor((len / 2)));
+            while (this.lastImageArray.length > cull && cull >= 0) {
+                this.lastImageArray.shift();
+            }
         }
+    } else { // jk, not actually random
+        var img=(this.imageIndex + 1) % this.resourceManager.enabledImages.length;
+        this.setImage(img);
     }
 };
 

@@ -52,6 +52,7 @@ HuesSettings.prototype.defaultSettings = {
     blackoutUI: "off",
     playBuildups: "on",
     visualiser: "off",
+    shuffleImages: "on",
     autoSong: "off",
     autoSongDelay: 5, // loops or minutes depending on autoSong value
     autoSongShuffle: "on",
@@ -82,13 +83,7 @@ HuesSettings.prototype.settingsCategories = {
         "autoSong",
         "autoSongShuffle",
         "autoSongFadeout",
-        "smartAlign"
-    ],
-    "Interface" : [
-        "currentUI",
-        "colourSet",
-        "blackoutUI",
-        "visualiser"
+        "playBuildups"
     ],
     "Graphics" : [
         "blurAmount",
@@ -96,9 +91,16 @@ HuesSettings.prototype.settingsCategories = {
         "blurQuality",
         "trippyMode"
     ],
-    "Audio" : [
-        "playBuildups"
-    ]
+    "Visuals" : [
+        "smartAlign",
+        "shuffleImages",
+        "colourSet",
+        "visualiser"
+    ],
+    "Interface" : [
+        "currentUI",
+        "blackoutUI",
+    ],
 };
 
 HuesSettings.prototype.settingsOptions = {
@@ -180,6 +182,10 @@ HuesSettings.prototype.settingsOptions = {
     },
     trippyMode : {
         name : "Trippy Mode",
+        options : ["off", "on"]
+    },
+    shuffleImages : {
+        name : "Shuffle images",
         options : ["off", "on"]
     }
 };
