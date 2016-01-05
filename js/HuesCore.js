@@ -356,7 +356,10 @@ HuesCore.prototype.setSong = function(index) {
 
 HuesCore.prototype.fillBuildup = function() {
     this.beatLength = this.soundManager.loopLength / this.currentSong.rhythm.length;
-    var buildBeats = Math.floor(this.soundManager.loopStart / this.beatLength) + 1;
+    var buildBeats = Math.floor(this.soundManager.loopStart / this.beatLength);
+    if(buildBeats < 1) {
+        buildBeats = 1;
+    }
     if (this.currentSong.buildupRhythm === null) {
         this.currentSong.buildupRhythm = "";
     }
