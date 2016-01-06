@@ -115,6 +115,7 @@ function HuesCore(defaults) {
     }.bind(this);
 
     console.log("0x40 Hues - start your engines!");
+    populateHuesInfo(this.version);
     this.colours = this.oldColours;
     this.uiArray = [];
     this.lastSongArray = [];

@@ -1,4 +1,4 @@
-JS=HuesCanvas.js HuesCore.js HuesSettings.js HuesUI.js ResourceManager.js ResourcePack.js SoundManager.js
+JS=HuesCanvas.js HuesCore.js HuesSettings.js HuesUI.js HuesInfo.js ResourceManager.js ResourcePack.js SoundManager.js
 YUI=yuicompressor-2.4.8.jar
 
 all: minify pack
