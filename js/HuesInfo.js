@@ -52,7 +52,7 @@ var beatGlossary = [
 var shortcuts = [
     "↑↓  Change song",
     "←→  Change image",
-    "[SHIFT] Random song",
+    "[N] Random song",
     "-+  Change volume",
     "[M] Toggle mute",
     "[F] Toggle automode",

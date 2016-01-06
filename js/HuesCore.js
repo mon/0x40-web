@@ -172,8 +172,7 @@ function HuesCore(defaults) {
     document.onkeydown = function(e){
         e = e || window.event;
         // Ignore modifiers so we don't steal other events
-        // Shift is actually used, and is thus ignored here
-        if (e.altKey || e.ctrlKey || e.metaKey) {
+        if (e.altKey || e.ctrlKey || e.metaKey || e.shiftKey) {
             return true;
         }
         // If we've focused a text input, let the input go through!
@@ -843,7 +842,7 @@ HuesCore.prototype.keyHandler = function(key) {
     case 87: // W
         this.settings.toggle();
         break;
-    case 16: // SHIFT
+    case 78: // N
         this.randomSong();
         break;
     default:
