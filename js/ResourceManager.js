@@ -758,10 +758,28 @@ Resources.prototype.selectRemotePack = function(id) {
         var song = pack.songs[i];
         this.appendSimpleListItem(song, songList);
     }
+    var moreSongs = pack.songcount - pack.songs.length;
+    if(moreSongs > 0) {
+        var text = "... and " + moreSongs + " more song";
+        if(moreSongs > 1) {
+            text += "s"
+        }
+        this.appendSimpleListItem(text + ".", songList);
+        this.appendSimpleListItem("Load the respack to show the rest!", songList);
+    }
 
     for(var i = 0; i < pack.images.length; i++) {
         var image = pack.images[i];
         this.appendSimpleListItem(image, imageList);
+    }
+    var moreImages = pack.imagecount - pack.images.length;
+    if(moreImages > 0) {
+        var text = "... and " + moreImages + " more image";
+        if(moreImages > 1) {
+            text += "s"
+        }
+        this.appendSimpleListItem(text + ".", imageList);
+        this.appendSimpleListItem("Load the respack to show the rest!", imageList);
     }
 };
 
@@ -818,7 +836,8 @@ Resources.prototype.appendSimpleListItem = function(value, root, onclick) {
     var div = document.createElement("div");
     div.className = "res-listitem";
     var label = document.createElement("span");
-    label.textContent = value;
+    // Because we're using textContent, we replace with literal &
+    label.textContent = value.replace(/&amp;/g, '&');
     label.onclick = onclick;
     div.appendChild(label);
     root.appendChild(div);
