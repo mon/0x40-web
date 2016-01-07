@@ -54,7 +54,6 @@ function SoundManager(core) {
     this.maxBinLin = 0;
 
     // For concatenating our files
-    this.leftToLoad = 0;
     this.tmpBuffer = null;
     this.tmpBuild = null;
     this.onLoadCallback = null;
@@ -76,11 +75,7 @@ function SoundManager(core) {
     }
     
     this.mp3Worker = new Worker(core.settings.defaults.mp3WorkerPath + 'mp3-worker.js');
-    this.mp3Worker.addEventListener('message', function(e) {
-      console.log('Worker said: ', e.data);
-    }, false);
-    
-    this.mp3Worker.postMessage("Hello world");
+    this.mp3Worker.addEventListener('message', this.workerFinished.bind(this), false);
 
     window.addEventListener('touchend', function() {
         // create empty buffer
@@ -201,76 +196,97 @@ SoundManager.prototype.loadBuffer = function(song, callback) {
     if(callback) {
         this.onLoadCallback = callback;
     }
-    if(song.buildup) {
-        this.loadAudioFile(song, true);
+    if(song.sound.byteLength == 0) {
+        // Someone went forward then immediately back then forward again
+        // Either way, the sound is still loading. It'll come back when it's ready
+        return;
     }
-    this.loadAudioFile(song, false);
+    var transferrables = [song.sound];
+    if(song.buildup) {
+        transferrables.push(song.buildup);
+    }
+    this.mp3Worker.postMessage(song, transferrables);
 };
 
-SoundManager.prototype.loadAudioFile = function(song, isBuild) {
-    var asset = AV.Asset.fromBuffer(isBuild ? song.buildup : song.sound);
-    asset.on("error", function(err) {
-        console.log(err);
-    });
-    asset.decodeToBuffer(function(buffer) {
-        console.log(asset.format);
-        console.log(buffer.length);
-        var channels = asset.format.channelsPerFrame;
-        var samples = buffer.length/channels;
-        var audioBuf = this.context.createBuffer(channels, samples, asset.format.sampleRate);
-        var audioChans = [];
-        for(var i = 0; i < channels; i++) {
-            audioChans.push(audioBuf.getChannelData(i));
-        }
-        for(var i = 0; i < buffer.length; i++) {
-            audioChans[i % channels][Math.round(i/channels)] = buffer[i];
-        }
-        (this.getAudioCallback(song, isBuild))(audioBuf);
-    }.bind(this));
-};
+SoundManager.prototype.workerFinished = function(event) {
+    var result = event.data;
+    
+    // restore our old ArrayBuffers TODO race
+    var song = this.restoreBuffers(result.song);
+    
+    // Something else started loading after we started
+    if(this.song != song) {
+        console.log("Song changed before we could play it, user is impatient!");
+        return;
+    }
 
-/* decodeAudioData nukes our original MP3 array, but we want to keep it around
-  for memory saving purposes, so we must duplicate it locally here */
-SoundManager.prototype.getAudioCallback = function(song, isBuild) {
-    var current = isBuild ? song.buildup : song.sound;
-    var copy = current.slice(0);
-    return function(buffer) {
-        // before the race condition check or we might lose data
-        if(isBuild) {
-            song.buildup = copy;
-        } else {
-            song.sound = copy;
-        }
-        // race condition prevention
-        if(this.song != song) {
-            return;
-        }
-        if(isBuild) {
-            this.tmpBuild = this.trimMP3(buffer, song.forceTrim, song.noTrim);
-        } else {
-            this.tmpBuffer = this.trimMP3(buffer, song.forceTrim, song.noTrim);
-        }
-        this.onSongLoad(song);
-    }.bind(this);
-};
+    if(song.buildup) {
+        this.tmpBuild = this.trimMP3(this.audioBufFromRaw(result.build), song.forceTrim, song.noTrim);
+    }
+    this.tmpBuffer = this.trimMP3(this.audioBufFromRaw(result.loop), song.forceTrim, song.noTrim);
+    this.onSongLoad(song);
+}
+
+// We pass our ArrayBuffers away, so we need to put them back
+// We must iterate all the songs in case the player has moved on in the meantime
+ SoundManager.prototype.restoreBuffers = function(newSong) {
+     var songs = this.core.resourceManager.allSongs;
+     for(var i = 0; i < songs.length; i++) {
+         var oldSong = songs[i];
+         var same = true;
+         for(var attr in oldSong) {
+            if(oldSong.hasOwnProperty(attr) && attr != "buildup" && attr != "sound") {
+                var oldV = oldSong[attr];
+                var newV = newSong[attr];
+                if(oldV != newV) {
+                    // Equality checks break for NaN, and isNaN coerces args to Number, which we don't want
+                    if(!( (oldV != oldV) && (newV != newV) )) {
+                        same = false;
+                        break;
+                    }
+                }
+            }
+         }
+         if(same) {
+             oldSong.sound = newSong.sound;
+             oldSong.buildup = newSong.buildup;
+             return oldSong;
+         }
+     }
+     console.log("Oh no! Original song has been lost!");
+     return null;
+ }
+
+// Converts interleaved PCM to Web Audio API friendly format
+SoundManager.prototype.audioBufFromRaw = function(sound) {
+    var buffer = sound.array;
+    var channels = sound.channels;
+    var samples = buffer.length/channels;
+    var audioBuf = this.context.createBuffer(channels, samples, sound.sampleRate);
+    var audioChans = [];
+    for(var i = 0; i < channels; i++) {
+        audioChans.push(audioBuf.getChannelData(i));
+    }
+    for(var i = 0; i < buffer.length; i++) {
+        audioChans[i % channels][Math.round(i/channels)] = buffer[i];
+    }
+    return audioBuf;
+}
 
 SoundManager.prototype.onSongLoad = function(song) {
-    // if this fails, we need to wait for the other part to load
-    if(this.tmpBuffer && (!song.buildup || this.tmpBuild)) {
-        if(song.buildup) {
-            this.buffer = this.concatenateAudioBuffers(this.tmpBuild, this.tmpBuffer);
-            this.loopStart = this.tmpBuild.duration;
-        } else {
-            this.buffer = this.tmpBuffer;
-            this.loopStart = 0;
-        }
-        this.loopLength = this.buffer.duration - this.loopStart;
-        // free dat memory
-        this.tmpBuild = this.tmpBuffer = null;
-        if(this.onLoadCallback) {
-            this.onLoadCallback();
-            this.onLoadCallback = null;
-        }
+    if(song.buildup) {
+        this.buffer = this.concatenateAudioBuffers(this.tmpBuild, this.tmpBuffer);
+        this.loopStart = this.tmpBuild.duration;
+    } else {
+        this.buffer = this.tmpBuffer;
+        this.loopStart = 0;
+    }
+    this.loopLength = this.buffer.duration - this.loopStart;
+    // free dat memory
+    this.tmpBuild = this.tmpBuffer = null;
+    if(this.onLoadCallback) {
+        this.onLoadCallback();
+        this.onLoadCallback = null;
     }
 };
 
