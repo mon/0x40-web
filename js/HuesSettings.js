@@ -21,6 +21,8 @@
  */
 
 HuesSettings.prototype.defaultSettings = {
+    // MP3 worker script location relative to root
+    mp3WorkerPath : "js/mp3/",
     // Debugging var, for loading zips or not
     load : true,
     // Debug, play first song automatically?

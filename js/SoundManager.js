@@ -19,9 +19,9 @@
  * THE SOFTWARE.
  */
 
-// Flash value + MAGIC WEB VALUE
-var LAME_DELAY_START = 2258 + 1534;
-var LAME_DELAY_END = 1000;
+// Flash value
+var LAME_DELAY_START = 2258;
+var LAME_DELAY_END = 0;
 
 function SoundManager(core) {
     this.core = core;
@@ -74,14 +74,13 @@ function SoundManager(core) {
         this.errorMsg = "Web Audio API not supported in this browser.";
         return;
     }
-    var audio  = document.createElement("audio"),
-    canPlayMP3 = (typeof audio.canPlayType === "function" &&
-              audio.canPlayType("audio/mpeg") !== "");
-    if(!canPlayMP3) {
-        this.canUse = false;
-        this.errorMsg = "MP3 not supported in this browser.";
-        return;
-    }
+    
+    this.mp3Worker = new Worker(core.settings.defaults.mp3WorkerPath + 'mp3-worker.js');
+    this.mp3Worker.addEventListener('message', function(e) {
+      console.log('Worker said: ', e.data);
+    }, false);
+    
+    this.mp3Worker.postMessage("Hello world");
 
     window.addEventListener('touchend', function() {
         // create empty buffer
@@ -209,13 +208,25 @@ SoundManager.prototype.loadBuffer = function(song, callback) {
 };
 
 SoundManager.prototype.loadAudioFile = function(song, isBuild) {
-    this.context.decodeAudioData(
-        isBuild ? song.buildup : song.sound,
-        this.getAudioCallback(song, isBuild),
-            function() {
-                console.log('Error decoding audio "' + song.name + '".');
+    var asset = AV.Asset.fromBuffer(isBuild ? song.buildup : song.sound);
+    asset.on("error", function(err) {
+        console.log(err);
+    });
+    asset.decodeToBuffer(function(buffer) {
+        console.log(asset.format);
+        console.log(buffer.length);
+        var channels = asset.format.channelsPerFrame;
+        var samples = buffer.length/channels;
+        var audioBuf = this.context.createBuffer(channels, samples, asset.format.sampleRate);
+        var audioChans = [];
+        for(var i = 0; i < channels; i++) {
+            audioChans.push(audioBuf.getChannelData(i));
         }
-    );
+        for(var i = 0; i < buffer.length; i++) {
+            audioChans[i % channels][Math.round(i/channels)] = buffer[i];
+        }
+        (this.getAudioCallback(song, isBuild))(audioBuf);
+    }.bind(this));
 };
 
 /* decodeAudioData nukes our original MP3 array, but we want to keep it around
@@ -265,22 +276,8 @@ SoundManager.prototype.onSongLoad = function(song) {
 
 // because MP3 is bad, we nuke silence
 SoundManager.prototype.trimMP3 = function(buffer, forceTrim, noTrim) {
-    // Firefox/Edge has to trim always, other Webkit only on PackShit
-    var isWebkit = navigator.userAgent.indexOf('AppleWebKit') != -1;
-    // Edge is webkit but doesn't act like it
-    isWebkit = isWebkit && navigator.userAgent.indexOf('Edge') == -1;
-    // forceTrim is because PackShit breaks everything
-    // noTrim is for oggs
-    if((isWebkit && !forceTrim) || noTrim) {
-        return buffer;
-    }
     var start = LAME_DELAY_START;
     var newLength = buffer.length - LAME_DELAY_START - LAME_DELAY_END;
-    if(forceTrim && isWebkit) {
-        // yes, really
-        newLength -= 1200;
-        start += 1200;
-    }
     var ret = this.context.createBuffer(buffer.numberOfChannels, newLength, buffer.sampleRate);
     for(var i=0; i<buffer.numberOfChannels; i++) {
         var oldBuf = buffer.getChannelData(i);
