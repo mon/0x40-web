@@ -3,7 +3,6 @@ exports.MP3Demuxer = require('./src/demuxer');
 exports.MP3Decoder = require('./src/decoder');
 
 },{"./src/decoder":2,"./src/demuxer":3}],2:[function(require,module,exports){
-var AV = (window.AV);
 var MP3FrameHeader = require('./header');
 var MP3Stream = require('./stream');
 var MP3Frame = require('./frame');
@@ -120,7 +119,6 @@ var MP3Decoder = AV.Decoder.extend(function() {
 module.exports = MP3Decoder;
 
 },{"./frame":4,"./header":5,"./layer1":9,"./layer2":10,"./layer3":11,"./stream":12,"./synth":13}],3:[function(require,module,exports){
-var AV = (window.AV);
 var ID3v23Stream = require('./id3').ID3v23Stream;
 var ID3v22Stream = require('./id3').ID3v22Stream;
 var MP3FrameHeader = require('./header');
@@ -331,7 +329,6 @@ MP3Frame.prototype.decode = function(stream) {
 module.exports = MP3Frame;
 
 },{"./header":5,"./utils":15}],5:[function(require,module,exports){
-var AV = (window.AV);
 
 function MP3FrameHeader() {
     this.layer          = 0; // audio layer (1, 2, or 3)
@@ -3640,7 +3637,6 @@ exports.huff_pair_table = [
 ];
 
 },{}],7:[function(require,module,exports){
-var AV = (window.AV);
 
 const ENCODINGS = ['latin1', 'utf16-bom', 'utf16-be', 'utf8'];
 
@@ -4905,7 +4901,6 @@ Layer2.prototype.decodeSamples = function(stream, quantclass) {
 module.exports = Layer2;
 
 },{"./frame":4,"./header":5,"./tables":14,"./utils":15}],11:[function(require,module,exports){
-var AV = (window.AV);
 var tables = require('./tables');
 var MP3FrameHeader = require('./header');
 var MP3Frame = require('./frame');
@@ -6141,7 +6136,6 @@ Layer3.prototype.reorder = function (xr, channel, sfbwidth) {
 module.exports = Layer3;
 
 },{"./frame":4,"./header":5,"./huffman":6,"./imdct":8,"./tables":14,"./utils":15}],12:[function(require,module,exports){
-var AV = (window.AV);
 var MP3FrameHeader = require('./header');
 
 function MP3Stream(stream) {
