@@ -1,4 +1,4 @@
-importScripts('aurora.js', 'mp3.js');
+importScripts('mp3-min.js');
 
 var decodeBuffer = function(source, callback) {
     var asset = AV.Asset.fromBuffer(source);
