@@ -24,7 +24,7 @@
 
 function HuesCore(defaults) {
     // Bunch-o-initialisers
-    this.version = "0x0A";
+    this.version = "0x0B";
     this.beatIndex = 0;
     this.beatLength = -1;
     this.currentSong = null;
@@ -113,8 +113,9 @@ function HuesCore(defaults) {
         // Get more info in console
         return false;
     }.bind(this);
-
-    console.log("0x40 Hues - start your engines!");
+    
+    var versionString = "v" + (parseInt(this.version)/10).toFixed(1);
+    console.log("0x40 Hues " + versionString + " - start your engines!");
     populateHuesInfo(this.version);
     this.colours = this.oldColours;
     this.uiArray = [];
