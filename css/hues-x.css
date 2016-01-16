@@ -39,8 +39,10 @@
 
 .hues-x-lighton, .hues-x-lightoff {
     position: absolute;
-    width: 68px;
-    height: 113px;
+    width: 56px;
+    height: 81px;
+    left: 5px;
+    top: 9px;
     background-repeat: no-repeat;
 }
 

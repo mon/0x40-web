@@ -882,9 +882,9 @@ XmasUI.prototype.lightFadeOut = function(light) {
 };
 
 XmasUI.prototype.lightRecolour = function(light) {
-    var hue = Math.random() * 360;
-    light.bulb.style.filter = "hue-rotate(" + hue + "deg)";
-    light.bulb.style.webkitFilter = "hue-rotate(" + hue + "deg)";
+    var hue = Math.floor(Math.random() * 7) * -56;
+    light.on.style.backgroundPosition = hue + "px, 0, center";
+    light.off.style.backgroundPosition = hue + "px, 0, center";
 };
 
 XmasUI.prototype.randomLight = function(light) {
