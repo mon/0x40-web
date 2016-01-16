@@ -30,6 +30,7 @@
     transform-origin: 32px 69px;
     -webkit-transform-origin: 32px 69px;
     background-image: url("../img/lightbase.png");
+    background-repeat: no-repeat;
 }
 
 .hues-x-fade{

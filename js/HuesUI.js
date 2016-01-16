@@ -918,7 +918,7 @@ XmasUI.prototype.beat = function(beats, index) {
     if(this.currentBeat != ".") {
         this.lights.forEach(function(light, i, a) {
             switch(this.currentBeat) {
-                case ": ": 
+                case ":": 
                     this.lightOn(light);
                     this.lightRecolour(light);
                     break;
