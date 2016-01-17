@@ -5,7 +5,7 @@ all: minify pack
 
 minify:
 	cd ./js ; java -jar ../compiler.jar --js $(JS) --js_output_file hues-min.js
-	cd ./js/mp3 ; java -jar ../../compiler.jar --js aurora.js mp3.js --js_output_file mp3-min.js --language_in=ECMASCRIPT6
+	cd ./js/mp3 ; java -jar ../../compiler.jar --js aurora.js mp3.js --js_output_file mp3-min.js --language_in=ECMASCRIPT6 -W QUIET
 	-rm ./css/hues-min.css
 	cd ./css ; java -jar ../$(YUI) --type css -o hues-s-min.css hues-h.css
 	cd ./css ; java -jar ../$(YUI) --type css -o hues-m-min.css hues-m.css
