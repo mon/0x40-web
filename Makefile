@@ -15,7 +15,6 @@ minify:
 	cd ./css ; java -jar ../$(YUI) --type css -o hues-res-min.css hues-res.css
 	cd ./css ; java -jar ../$(YUI) --type css -o style-min.css style.css
 	cat ./css/*-min.css >> hues-min.css
-	cat ./css/font-awesome.min.css >> hues-min.css
 	rm ./css/*-min.css
 	mv ./hues-min.css ./css/
 	
