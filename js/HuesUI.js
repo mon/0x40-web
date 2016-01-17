@@ -136,7 +136,8 @@ HuesUI.prototype.initUI = function() {
 
     // Config stuff
     this.settingsToggle = document.createElement("div");
-    this.settingsToggle.innerHTML = '<i class="fa fa-cog"></i>';
+    this.settingsToggle.innerHTML = '&#xe900;'; // COG
+    this.settingsToggle.className = 'hues-icon';
     this.settingsToggle.onclick = function() {
         this.core.settings.toggle();
     }.bind(this);
@@ -556,7 +557,7 @@ ModernUI.prototype.initUI = function() {
     volCluster.className = "hues-m-vol-cluster";
     leftBox.appendChild(volCluster);
 
-    this.settingsToggle.className = "hues-m-cog";
+    this.settingsToggle.className += " hues-m-cog";
     volCluster.appendChild(this.settingsToggle);
 
     this.hideToggle.className = "hues-m-hide";
@@ -611,8 +612,8 @@ ModernUI.prototype.initUI = function() {
     this.songPrev.className = "hues-m-prevbutton";
     this.songNext.className = "hues-m-nextbutton";
     this.songShuffle = document.createElement("div");
-    this.songShuffle.innerHTML = '<i class="fa fa-random"></i>';
-    this.songShuffle.className = "hues-m-actbutton";
+    this.songShuffle.innerHTML = '&#xe903;'; // SHUFFLE
+    this.songShuffle.className = "hues-m-actbutton hues-icon";
     this.songShuffle.onclick = function() {this.core.randomSong();}.bind(this);
     songs.appendChild(this.songList);
     songControls.appendChild(this.songPrev);
@@ -630,8 +631,8 @@ ModernUI.prototype.initUI = function() {
     imageControls.className = "hues-m-controlbuttons";
 
     this.imageMode = document.createElement("div");
-    this.imageMode.innerHTML = "&#9654;"; // PLAY
-    this.imageMode.className = "hues-m-actbutton";
+    this.imageMode.innerHTML = "&#xe901;"; // PLAY
+    this.imageMode.className = "hues-m-actbutton hues-icon";
     this.imageMode.onclick = function() {this.core.toggleFullAuto();}.bind(this);
     this.imagePrev.className = "hues-m-prevbutton";
     this.imageNext.className = "hues-m-nextbutton";
@@ -721,9 +722,9 @@ ModernUI.prototype.updateVolume = function(vol) {
 
 ModernUI.prototype.newMode = function(isAuto) {
     if(isAuto) {
-        this.imageMode.innerHTML = '<i class="fa fa-pause"></i>'; // PAUSE;
+        this.imageMode.innerHTML = '&#xe902;'; // PAUSE;
     } else {
-        this.imageMode.innerHTML = "&#9654;"; // PLAY
+        this.imageMode.innerHTML = "&#xe901;"; // PLAY
     }
 };
 

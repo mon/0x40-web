@@ -312,16 +312,16 @@
 
 .hues-m-cog {
     position: absolute;
-    left: 15px;
-    top: 0px;
+    left: 14px;
+    top: 1px;
     font-size: 20px;
 }
 
 .hues-m-hide {
     position: absolute;
-    left: 17px;
-    top: 20px;
-    font-size: 12px;
+    left: 15px;
+    top: 22px;
+    font-size: 15px;
 }
 
 .hues-m-hiderestore {
