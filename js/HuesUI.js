@@ -123,7 +123,7 @@ HuesUI.prototype.initUI = function() {
 
     // Beat timer, x and y blur, millis timer
     this.timer = document.createElement("div");
-    this.timer.textContent = "T=$0x0000";
+    this.timer.textContent = "T=$0x00000";
 
     this.beatCount = document.createElement("div");
     this.beatCount.textContent = "B=$0x0000";
@@ -244,7 +244,7 @@ HuesUI.prototype.blurUpdated = function(x, y) {
 
 HuesUI.prototype.updateTime = function(time) {
     time = Math.floor(time * 1000);
-    this.timer.textContent = "T=" + this.intToHex4(time);
+    this.timer.textContent = "T=" + this.intToHex5(time);
 };
 
 HuesUI.prototype.intToHex2 = function(num) {
@@ -257,6 +257,10 @@ HuesUI.prototype.intToHex3 = function(num) {
 
 HuesUI.prototype.intToHex4 = function(num) {
     return '$0x' + ("0000"+num.toString(16)).slice(-4);
+};
+
+HuesUI.prototype.intToHex5 = function(num) {
+    return '$0x' + ("00000"+num.toString(16)).slice(-5);
 };
 
 /*
@@ -414,7 +418,7 @@ RetroUI.prototype.newColour = function(colour) {
 RetroUI.prototype.beat = function(beats, index) {
     var rest = beats.slice(1);
     this.beatBar.textContent = ">>" + rest;
-    this.beatCount.textContent = "B=" + this.intToHex3(index);
+    this.beatCount.textContent = "B=" + this.intToHex4(index);
 };
 
 RetroUI.prototype.resize = function() {
@@ -476,7 +480,7 @@ WeedUI.prototype.beat = function(beats, index) {
     this.beatLeft.textContent = rest;
     this.beatRight.textContent = rest;
 
-    this.beatCount.textContent = "B=" + this.intToHex3(index);
+    this.beatCount.textContent = "B=" + this.intToHex4(index);
 
     if(["x", "o", "X", "O"].indexOf(beats[0]) != -1) {
         var beatCenter = document.createElement("div");
