@@ -22,9 +22,9 @@
 
 /*  Takes an element name to attach to, and an audio context element for
     getting the current time with reasonable accuracy */
-function HuesCanvas(element, aContext, core) {
+function HuesCanvas(element, audioContext, core) {
     'use strict';
-    this.aContext = aContext;
+    this.audio = audioContext;
     core.addEventListener("newimage", this.setImage.bind(this));
     core.addEventListener("newcolour", this.setColour.bind(this));
     core.addEventListener("beat", this.beat.bind(this));
@@ -73,9 +73,16 @@ function HuesCanvas(element, aContext, core) {
     this.setBlurAmount("medium");
     this.setBlurQuality("high");
     this.setBlurDecay("fast");
-    this.canvas = document.getElementById(element).getContext("2d");
-    this.offscreenCanvas = document.createElement('canvas').getContext('2d');
-    this.offscreenCanvas.globalCompositeOperation = "source-over";
+    
+    this.canvas = document.getElementById(element);
+    this.context = this.canvas.getContext("2d");
+    
+    this.offCanvas = document.createElement('canvas');
+    this.offContext = this.offCanvas.getContext('2d');
+    
+    this.snowCanvas = document.getElementById("snow");
+    this.snowContext = this.snowCanvas.getContext("2d");
+    
     window.addEventListener('resize', this.resize.bind(this));
     this.resize();
 
@@ -100,36 +107,35 @@ HuesCanvas.prototype.settingsUpdated = function() {
 HuesCanvas.prototype.resize = function() {
     // height is constant 720px, we expand width to suit
     var ratio = window.innerWidth / window.innerHeight;
-    this.canvas.canvas.width = Math.ceil(720 * ratio);
-    this.offscreenCanvas.canvas.height = this.canvas.canvas.height;
-    this.offscreenCanvas.canvas.width = this.canvas.canvas.width;
-    var snow = document.getElementById("snow").getContext("2d");
-    snow.canvas.width = Math.ceil(720 * ratio);
-    this.trippyRadius = Math.max(this.canvas.canvas.width, this.canvas.canvas.height) / 2;
+    this.canvas.width = Math.ceil(720 * ratio);
+    this.offCanvas.height = this.canvas.height;
+    this.offCanvas.width = this.canvas.width;
+    this.snowCanvas.width = Math.ceil(720 * ratio);
+    this.trippyRadius = Math.max(this.canvas.width, this.canvas.height) / 2;
     this.needsRedraw = true;
 };
 
 HuesCanvas.prototype.redraw = function() {
     var offset; // for centering/right/left align
     var bOpacity;
-    var width = this.canvas.canvas.width;
+    var width = this.canvas.width;
 
-    var cTime = this.aContext.currentTime;
+    var cTime = this.audio.currentTime;
     // white BG for the hard light filter
-    this.canvas.globalAlpha = 1;
-    this.canvas.globalCompositeOperation = "source-over";
+    this.context.globalAlpha = 1;
+    this.context.globalCompositeOperation = "source-over";
     if(this.blackout) {
         // original is 3 frames at 30fps, this is close
         bOpacity = (cTime - this.blackoutStart)*10;
         if(bOpacity > 1) { // optimise the draw
-            this.canvas.fillStyle = this.blackoutColour;
-            this.canvas.fillRect(0,0,width,720);
+            this.context.fillStyle = this.blackoutColour;
+            this.context.fillRect(0,0,width,720);
             this.needsRedraw = false;
             return;
         }
     } else {
-        this.canvas.fillStyle = "#FFF";
-        this.canvas.fillRect(0,0,width,720);
+        this.context.fillStyle = "#FFF";
+        this.context.fillRect(0,0,width,720);
     }
 
     if(this.image && (this.image.bitmap || this.image.bitmaps)) {
@@ -151,31 +157,31 @@ HuesCanvas.prototype.redraw = function() {
             offset = width/2 - bitmap.width/2;
         }
         if(this.xBlur || this.yBlur) {
-            this.canvas.globalAlpha = this.blurAlpha;
+            this.context.globalAlpha = this.blurAlpha;
         }
         if(this.xBlur) {
             if(this.blurIterations < 0) {
-                this.canvas.globalAlpha = 1;
-                this.canvas.drawImage(bitmap, Math.floor(offset - this.blurDistance/2), 0,
+                this.context.globalAlpha = 1;
+                this.context.drawImage(bitmap, Math.floor(offset - this.blurDistance/2), 0,
                     bitmap.width + this.blurDistance, bitmap.height);
             } else {
                 for(var i=-1; i<=1; i+= this.blurDelta) {
-                    this.canvas.drawImage(bitmap, Math.floor(this.blurDistance * i) + offset, 0);
+                    this.context.drawImage(bitmap, Math.floor(this.blurDistance * i) + offset, 0);
                 }
             }
         } else if(this.yBlur) {
             if(this.blurIterations < 0) {
-                this.canvas.globalAlpha = 1;
-                this.canvas.drawImage(bitmap, offset, Math.floor(-this.blurDistance/2),
+                this.context.globalAlpha = 1;
+                this.context.drawImage(bitmap, offset, Math.floor(-this.blurDistance/2),
                     bitmap.width, bitmap.height + this.blurDistance);
             } else {
                 for(var i=-1; i<=1; i+= this.blurDelta) {
-                    this.canvas.drawImage(bitmap, offset, Math.floor(this.blurDistance * i));
+                    this.context.drawImage(bitmap, offset, Math.floor(this.blurDistance * i));
                 }
             }
         } else {
-            this.canvas.globalAlpha = 1;
-            this.canvas.drawImage(bitmap, offset, 0);
+            this.context.globalAlpha = 1;
+            this.context.drawImage(bitmap, offset, 0);
         }
     }
     
@@ -186,8 +192,8 @@ HuesCanvas.prototype.redraw = function() {
         var baseInvert = this.trippyStart[1] > this.trippyStart[0];
         var invertC = this.intToHex(0xFFFFFF ^ this.colour);
         var normalC = this.intToHex(this.colour);
-        this.offscreenCanvas.fillStyle = baseInvert ? invertC : normalC;
-        this.offscreenCanvas.fillRect(0,0,width,720);
+        this.offContext.fillStyle = baseInvert ? invertC : normalC;
+        this.offContext.fillRect(0,0,width,720);
         
         // sort high to low
         this.trippyRadii.sort(function(a,b) {
@@ -200,24 +206,24 @@ HuesCanvas.prototype.redraw = function() {
                 continue;
             }
             // Invert for each subsequent draw
-            this.offscreenCanvas.beginPath();
-            this.offscreenCanvas.fillStyle = this.intToHex(invert ? invertC : normalC);
-            this.offscreenCanvas.arc(width/2, this.canvas.canvas.height/2, this.trippyRadii[i], 0, 2 * Math.PI, false);
-            this.offscreenCanvas.fill();
-            this.offscreenCanvas.closePath();
+            this.offContext.beginPath();
+            this.offContext.fillStyle = this.intToHex(invert ? invertC : normalC);
+            this.offContext.arc(width/2, this.canvas.height/2, this.trippyRadii[i], 0, 2 * Math.PI, false);
+            this.offContext.fill();
+            this.offContext.closePath();
             invert = !invert;
         }
     } else {
-        this.offscreenCanvas.fillStyle = this.intToHex(this.colour);
-        this.offscreenCanvas.fillRect(0,0,width,720);
+        this.offContext.fillStyle = this.intToHex(this.colour);
+        this.offContext.fillRect(0,0,width,720);
     }
-    this.canvas.globalAlpha = 0.7;
-    this.canvas.globalCompositeOperation = this.blendMode;
-    this.canvas.drawImage(this.offscreenCanvas.canvas, 0, 0);
+    this.context.globalAlpha = 0.7;
+    this.context.globalCompositeOperation = this.blendMode;
+    this.context.drawImage(this.offCanvas, 0, 0);
     if(this.blackout) {
-        this.canvas.globalAlpha = bOpacity;
-        this.canvas.fillStyle = this.blackoutColour;
-        this.canvas.fillRect(0,0,width,720);
+        this.context.globalAlpha = bOpacity;
+        this.context.fillStyle = this.blackoutColour;
+        this.context.fillRect(0,0,width,720);
         this.needsRedraw = true;
     } else {
         this.needsRedraw = false;
@@ -233,7 +239,7 @@ HuesCanvas.prototype.intToHex = function(num) {
 
 HuesCanvas.prototype.animationLoop = function() {
     if (this.colourFade) {
-        var delta = this.aContext.currentTime - this.colourFadeStart;
+        var delta = this.audio.currentTime - this.colourFadeStart;
         var fadeVal = delta / this.colourFadeLength;
         if (fadeVal >= 1) {
             this.stopFade();
@@ -243,7 +249,7 @@ HuesCanvas.prototype.animationLoop = function() {
         }
         this.needsRedraw = true;
     }
-    if(this.blackoutTimeout && this.aContext.currentTime > this.blackoutTimeout) {
+    if(this.blackoutTimeout && this.audio.currentTime > this.blackoutTimeout) {
         this.clearBlackout();
     }
     if(this.image && this.image.animated){
@@ -253,9 +259,9 @@ HuesCanvas.prototype.animationLoop = function() {
             if(this.animFrame != a) {
                 this.needsRedraw = true;
                 // If you change to a non-synced song, this needs to be reset
-                this.animTimeout = this.aContext.currentTime;
+                this.animTimeout = this.audio.currentTime;
             }
-        } else if(this.animTimeout < this.aContext.currentTime) {
+        } else if(this.animTimeout < this.audio.currentTime) {
             this.animFrame++;
             this.animFrame %= this.image.frameDurations.length;
             // Don't rebase to current time otherwise we may lag
@@ -265,7 +271,7 @@ HuesCanvas.prototype.animationLoop = function() {
     }
     if(this.blurStart) {
         // flash offsets blur gen by a frame
-        var delta = this.aContext.currentTime - this.blurStart + (1/30);
+        var delta = this.audio.currentTime - this.blurStart + (1/30);
         this.blurDistance = this.blurAmount * Math.exp(-this.blurDecay * delta);
         
         // Update UI
@@ -277,7 +283,7 @@ HuesCanvas.prototype.animationLoop = function() {
     }
     if(this.trippyOn && (this.trippyStart[0] || this.trippyStart[1])) {
         for(var i = 0; i < 2; i++) {
-            this.trippyRadii[i] = Math.floor((this.aContext.currentTime - this.trippyStart[i]) * this.trippyRadius) * 2;
+            this.trippyRadii[i] = Math.floor((this.audio.currentTime - this.trippyStart[i]) * this.trippyRadius) * 2;
             if(this.trippyRadii[i] > this.trippyRadius) {
                 this.trippyStart[i] = 0;
                 this.trippyRadii[i] = 0;
@@ -323,7 +329,7 @@ HuesCanvas.prototype.setImage = function(image) {
     if(image.animated) {
         this.animBeat = null;
         this.animFrame = 0;
-        this.animTimeout = this.aContext.currentTime + image.frameDurations[0]/1000;
+        this.animTimeout = this.audio.currentTime + image.frameDurations[0]/1000;
         if(image.beatsPerAnim && this.core.currentSong && this.core.currentSong.charsPerBeat) {
             this.syncAnim();
         }
@@ -331,7 +337,7 @@ HuesCanvas.prototype.setImage = function(image) {
 };
 
 HuesCanvas.prototype.beat = function() {
-    this.lastBeat = this.aContext.currentTime;
+    this.lastBeat = this.audio.currentTime;
 };
 
 HuesCanvas.prototype.syncAnim = function() {
@@ -342,7 +348,7 @@ HuesCanvas.prototype.syncAnim = function() {
     var index = this.core.beatIndex;
     // When animation has more frames than song has beats, or part thereof
     if(this.lastBeat && this.core.beatLength) {
-        var interp = (this.aContext.currentTime - this.lastBeat) / this.core.beatLength;
+        var interp = (this.audio.currentTime - this.lastBeat) / this.core.beatLength;
         index += Math.min(interp, 1);
     }
     // This loops A-OK because the core's beatIndex never rolls over for a new loop
@@ -378,7 +384,7 @@ HuesCanvas.prototype.doBlackout = function(whiteout) {
         this.blackoutColour = "#000";
     }
     this.blackoutTimeout = 0; // indefinite
-    this.blackoutStart = this.aContext.currentTime;
+    this.blackoutStart = this.audio.currentTime;
     this.blackout = true;
     this.needsRedraw = true;
     if(localStorage["blackoutUI"] == "on") {
@@ -398,7 +404,7 @@ HuesCanvas.prototype.clearBlackout = function() {
 
 HuesCanvas.prototype.doShortBlackout = function(beatTime) {
     this.doBlackout();
-    this.blackoutTimeout = this.aContext.currentTime + beatTime / 1.7;
+    this.blackoutTimeout = this.audio.currentTime + beatTime / 1.7;
     // looks better if we go right to black
     this.blackoutStart = 0;
 };
@@ -406,7 +412,7 @@ HuesCanvas.prototype.doShortBlackout = function(beatTime) {
 HuesCanvas.prototype.doColourFade = function(length) {
     this.colourFade = true;
     this.colourFadeLength = length;
-    this.colourFadeStart = this.aContext.currentTime;
+    this.colourFadeStart = this.audio.currentTime;
     this.oldColour = this.colour;
 };
 
@@ -431,7 +437,7 @@ HuesCanvas.prototype.mixColours = function(percent) {
 };
 
 HuesCanvas.prototype.doXBlur = function() {
-    this.blurStart = this.aContext.currentTime;
+    this.blurStart = this.audio.currentTime;
     this.trippyStart[0] = this.blurStart;
     this.blurDistance = this.blurAmount;
     this.xBlur = true;
@@ -440,7 +446,7 @@ HuesCanvas.prototype.doXBlur = function() {
 };
 
 HuesCanvas.prototype.doYBlur = function() {
-    this.blurStart = this.aContext.currentTime;
+    this.blurStart = this.audio.currentTime;
     this.trippyStart[1] = this.blurStart;
     this.blurDistance = this.blurAmount;
     this.xBlur = false;
@@ -477,9 +483,9 @@ HuesCanvas.prototype.setAnimating = function(anim) {
 
 HuesCanvas.prototype.startSnow = function() {
     this.snowing = true;
-    document.getElementById("snow").style.display = "block";
-    var height = this.canvas.canvas.height;
-    var width = this.canvas.canvas.width;
+    this.snowCanvas.style.display = "block";
+    var height = this.canvas.height;
+    var width = this.canvas.width;
     this.snowAngle = 0;
     this.snowflakes = [];
 	for(var i = 0; i < this.maxSnow; i++) {
@@ -490,58 +496,57 @@ HuesCanvas.prototype.startSnow = function() {
 			d: Math.random()*25 //density
 		});
 	}
-    this.lastSnow = this.aContext.currentTime;
+    this.lastSnow = this.audio.currentTime;
 };
 
 HuesCanvas.prototype.stopSnow = function() {
     this.snowing = false;
-    document.getElementById("snow").style.display = "none";
+    this.snowCanvas.style.display = "none";
 };
 
 HuesCanvas.prototype.drawSnow = function() {
-    var ctx = document.getElementById("snow").getContext("2d");
-    var W = ctx.canvas.width;
-    var H = ctx.canvas.height;
-    var delta = this.lastSnow - this.aContext.currentTime;
-    ctx.clearRect(0, 0, W, H);
+    var width = this.snowCanvas.width;
+    var height = this.snowCanvas.height;
+    var delta = this.lastSnow - this.audio.currentTime;
+    this.snowContext.clearRect(0, 0, width, height);
 
-    ctx.fillStyle = "rgba(255, 255, 255, 0.8)";
-    ctx.beginPath();
+    this.snowContext.fillStyle = "rgba(255, 255, 255, 0.8)";
+    this.snowContext.beginPath();
     for(var i = 0; i < this.maxSnow; i++) {
-        var p = this.snowflakes[i];
-        ctx.moveTo(p.x, p.y);
-        ctx.arc(p.x, p.y, p.r, 0, Math.PI*2, true);
+        var flake = this.snowflakes[i];
+        this.snowContext.moveTo(flake.x, flake.y);
+        this.snowContext.arc(flake.x, flake.y, flake.r, 0, Math.PI * 2, true);
     }
-    ctx.fill();
+    this.snowContext.fill();
 
     this.snowAngle += delta / 6;
     for(var i = 0; i < this.maxSnow; i++) {
-        var p = this.snowflakes[i];
+        var flake = this.snowflakes[i];
         //Updating X and Y coordinates
         //We will add 1 to the cos function to prevent negative values which will lead flakes to move upwards
         //Every particle has its own density which can be used to make the downward movement different for each flake
         //Lets make it more random by adding in the radius
-        p.y += Math.cos(this.snowAngle+p.d) + 1 + p.r/2;
-        p.x += Math.sin(this.snowAngle) * 2;
+        flake.y += Math.cos(this.snowAngle + flake.d) + 1 + flake.r / 2;
+        flake.x += Math.sin(this.snowAngle) * 2;
 
         //Sending flakes back from the top when it exits
         //Lets make it a bit more organic and let flakes enter from the left and right also.
-        if(p.x > W+5 || p.x < -5 || p.y > H) {
-            if(i%3 > 0) {//66.67% of the flakes
-                this.snowflakes[i] = {x: Math.random()*W, y: -10, r: p.r, d: p.d};
+        if(flake.x > width + 5 || flake.x < -5 || flake.y > height) {
+            if(i % 3 > 0) {//66.67% of the flakes
+                this.snowflakes[i] = {x: Math.random() * width, y: -10, r: flake.r, d: flake.d};
             }
             else {
                 //If the flake is exitting from the right
                 if(Math.sin(this.snowAngle) > 0) {
                     //Enter from the left
-                    this.snowflakes[i] = {x: -5, y: Math.random()*H, r: p.r, d: p.d};
+                    this.snowflakes[i] = {x: -5, y: Math.random() * height, r: flake.r, d: flake.d};
                 }
                 else {
                     //Enter from the right
-                    this.snowflakes[i] = {x: W+5, y: Math.random()*H, r: p.r, d: p.d};
+                    this.snowflakes[i] = {x: width+5, y: Math.random() * height, r: flake.r, d: flake.d};
                 }
             }
         }
     }
-    this.lastSnow = this.aContext.currentTime;
+    this.lastSnow = this.audio.currentTime;
 };
