@@ -20,6 +20,9 @@
  * THE SOFTWARE.
  */
 
+/* If you're modifying settings for your hues, DON'T EDIT THIS
+   - Go to the HTML and edit the `defaults` object instead!
+ */
 HuesSettings.prototype.defaultSettings = {
     // MP3 worker script location relative to root
     mp3WorkerPath : "js/mp3/",
