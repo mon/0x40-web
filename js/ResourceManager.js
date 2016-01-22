@@ -310,11 +310,11 @@ Resources.prototype.initUI = function() {
     var buttons = document.createElement("div");
     buttons.className = "res-buttons";
     var loadRemote = document.createElement("div");
-    loadRemote.className = "res-button hidden";
+    loadRemote.className = "hues-button hidden";
     loadRemote.textContent = "LOAD REMOTE";
     loadRemote.onclick = function() {this.loadCurrentRemote();}.bind(this);
     var loadLocal = document.createElement("div");
-    loadLocal.className = "res-button";
+    loadLocal.className = "hues-button";
     loadLocal.textContent = "LOAD ZIPS";
     loadLocal.onclick = function() {this.fileInput.click();}.bind(this);
     buttons.appendChild(loadLocal);
@@ -430,15 +430,15 @@ Resources.prototype.initUI = function() {
     packButtons.id = "res-packbuttons";
     var enableAll = document.createElement("div");
     enableAll.textContent = "ENABLE ALL";
-    enableAll.className = "res-button";
+    enableAll.className = "hues-button";
     enableAll.onclick = function() {this.enableAll();}.bind(this);
     var invert = document.createElement("div");
     invert.textContent = "INVERT";
-    invert.className = "res-button";
+    invert.className = "hues-button";
     invert.onclick = function() {this.invert();}.bind(this);
     var disableAll = document.createElement("div");
     disableAll.textContent = "DISABLE ALL";
-    disableAll.className = "res-button";
+    disableAll.className = "hues-button";
     disableAll.onclick = function() {this.disableAll();}.bind(this);
     packButtons.appendChild(enableAll);
     packButtons.appendChild(invert);
@@ -545,7 +545,7 @@ Resources.prototype.selectPack = function(id) {
     this.packView.pack = pack;
 
     this.packView.packButtons.className = "res-buttons";
-    this.packsView.loadRemote.className = "res-button hidden";
+    this.packsView.loadRemote.className = "hues-button hidden";
 
     this.packView.name.textContent = pack.name;
     this.packView.creator.textContent = pack.author;
@@ -724,7 +724,7 @@ Resources.prototype.selectRemotePack = function(id) {
     this.packView.pack = pack;
 
     this.packView.packButtons.className = "res-buttons hidden";
-    this.packsView.loadRemote.className = "res-button";
+    this.packsView.loadRemote.className = "hues-button";
     if(pack.loaded) {
         this.packsView.loadRemote.className += " loaded";
         this.packsView.loadRemote.textContent = "LOADED";
@@ -793,7 +793,7 @@ Resources.prototype.loadCurrentRemote = function() {
 
     // TODO Error checking on failure
     pack.loaded = true;
-    this.packsView.loadRemote.className = "res-button loaded";
+    this.packsView.loadRemote.className = "hues-button loaded";
     this.packsView.loadRemote.textContent = "LOADING";
     this.addAll([pack.url], function() {
             this.remoteComplete();

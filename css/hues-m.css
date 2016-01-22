@@ -1,9 +1,5 @@
-/* Heavily based on Kepstin's wonderful CSS work
+/* ModernUI, heavily based on Kepstin's wonderful CSS work
     https://github.com/kepstin/0x40hues-html5/blob/master/hues-m.css */
-  
-.ModernUI {
-    font-family: 'PetMe64Web';
-}
 
 .hues-m-beatbar, .hues-m-beatcenter{
     transform: translateY(0px);

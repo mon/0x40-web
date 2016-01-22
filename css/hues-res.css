@@ -151,42 +151,6 @@
     display: none;
 }
 
-.res-button {
-    font-size: 10px;
-    margin: 3px 2px;
-    padding: 3px;
-    background: rgba(127,127,127, 0.5);
-    border-color: rgb(0,0,0);
-    border-width: 1px;
-    border-style: solid;
-    cursor: pointer;
-    /* Don't want double click to select */
-    -webkit-touch-callout: none;
-    -webkit-user-select: none;
-    -khtml-user-select: none;
-    -moz-user-select: none;
-    -ms-user-select: none;
-    user-select: none;
-}
-
-.res-button.hidden {
-    display: none;
-}
-
-.res-button.loaded {
-    background-color: rgba(0,127,0,0.5);
-    cursor: auto;
-}
-
-.res-button:hover {
-    background: rgba(255,255,255, 0.5);
-}
-
-.res-button.loaded:hover {
-    background-color: rgba(0,127,0,0.5);
-    cursor: default;
-}
-
 #res-countscontainer {
     position: absolute;
     bottom: 0;
