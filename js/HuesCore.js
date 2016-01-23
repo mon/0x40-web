@@ -80,8 +80,7 @@ function HuesCore(defaults) {
          *
          * Called on every new beat.
          * beatString is a 256 char long array of current and upcoming beat chars
-         * beatIndex is a "safe to display" beat index. 0 during buildups,
-         * index % beatmap length otherwise.
+         * beatIndex is the beat index. Negative during buildups
          */
         beat : [],
         /* callback invert(isInverted)
@@ -172,13 +171,16 @@ function HuesCore(defaults) {
 
     document.onkeydown = function(e){
         e = e || window.event;
+        if(e.defaultPrevented) {
+            return true;
+        }
         // Ignore modifiers so we don't steal other events
         if (e.altKey || e.ctrlKey || e.metaKey || e.shiftKey) {
             return true;
         }
         // If we've focused a text input, let the input go through!
-        if(document.activeElement.tagName.toLowerCase() == "input" &&
-                document.activeElement.type == "text") {
+        if((e.target.tagName.toLowerCase() == "input" && e.target.type == "text")
+            || e.target.contentEditable === "true") {
             return true;
         }
         var key = e.keyCode || e.which;
@@ -281,14 +283,22 @@ HuesCore.prototype.animationLoop = function() {
     this.callEventListeners("frame");
 };
 
-HuesCore.prototype.getSafeBeatIndex = function() {
+HuesCore.prototype.getBeatIndex = function() {
     if(!this.soundManager.playing) {
         return 0;
-    }
-    if(this.beatIndex < 0) {
-        return 0;
+    } else if(this.beatIndex < 0) {
+        return this.beatIndex;
     } else {
         return this.beatIndex % this.currentSong.rhythm.length;
+    }
+}
+
+HuesCore.prototype.getSafeBeatIndex = function() {
+    var index = this.getBeatIndex();
+    if(index < 0) {
+        return 0;
+    } else {
+        return index;
     }
 };
 
@@ -549,7 +559,7 @@ HuesCore.prototype.getBeat = function(index) {
 };
 
 HuesCore.prototype.beater = function(beat) {
-    this.callEventListeners("beat", this.getBeatString(), this.getSafeBeatIndex());
+    this.callEventListeners("beat", this.getBeatString(), this.getBeatIndex());
     switch(beat) {
         case 'X':
         case 'x':

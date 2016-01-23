@@ -419,6 +419,9 @@ RetroUI.prototype.newColour = function(colour) {
 RetroUI.prototype.beat = function(beats, index) {
     var rest = beats.slice(1);
     this.beatBar.textContent = ">>" + rest;
+    if(index < 0) {
+        index = 0;
+    }
     this.beatCount.textContent = "B=" + this.intToHex4(index);
 };
 
@@ -480,7 +483,10 @@ WeedUI.prototype.beat = function(beats, index) {
 
     this.beatLeft.textContent = rest;
     this.beatRight.textContent = rest;
-
+    
+    if(index < 0) {
+        index = 0;
+    }
     this.beatCount.textContent = "B=" + this.intToHex4(index);
 
     if(["x", "o", "X", "O"].indexOf(beats[0]) != -1) {
@@ -743,6 +749,9 @@ ModernUI.prototype.beat = function(beats, index) {
         var span = this.beatCenter.ownerDocument.createElement("span");
         span.textContent = this.currentBeat;
         this.beatCenter.appendChild(span);
+    }
+    if(index < 0) {
+        index = 0;
     }
     this.beatCount.textContent = "B=" + this.intToHex4(index);
 };
