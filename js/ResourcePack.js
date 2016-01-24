@@ -19,6 +19,9 @@
  * THE SOFTWARE.
  */
 
+ (function(window, document) {
+"use strict";
+
 var debugConsole = false;
 function debug() {
     if(debugConsole) {
@@ -456,6 +459,7 @@ Respack.prototype.parseSongQueue = function() {
 };
 
 Respack.prototype.parseImageQueue = function() {
+    var match;
     var imgFile = this.imageQueue.shift();
     var name = imgFile.name.replace(this.imageExtensions, "");
 
@@ -539,3 +543,7 @@ Respack.prototype.tryFinish = function() {
         this.parseXML();
     }
 };
+
+window.Respack = Respack;
+
+})(window, document);
