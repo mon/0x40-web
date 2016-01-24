@@ -19,6 +19,9 @@
  * THE SOFTWARE.
  */
 
+ (function(window, document) {
+"use strict";
+
 // NOTE: Any packs referenced need CORS enabled or loads fail
 var packsURL = "http://cdn.0x40hu.es/getRespacks.php";
 
@@ -843,3 +846,7 @@ Resources.prototype.appendSimpleListItem = function(value, root, onclick) {
     root.appendChild(div);
     return label;
 };
+
+window.Resources = Resources;
+
+})(window, document);

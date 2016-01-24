@@ -20,6 +20,9 @@
  * THE SOFTWARE.
  */
 
+ (function(window, document) {
+"use strict";
+
 /* If you're modifying settings for your hues, DON'T EDIT THIS
    - Go to the HTML and edit the `defaults` object instead!
  */
@@ -405,3 +408,7 @@ HuesSettings.prototype.setDefaults = function() {
         }
     }
 };
+
+window.HuesSettings = HuesSettings;
+
+})(window, document);

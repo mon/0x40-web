@@ -20,10 +20,12 @@
  * THE SOFTWARE.
  */
 
+(function(window, document) {
+"use strict";
+
 /*  Takes an element name to attach to, and an audio context element for
     getting the current time with reasonable accuracy */
 function HuesCanvas(element, audioContext, core) {
-    'use strict';
     this.audio = audioContext;
     core.addEventListener("newimage", this.setImage.bind(this));
     core.addEventListener("newcolour", this.setColour.bind(this));
@@ -550,3 +552,7 @@ HuesCanvas.prototype.drawSnow = function() {
     }
     this.lastSnow = this.audio.currentTime;
 };
+
+window.HuesCanvas = HuesCanvas;
+
+})(window, document);

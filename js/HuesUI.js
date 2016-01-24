@@ -19,6 +19,9 @@
  * THE SOFTWARE.
  */
 
+ (function(window, document) {
+"use strict";
+
 /*
     Base UI Class for Hues display. Parent is an element
     to put all your own elements under, but make a div
@@ -1134,3 +1137,11 @@ var xbottom = [
     {"angle": -18.378894807, "x": 2627.55, "y": 24.9},
     {"angle": -4.561224264, "x": 2710.4, "y": 14.4}
 ];
+
+window.RetroUI = RetroUI;
+window.WeedUI = WeedUI;
+window.ModernUI = ModernUI;
+window.XmasUI = XmasUI;
+window.HalloweenUI = HalloweenUI;
+
+})(window, document);

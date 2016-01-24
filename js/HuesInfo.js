@@ -19,8 +19,10 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
- 
- 
+
+(function(window, document) {
+"use strict"; 
+
  /* HuesInfo.js populates the beat glossary, shortcut list, and version string.
   * This means the HTML should rarely need to be updated.
   * If the element IDs are not present, the DOM is not modified. If you would
@@ -100,3 +102,7 @@ var addInfo = function(titleText, list) {
     });
     info.appendChild(listElem);
 };
+
+window.populateHuesInfo = populateHuesInfo;
+
+})(window, document);

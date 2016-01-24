@@ -19,6 +19,9 @@
  * THE SOFTWARE.
  */
 
+(function(window, document) {
+"use strict";
+
 // Flash value
 var LAME_DELAY_START = 2258;
 var LAME_DELAY_END = 0;
@@ -485,3 +488,7 @@ SoundManager.prototype.fadeOut = function(callback) {
     }
     setTimeout(callback, 2000);
 }
+
+window.SoundManager = SoundManager;
+
+})(window, document);

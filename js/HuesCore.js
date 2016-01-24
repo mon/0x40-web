@@ -22,6 +22,9 @@
 /* We don't  want localstorage variables 'optimised' to different identifiers*/
 /*jshint -W069 */
 
+(function(window, document) {
+"use strict";
+
 function HuesCore(defaults) {
     // Bunch-o-initialisers
     this.version = "0x0B";
@@ -1062,3 +1065,7 @@ HuesCore.prototype.weedColours =
     {'c': 0xB62084, 'n': "Harold's Crayon"},
     {'c': 0x694489, 'n': 'Purple Rain'},
     {'c': 0xFFD700, 'n': 'Gold'}];
+    
+window.HuesCore = HuesCore;
+
+})(window, document);
