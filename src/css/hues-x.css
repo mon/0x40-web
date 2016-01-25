@@ -26,14 +26,12 @@
     width: 68px;
     height: 113px;
     transform-origin: 32px 69px;
-    -webkit-transform-origin: 32px 69px;
     background-image: url("../img/lightbase.png");
     background-repeat: no-repeat;
 }
 
 .hues-x-fade{
     transition: opacity 0.1s linear;
-    -webkit-transition: opacity 0.1s linear;
 }
 
 .hues-x-lighton, .hues-x-lightoff {
@@ -107,7 +105,6 @@
 
 .hues-x-visualisercontainer {
     transform: scaleY(-1);
-    -webkit-transform: scaleY(-1);
     position: absolute;
     width: 100%;
     height: 64px;

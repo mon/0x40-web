@@ -63,11 +63,8 @@ h1, h2, h3 {
 }
 
 #reference {
-    display:-webkit-flex;
     display:flex;
-    -webkit-align-items:center;
     align-items:center;
-    -webkit-justify-content: center;
     justify-content: center;
 }
 
@@ -125,13 +122,9 @@ h1, h2, h3 {
     background-color: #FFF; 
     width: 100%;
     height: 100%;
-    display:-webkit-flex;
     display:flex;
-    -webkit-justify-content:center;
     justify-content:center;
-    -webkit-align-items:center;
     align-items:center;
-    -webkit-flex-direction: column;
     flex-direction: column;
     font-size: 25pt;
     
@@ -142,7 +135,6 @@ h1, h2, h3 {
     visibility: visible;
     opacity: 1;
     transition: visibility 1s linear, opacity 1s linear;
-    -webkit-transition: visibility 1s linear, opacity 1s linear;
 }
 
 #preloadHelper.loaded {
@@ -191,7 +183,8 @@ input.tab-input[type="radio"]:checked + label {
 
 #tab1:checked ~ #tab1-content,
 #tab2:checked ~ #tab2-content,
-#tab3:checked ~ #tab3-content {
+#tab3:checked ~ #tab3-content,
+#tab4:checked ~ #tab4-content {
     display: block;
 }
 
@@ -238,7 +231,7 @@ input.tab-input[type="radio"]:checked + label {
 }
 
 .settings-category {
-    font-size: 12pt;
+    font-size: 16px;
     width: 50%;
     float: left;
     margin-bottom: 10px;
@@ -319,7 +312,12 @@ label.settings-label:hover {
 
 .hues-button.loaded {
     background-color: rgba(0,127,0,0.5);
-    cursor: auto;
+    cursor: default;
+}
+
+.hues-button.disabled {
+    color: #777;
+    cursor: default;
 }
 
 .hues-button:hover {
@@ -329,4 +327,8 @@ label.settings-label:hover {
 .hues-button.loaded:hover {
     background-color: rgba(0,127,0,0.5);
     cursor: default;
+}
+
+.hues-button.disabled:hover {
+    background-color: rgba(127,127,127, 0.5);
 }

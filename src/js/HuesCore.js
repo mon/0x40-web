@@ -26,6 +26,8 @@
 "use strict";
 
 function HuesCore(defaults) {
+    // Yes, we do indeed have Javascript
+    this.clearMessage();
     // Bunch-o-initialisers
     this.version = "0x0B";
     this.beatIndex = 0;
@@ -126,7 +128,9 @@ function HuesCore(defaults) {
     this.uiArray.push(new RetroUI(), new WeedUI(), new ModernUI(), new XmasUI(), new HalloweenUI());
     
     this.settings = new HuesSettings(defaults);
+    zip.workerScriptsPath = this.settings.defaults.workersPath;
     this.resourceManager = new Resources(this);
+    this.editor = new HuesEditor(this);
     
     this.autoSong = localStorage["autoSong"];
     
@@ -334,6 +338,16 @@ HuesCore.prototype.setSongByName = function(name) {
     this.setSong(0); // fallback
 };
 
+/* To set songs via reference instead of index - used in HuesEditor */
+HuesCore.prototype.setSongOject = function(song) {
+    for(var i = 0; i < this.resourceManager.enabledSongs.length; i++) {
+        if(this.resourceManager.enabledSongs[i] === song) {
+            this.setSong(i);
+            return;
+        }
+    }
+}
+
 HuesCore.prototype.setSong = function(index) {
     if(this.currentSong == this.resourceManager.enabledSongs[index]) {
         return;
@@ -370,8 +384,16 @@ HuesCore.prototype.setSong = function(index) {
     }.bind(this));
 };
 
+HuesCore.prototype.updateBeatLength = function() {
+    //if(this.soundManager.currentTime() < 0) {
+    //    this.beatLength = this.soundManager.loopStart / this.currentSong.buildupRhythm.length;
+    //} else {
+        this.beatLength = this.soundManager.loopLength / this.currentSong.rhythm.length;
+    //}
+}
+
 HuesCore.prototype.fillBuildup = function() {
-    this.beatLength = this.soundManager.loopLength / this.currentSong.rhythm.length;
+    this.updateBeatLength();
     var buildBeats = Math.floor(this.soundManager.loopStart / this.beatLength);
     if(buildBeats < 1) {
         buildBeats = 1;
@@ -825,9 +847,9 @@ HuesCore.prototype.keyHandler = function(key) {
     case 82: // R
         this.settings.showRespacks();
         break;
-    /*case 69: // E
-        this.window.showEditor();
-        break;*/
+    case 69: // E
+        this.settings.showEditor();
+        break;
     case 79: // O
         this.settings.showOptions();
         break;
@@ -880,7 +902,6 @@ HuesCore.prototype.warning = function(message) {
 };
 
 HuesCore.prototype.clearMessage = function() {
-    console.log(message);
     document.getElementById("preSub").textContent = "";
     document.getElementById("preMain").style.color = "";
 };

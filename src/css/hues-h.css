@@ -33,8 +33,7 @@
 }
 
 .hues-m-beatcenter.hues-h-text.hidden{
-    transform: translateY(-80px);   
-    -webkit-transform: translateY(-80px);
+    transform: translateY(-80px);
 }
 
 .hues-h-eyes {
@@ -45,14 +44,8 @@
     height: 64px;
     box-shadow: none;
     
-    -moz-animation-duration: 150ms;
-    -webkit-animation-duration: 150ms;
     animation-duration: 150ms;
-    -moz-animation-name: hues-m-beatcenter;
-    -webkit-animation-name: hues-m-beatcenter;
     animation-name: hues-m-beatcenter;
-    -moz-animation-fill-mode: forwards;
-    -webkit-animation-fill-mode: forwards;
     animation-fill-mode: forwards;
 }
 
@@ -82,7 +75,6 @@
 @media (min-width: 768px) {
   .hues-m-controls.hues-h-controls.hidden {
     transform: translateY(64px);
-    -webkit-transform: translateY(64px);
   }
 }
 
@@ -92,9 +84,6 @@
     background: none;
     border-style: solid;
     border-width: 0px 19px 0px 18px;
-    -moz-border-image: url(../img/bones.png) 0 19 0 18 repeat stretch;
-    -webkit-border-image: url(../img/bones.png) 0 19 0 18 repeat stretch;
-    -o-border-image: url(../img/bones.png) 0 19 0 18 repeat stretch;
     border-image: url(../img/bones.png) 0 19 0 18 fill repeat stretch;
 }
 
@@ -145,9 +134,6 @@
 .hues-h-tombstone {
     border-style: solid;
     border-width: 22px 40px 0px 42px;
-    -moz-border-image: url(../img/tombstone.png) 22 42 0 42 repeat;
-    -webkit-border-image: url(../img/tombstone.png) 22 42 0 42 repeat;
-    -o-border-image: url(../img/tombstone.png) 22 42 0 42 repeat;
     border-image: url(../img/tombstone.png) 22 42 0 42 fill repeat;
     height: 36px;
     position: absolute;

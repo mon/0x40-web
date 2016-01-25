@@ -4,3 +4,4 @@ release/
 *.jar
 css/hues-min.css
 js/hues-min.js
+node_modules/

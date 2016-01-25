@@ -27,8 +27,9 @@
    - Go to the HTML and edit the `defaults` object instead!
  */
 HuesSettings.prototype.defaultSettings = {
-    // MP3 worker script location relative to root
-    mp3WorkerPath : "js/mp3/",
+    // Location relative to root - where do the mp3/zip workers live
+    // This is required because Web Workers need an absolute path
+    workersPath : "lib/workers/",
     // Debugging var, for loading zips or not
     load : true,
     // Debug, play first song automatically?
@@ -49,6 +50,8 @@ HuesSettings.prototype.defaultSettings = {
     preloadPrefix: "0x",
     preloadBase: 16,
     preloadMax: 0x40,
+    // If true, loads the editor on launch
+    showEditor: false,
 
     // UI accessible config
     smartAlign: "on",
@@ -82,7 +85,9 @@ HuesSettings.prototype.ephemeralSettings = [
     "preloadBase",
     "preloadMax",
     "noUI",
-    "showInfo"
+    "showInfo",
+    "showEditor",
+    "workersPath"
 ];
 
 // To dynamically build the UI like the cool guy I am
@@ -273,14 +278,19 @@ HuesSettings.prototype.showRespacks = function() {
     document.getElementById("tab1").checked = true;
 };
 
-HuesSettings.prototype.showOptions = function() {
+HuesSettings.prototype.showEditor = function() {
     this.show();
     document.getElementById("tab2").checked = true;
 };
 
-HuesSettings.prototype.showInfo = function() {
+HuesSettings.prototype.showOptions = function() {
     this.show();
     document.getElementById("tab3").checked = true;
+};
+
+HuesSettings.prototype.showInfo = function() {
+    this.show();
+    document.getElementById("tab4").checked = true;
 };
 
 HuesSettings.prototype.initUI = function() {

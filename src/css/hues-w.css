@@ -1,9 +1,7 @@
 /* WeedUI */
 
 .hues-w-controls {
-    display:-webkit-flex;
     display:flex;
-    -webkit-align-items:center;
     align-items:center;
     position: absolute;
     right: 0px;
@@ -33,7 +31,6 @@
     visibility: visible;
     opacity: 1;
     transition: visibility 0.5s linear, opacity 0.5s linear;
-    -webkit-transition: visibility 0.5s linear, opacity 0.5s linear;
 }
 
 .hues-w-controls.hidden, .hues-w-subcontrols.hidden, .hues-w-beatbar.hidden {
@@ -52,7 +49,6 @@
 }
 .hues-w-beatleft {
     transform: scaleX(-1);
-    -webkit-transform: scaleX(-1);
     left: 8px;
     right: 50%;
 }
@@ -75,18 +71,10 @@
     animation-name: fallspin;
     animation-timing-function: cubic-bezier(0.215, 0.61, 0.355, 1);
     animation-duration: 0.5s;
-    
-    -webkit-animation-name: fallspin;
-    -webkit-animation-timing-function: cubic-bezier(0.215, 0.61, 0.355, 1);
-    -webkit-animation-duration: 0.5s;
 }
 
 @keyframes fallspin {
     from {transform: rotate(0deg) translate(0px, 0px);
-          opacity: 1;}
-}
-@-webkit-keyframes fallspin {
-    from {-webkit-transform: rotate(0deg) translate(0px, 0px);
           opacity: 1;}
 }
 

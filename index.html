@@ -3,46 +3,30 @@
     <head>
         <meta http-equiv="content-type" content="text/html; charset=utf-8" />
         <title>0x40</title>
-        <link rel="stylesheet" href="css/style.css">
-        <link rel="stylesheet" href="css/hues-x.css">
-        <link rel="stylesheet" href="css/hues-m.css">
-        <link rel="stylesheet" href="css/hues-r.css">
-        <link rel="stylesheet" href="css/hues-w.css">
-        <link rel="stylesheet" href="css/hues-h.css">
-        <link rel="stylesheet" href="css/hues-res.css">
-        <link rel="stylesheet" href="css/font-awesome.min.css">
-        <script type="text/javascript" src="js/HuesCore.js"></script>
-        <script type="text/javascript" src="js/HuesSettings.js"></script>
-        <script type="text/javascript" src="js/HuesUI.js"></script>
-        <script type="text/javascript" src="js/HuesInfo.js"></script>
-        <script type="text/javascript" src="js/HuesCanvas.js"></script>
-        <script type="text/javascript" src="js/ResourcePack.js"></script>
-        <script type="text/javascript" src="js/ResourceManager.js"></script>
-        <script type="text/javascript" src="js/SoundManager.js"></script>
-        <script type="text/javascript" src="js/lib/zip.js"></script>
-        <script type="text/javascript" src="js/lib/zip-fs.js"></script>
+        <!-- Non minified at https://github.com/mon/0x40-web/ -->
+        <link rel="stylesheet" href="css/hues-min.css">
+        <script type="text/javascript" src="lib/hues-min.js"></script>
+        <script type="text/javascript" src="lib/zip.js"></script>
+        <script type="text/javascript" src="lib/zip-fs.js"></script>
         <script type="text/javascript">
-            window.onload = function() {
-                zip.workerScriptsPath = "js/lib/";
+            window.addEventListener("load", function() {
                 var defaults = {
-                    respacks : [//"./respacks/Defaults_v5.0.zip", 
-                                //"./respacks/CharPackagev0.03.zip", 
-                                //"./respacks/HuesMixB.zip",
-                                //"./respacks/PackShit.zip"
-                                "./respacks/Halloween+Hues+v0.98.zip"
+                    workersPath : "lib/workers/",
+                    respacks : ["./respacks/Defaults_v5.0.zip", 
+                                "./respacks/CharPackagev0.03.zip", 
+                                "./respacks/HuesMixA.zip"
                                 ],
-                    //load     : false, //debug
-                    autoplay : false, // debug
+                    firstSong : "Nhato - Miss You",
                 };
                 core = new HuesCore(defaults);
-            };
+            });
         </script>
     </head>
     <body>
         <div id="preloadHelper">
             <div id="preloader">
-                <div id="preMain">0x00</div>
-                <div id="preSub"></div>
+                <div id="preMain">Initialising...</div>
+                <div id="preSub">This page requires Javascript</div>
             </div>
         </div>
         <div id="settingsHelper">

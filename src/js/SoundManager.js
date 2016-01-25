@@ -83,7 +83,7 @@ SoundManager.prototype.init = function() {
             return new Promise(function(resolve, reject) {          
                 // Get our MP3 decoder started
                 try {
-                    this.mp3Worker = new Worker(this.core.settings.defaults.mp3WorkerPath + 'mp3-worker.js');
+                    this.mp3Worker = new Worker(this.core.settings.defaults.workersPath + 'mp3-worker.js');
                 } catch(e) {
                     console.log(e);
                     reject(Error("MP3 Worker cannot be started - correct path set in defaults?"));
@@ -118,10 +118,12 @@ SoundManager.prototype.init = function() {
                         source.start(0);
                         
                         window.removeEventListener('touchend', unlocker);
+                        window.removeEventListener('click', unlocker);
                         this.core.clearMessage();
                         resolve();
                     }.bind(this);
                     window.addEventListener('touchend', unlocker, false);
+                    window.addEventListener('click', unlocker, false);
                 } else {
                     resolve();
                 }
