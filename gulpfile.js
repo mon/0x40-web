@@ -22,9 +22,11 @@ gulp.task('css', function(){
         "hues-r.css",   // retro
         "hues-w.css"    //   weed
     ]))
+    .pipe(sourcemaps.init())
     .pipe(autoprefixer('last 2 version', 'ios 6', 'android 4'))
     .pipe(minifyCSS())
     .pipe(concat('hues-min.css'))
+    .pipe(sourcemaps.write("."))
     .pipe(gulp.dest('css'));
 });
 
