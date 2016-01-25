@@ -123,54 +123,58 @@ function HuesCore(defaults) {
     this.uiArray = [];
     this.lastSongArray = [];
     this.lastImageArray = [];
+    this.uiArray.push(new RetroUI(), new WeedUI(), new ModernUI(), new XmasUI(), new HalloweenUI());
+    
     this.settings = new HuesSettings(defaults);
-    this.autoSong = localStorage["autoSong"];
     this.resourceManager = new Resources(this);
-    this.soundManager = new SoundManager(this);
-    if(!this.soundManager.canUse) {
-        this.error(this.soundManager.errorMsg);
-        return;
-    }
-    setInterval(function() {
-        this.loopCheck();
-    }.bind(this), 1000);
-    this.renderer = new HuesCanvas("waifu", this.soundManager.context, this);
+    
+    this.autoSong = localStorage["autoSong"];
     
     this.visualiser = document.createElement("canvas");
     this.visualiser.id = "visualiser";
     this.visualiser.height = "64";
     this.vCtx = this.visualiser.getContext("2d");
-
-    this.uiArray.push(new RetroUI(), new WeedUI(), new ModernUI(), new XmasUI(), new HalloweenUI());
-    this.settings.connectCore(this);
-    // Update with merged
-    defaults = this.settings.defaults;
-    this.setColour(this.colourIndex);
-
-    if(defaults.load) {
-        this.resourceManager.addAll(defaults.respacks, function() {
-            document.getElementById("preloadHelper").classList.add("loaded");
-            if(defaults.firstImage) {
-                this.setImageByName(defaults.firstImage);
+    
+    this.soundManager = new SoundManager(this);
+    this.soundManager.init().then(function(response) {
+        setInterval(function() {
+            this.loopCheck();
+        }.bind(this), 1000);
+        this.renderer = new HuesCanvas("waifu", this.soundManager.context, this);
+        this.settings.connectCore(this);
+        // Update with merged
+        defaults = this.settings.defaults;
+        this.setColour(this.colourIndex);
+        this.animationLoop();
+        
+        if(defaults.load) {
+            return this.resourceManager.addAll(defaults.respacks, function(progress) {
+                var prog = document.getElementById("preMain");
+                var scale = Math.floor(progress * defaults.preloadMax);
+                var padding = defaults.preloadMax.toString(defaults.preloadBase).length;
+                prog.textContent = defaults.preloadPrefix + (Array(padding).join("0")+scale.toString(defaults.preloadBase)).slice(-padding);
+            });
+        } else {
+            document.getElementById("preloadHelper").style.display = "none";
+            return;
+        }
+    }.bind(this)).then(function(response) {
+        document.getElementById("preloadHelper").classList.add("loaded");
+        if(defaults.firstImage) {
+            this.setImageByName(defaults.firstImage);
+        } else {
+            this.setImage(0);
+        }
+        if(defaults.autoplay) {
+            if(defaults.firstSong) {
+                this.setSongByName(defaults.firstSong);
             } else {
-                this.setImage(0);
+                this.setSong(0);
             }
-            if(defaults.autoplay) {
-                if(defaults.firstSong) {
-                    this.setSongByName(defaults.firstSong);
-                } else {
-                    this.setSong(0);
-                }
-            }
-        }.bind(this), function(progress) {
-            var prog = document.getElementById("preMain");
-            var scale = Math.floor(progress * defaults.preloadMax);
-            var padding = defaults.preloadMax.toString(defaults.preloadBase).length;
-            prog.textContent = defaults.preloadPrefix + (Array(padding).join("0")+scale.toString(defaults.preloadBase)).slice(-padding);
-        });
-    } else {
-        document.getElementById("preloadHelper").style.display = "none";
-    }
+        }
+    }.bind(this))["catch"](function(error) {
+        this.error(error);
+    }.bind(this));
 
     document.onkeydown = function(e){
         e = e || window.event;
@@ -189,8 +193,6 @@ function HuesCore(defaults) {
         var key = e.keyCode || e.which;
         return this.keyHandler(key);
     }.bind(this);
-
-    this.animationLoop();
 }
 
 HuesCore.prototype.callEventListeners = function(ev) {
@@ -695,7 +697,7 @@ HuesCore.prototype.changeUI = function(index) {
         this.callEventListeners("newsong", this.currentSong);
         this.callEventListeners("newimage", this.currentImage);
         this.callEventListeners("newcolour", this.colours[this.colourIndex], false);
-        this.callEventListeners("beat", this.getBeatString(), this.getSafeBeatIndex());
+        this.callEventListeners("beat", this.getBeatString(), this.getBeatIndex());
     }
 };
 
@@ -866,8 +868,21 @@ HuesCore.prototype.keyHandler = function(key) {
 };
 
 HuesCore.prototype.error = function(message) {
-    document.getElementById("preSub").textContent = "Error: " + message;
+    console.log(message);
+    document.getElementById("preSub").textContent = message;
     document.getElementById("preMain").style.color = "#F00";
+};
+
+HuesCore.prototype.warning = function(message) {
+    console.log(message);
+    document.getElementById("preSub").textContent = message;
+    document.getElementById("preMain").style.color = "#F93";
+};
+
+HuesCore.prototype.clearMessage = function() {
+    console.log(message);
+    document.getElementById("preSub").textContent = "";
+    document.getElementById("preMain").style.color = "";
 };
 
 HuesCore.prototype.oldColours =

@@ -1,3 +1,7 @@
+// Use mp3.js and aurora.js for dev
+// Use mp3-min.js for release
+//importScripts('aurora.js');
+//importScripts('mp3.js');
 importScripts('mp3-min.js');
 
 var decodeBuffer = function(source, callback) {
@@ -25,6 +29,12 @@ var finish = function(result, transferrables) {
 
 self.addEventListener('message', function(e) {
     var song = e.data;
+    
+    // To see if things are working
+    if(song.ping) {
+        self.postMessage({ping: true});
+        return;
+    }
     
     var result = {song: song, build: null, loop: null};
     var transferrables = [result.song.sound];
