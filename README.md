@@ -43,4 +43,4 @@ Install the required packages for the build:
 npm install gulp -g
 npm install gulp-sourcemaps gulp-babel babel-preset-es2015 gulp-uglify gulp-concat gulp-cssnano gulp-autoprefixer gulp-order del
 ```
-Build with `gulp`. Make a release folder with `gulp release`. For seamless development, auto-minify changed filed with `gulp watch`.
+Build with `gulp`. Make a release folder with `gulp release`. For seamless development, auto-minify changed files with `gulp watch`.
