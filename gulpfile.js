@@ -49,7 +49,7 @@ gulp.task("minify", function () {
     .pipe(gulp.dest("lib"));
 });
 
-gulp.task('watch', function() {
+gulp.task('watch', ['default'], function() {
   gulp.watch('src/css/*.css', ['css']);
   gulp.watch('src/js/*.js', ['minify']);
 });
@@ -64,7 +64,18 @@ gulp.task('clean', function() {
 });
 
 gulp.task('release', ['default'], function() {
-    gulp.src(['css/**/*', 'lib/**/*', 'fonts/**/*', 'img/**/*', 'index.html', 'favicon.ico'], {
+    gulp.src([
+        'css/**/*',
+        'lib/hues-min.js',
+        'lib/mp3-min.js',
+        'fonts/**/*',
+        'img/**/*',
+        'index.html',
+        'favicon.ico'], {
             base: '.'
     }).pipe(gulp.dest('release'));
+    
+    gulp.src(['lib/workers/**/*','lib/zip*'], {base: 'lib'})
+    .pipe(uglify())
+    .pipe(gulp.dest("release/lib"));
 });
