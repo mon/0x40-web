@@ -66,7 +66,7 @@ function SoundManager(core) {
 
 SoundManager.prototype.init = function() {
     if(!this.initPromise) {
-        this.initPromise = new Promise(function(resolve, reject) {
+        this.initPromise = new Promise((resolve, reject) => {
             // Check Web Audio API Support
             try {
                 // More info at http://caniuse.com/#feat=audio-api
@@ -79,8 +79,8 @@ SoundManager.prototype.init = function() {
                 return;
             }
             resolve();
-        }.bind(this)).then(function(response) {
-            return new Promise(function(resolve, reject) {          
+        }).then(response => {
+            return new Promise((resolve, reject) => {          
                 // Get our MP3 decoder started
                 try {
                     this.mp3Worker = new Worker(this.core.settings.defaults.workersPath + 'mp3-worker.js');
@@ -88,24 +88,24 @@ SoundManager.prototype.init = function() {
                     console.log(e);
                     reject(Error("MP3 Worker cannot be started - correct path set in defaults?"));
                 }
-                var pingListener = function(event) {
+                var pingListener = event => {
                     this.mp3Worker.removeEventListener('message', pingListener);
                     this.mp3Worker.addEventListener('message', this.workerFinished.bind(this), false);
                     resolve();
-                }.bind(this)
+                };
                 this.mp3Worker.addEventListener('message', pingListener, false);
-                this.mp3Worker.addEventListener('error', function() {
+                this.mp3Worker.addEventListener('error', () => {
                     reject(Error("MP3 Worker cannot be started - correct path set in defaults?"));
-                }.bind(this), false);
+                }, false);
                 this.mp3Worker.postMessage({ping:true});
-            }.bind(this))
-        }.bind(this)).then(function(response) {
-            return new Promise(function(resolve, reject) {
+            })
+        }).then(response => {
+            return new Promise((resolve, reject) => {
                 // iOS and other some mobile browsers - unlock the context as
                 // it starts in a suspended state
                 if(this.context.state != "running") {
                     this.core.warning("We're about to load about 10MB of stuff. Tap to begin!");
-                    var unlocker = function() {
+                    var unlocker = () => {
                         // create empty buffer
                         var buffer = this.context.createBuffer(1, 1, 22050);
                         var source =  this.context.createBufferSource();
@@ -121,14 +121,14 @@ SoundManager.prototype.init = function() {
                         window.removeEventListener('click', unlocker);
                         this.core.clearMessage();
                         resolve();
-                    }.bind(this);
+                    };
                     window.addEventListener('touchend', unlocker, false);
                     window.addEventListener('click', unlocker, false);
                 } else {
                     resolve();
                 }
-            }.bind(this))
-        }.bind(this));
+            })
+        });
     }
     return this.initPromise;
 }
@@ -151,7 +151,7 @@ SoundManager.prototype.playSong = function(song, playBuild, callback) {
         this.setMute(true);
     }
 
-    this.loadBuffer(song, function() {
+    this.loadBuffer(song, () => {
         // To prevent race condition if you press "next" twice fast
         if(song == this.song) {
             // more racing than the Melbourne Cup
@@ -167,7 +167,7 @@ SoundManager.prototype.playSong = function(song, playBuild, callback) {
 
             // This fixes sync issues on Firefox and slow machines.
             if(this.context.suspend && this.context.resume) {
-                this.context.suspend().then(function() {
+                this.context.suspend().then(() => {
                     if(playBuild) {
                         // mobile webkit requires offset, even if 0
                         this.bufSource.start(0);
@@ -176,12 +176,12 @@ SoundManager.prototype.playSong = function(song, playBuild, callback) {
                         this.bufSource.start(0, this.loopStart);
                         this.startTime = this.context.currentTime;
                     }
-                    this.context.resume().then(function() {
+                    this.context.resume().then(() => {
                         this.playing = true;
                         if(callback)
                             callback();
-                    }.bind(this));
-                }.bind(this));
+                    });
+                });
             } else {
                 if(playBuild) {
                     // mobile webkit requires offset, even if 0
@@ -196,7 +196,7 @@ SoundManager.prototype.playSong = function(song, playBuild, callback) {
                     callback();
             }
         }
-    }.bind(this));
+    });
 };
 
 SoundManager.prototype.stop = function() {

@@ -112,11 +112,11 @@ function HuesCore(defaults) {
         settingsupdated : []
     };
 
-    window.onerror = function(msg, url, line, col, error) {
+    window.onerror = (msg, url, line, col, error) => {
         this.error(msg);
         // Get more info in console
         return false;
-    }.bind(this);
+    };
     
     var versionString = "v" + (parseInt(this.version)/10).toFixed(1);
     console.log("0x40 Hues " + versionString + " - start your engines!");
@@ -140,10 +140,8 @@ function HuesCore(defaults) {
     this.vCtx = this.visualiser.getContext("2d");
     
     this.soundManager = new SoundManager(this);
-    this.soundManager.init().then(function(response) {
-        setInterval(function() {
-            this.loopCheck();
-        }.bind(this), 1000);
+    this.soundManager.init().then(response => {
+        setInterval(this.loopCheck.bind(this), 1000);
         this.renderer = new HuesCanvas("waifu", this.soundManager.context, this);
         this.settings.connectCore(this);
         // Update with merged
@@ -162,7 +160,7 @@ function HuesCore(defaults) {
             document.getElementById("preloadHelper").style.display = "none";
             return;
         }
-    }.bind(this)).then(function(response) {
+    }).then(response => {
         document.getElementById("preloadHelper").classList.add("loaded");
         if(defaults.firstImage) {
             this.setImageByName(defaults.firstImage);
@@ -176,11 +174,11 @@ function HuesCore(defaults) {
                 this.setSong(0);
             }
         }
-    }.bind(this))["catch"](function(error) {
+    }).catch(error => {
         this.error(error);
-    }.bind(this));
+    });
 
-    document.onkeydown = function(e){
+    document.onkeydown = (e) => {
         e = e || window.event;
         if(e.defaultPrevented) {
             return true;
@@ -196,7 +194,7 @@ function HuesCore(defaults) {
         }
         var key = e.keyCode || e.which;
         return this.keyHandler(key);
-    }.bind(this);
+    };
 }
 
 HuesCore.prototype.callEventListeners = function(ev) {
@@ -377,11 +375,11 @@ HuesCore.prototype.setSong = function(index) {
         }
     }
     this.setInvert(false);
-    this.soundManager.playSong(this.currentSong, this.doBuildup, function() {
+    this.soundManager.playSong(this.currentSong, this.doBuildup, () => {
         this.resetAudio();
         this.fillBuildup();
         this.callEventListeners("songstarted");
-    }.bind(this));
+    });
 };
 
 HuesCore.prototype.updateBeatLength = function() {
@@ -470,9 +468,9 @@ HuesCore.prototype.doAutoSong = function() {
         func = this.nextSong;
     }
     if(localStorage["autoSongFadeout"] == "on") {
-        this.soundManager.fadeOut(function() {
+        this.soundManager.fadeOut(() => {
             func.call(this);
-        }.bind(this));
+        });
     } else {
         func.call(this);
     }

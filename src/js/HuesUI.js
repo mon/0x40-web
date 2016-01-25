@@ -100,28 +100,28 @@ HuesUI.prototype.initUI = function() {
     // Prev/next controls
     var imagePrev = document.createElement("div");
     imagePrev.textContent = "<";
-    imagePrev.onclick = function() {this.core.previousImage();}.bind(this);
+    imagePrev.onclick = () => {this.core.previousImage();};
     this.imagePrev = imagePrev;
     var imageNext = document.createElement("div");
     imageNext.textContent = ">";
-    imageNext.onclick = function() {this.core.nextImage();}.bind(this);
+    imageNext.onclick = () =>{this.core.nextImage();};
     this.imageNext = imageNext;
     var songPrev = document.createElement("div");
     songPrev.textContent = "<";
     this.songPrev = songPrev;
-    songPrev.onclick = function() {this.core.previousSong();}.bind(this);
+    songPrev.onclick = () =>{this.core.previousSong();};
     var songNext = document.createElement("div");
     songNext.textContent = ">";
-    songNext.onclick = function() {this.core.nextSong();}.bind(this);
+    songNext.onclick = () =>{this.core.nextSong();};
     this.songNext = songNext;
 
     var songList = document.createElement("div");
     songList.textContent = "SONGS";
-    songList.onclick = function() {this.core.toggleSongList();}.bind(this);
+    songList.onclick = () =>{this.core.toggleSongList();};
     this.songList = songList;
     var imageList = document.createElement("div");
     imageList.textContent = "IMAGES";
-    imageList.onclick = function() {this.core.toggleImageList();}.bind(this);
+    imageList.onclick = () =>{this.core.toggleImageList();};
     this.imageList = imageList;
 
     // Beat timer, x and y blur, millis timer
@@ -141,15 +141,15 @@ HuesUI.prototype.initUI = function() {
     this.settingsToggle = document.createElement("div");
     this.settingsToggle.innerHTML = '&#xe900;'; // COG
     this.settingsToggle.className = 'hues-icon';
-    this.settingsToggle.onclick = function() {
+    this.settingsToggle.onclick = () => {
         this.core.settings.toggle();
-    }.bind(this);
+    };
 
     this.hideToggle = document.createElement("div");
     this.hideToggle.innerHTML = "&#x25BC;";
-    this.hideToggle.onclick = function() {
+    this.hideToggle.onclick = () => {
         this.toggleHide();
-    }.bind(this);
+    };
 
     this.listContainer = document.createElement("div");
     this.visualiserContainer = document.createElement("div");
@@ -322,15 +322,15 @@ RetroUI.prototype.initUI = function() {
     var imageMode = document.createElement("div");
     this.imageModeManual = document.createElement("div");
     this.imageModeManual.textContent = "NORMAL";
-    this.imageModeManual.onclick = function() {
+    this.imageModeManual.onclick = () => {
         this.core.setIsFullAuto(false);
-    }.bind(this);
+    };
     this.imageModeManual.className = "hues-r-manualmode hues-r-button";
     this.imageModeAuto = document.createElement("div");
     this.imageModeAuto.textContent = "FULL AUTO";
-    this.imageModeAuto.onclick = function() {
+    this.imageModeAuto.onclick = () => {
         this.core.setIsFullAuto(true);
-    }.bind(this);
+    };
     this.imageModeAuto.className = "hues-r-automode hues-r-button";
     imageMode.appendChild(this.imageModeManual);
     imageMode.appendChild(this.imageModeAuto);
@@ -363,9 +363,9 @@ RetroUI.prototype.initUI = function() {
     this.hideRestore = document.createElement("div");
     this.hideRestore.className = "hues-r-hiderestore";
     this.hideRestore.innerHTML = "&#x25B2;";
-    this.hideRestore.onclick = function() {
+    this.hideRestore.onclick = () => {
         this.toggleHide();
-    }.bind(this);
+    };
     this.root.appendChild(this.hideRestore);
 
     this.listContainer.className = "hues-r-listcontainer";
@@ -580,18 +580,18 @@ ModernUI.prototype.initUI = function() {
     var label = document.createElement("div");
     label.textContent = "VOL";
     label.className = "hues-m-vol-label";
-    label.onclick = function() {
+    label.onclick = () => {
         this.core.soundManager.toggleMute();
-    }.bind(this);
+    };
     volBar.appendChild(label);
     this.volLabel = label;
 
     this.infoToggle = document.createElement("div");
     this.infoToggle.innerHTML = '?';
     this.infoToggle.className = "hues-m-question";
-    this.infoToggle.onclick = function() {
+    this.infoToggle.onclick = () => {
         this.core.settings.showInfo();
-    }.bind(this);
+    };
     volCluster.appendChild(this.infoToggle);
 
     var input = document.createElement("input");
@@ -601,9 +601,9 @@ ModernUI.prototype.initUI = function() {
     input.step = 0.1;
     volBar.appendChild(input);
     this.volInput = input;
-    input.oninput = function() {
+    input.oninput = () => {
         this.core.soundManager.setVolume(parseFloat(input.value));
-    }.bind(this);
+    };
 
     var rightBox = document.createElement("div");
     rightBox.className = "hues-m-rightbox";
@@ -623,7 +623,7 @@ ModernUI.prototype.initUI = function() {
     this.songShuffle = document.createElement("div");
     this.songShuffle.innerHTML = '&#xe903;'; // SHUFFLE
     this.songShuffle.className = "hues-m-actbutton hues-icon";
-    this.songShuffle.onclick = function() {this.core.randomSong();}.bind(this);
+    this.songShuffle.onclick = () => {this.core.randomSong();};
     songs.appendChild(this.songList);
     songControls.appendChild(this.songPrev);
     songControls.appendChild(this.songShuffle);
@@ -642,7 +642,7 @@ ModernUI.prototype.initUI = function() {
     this.imageMode = document.createElement("div");
     this.imageMode.innerHTML = "&#xe901;"; // PLAY
     this.imageMode.className = "hues-m-actbutton hues-icon";
-    this.imageMode.onclick = function() {this.core.toggleFullAuto();}.bind(this);
+    this.imageMode.onclick = () => {this.core.toggleFullAuto();};
     this.imagePrev.className = "hues-m-prevbutton";
     this.imageNext.className = "hues-m-nextbutton";
     images.appendChild(this.imageList);
@@ -690,9 +690,9 @@ ModernUI.prototype.initUI = function() {
 
     this.hideRestore = document.createElement("div");
     this.hideRestore.className = "hues-m-hiderestore";
-    this.hideRestore.onclick = function() {
+    this.hideRestore.onclick = () => {
         this.toggleHide();
-    }.bind(this);
+    };
     this.root.appendChild(this.hideRestore);
 
     this.listContainer.className = "hues-m-listcontainer";

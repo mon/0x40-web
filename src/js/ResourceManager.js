@@ -82,7 +82,7 @@ function Resources(core) {
 // Array of URLs to load, and a callback for when we're done
 // Preserves order of URLs being loaded
 Resources.prototype.addAll = function(urls, progressCallback) {
-    return new Promise(function(resolve, reject) {
+    return new Promise((resolve, reject) => {
         this.toLoad += urls.length;
         if(progressCallback) {
             this.progressCallback = progressCallback;
@@ -91,7 +91,7 @@ Resources.prototype.addAll = function(urls, progressCallback) {
         for(var i = 0; i < urls.length; i++) {
             var r = new Respack();
             this.rToLoad.push(r);
-            r.loadFromURL(urls[i], function() {
+            r.loadFromURL(urls[i], () => {
                 this.toLoad--;
                 if(this.toLoad <= 0) {
                     for(var i = 0; i < this.rToLoad.length; i++) {
@@ -101,12 +101,12 @@ Resources.prototype.addAll = function(urls, progressCallback) {
                     this.progressCallback = null;
                     resolve();
                 }
-            }.bind(this), function(index, progress, pack) {
+            }, function(index, progress, pack) {
                 this.progressState[index] = progress;
                 this.updateProgress(pack);
             }.bind(this, i));
         }
-    }.bind(this));
+    });
 };
 
 Resources.prototype.updateProgress = function(pack) {
@@ -239,13 +239,13 @@ Resources.prototype.parseLocalQueue = function(recursing) {
     if(this.fileParseQueue.length) {
         var r = new Respack();
         r.loadBlob(this.fileParseQueue.shift(),
-            function() {
+            () => {
                 this.addPack(r);
                 this.localComplete();
                 this.parseLocalQueue(true);
-            }.bind(this),
-            function(progress, respack) {this.localProgress(progress, respack);}.bind(this),
-            function() {this.parseLocalQueue(true);}.bind(this));
+            },
+            (progress, respack) => {this.localProgress(progress, respack);},
+            () => {this.parseLocalQueue(true);});
     } else {
         console.log("Local respack parsing complete");
         this.currentlyParsing = false;
@@ -298,7 +298,7 @@ Resources.prototype.initUI = function() {
         remoteList.className = "res-list";
         remoteList.id = "res-remotelist";
         this.appendSimpleListItem("Click to load the list", remoteList,
-            function() {this.loadRemotes();}.bind(this));
+            this.loadRemotes.bind(this));
         this.packsView.remoteList = remoteList;
     } else {
         packList.className += " noremotes";
@@ -309,11 +309,11 @@ Resources.prototype.initUI = function() {
     var loadRemote = document.createElement("div");
     loadRemote.className = "hues-button hidden";
     loadRemote.textContent = "LOAD REMOTE";
-    loadRemote.onclick = function() {this.loadCurrentRemote();}.bind(this);
+    loadRemote.onclick = this.loadCurrentRemote.bind(this);
     var loadLocal = document.createElement("div");
     loadLocal.className = "hues-button";
     loadLocal.textContent = "LOAD ZIPS";
-    loadLocal.onclick = function() {this.fileInput.click();}.bind(this);
+    loadLocal.onclick = () => {this.fileInput.click};
     buttons.appendChild(loadLocal);
     buttons.appendChild(loadRemote);
     this.packsView.loadRemote = loadRemote;
@@ -322,7 +322,7 @@ Resources.prototype.initUI = function() {
     this.fileInput.type ="file";
     this.fileInput.accept="application/zip";
     this.fileInput.multiple = true;
-    this.fileInput.onchange = function() {this.loadLocal();}.bind(this);
+    this.fileInput.onchange = this.loadLocal.bind(this);
 
     var progressContainer = document.createElement("div");
     progressContainer.id = "res-progress-container";
@@ -428,15 +428,15 @@ Resources.prototype.initUI = function() {
     var enableAll = document.createElement("div");
     enableAll.textContent = "ENABLE ALL";
     enableAll.className = "hues-button";
-    enableAll.onclick = function() {this.enableAll();}.bind(this);
+    enableAll.onclick = this.enableAll.bind(this);
     var invert = document.createElement("div");
     invert.textContent = "INVERT";
     invert.className = "hues-button";
-    invert.onclick = function() {this.invert();}.bind(this);
+    invert.onclick = this.invert.bind(this);
     var disableAll = document.createElement("div");
     disableAll.textContent = "DISABLE ALL";
     disableAll.className = "hues-button";
-    disableAll.onclick = function() {this.disableAll();}.bind(this);
+    disableAll.onclick = this.disableAll.bind(this);
     packButtons.appendChild(enableAll);
     packButtons.appendChild(invert);
     packButtons.appendChild(disableAll);
@@ -688,17 +688,17 @@ Resources.prototype.loadRemotes = function() {
     var req = new XMLHttpRequest();
     req.open('GET', packsURL, true);
     req.responseType = 'json';
-    req.onload = function() {
+    req.onload = () => {
         if(!req.response) {
             req.onerror();
         }
         this.remotes = req.response;
         this.populateRemotes();
-    }.bind(this);
-    req.onerror = function() {
+    };
+    req.onerror = () => {
         item.textContent = "Could not load list! Click to try again";
-        item.onclick = function() {this.loadRemotes();}.bind(this);
-    }.bind(this);
+        item.onclick = this.loadRemotes.bind(this);
+    };
     req.send();
 };
 
@@ -792,13 +792,10 @@ Resources.prototype.loadCurrentRemote = function() {
     pack.loaded = true;
     this.packsView.loadRemote.className = "hues-button loaded";
     this.packsView.loadRemote.textContent = "LOADING";
-    this.addAll([pack.url], function() {
-            this.remoteComplete();
-        }.bind(this), 
-        function(progress, respack) {
+    this.addAll([pack.url], (progress, respack) => {
             this.remoteProgress(progress, respack);
-        }.bind(this)
-    );
+        }
+    ).then(this.remoteComplete.bind(this));
 };
 
 Resources.prototype.remoteProgress = function(progress, respack) {

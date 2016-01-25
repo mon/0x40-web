@@ -240,9 +240,7 @@ function HuesSettings(defaults) {
     }
 
     // because we still care about the main window
-    document.getElementById("closeButton").onclick = function() {
-        this.hide();
-    }.bind(this);
+    document.getElementById("closeButton").onclick = this.hide.bind(this);
     if(!this.defaults.noUI) {
         this.initUI();
     }
