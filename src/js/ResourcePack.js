@@ -311,6 +311,8 @@ Respack.prototype.loadImage = function(imgFile, imageObj) {
     return new Promise((resolve, reject) => {
         imgFile.getData64URI(mime, resolve);
     }).then(bitmap => {
+        this.filesLoaded++;
+        this.updateProgress();
         return {bitmap: bitmap, img: imageObj};
     });
 };
@@ -328,8 +330,6 @@ Respack.prototype.parseImageQueue = function() {
             } else {
                 response.img.bitmap = newImg;
             }
-            this.filesLoaded++;
-            this.updateProgress();
         });
     }, Promise.resolve());
 }
