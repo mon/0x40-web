@@ -104,7 +104,7 @@ Respack.prototype.getBlob = function(url, progress) {
             resolve(req.response);
         };
         req.onerror = function() {
-            reject(Error("Could not load respack at URL" + url));
+            reject(Error("Could not fetch respack at URL" + url));
         };
         req.onprogress = event => {
             if (event.lengthComputable) {
@@ -117,6 +117,9 @@ Respack.prototype.getBlob = function(url, progress) {
             }
         };
         req.send();
+    }).catch(error => {
+        // Infinitely more useful than the error Same Origin gives
+        throw Error("Could not fetch respack at URL" + url);
     });
 }
 

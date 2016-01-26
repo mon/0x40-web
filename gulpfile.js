@@ -32,7 +32,6 @@ gulp.task('css', function(){
 
 gulp.task("mp3", function () {
   return gulp.src("src/js/mp3/*.js")
-    .pipe(babel())
     .pipe(uglify())
     .pipe(concat("mp3-min.js"))
     .pipe(gulp.dest("lib"));
