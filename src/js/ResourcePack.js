@@ -29,7 +29,7 @@ function debug() {
     }
 }
 
-function Respack(url) {
+function Respack() {
     this.songs = [];
     this.songQueue = [];
     this.images = [];
@@ -50,16 +50,11 @@ function Respack(url) {
 
     this.totalFiles = -1;
 
-    this.file = null;
-    this._completionCallback = null;
     // For zip parsing progress events
     this.progressCallback = null;
     this.filesToLoad = 0;
     this.filesLoaded = 0;
     this.loadedFromURL = false;
-
-    if(url)
-        this.loadFromURL(url);
 }
 
 Respack.prototype.audioExtensions = new RegExp("\\.(mp3|ogg)$", "i");
@@ -163,6 +158,10 @@ Respack.prototype.parseZip = function(zip) {
     }).then(() => {
         return this.parseXML();
     }).then(() => {
+        // Cleanup
+        this._songXMLPromise = null;
+        this._imageXMLPromise = null;
+        this._infoXMLPromise = null;
         console.log("Loaded", this.name, "successfully with", this.songs.length,
                     "songs and", this.images.length, "images.");
     });
