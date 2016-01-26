@@ -66,7 +66,7 @@ gulp.task('clean', function() {
 
 gulp.task('release', ['default'], function() {
     gulp.src([
-        'css/**/*',
+        'css/hues-min.css',
         'lib/hues-min.js',
         'lib/mp3-min.js',
         'fonts/**/*',
