@@ -79,11 +79,7 @@ Respack.prototype.loadFromURL = function(url, progress) {
 
     return this.getBlob(url)
     .then(response => {
-        return this.loadBlob(response);
-    }).then(zip => {
-        return this.parseZip(zip);
-    }).then(() => {
-        return this;
+        return this.loadFromBlob(response);
     });
 };
 
@@ -118,7 +114,7 @@ Respack.prototype.getBlob = function(url, progress) {
     });
 }
 
-Respack.prototype.loadBlob = function(blob, progress) {
+Respack.prototype.loadFromBlob = function(blob, progress) {
     if(progress) {
         this.progressCallback = progress;
     }
@@ -133,7 +129,11 @@ Respack.prototype.loadBlob = function(blob, progress) {
                 reject(Error("Respack error:", error.toString()));
             }
         );
-    });
+    }).then(zip => {
+        return this.parseZip(zip);
+    }).then(() => {
+        return this;
+    });;
 };
 
 Respack.prototype.parseZip = function(zip) {

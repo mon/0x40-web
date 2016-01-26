@@ -71,7 +71,6 @@ function Resources(core) {
     this.remotes = null;
     this.fileInput = null;
     this.fileParseQueue = [];
-    this.currentlyParsing = false;
     if(!core.settings.defaults.noUI) {
         this.initUI();
     }
@@ -84,14 +83,17 @@ Resources.prototype.addAll = function(urls, progressCallback) {
         this.progressCallback = progressCallback;
         this.progressState = Array.apply(null, Array(urls.length)).map(Number.prototype.valueOf,0);
     }
+    var r;
     
     var respackPromises = []
     for(var i = 0; i < urls.length; i++) {
-        var r = new Respack();
-        respackPromises.push(r.loadFromURL(urls[i], function(index, progress, pack) {
-                this.progressState[index] = progress;
-                this.updateProgress(pack);
-        }.bind(this, i)));
+        r = new Respack();
+        (function(r) {
+            respackPromises.push(r.loadFromURL(urls[i], function(index, progress, pack) {
+                    this.progressState[index] = progress;
+                    this.updateProgress(pack);
+            }.bind(this, i)));
+        })(r);
     }
     // Start all the promises at once, but add in sequence
     return respackPromises.reduce((sequence, packPromise) => {
@@ -217,33 +219,27 @@ Resources.prototype.getSongNames = function() {
 
 Resources.prototype.loadLocal = function() {
     console.log("Loading local zip(s)");
+    
+    var r;
     var files = this.fileInput.files;
+    var p = Promise.resolve();
     for(var i = 0; i < files.length; i++) {
-        this.fileParseQueue.push(files[i]);
-    }
-    this.parseLocalQueue();
-};
-
-Resources.prototype.parseLocalQueue = function(recursing) {
-    // avoid race conditions
-    if(this.currentlyParsing && !recursing) {
-        return;
-    }
-    this.currentlyParsing = true;
-    if(this.fileParseQueue.length) {
-        var r = new Respack();
-        r.loadBlob(this.fileParseQueue.shift(),
-            () => {
-                this.addPack(r);
+        r = new Respack();
+        // closure required
+        ((file, r) => {
+            p = p.then(() => {
+                return r.loadFromBlob(file, (progress, respack) => {
+                    this.localProgress(progress, respack);
+                });
+            }).then(pack => {
+                this.addPack(pack);
                 this.localComplete();
-                this.parseLocalQueue(true);
-            },
-            (progress, respack) => {this.localProgress(progress, respack);},
-            () => {this.parseLocalQueue(true);});
-    } else {
-        console.log("Local respack parsing complete");
-        this.currentlyParsing = false;
+            });
+        })(files[i], r);
     }
+    return p.then(() => {
+        console.log("Local respack parsing complete");
+    });
 };
 
 Resources.prototype.localProgress = function(progress, respack) {
@@ -307,7 +303,7 @@ Resources.prototype.initUI = function() {
     var loadLocal = document.createElement("div");
     loadLocal.className = "hues-button";
     loadLocal.textContent = "LOAD ZIPS";
-    loadLocal.onclick = () => {this.fileInput.click};
+    loadLocal.onclick = () => {this.fileInput.click()};
     buttons.appendChild(loadLocal);
     buttons.appendChild(loadRemote);
     this.packsView.loadRemote = loadRemote;
