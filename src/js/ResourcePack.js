@@ -44,10 +44,9 @@ function Respack(url) {
     this.downloaded = -1;
     this.enabled = true;
 
-    this._songFile = null;
-    this._songFileParsed = false;
-    this._imageFile = null;
-    this._infoFile = null;
+    this._songXMLPromise = null;
+    this._imageXMLPromise = null;
+    this._infoXMLPromise = null;
 
     this.totalFiles = -1;
 
@@ -77,61 +76,77 @@ Respack.prototype.updateProgress = function() {
     }
 };
 
-Respack.prototype.loadFromURL = function(url, callback, progress) {
+Respack.prototype.loadFromURL = function(url, progress) {
     this.loadedFromURL = true;
+    if(progress) {
+        this.progressCallback = progress;
+    }
 
-    var req = new XMLHttpRequest();
-    req.open('GET', url, true);
-    req.responseType = 'blob';
-    req.onload = () => {
-        this.loadBlob(req.response, callback, progress);
-    };
-    req.onerror = function() {
-        console.log("Could not load respack at URL", url);
-    };
-    req.onprogress = event => {
-        if (event.lengthComputable) {
-            this.size = event.total;
-            this.downloaded = event.loaded;
-            var percent = event.loaded / event.total;
-            if(progress) {
-                progress(percent / 2, this); // because of processing too
-            }
-        } else {
-            // Unable to compute progress information since the total size is unknown
-        }
-    };
-    req.send();
+    return this.getBlob(url)
+    .then(response => {
+        return this.loadBlob(response);
+    }).then(zip => {
+        return this.parseZip(zip);
+    }).then(() => {
+        return this;
+    });
 };
 
-Respack.prototype.loadBlob = function(blob, callback, progress, errorCallback) {
-    this._completionCallback = callback;
-    this.progressCallback = progress;
-    this.size = blob.size;
-    this.file = new zip.fs.FS();
-    this.file.importBlob(blob,
-        this.parseWholeZip.bind(this),
-        error => {   // failure
-            console.log("Error loading respack :", error.toString());
-            this.file = null;
-            if(errorCallback) {
-                errorCallback(error.toString());
+Respack.prototype.getBlob = function(url, progress) {
+    if(progress) {
+        this.progressCallback = progress;
+    }
+    return new Promise ((resolve, reject) => {
+        var req = new XMLHttpRequest();
+        req.open('GET', url, true);
+        req.responseType = 'blob';
+        req.onload = () => {
+            resolve(req.response);
+        };
+        req.onerror = function() {
+            reject(Error("Could not load respack at URL" + url));
+        };
+        req.onprogress = event => {
+            if (event.lengthComputable) {
+                this.size = event.total;
+                this.downloaded = event.loaded;
+                var percent = event.loaded / event.total;
+                if(this.progressCallback) {
+                    this.progressCallback(percent / 2, this); // because of processing too
+                }
             }
-        }
-    );
+        };
+        req.send();
+    });
+}
+
+Respack.prototype.loadBlob = function(blob, progress) {
+    if(progress) {
+        this.progressCallback = progress;
+    }
+    return new Promise((resolve, reject) => {
+        this.size = blob.size;
+        var file = new zip.fs.FS();
+        file.importBlob(blob,
+            () => {
+                resolve(file);
+            },
+            error => {   // failure
+                reject(Error("Respack error:", error.toString()));
+            }
+        );
+    });
 };
 
-Respack.prototype.parseWholeZip = function() {
-    // TODO might break on bad file
-    console.log("Loading new respack: " + this.file.root.children[0].name);
-
-    var entries = this.file.entries;
+Respack.prototype.parseZip = function(zip) {
+    var entries = zip.entries;
 
     this.totalFiles = 0;
     // Progress events
     this.filesToLoad = 0;
     this.filesLoaded = 0;
 
+    // Get everything started
     for(var i = 0; i < entries.length; i++) {
         if(!entries[i].directory && entries[i].name) {
             this.totalFiles++;
@@ -139,29 +154,36 @@ Respack.prototype.parseWholeZip = function() {
         }
     }
 
-    debug("ZIP loader: trying to finish");
-    this.tryFinish();
+    return this.parseSongQueue()
+    .then(() => {
+        return this.parseImageQueue();
+    }).then(() => {
+        return this.parseXML();
+    }).then(() => {
+        console.log("Loaded", this.name, "successfully with", this.songs.length,
+                    "songs and", this.images.length, "images.");
+    });
 };
 
 Respack.prototype.parseFile = function(file) {
     var name = file.name;
     if (name.match(this.audioExtensions)) {
-        this.parseSong(file);
+        this.songQueue.push(this.parseSong(file));
         this.filesToLoad++;
     } else if (name.match(this.imageExtensions)) {
-        this.parseImage(file);
+        this.imageQueue.push(this.parseImage(file));
         this.filesToLoad++;
     }
     else {
         switch(name.toLowerCase()) {
             case "songs.xml":
-                this._songFile = file;
+                this._songXMLPromise = this.loadXML(file);
                 break;
             case "images.xml":
-                this._imageFile = file;
+                this._imageXMLPromise = this.loadXML(file);
                 break;
             case "info.xml":
-                this._infoFile = file;
+                this._infoXMLPromise = this.loadXML(file);
                 break;
             default:
         }
@@ -169,60 +191,191 @@ Respack.prototype.parseFile = function(file) {
 };
 
 Respack.prototype.parseSong = function(file) {
-    this.songQueue.push(file);
+    var name = file.name.replace(this.audioExtensions, "");
+    debug("parsing song: " + name);
+    if (this.containsSong(name)) {
+        var oldSong = this.getSong(name);
+        debug("WARNING: Song", name, "already exists! Conflict with", name, "and", oldSong.name);
+    } else {
+        var newSong = {"name":name,
+                       "title":null,
+                       "rhythm":null,
+                       "source":null,
+                       //"crc":this.quickCRC(file), TODO
+                       "sound":null,
+                       "enabled":true,
+                       "filename":file.name,
+                       "charsPerBeat": null};
+        var extension = file.name.split('.').pop().toLowerCase();
+        var mime = "";
+        switch(extension) {
+            case "mp3":
+                mime = "audio/mpeg3";
+                break;
+            case "ogg":
+                mime = "audio/ogg";
+                break;
+            default:
+                mime = "application/octet-stream";
+        }
+        this.songs.push(newSong);
+        return new Promise((resolve, reject) => {
+            file.getBlob(mime, sound => {
+                resolve(sound);
+            });
+        }).then(blob => {
+            return new Promise((resolve, reject) => {
+                // Because blobs are crap
+                var fr = new FileReader();
+                fr.onload = () => {
+                    resolve(fr.result);
+                };
+                fr.readAsArrayBuffer(blob);
+            });
+        }).then(sound => {
+            newSong.sound = sound;
+            this.filesLoaded++;
+            this.updateProgress();
+        });
+    }
 };
+
+Respack.prototype.parseSongQueue = function() {
+    return this.songQueue.reduce((sequence, songPromise) => {
+        return sequence.then(() => {
+            // Maintain order
+            return songPromise;
+        });
+    }, Promise.resolve());
+}
 
 Respack.prototype.parseImage = function(file) {
-    this.imageQueue.push(file);
+    var match;
+    var name = file.name.replace(this.imageExtensions, "");
+    var img;
+
+    // Animation
+    if((match = name.match(new RegExp("^(.*)_(\\d+)$")))) {
+        var img = this.getImage(match[1]);
+        if(!img) { // make a fresh one
+            img = {"name":match[1],
+                    "fullname":match[1],
+                    "align":"center",
+                    //"crc":this.quickCRC(file),
+                    "bitmaps":[],
+                    "frameDurations":[33],
+                    "source":null,
+                    "enabled":true,
+                    "animated":true,
+                    "beatsPerAnim": null};
+            this.images.push(img);
+        }
+    // Normal image
+    } else if (!this.containsImage(name)) {
+        var img = {"name":name,
+                "fullname":name,
+                "bitmap":null,
+                "align":"center",
+                //"crc":this.quickCRC(file),
+                "source":null,
+                "enabled":true,
+                "filename":file.name,
+                "animated":false};
+        this.images.push(img);
+    } else {
+        var existing = this.getImage(name);
+        debug("WARNING: Image", name, "already exists! Conflict with", file.name, "and", existing.name);
+        return;
+    }
+    
+    return this.loadImage(file, img);
 };
 
-Respack.prototype.parseXML = function() {
-    if (this._infoFile) {
-        this._infoFile.getText(text => {
+Respack.prototype.loadImage = function(imgFile, imageObj) {
+    var extension = imgFile.name.split('.').pop().toLowerCase();
+    var mime = "";
+    switch(extension) {
+        case "png":
+            mime = "image/png";
+            break;
+        case "gif":
+            mime = "image/gif";
+            break;
+        case "jpg":
+        case "jpeg":
+            mime = "image/jpeg";
+            break;
+        default:
+            mime = "application/octet-stream";
+    }
+    return new Promise((resolve, reject) => {
+        imgFile.getData64URI(mime, resolve);
+    }).then(bitmap => {
+        return {bitmap: bitmap, img: imageObj};
+    });
+};
+
+Respack.prototype.parseImageQueue = function() {
+    return this.imageQueue.reduce((sequence, imagePromise) => {
+        return sequence.then(() => {
+            // Maintain order
+            return imagePromise;
+        }).then(response => {
+            var newImg = new Image();
+            newImg.src = response.bitmap;
+            if (response.img.animated) {
+                response.img.bitmaps.push(newImg);
+            } else {
+                response.img.bitmap = newImg;
+            }
+            this.filesLoaded++;
+            this.updateProgress();
+        });
+    }, Promise.resolve());
+}
+
+Respack.prototype.loadXML = function(file) {
+    return new Promise((resolve, reject) => {
+        file.getText(text => {
+            //XML parser will complain about a bare '&', but some respacks use &amp
             text = text.replace(/&amp;/g, '&');
             text = text.replace(/&/g, '&amp;');
-            this.parseInfoFile(text);
-            this._infoFile = null;
-            this.parseXML();
+            resolve(text);
         });
-        return;
+    });
+}
+
+Respack.prototype.parseXML = function() {
+    var p = Promise.resolve();
+    // info xml?
+    if(this._infoXMLPromise) {
+        p = p.then(() => {
+            return this._infoXMLPromise;
+        }).then(text => {
+            this.parseInfoFile(text);
+        });
     }
+    // song xml and songs exist?
     if (this.songs.length > 0) {
-        if (this._songFile) {
-            this._songFile.getText(text => {
-                //XML parser will complain about a bare '&', but some respacks use &amp
-                text = text.replace(/&amp;/g, '&');
-                text = text.replace(/&/g, '&amp;');
+        if(this._songXMLPromise) {
+            p = p.then(() => {
+                return this._songXMLPromise;
+            }).then(text => {
                 this.parseSongFile(text);
-                // Go to next in series
-                this._songFile = null;
-                this._songFileParsed = true;
-                this.parseXML();
             });
-            return;
-        } else if(!this._songFileParsed) {
+        } else {
             console.log("!!!", "Got songs but no songs.xml!");
-            this._songFileParsed = true;
         }
     }
-    if (this.images.length > 0 && this._imageFile) {
-        this._imageFile.getText(text => {
-            text = text.replace(/&amp;/g, '&');
-            text = text.replace(/&/g, '&amp;');
+    // images xml and images exist?
+    if (this.images.length > 0 && this._imageXMLPromise) {
+        p = p.then(() => {
+            return this._imageXMLPromise;
+        }).then(text => {
             this.parseImageFile(text);
-            this._imageFile = null;
-            this.parseXML();
         });
-        return;
     }
-
-    // Finally done!
-    this.file = null;
-    console.log("Loaded", this.name, "successfully with", this.songs.length,
-                "songs and", this.images.length, "images.");
-    if(this._completionCallback) {
-        this._completionCallback();
-    }
+    return p;
 };
 
 // Save some chars
@@ -408,138 +561,6 @@ Respack.prototype.getImage = function(name) {
         }
     }
     return null;
-};
-
-Respack.prototype.parseSongQueue = function() {
-    var songFile = this.songQueue.shift();
-    var name = songFile.name.replace(this.audioExtensions, "");
-
-    debug("parsing song: " + name);
-    if (this.containsSong(name)) {
-        var oldSong = this.getSong(name);
-        debug("WARNING: Song", name, "already exists! Conflict with", name, "and", oldSong.name);
-    } else {
-        var newSong = {"name":name,
-                       "title":null,
-                       "rhythm":null,
-                       "source":null,
-                       //"crc":this.quickCRC(file), TODO
-                       "sound":null,
-                       "enabled":true,
-                       "filename":songFile.name,
-                       "charsPerBeat": null};
-        var extension = songFile.name.split('.').pop().toLowerCase();
-        var mime = "";
-        switch(extension) {
-            case "mp3":
-                mime = "audio/mpeg3";
-                break;
-            case "ogg":
-                mime = "audio/ogg";
-                newSong.noTrim = true;
-                break;
-            default:
-                mime = "application/octet-stream";
-        }
-        songFile.getBlob(mime, sound => {
-            // Because blobs are crap
-            var fr = new FileReader();
-            fr.onload = () => {
-                newSong.sound = fr.result;
-                this.filesLoaded++;
-                this.updateProgress();
-                this.tryFinish();
-            };
-            fr.readAsArrayBuffer(sound);
-        });
-        this.songs.push(newSong);
-    }
-};
-
-Respack.prototype.parseImageQueue = function() {
-    var match;
-    var imgFile = this.imageQueue.shift();
-    var name = imgFile.name.replace(this.imageExtensions, "");
-
-    if((match = name.match(new RegExp("^(.*)_(\\d+)$")))) {
-        var anim = this.getImage(match[1]);
-        if(!anim) { // make a fresh one
-            anim = {"name":match[1],
-                    "fullname":match[1],
-                    "align":"center",
-                    //"crc":this.quickCRC(imgFile),
-                    "bitmaps":[],
-                    "frameDurations":[33],
-                    "source":null,
-                    "enabled":true,
-                    "animated":true,
-                    "beatsPerAnim": null};
-            this.images.push(anim);
-        }
-        this.imageLoadStart(imgFile, anim);
-    } else if (!this.containsImage(name)) {
-        var img = {"name":name,
-                "fullname":name,
-                "bitmap":null,
-                "align":"center",
-                //"crc":this.quickCRC(imgFile),
-                "source":null,
-                "enabled":true,
-                "filename":imgFile.name,
-                "animated":false};
-        this.images.push(img);
-        this.imageLoadStart(imgFile, img);
-    } else {
-        var existing = this.getImage(name);
-        debug("WARNING: Image", name, "already exists! Conflict with", imgFile.name, "and", existing.name);
-    }
-};
-
-Respack.prototype.imageLoadStart = function(imgFile, imageObj) {
-    var extension = imgFile.name.split('.').pop().toLowerCase();
-    var mime = "";
-    switch(extension) {
-        case "png":
-            mime = "image/png";
-            break;
-        case "gif":
-            mime = "image/gif";
-            break;
-        case "jpg":
-        case "jpeg":
-            mime = "image/jpeg";
-            break;
-        default:
-            mime = "application/octet-stream";
-    }
-    imgFile.getData64URI(mime, image => {
-        this.imageLoadComplete(image, imageObj);
-    });
-};
-
-Respack.prototype.imageLoadComplete = function(imageBmp, imageObj) {
-    var newImg = new Image();
-    newImg.src = imageBmp;
-    if (imageObj.animated) {
-        imageObj.bitmaps.push(newImg);
-    } else {
-        imageObj.bitmap = newImg;
-        debug("parsing image:", imageObj.name);
-    }
-    this.filesLoaded++;
-    this.updateProgress();
-    this.tryFinish();
-};
-
-Respack.prototype.tryFinish = function() {
-    if (this.imageQueue.length > 0) {
-        this.parseImageQueue();
-    } else if(this.songQueue.length > 0) {
-        this.parseSongQueue();
-    } else {
-        debug("Finished parsing images/songs, parsing xml files...");
-        this.parseXML();
-    }
 };
 
 window.Respack = Respack;

@@ -36,9 +36,7 @@ function Resources(core) {
     this.enabledSongs = [];
     this.enabledImages = [];
 
-    this.toLoad = 0;
     this.progressState = [];
-    this.rToLoad = [];
     this.progressCallback = null;
 
     this.root = null;
@@ -82,31 +80,27 @@ function Resources(core) {
 // Array of URLs to load, and a callback for when we're done
 // Preserves order of URLs being loaded
 Resources.prototype.addAll = function(urls, progressCallback) {
-    return new Promise((resolve, reject) => {
-        this.toLoad += urls.length;
-        if(progressCallback) {
-            this.progressCallback = progressCallback;
-            this.progressState = Array.apply(null, Array(urls.length)).map(Number.prototype.valueOf,0);
-        }
-        for(var i = 0; i < urls.length; i++) {
-            var r = new Respack();
-            this.rToLoad.push(r);
-            r.loadFromURL(urls[i], () => {
-                this.toLoad--;
-                if(this.toLoad <= 0) {
-                    for(var i = 0; i < this.rToLoad.length; i++) {
-                        this.addPack(this.rToLoad[i]);
-                    }
-                    this.rToLoad = [];
-                    this.progressCallback = null;
-                    resolve();
-                }
-            }, function(index, progress, pack) {
+    if(progressCallback) {
+        this.progressCallback = progressCallback;
+        this.progressState = Array.apply(null, Array(urls.length)).map(Number.prototype.valueOf,0);
+    }
+    
+    var respackPromises = []
+    for(var i = 0; i < urls.length; i++) {
+        var r = new Respack();
+        respackPromises.push(r.loadFromURL(urls[i], function(index, progress, pack) {
                 this.progressState[index] = progress;
                 this.updateProgress(pack);
-            }.bind(this, i));
-        }
-    });
+        }.bind(this, i)));
+    }
+    // Start all the promises at once, but add in sequence
+    return respackPromises.reduce((sequence, packPromise) => {
+        return sequence.then(() => {
+            return packPromise;
+        }).then(pack => {
+            this.addPack(pack);
+        });
+    }, Promise.resolve());
 };
 
 Resources.prototype.updateProgress = function(pack) {
