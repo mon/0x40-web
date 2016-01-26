@@ -5,3 +5,5 @@ release/
 css/hues-min.css
 js/hues-min.js
 node_modules/
+*.map
+*-min.js

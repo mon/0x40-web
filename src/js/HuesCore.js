@@ -174,7 +174,7 @@ function HuesCore(defaults) {
                 this.setSong(0);
             }
         }
-    }).catch(error => {
+    }).catch(error => { // Comment this out to get proper stack traces
         this.error(error);
     });
 
