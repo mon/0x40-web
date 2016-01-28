@@ -420,13 +420,14 @@ HuesCore.prototype.fillBuildup = function() {
 };
 
 HuesCore.prototype.randomSong = function() {
-    var index=Math.floor((Math.random() * this.resourceManager.enabledSongs.length));
-    if (index == this.songIndex && this.resourceManager.enabledSongs.length > 1 || this.lastSongArray.indexOf(index) != -1) {
+    var songCount = this.resourceManager.enabledSongs.length;
+    var index=Math.floor((Math.random() * songCount));
+    if (songCount > 1 && (index == this.songIndex || this.lastSongArray.indexOf(index) != -1)) {
         this.randomSong();
     } else {
         console.log("Randoming a song!");
         this.setSong(index);
-        var noRepeat = Math.min(5, Math.floor((this.resourceManager.enabledSongs.length / 2)));
+        var noRepeat = Math.min(5, Math.floor(songCount / 2));
         while (this.lastSongArray.length > noRepeat && noRepeat >= 0) {
             this.lastSongArray.shift();
         }

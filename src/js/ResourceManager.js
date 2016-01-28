@@ -88,7 +88,7 @@ Resources.prototype.addAll = function(urls, progressCallback) {
     var respackPromises = []
     for(var i = 0; i < urls.length; i++) {
         r = new Respack();
-        (function(r) {
+        ((r) => {
             respackPromises.push(r.loadFromURL(urls[i], function(index, progress, pack) {
                     this.progressState[index] = progress;
                     this.updateProgress(pack);
@@ -804,7 +804,7 @@ Resources.prototype.remoteProgress = function(progress, respack) {
     }
 };
 
-Resources.prototype.remoteComplete = function(progress) {
+Resources.prototype.remoteComplete = function() {
     var progStat = this.packsView.progressStatus;
     progStat.textContent = "Complete";
     window.setTimeout(function() {progStat.textContent = "Idle";}, 2000);
