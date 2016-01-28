@@ -375,7 +375,8 @@ HuesCore.prototype.setSong = function(index) {
         }
     }
     this.setInvert(false);
-    this.soundManager.playSong(this.currentSong, this.doBuildup, () => {
+    this.soundManager.playSong(this.currentSong, this.doBuildup)
+    .then(() => {
         this.resetAudio();
         this.fillBuildup();
         this.callEventListeners("songstarted");
@@ -392,7 +393,7 @@ HuesCore.prototype.updateBeatLength = function() {
 
 HuesCore.prototype.fillBuildup = function() {
     this.updateBeatLength();
-    var buildBeats = Math.floor(this.soundManager.loopStart / this.beatLength);
+    var buildBeats = Math.floor(this.soundManager.buildLength / this.beatLength);
     if(buildBeats < 1) {
         buildBeats = 1;
     }
