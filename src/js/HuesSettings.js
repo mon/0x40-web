@@ -50,8 +50,6 @@ HuesSettings.prototype.defaultSettings = {
     preloadPrefix: "0x",
     preloadBase: 16,
     preloadMax: 0x40,
-    // If true, loads the editor on launch
-    showEditor: false,
 
     // UI accessible config
     smartAlign: "on",
@@ -86,7 +84,6 @@ HuesSettings.prototype.ephemeralSettings = [
     "preloadMax",
     "noUI",
     "showInfo",
-    "showEditor",
     "workersPath"
 ];
 
