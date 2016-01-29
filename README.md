@@ -34,7 +34,7 @@ var defaults = {
 ```
 
 ## Settings object  
-See [HuesSettings.js](https://github.com/mon/0x40-web/blob/master/js/HuesSettings.js#L23) for the possible options you can put into the `defaults` object.
+See [HuesSettings.js](https://github.com/mon/0x40-web/blob/master/src/js/HuesSettings.js#L29) for the possible options you can put into the `defaults` object.
 
 ## Building
 Install [Node.js](https://nodejs.org/en/), v5 preferred.  
