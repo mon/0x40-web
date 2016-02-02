@@ -290,6 +290,10 @@ HuesCore.prototype.animationLoop = function() {
     this.callEventListeners("frame");
 };
 
+HuesCore.prototype.recalcBeatIndex = function() {
+    this.beatIndex = Math.floor(this.soundManager.clampedTime() / this.beatLength);
+};
+
 HuesCore.prototype.getBeatIndex = function() {
     if(!this.soundManager.playing) {
         return 0;
@@ -298,7 +302,7 @@ HuesCore.prototype.getBeatIndex = function() {
     } else {
         return this.beatIndex % this.currentSong.rhythm.length;
     }
-}
+};
 
 HuesCore.prototype.getSafeBeatIndex = function() {
     var index = this.getBeatIndex();
@@ -329,19 +333,17 @@ HuesCore.prototype.setSongByName = function(name) {
     var songs = this.resourceManager.enabledSongs;
     for(var i = 0; i < songs.length; i++) {
         if(songs[i].title == name) {
-            this.setSong(i);
-            return;
+            return this.setSong(i);
         }
     }
-    this.setSong(0); // fallback
+    return this.setSong(0); // fallback
 };
 
 /* To set songs via reference instead of index - used in HuesEditor */
 HuesCore.prototype.setSongOject = function(song) {
     for(var i = 0; i < this.resourceManager.enabledSongs.length; i++) {
         if(this.resourceManager.enabledSongs[i] === song) {
-            this.setSong(i);
-            return;
+            return this.setSong(i);
         }
     }
 }
@@ -375,7 +377,7 @@ HuesCore.prototype.setSong = function(index) {
         }
     }
     this.setInvert(false);
-    this.soundManager.playSong(this.currentSong, this.doBuildup)
+    return this.soundManager.playSong(this.currentSong, this.doBuildup)
     .then(() => {
         this.resetAudio();
         this.fillBuildup();
@@ -393,20 +395,22 @@ HuesCore.prototype.updateBeatLength = function() {
 
 HuesCore.prototype.fillBuildup = function() {
     this.updateBeatLength();
-    var buildBeats = Math.floor(this.soundManager.buildLength / this.beatLength);
-    if(buildBeats < 1) {
-        buildBeats = 1;
-    }
-    if (this.currentSong.buildupRhythm === null) {
+    if (!this.currentSong.buildupRhythm) {
         this.currentSong.buildupRhythm = "";
     }
-    if (this.currentSong.buildupRhythm.length < buildBeats) {
-        console.log("Filling buildup beatmap");
-        while (this.currentSong.buildupRhythm.length < buildBeats) {
-            this.currentSong.buildupRhythm = this.currentSong.buildupRhythm + ".";
+    if(this.currentSong.buildup) {
+        var buildBeats = Math.floor(this.soundManager.buildLength / this.beatLength);
+        if(buildBeats < 1) {
+            buildBeats = 1;
         }
+        if (this.currentSong.buildupRhythm.length < buildBeats) {
+            console.log("Filling buildup beatmap");
+            while (this.currentSong.buildupRhythm.length < buildBeats) {
+                this.currentSong.buildupRhythm = this.currentSong.buildupRhythm + ".";
+            }
+        }
+        console.log("Buildup length:", buildBeats);
     }
-    console.log("Buildup length:", buildBeats);
     if(this.doBuildup) {
         this.beatIndex = -this.currentSong.buildupRhythm.length;
     } else {
@@ -633,7 +637,7 @@ HuesCore.prototype.beater = function(beat) {
                     break;
                 }
             }
-            this.renderer.doColourFade(fadeLen * this.beatLength);
+            this.renderer.doColourFade((fadeLen * this.beatLength) / this.soundManager.playbackRate);
             this.randomColour(true);
             break;
         case 'I':

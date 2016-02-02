@@ -25,6 +25,7 @@
 function SoundManager(core) {
     this.core = core;
     this.playing = false;
+    this.playbackRate = 1;
     this.song = null;
     
     this.initPromise = null;
@@ -130,9 +131,10 @@ SoundManager.prototype.init = function() {
     return this.initPromise;
 }
 
-SoundManager.prototype.playSong = function(song, playBuild) {
+SoundManager.prototype.playSong = function(song, playBuild, forcePlay) {
     var p = Promise.resolve();
-    if(this.song == song) {
+    // Editor forces play on audio updates
+    if(this.song == song && !forcePlay) {
         return p;
     }
     this.stop();
@@ -173,8 +175,6 @@ SoundManager.prototype.playSong = function(song, playBuild) {
         }
         
         return this.context.resume();
-    }).then(() => {
-        this.playing = true;
     }).catch(error => {
         // Just to ignore it if the song was invalid
         // Log it in case it's something weird
@@ -202,8 +202,20 @@ SoundManager.prototype.stop = function() {
     }
 };
 
+SoundManager.prototype.setRate = function(rate) {
+    // Double speed is more than enough. Famous last words?
+    rate = Math.max(Math.min(rate, 2), 0.25);
+    
+    var time = this.clampedTime();
+    this.playbackRate = rate;
+    this.seek(time);
+}
+
 SoundManager.prototype.seek = function(time) {
-    console.log("Seeking to " + time);
+    if(!this.song) {
+        return;
+    }
+    //console.log("Seeking to " + time);
     // Clamp the blighter
     time = Math.min(Math.max(time, -this.buildLength), this.loopLength);
     
@@ -211,6 +223,7 @@ SoundManager.prototype.seek = function(time) {
         
     this.loopSource = this.context.createBufferSource();
     this.loopSource.buffer = this.loop;
+    this.loopSource.playbackRate.value = this.playbackRate;
     this.loopSource.loop = true;
     this.loopSource.loopStart = 0;
     this.loopSource.loopEnd = this.loopLength;
@@ -219,14 +232,17 @@ SoundManager.prototype.seek = function(time) {
     if(time < 0) {
         this.buildSource = this.context.createBufferSource();
         this.buildSource.buffer = this.buildup;
+        this.buildSource.playbackRate.value = this.playbackRate;
         this.buildSource.connect(this.gainNode);
         this.buildSource.start(0, this.buildLength + time);
-        this.loopSource.start(this.context.currentTime - time);
+        this.loopSource.start(this.context.currentTime - (time / this.playbackRate));
     } else {
         this.loopSource.start(0, time);
     }
     
-    this.startTime = this.context.currentTime - time;
+    this.startTime = this.context.currentTime - (time / this.playbackRate);
+    this.playing = true;
+    this.core.recalcBeatIndex();
 }
 
 // In seconds, relative to the loop start
@@ -234,18 +250,24 @@ SoundManager.prototype.currentTime = function() {
     if(!this.playing) {
         return 0;
     }
-    return this.context.currentTime - this.startTime;
+    return (this.context.currentTime - this.startTime) * this.playbackRate;
 };
 
-SoundManager.prototype.displayableTime = function() {
-    if(!this.playing) {
-        return 0;
-    }
+SoundManager.prototype.clampedTime = function() {
     var time = this.currentTime();
+    
+    if(time > 0) {
+        time %= this.loopLength;
+    }
+    return time;
+}
+
+SoundManager.prototype.displayableTime = function() {
+    var time = this.clampedTime();
     if(time < 0) {
         return 0;
     } else {
-        return time % this.loopLength;
+        return time;
     }
 };
 

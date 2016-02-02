@@ -421,17 +421,17 @@ Respack.prototype.parseSongFile = function(text) {
             if(song.buildupLength) {
                 debug("Using custom BU length:", song.buildupLength);
             }
-            song.buildup = el.getTag("buildup");
-            if(song.buildup) {
-                debug("  Finding a buildup '" + song.buildup + "' for ", song.name);
-                var build = this.getSong(song.buildup);
+            song.buildupName = el.getTag("buildup");
+            if(song.buildupName) {
+                debug("  Finding a buildup '" + song.buildupName + "' for ", song.name);
+                var build = this.getSong(song.buildupName);
                 if(build) {
                     song.buildup = build.sound;
                     song.buildupPlayed = false;
                     // get rid of the junk
                     this.songs.splice(this.songs.indexOf(build), 1);
                 } else {
-                    debug("  WARNING!", "Didn't find a buildup '" + song.buildup + "'!");
+                    debug("  WARNING!", "Didn't find a buildup '" + song.buildupName + "'!");
                 }
             }
 

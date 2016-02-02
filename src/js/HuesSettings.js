@@ -238,6 +238,18 @@ function HuesSettings(defaults) {
 
     // because we still care about the main window
     document.getElementById("closeButton").onclick = this.hide.bind(this);
+    // we also care about tabs looking nice.
+    var tabs = document.getElementsByClassName("tab-label");
+    for(var i = 0; i < tabs.length; i++) {
+        var check = document.getElementById(tabs[i].htmlFor);
+        check._label = tabs[i];
+        check.addEventListener("change", function() { // Uses 'this' of check!
+            for(var i = 0; i < tabs.length; i++) {
+                tabs[i].className = "tab-label";
+            }
+            this._label.className = "tab-label checked";
+        });
+    }
     if(!this.defaults.noUI) {
         this.initUI();
     }
@@ -251,7 +263,8 @@ HuesSettings.prototype.connectCore = function(core) {
 HuesSettings.prototype.show = function() {
     if(this.core)
         this.core.hideLists();
-    this.window.style.display = "block";
+    this.window.style.display = "-webkit-flex";
+    this.window.style.display = "flex";
 };
 
 HuesSettings.prototype.hide = function() {
@@ -260,32 +273,30 @@ HuesSettings.prototype.hide = function() {
 
 HuesSettings.prototype.toggle = function() {
     if(this.window.style.display == "none") {
-        this.window.style.display = "block";
-        if(this.core)
-            this.core.hideLists();
+        this.show();
     } else {
-        this.window.style.display = "none";
+        this.hide();
     }
 };
 
 HuesSettings.prototype.showRespacks = function() {
     this.show();
-    document.getElementById("tab1").checked = true;
+    document.getElementById("tab-resources").click();
 };
 
 HuesSettings.prototype.showEditor = function() {
     this.show();
-    document.getElementById("tab2").checked = true;
+    document.getElementById("tab-editor").click();
 };
 
 HuesSettings.prototype.showOptions = function() {
     this.show();
-    document.getElementById("tab3").checked = true;
+    document.getElementById("tab-options").click();
 };
 
 HuesSettings.prototype.showInfo = function() {
     this.show();
-    document.getElementById("tab4").checked = true;
+    document.getElementById("tab-info").click();
 };
 
 HuesSettings.prototype.initUI = function() {

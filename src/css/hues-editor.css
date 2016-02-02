@@ -1,0 +1,190 @@
+#huesEditor {
+    position: relative;
+    display: flex !important;
+    flex-direction: column;
+    max-width: calc(100% - 10px);
+    width: 1000px;
+
+    min-height: 400px;
+    margin: 5px;
+    
+    font-size: 13px;
+}
+
+#huesEditor > hr {
+    width: 100%;
+}
+
+#edit-titlebuttons {
+    margin: -2px 0 2px -2px;
+    height: 15px;
+}
+
+#edit-topbar {
+    display: flex;
+    height: 60px;
+}
+
+
+#edit-info {
+    flex-grow: 1;
+}
+
+#edit-imports {
+    padding-top: 6px;
+}
+
+#edit-songstats {
+    margin-top: 5px;
+    margin-left: -8px;
+}
+
+.edit-songstat-value {
+    position: absolute;
+    right: 2px;
+}
+
+.edit-label {
+    display: flex;
+    margin: 12px auto;
+}
+
+.edit-textbox-container {
+    display: flex;
+    margin-top: -2px;
+    flex-grow: 1;
+}
+
+.edit-textbox {
+    flex-grow: 1;
+    font-family: 'PetMe64Web';
+    font-size: 7pt;
+    margin-right: 5px;
+    border-color: rgb(0,0,0);
+    border-width: 1px;
+    border-style: solid;
+}
+
+#edit-timelock {
+    display: flex;
+    align-items: center;
+    position: absolute;
+    margin-top: 4px;
+}
+
+#edit-timelock:before { 
+  position: absolute;
+  z-index: -1;
+  content : "";
+  left  : 8px;
+  top   : 0;
+  height: 100%;
+  width : 5px;
+  border-left: 3px #666 solid;
+  border-top: 3px #666 solid;
+  border-bottom: 3px #666 solid;
+}
+
+#edit-timelock.unlocked:before {
+  border-left: 3px #666 dashed;
+}
+
+#edit-timelock > .hues-button {
+    /* because of the pseudo element this one can't be transparent */
+    background-color: rgb(171,171,171) !important;
+
+}
+    
+#edit-timelock:hover > .hues-button {
+    background-color: rgb(236,236,236) !important;
+}
+
+
+#edit-area {
+    flex-grow: 1;
+    /*height: initial !important;*/
+    margin: 0 auto;
+    width: 100%;
+}
+
+.edit-area-header {
+    padding-bottom: 8px;
+    margin-left: 15px;
+}
+
+.beat-count {
+    font-size: 10px;
+}
+
+.edit-area-right-header {
+    position: absolute;
+    right: 25px;
+}
+
+.edit-box {
+    position: relative;
+    overflow-y : scroll;
+    background-color: white;
+    margin: auto 20px;
+}
+
+.beatmap {
+    height: inherit;
+    width: inherit;
+    position: relative;
+}
+
+.beat-hilight {
+    position: absolute;
+    color: rgba(127,127,127,0.5);
+    visibility: visible;
+    text-align: center;
+}
+
+.beat-hilight.hidden {
+    visibility: hidden;
+}
+
+#edit-build, #edit-loop {
+    height: auto;
+}
+
+#edit-resize-handle-container {
+    width: 100%;
+    height: 20px;
+    cursor: row-resize;
+    overflow: hidden;
+}
+
+#edit-resize-handle {
+    transform: scale(10.0, 1.0);
+    font-size: 20px;
+    text-align:center;
+    color: #999;
+}
+
+#edit-resize-handle:hover {
+    color: #000;
+}
+
+#edit-controls {
+    height: 25px !important;
+}
+
+#edit-waveform {
+    width: 100%;
+    height: 50px;
+}
+
+/* Make it as invisible as we can */
+#edit-copybox {
+    position : fixed;
+    top : 0;
+    left : 0;
+    width : 2em;
+    height : 2em;
+    padding : 0;
+    border : none;
+    outline : none;
+    background : transparent;
+}

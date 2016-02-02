@@ -33,21 +33,29 @@
             <div id="settingsWindow">
                 <div id="closeButton">x</div>
                 <div id="tabs">
-                    <input class="tab-input" type="radio" name="tabs" id="tab1">
-                    <label class="tab-label" for="tab1">RESOURCES</label>
-                    <input class="tab-input" type="radio" name="tabs" id="tab2">
-                    <label class="tab-label" for="tab2">OPTIONS</label>
-                    <input class="tab-input" type="radio" name="tabs" id="tab3" checked>
-                    <label class="tab-label" for="tab3">INFO</label>
-                    <div id="tab1-content" class="tab-content">
+                    <label class="tab-label" for="tab-resources">RESOURCES</label>
+                    <label class="tab-label checked" for="tab-editor">EDITOR</label>
+                    <label class="tab-label" for="tab-options">OPTIONS</label>
+                    <label class="tab-label" for="tab-info">INFO</label>
+                </div>
+                <div>
+                    <input class="tab-input" type="radio" name="tabs" id="tab-resources">
+                    <input class="tab-input" type="radio" name="tabs" id="tab-editor" checked>
+                    <input class="tab-input" type="radio" name="tabs" id="tab-options">
+                    <input class="tab-input" type="radio" name="tabs" id="tab-info">
+                    <div id="tab-resources-content" class="tab-content">
                         <!-- Populated by ResourceManager.js -->
                         <div id="huesResources"></div>
                     </div>
-                    <div id="tab2-content" class="tab-content">
+                    <div id="tab-editor-content" class="tab-content">
+                        <!-- Populated by HuesEditor.js -->
+                        <div id="huesEditor"></div>
+                    </div>
+                    <div id="tab-options-content" class="tab-content">
                         <!-- Populated by HuesSettings.js -->
                         <div id="huesSettings"></div>
                     </div>
-                    <div id="tab3-content" class="tab-content">
+                    <div id="tab-info-content" class="tab-content">
                         <div id="about">
                             <h1>0x40 Hues of JS, <span id="versionText"><!-- Populated by HuesInfo.js --></span></h1>
                             <h2>Adapted from the <a target="_blank" href="http://0x40hues.blogspot.com">0x40 Flash</a></h2>
