@@ -248,10 +248,17 @@ HuesEditor.prototype.loadAudio = function(editor) {
     // load audio
     this.blobToArrayBuffer(file)
     .then(buffer => {
-        // First load, go fresh, get the core synced up
+        // If first load, this makes fresh, gets the core synced up
         this.newSong(this.song);
         
         this.song[editor._sound] = buffer;
+        // Save filename for XML export
+        var noExt = file.name.replace(/\.[^/.]+$/, "");
+        if(editor._sound == "sound") {
+            this.song.name = noExt;
+        } else {
+            this.song.buildupName = noExt;
+        }
         // make empty map if needed
         if(!this.getText(editor)) {
             this.setText(editor, "x...o...x...o...");
@@ -267,7 +274,8 @@ HuesEditor.prototype.loadAudio = function(editor) {
         this.core.updateBeatLength();
         // We may have to go backwards in time
         this.core.recalcBeatIndex();
-    }).catch(() => {
+    }).catch(error => {
+        console.log(error);
         alert("Couldn't load song! Is it a LAME encoded MP3?");
     });
 }
@@ -602,6 +610,7 @@ HuesEditor.prototype.uiCreateSingleEditor = function(title, soundName, rhythmNam
     beatmap.contentEditable = true;
     beatmap.spellcheck = false;
     beatmap.oninput = this.textUpdated.bind(this, container);
+    beatmap.oncontextmenu = this.rightClick.bind(this, container);
     
     var beatHilight = document.createElement("div");
     beatHilight.className = "beat-hilight";
@@ -624,6 +633,27 @@ HuesEditor.prototype.uiCreateSingleEditor = function(title, soundName, rhythmNam
     this.setLocked(container, 0);
     
     return container;
+}
+
+HuesEditor.prototype.rightClick = function(editor, event) {
+    // We abuse the fact that right clicking moves the caret. Hooray!
+    var caret = this.getCaret(editor._beatmap);
+    var totalLen = this.getText(editor).length;
+    var percent = caret / totalLen;
+    if(caret <= totalLen) {
+        var seekTime = 0;
+        if(editor._rhythm == "rhythm") { // loop
+            seekTime = this.core.soundManager.loopLength * percent;
+        } else { // build
+            var bLen = this.core.soundManager.buildLength;
+            seekTime = -bLen + bLen * percent;
+        }
+        this.core.soundManager.seek(seekTime);
+        event.preventDefault();
+        return false;
+    } else {
+        return true;
+    }
 }
 
 HuesEditor.prototype.textUpdated = function(editor) {
