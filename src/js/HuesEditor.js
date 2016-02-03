@@ -115,6 +115,7 @@ HuesEditor.prototype.resize = function() {
     this.root.appendChild(hilight);
     this.hilightWidth = hilight.clientWidth;
     this.hilightHeight = hilight.clientHeight;
+    this.editorWidth = this.loopEdit._beatmap.clientWidth;
     this.root.removeChild(hilight);
 }
 
@@ -227,8 +228,7 @@ HuesEditor.prototype.reflow = function(editor, map) {
     } else {
         editor._hilight.innerHTML = "&block;";
     }
-    var charWidth = editor._hilight.clientWidth;
-    var charsPerLine = Math.floor(editor._beatmap.clientWidth / charWidth);
+    var charsPerLine = Math.floor(this.editorWidth / this.hilightWidth);
     // if it's too long to wrap, just give up
     var wrap = Math.min(this.wrapAt, charsPerLine);
     charsPerLine -= charsPerLine % wrap;
