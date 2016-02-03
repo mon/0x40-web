@@ -519,10 +519,11 @@ HuesEditor.prototype.uiCreateEditArea = function() {
     
     handleContainer.addEventListener("mousedown", (e) => {
         e.preventDefault();
+        var editTop = this.editArea.getBoundingClientRect().top;
+        var handleSize = this.resizeHandle.clientHeight;
         
         var resizer = (e) => {
-            var editTop = this.editArea.getBoundingClientRect().top;
-            this.buildEditSize = Math.floor(e.clientY - editTop);
+            this.buildEditSize = Math.floor(e.clientY - editTop + handleSize/2);
             this.resize();
         };
         
