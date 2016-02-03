@@ -291,7 +291,7 @@ HuesCore.prototype.animationLoop = function() {
 };
 
 HuesCore.prototype.recalcBeatIndex = function() {
-    this.beatIndex = Math.floor(this.soundManager.clampedTime() / this.beatLength);
+    this.beatIndex = Math.floor(this.soundManager.currentTime() / this.beatLength);
 };
 
 HuesCore.prototype.getBeatIndex = function() {
