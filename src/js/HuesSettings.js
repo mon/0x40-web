@@ -265,6 +265,8 @@ HuesSettings.prototype.show = function() {
         this.core.hideLists();
     this.window.style.display = "-webkit-flex";
     this.window.style.display = "flex";
+    if(this.core.editor)
+        this.core.editor.resize();
 };
 
 HuesSettings.prototype.hide = function() {
