@@ -640,6 +640,9 @@ HuesEditor.prototype.uiCreateSingleEditor = function(title, soundName, rhythmNam
 }
 
 HuesEditor.prototype.rightClick = function(editor, event) {
+    if(!this.linked) {
+        return;
+    }
     // We abuse the fact that right clicking moves the caret. Hooray!
     var caret = this.getCaret(editor._beatmap);
     var totalLen = this.getText(editor).length;
