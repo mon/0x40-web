@@ -169,9 +169,9 @@ SoundManager.prototype.playSong = function(song, playBuild, forcePlay) {
         return this.context.suspend()
     }).then(() => {
         if(playBuild) {
-            this.seek(-this.buildLength);
+            this.seek(-this.buildLength, true);
         } else {
-            this.seek(0);
+            this.seek(0, true);
         }
         
         return this.context.resume();
@@ -213,7 +213,7 @@ SoundManager.prototype.setRate = function(rate) {
     this.seek(time);
 }
 
-SoundManager.prototype.seek = function(time) {
+SoundManager.prototype.seek = function(time, noPlayingUpdate) {
     if(!this.song) {
         return;
     }
@@ -243,6 +243,9 @@ SoundManager.prototype.seek = function(time) {
     }
     
     this.startTime = this.context.currentTime - (time / this.playbackRate);
+    if(!noPlayingUpdate) {
+        this.playing = true;
+    }
     this.core.recalcBeatIndex();
 }
 

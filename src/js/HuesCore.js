@@ -415,8 +415,10 @@ HuesCore.prototype.fillBuildup = function() {
     // update loop length for flash style filling
     this.updateBeatLength();
     if(this.currentSong.buildup) {
-        // TODO CHECK IF OLD OR NEW BEHAVIOUR
-        if(true) {
+        if(this.currentSong.independentBuild) {
+            console.log("New behaviour - separate build/loop lengths");
+            // Do nothing
+        } else {
             console.log("Flash behaviour - filling buildup");
             var buildBeats = Math.floor(this.soundManager.buildLength / this.loopLength);
             if(buildBeats < 1) {
@@ -425,8 +427,6 @@ HuesCore.prototype.fillBuildup = function() {
             while (this.currentSong.buildupRhythm.length < buildBeats) {
                 this.currentSong.buildupRhythm = this.currentSong.buildupRhythm + ".";
             }
-        } else {
-            console.log("New behaviour - separate build/loop lengths");
         }
         console.log("Buildup length:", buildBeats);
     }
