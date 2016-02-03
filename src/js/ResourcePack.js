@@ -436,7 +436,7 @@ Respack.prototype.parseSongFile = function(text) {
             }
 
             song.buildupRhythm = el.getTag("buildupRhythm");
-            song.independentBuild = el.getTag("independentBuild");
+            song.independentBuild = el.getTag("independentBuild") != "false";
             song.source = el.getTag("source");
             song.charsPerBeat = parseFloat(el.getTag("charsPerBeat"));
 

@@ -852,6 +852,9 @@ HuesEditor.prototype.generateXML = function() {
 	if(this.song.buildup) {
         result += "    <buildup>" + this.song.buildupName + "</buildup>\n";
         result += "    <buildupRhythm>" + this.song.buildupRhythm + "</buildupRhythm>\n";
+        if(this.song.independentBuild) {
+            result += "    <independentBuild>true</independentBuild>\n";
+        }
     }
 	result += "  </song>\n";
     return result;
