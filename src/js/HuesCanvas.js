@@ -349,8 +349,8 @@ HuesCanvas.prototype.syncAnim = function() {
     }
     var index = this.core.beatIndex;
     // When animation has more frames than song has beats, or part thereof
-    if(this.lastBeat && this.core.beatLength) {
-        var interp = (this.audio.currentTime - this.lastBeat) / this.core.beatLength;
+    if(this.lastBeat && this.core.getBeatLength()) {
+        var interp = (this.audio.currentTime - this.lastBeat) / this.core.getBeatLength();
         index += Math.min(interp, 1);
     }
     // This loops A-OK because the core's beatIndex never rolls over for a new loop

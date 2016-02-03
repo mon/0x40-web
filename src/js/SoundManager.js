@@ -175,6 +175,8 @@ SoundManager.prototype.playSong = function(song, playBuild, forcePlay) {
         }
         
         return this.context.resume();
+    }).then(() => {
+        this.playing = true;
     }).catch(error => {
         // Just to ignore it if the song was invalid
         // Log it in case it's something weird
@@ -241,7 +243,6 @@ SoundManager.prototype.seek = function(time) {
     }
     
     this.startTime = this.context.currentTime - (time / this.playbackRate);
-    this.playing = true;
     this.core.recalcBeatIndex();
 }
 
