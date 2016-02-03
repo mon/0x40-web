@@ -85,7 +85,7 @@ HuesEditor.prototype.initUI = function() {
     this.resize();
 };
 
-HuesEditor.prototype.resize = function() {
+HuesEditor.prototype.resize = function(noHilightCalc) {
     this.root.style.height = (window.innerHeight - 200) + "px";
     var boxHeight = this.editArea.offsetHeight;
     var bHeadHeight = this.buildEdit._header.offsetHeight;
@@ -109,14 +109,17 @@ HuesEditor.prototype.resize = function() {
     this.timeLock.style.height = (buildHeight + handleHeight) + "px";
     
     // Save to fix Chrome rendering and to enable right click to seek
-    var hilight = document.createElement("div");
-    hilight.className = "beat-hilight";
-    hilight.innerHTML = "&block;";
-    this.root.appendChild(hilight);
-    this.hilightWidth = hilight.clientWidth;
-    this.hilightHeight = hilight.clientHeight;
-    this.editorWidth = this.loopEdit._beatmap.clientWidth;
-    this.root.removeChild(hilight);
+    // We only resize on a window resize event, not when dragging the handle
+    if(!noHilightCalc) {
+        var hilight = document.createElement("div");
+        hilight.className = "beat-hilight";
+        hilight.innerHTML = "&block;";
+        this.root.appendChild(hilight);
+        this.hilightWidth = hilight.clientWidth;
+        this.hilightHeight = hilight.clientHeight;
+        this.editorWidth = this.loopEdit._beatmap.clientWidth;
+        this.root.removeChild(hilight);
+    }
 }
 
 HuesEditor.prototype.createTextInput = function(label, id, subtitle, parent) {
@@ -524,7 +527,7 @@ HuesEditor.prototype.uiCreateEditArea = function() {
         
         var resizer = (e) => {
             this.buildEditSize = Math.floor(e.clientY - editTop + handleSize/2);
-            this.resize();
+            this.resize(true);
         };
         
         var mouseup = function(e) {
