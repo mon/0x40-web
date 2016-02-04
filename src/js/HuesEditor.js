@@ -283,6 +283,22 @@ HuesEditor.prototype.loadAudio = function(editor) {
     });
 }
 
+HuesEditor.prototype.removeAudio = function(editor) {
+    if(!this.song) {
+        return;
+    }
+    
+    this.song[editor._sound] = null;
+    this.song[editor._rhythm] = "";
+    this.reflow(editor, "");
+    // Is the loop playable?
+    if(this.song.sound) {
+        this.core.soundManager.playSong(this.song, true, true);
+    } else {
+        this.core.soundManager.stop();
+    }
+}
+
 HuesEditor.prototype.blobToArrayBuffer = function(blob) {
     return new Promise((resolve, reject) => {
         var fr = new FileReader();
@@ -624,6 +640,7 @@ HuesEditor.prototype.uiCreateSingleEditor = function(title, soundName, rhythmNam
     load.onclick = () => {fileInput.click()};
     
     container._removeBtn = this.createButton("Remove", rightHeader, true);
+    container._removeBtn.onclick = this.removeAudio.bind(this, container);
     
     var editBox = document.createElement("div");
     editBox.className = "edit-box";
