@@ -548,8 +548,8 @@ HuesEditor.prototype.uiCreateEditArea = function() {
 
     this.loopEdit = this.uiCreateSingleEditor("Rhythm&nbsp;", "sound", "rhythm", "edit-loop", editArea);
     this.seekLoop = this.loopEdit._seek;
-    // BACK |<
-    this.seekLoop.innerHTML = "&#xe90c;";
+    // FIRST |<<
+    this.seekLoop.innerHTML = "&#xe90b;";
     this.seekLoop.onclick = () => {
         this.core.soundManager.seek(0);
     };
