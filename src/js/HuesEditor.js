@@ -798,11 +798,6 @@ HuesEditor.prototype.uiCreateControls = function() {
     controls.id = "edit-controls";
     this.root.appendChild(controls);
     
-    var playRateLab = document.createElement("span");
-    playRateLab.className = "settings-individual";
-    playRateLab.textContent = "1.00x";
-    controls.appendChild(playRateLab);
-    
     var changeRate = function(change) {
         var rate = this.core.soundManager.playbackRate;
         rate += change;
@@ -812,17 +807,28 @@ HuesEditor.prototype.uiCreateControls = function() {
         playRateLab.textContent = newRate.toFixed(2) + "x";
     }
     
+    var speedControl = document.createElement("div");
+    controls.appendChild(speedControl);
+    
     // BACKWARD
-    var speedDown = this.createButton("&#xe909;", controls, false, "hues-icon");
+    var speedDown = this.createButton("&#xe909;", speedControl, false, "hues-icon");
     speedDown.onclick = changeRate.bind(this, -0.25);
     // FORWARD
-    var speedUp = this.createButton("&#xe90a;", controls, false, "hues-icon");
+    var speedUp = this.createButton("&#xe90a;", speedControl, false, "hues-icon");
     speedUp.onclick = changeRate.bind(this, 0.25);
+        
+    var playRateLab = document.createElement("span");
+    playRateLab.className = "settings-individual";
+    playRateLab.textContent = "1.00x";
+    speedControl.appendChild(playRateLab);
+    
+    var wrapControl = document.createElement("div");
+    controls.appendChild(wrapControl);
     
     var wrapLab = document.createElement("span");
     wrapLab.className = "settings-individual";
     wrapLab.textContent = "New line at beat ";
-    controls.appendChild(wrapLab);
+    wrapControl.appendChild(wrapLab);
     
     var wrapAt = document.createElement("input");
     wrapAt.className = "settings-input";
@@ -839,7 +845,7 @@ HuesEditor.prototype.uiCreateControls = function() {
         this.reflow(this.loopEdit, this.song.rhythm);
         
     };
-    controls.appendChild(wrapAt);
+    wrapControl.appendChild(wrapAt);
 };
 
 HuesEditor.prototype.uiCreateVisualiser = function() {

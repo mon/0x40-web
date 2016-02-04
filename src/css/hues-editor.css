@@ -169,7 +169,10 @@
 }
 
 #edit-controls {
+    display: flex;
+    justify-content: space-between;
     height: 25px !important;
+    margin: 0 20px;
 }
 
 #edit-waveform {
