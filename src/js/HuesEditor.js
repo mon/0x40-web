@@ -321,7 +321,8 @@ HuesEditor.prototype.newSong = function(song) {
            "sound":null,
            "enabled":true,
            "filename":null,
-           "charsPerBeat": null};
+           "charsPerBeat": null,
+           "independentBuild": false};
        if(!this.respack) {
            this.respack = new Respack();
            this.respack.name = "Editor Respack";
@@ -380,6 +381,14 @@ HuesEditor.prototype.updateInfo = function() {
     this.loopEdit._removeBtn.classList.add("disabled");
     
     if(this.song) {
+        if(this.song.independentBuild) {
+            this.timeLock._locker.innerHTML = "&#xe904;";
+            this.timeLock.classList.add("unlocked");
+        } else {
+            this.timeLock._locker.innerHTML = "&#xe905;";
+            this.timeLock.classList.remove("unlocked");
+        }
+    
         this.saveBtn.classList.remove("disabled");
         this.copyBtn.classList.remove("disabled");
         if(this.song.sound) {
@@ -426,7 +435,7 @@ HuesEditor.prototype.undoRedo = function(from, to) {
     this.song[fromData.songVar] = fromData.text;
     this.reflow(fromData.editor, this.song[fromData.songVar]);
     this.updateUndoUI();
-    this.updateHalveDoubleButtons();
+    this.updateHalveDoubleButtons(fromData.editor);
     this.core.updateBeatLength();
     this.core.recalcBeatIndex();
 }
@@ -457,12 +466,32 @@ HuesEditor.prototype.halveBeats = function(editor) {
     if(!this.song || this.getText(editor).length < 2) {
         return;
     }
+    if(!this.song.independentBuild) {
+        // halve them both
+        var other = editor._rhythm == "rhythm" ? this.buildEdit : this.loopEdit;
+        if(this.getText(other).length < 2) {
+            return;
+        }
+        this.song.independentBuild = true;
+        this.halveBeats(other);
+        this.song.independentBuild = false;
+    }
     this.setText(editor, this.song[editor._rhythm].replace(/(.)./g, "$1"));
 }
 
 HuesEditor.prototype.doubleBeats = function(editor) {
     if(!this.song || this.getText(editor).length == 0) {
         return;
+    }
+    if(!this.song.independentBuild) {
+        // Double them both
+        var other = editor._rhythm == "rhythm" ? this.buildEdit : this.loopEdit;
+        if(this.getText(other).length == 0) {
+            return;
+        }
+        this.song.independentBuild = true;
+        this.doubleBeats(other);
+        this.song.independentBuild = false;
     }
     this.setText(editor, this.song[editor._rhythm].replace(/(.)/g, "$1."));
 }
@@ -522,7 +551,18 @@ HuesEditor.prototype.uiCreateEditArea = function() {
     this.timeLock.id = "edit-timelock";
     this.timeLock.className = "hues-icon";
     // CHAIN, use &#xe904; for CHAIN-BROKEN
-    this.createButton("&#xe905;", this.timeLock)
+    var locker = this.createButton("&#xe905;", this.timeLock)
+    locker.onclick = () => {
+        if(!this.song) {
+            return;
+        }
+        this.song.independentBuild = !this.song.independentBuild;
+        if(!this.song.independentBuild) {
+            // Correct the lengths
+            this.setText(this.loopEdit, this.getText(this.loopEdit));
+        }
+    };
+    this.timeLock._locker = locker;
     
     this.buildEdit = this.uiCreateSingleEditor("Buildup", "buildup", "buildupRhythm", "edit-build", editArea);
     this.seekStart = this.buildEdit._seek;
@@ -719,12 +759,12 @@ HuesEditor.prototype.getText = function(editor) {
     }
 };
 
-HuesEditor.prototype.setText = function(editor, text) {
+HuesEditor.prototype.setText = function(editor, text, caretFromEnd) {
     if(!this.song || !this.song[editor._sound]) {
         this.reflow(editor, "");
         return;
     }
-    var caret = this.getCaret(editor._beatmap);
+    var caret = caretFromEnd ? text.length : this.getCaret(editor._beatmap);
     if(editor._locked) {
         caret = Math.min(editor._locked, caret);
         if(text.length > editor._locked) {
@@ -735,6 +775,34 @@ HuesEditor.prototype.setText = function(editor, text) {
                 text += ".";
             }
         }
+    // time to scale things to fit
+    } else if(!this.song.independentBuild && this.song.buildupRhythm && this.song.rhythm) {
+        var ratio = this.core.soundManager.loopLength / this.core.soundManager.buildLength;
+        var newLen, otherMap;
+        if(editor._rhythm == "rhythm") { // editing rhythm, adjust beatmap
+            otherMap = this.buildEdit;
+            newLen = Math.floor(text.length / ratio);
+        } else { // editing build, adjust rhythm
+            otherMap = this.loopEdit;
+            newLen = Math.floor(text.length * ratio);
+        }
+        var wasLocked = otherMap._locked;
+        // avoid infinite loop
+        this.song.independentBuild = true;
+        // clamp the length
+        otherMap._locked = newLen;
+        // Use setText to update undo state and fill/clamp beats
+        this.setText(otherMap, this.song[otherMap._rhythm], true);
+        // Restore
+        this.song.independentBuild = false;
+        // Otherwise we'll lose the new length on the next edit
+        if(wasLocked) {
+            otherMap._locked = newLen;
+        } else {
+            otherMap._locked = 0;
+        }
+        // Fix the buttons
+        this.updateHalveDoubleButtons(otherMap);
     }
     this.pushUndo(editor._rhythm, editor, this.song[editor._rhythm], text);
     this.song[editor._rhythm] = text
