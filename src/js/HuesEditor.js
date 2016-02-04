@@ -356,22 +356,22 @@ HuesEditor.prototype.updateInfo = function() {
     this.beatLen.textContent = beatLen.toFixed(2);
     
     // Avoid a bunch of nested elses
-    this.seekStart.className = "hues-button disabled";
-    this.seekLoop.className = "hues-button disabled";
-    this.saveBtn.className = "hues-button disabled";
-    this.copyBtn.className = "hues-button disabled";
-    this.buildEdit._removeBtn.className = "hues-button disabled";
-    this.loopEdit._removeBtn.className = "hues-button disabled";
+    this.seekStart.classList.add("disabled");
+    this.seekLoop.classList.add("disabled");
+    this.saveBtn.classList.add("disabled");
+    this.copyBtn.classList.add("disabled");
+    this.buildEdit._removeBtn.classList.add("disabled");
+    this.loopEdit._removeBtn.classList.add("disabled");
     
     if(this.song) {
-        this.saveBtn.className = "hues-button";
-        this.copyBtn.className = "hues-button";
+        this.saveBtn.classList.remove("disabled");
+        this.copyBtn.classList.remove("disabled");
         if(this.song.sound) {
-            this.seekLoop.className = "hues-button";
-            this.loopEdit._removeBtn.className = "hues-button";
+            this.seekLoop.classList.remove("disabled");
+            this.loopEdit._removeBtn.classList.remove("disabled");
             if(this.song.buildup) {
-                this.seekStart.className = "hues-button";
-                this.buildEdit._removeBtn.className = "hues-button";
+                this.seekStart.classList.remove("disabled");
+                this.buildEdit._removeBtn.classList.remove("disabled");
             }
         }
     }
@@ -507,7 +507,14 @@ HuesEditor.prototype.uiCreateEditArea = function() {
     this.timeLock.className = "hues-icon";
     // CHAIN, use &#xe904; for CHAIN-BROKEN
     this.createButton("&#xe905;", this.timeLock)
-    this.buildEdit = this.uiCreateSingleEditor("Buildup&nbsp;", "buildup", "buildupRhythm", "edit-build", editArea);
+    
+    this.buildEdit = this.uiCreateSingleEditor("Buildup", "buildup", "buildupRhythm", "edit-build", editArea);
+    this.seekStart = this.buildEdit._seek;
+    // FIRST |<<
+    this.seekStart.innerHTML = "&#xe90b;";
+    this.seekStart.onclick = () => {
+        this.core.soundManager.seek(-this.core.soundManager.buildLength);
+    };
     
     // drag handle
     var handleContainer = document.createElement("div");
@@ -539,7 +546,13 @@ HuesEditor.prototype.uiCreateEditArea = function() {
         document.addEventListener("mouseup", mouseup);
     });
 
-    this.loopEdit = this.uiCreateSingleEditor("Rhythm&nbsp;&nbsp;", "sound", "rhythm", "edit-loop", editArea);
+    this.loopEdit = this.uiCreateSingleEditor("Rhythm&nbsp;", "sound", "rhythm", "edit-loop", editArea);
+    this.seekLoop = this.loopEdit._seek;
+    // BACK |<
+    this.seekLoop.innerHTML = "&#xe90c;";
+    this.seekLoop.onclick = () => {
+        this.core.soundManager.seek(0);
+    };
     
     this.buildEdit._hilight.textContent = "[none]";
     this.loopEdit._hilight.innerHTML = 
@@ -574,6 +587,11 @@ HuesEditor.prototype.uiCreateSingleEditor = function(title, soundName, rhythmNam
     var nameLabel = document.createElement("span");
     header.appendChild(nameLabel);
     nameLabel.innerHTML = title;
+    
+    var seek = this.createButton("", header, true, "hues-icon");
+    header.appendChild(seek);
+    container._seek = seek;
+    
     var beatCount = document.createElement("span");
     header.appendChild(beatCount);
     beatCount.className = "beat-count";
@@ -779,15 +797,6 @@ HuesEditor.prototype.uiCreateControls = function() {
     var controls = document.createElement("div");
     controls.id = "edit-controls";
     this.root.appendChild(controls);
-    
-    this.seekStart = this.createButton("<< Start", controls, true);
-    this.seekStart.onclick = () => {
-        this.core.soundManager.seek(-this.core.soundManager.buildLength);
-    };
-    this.seekLoop = this.createButton("< Loop", controls, true);
-    this.seekLoop.onclick = () => {
-        this.core.soundManager.seek(0);
-    };
     
     var playRateLab = document.createElement("span");
     playRateLab.className = "settings-individual";

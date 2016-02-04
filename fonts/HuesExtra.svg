@@ -18,4 +18,6 @@
 <glyph unicode="&#xe908;" glyph-name="menu" d="M128 682.667h768v-86h-768v86zM128 384.667v84h768v-84h-768zM128 170.667v86h768v-86h-768z" />
 <glyph unicode="&#xe909;" glyph-name="backward2" d="M576 800v-320l320 320v-704l-320 320v-320l-352 352z" />
 <glyph unicode="&#xe90a;" glyph-name="forward3" d="M512 96v320l-320-320v704l320-320v320l352-352z" />
+<glyph unicode="&#xe90b;" glyph-name="first" d="M128 64v768h128v-352l320 320v-320l320 320v-704l-320 320v-320l-320 320v-352z" />
+<glyph unicode="&#xe90c;" glyph-name="previous2" d="M256 64v768h128v-352l320 320v-704l-320 320v-352z" />
 </font></defs></svg>
