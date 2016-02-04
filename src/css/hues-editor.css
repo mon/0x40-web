@@ -70,6 +70,7 @@
     align-items: center;
     position: absolute;
     margin-top: 4px;
+    margin-left: -4px;
 }
 
 #edit-timelock:before { 
@@ -92,10 +93,9 @@
 #edit-timelock > .hues-button {
     /* because of the pseudo element this one can't be transparent */
     background-color: rgb(171,171,171) !important;
-
 }
     
-#edit-timelock:hover > .hues-button {
+#edit-timelock > .hues-button:hover {
     background-color: rgb(236,236,236) !important;
 }
 

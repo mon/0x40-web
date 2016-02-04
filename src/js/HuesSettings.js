@@ -261,12 +261,13 @@ HuesSettings.prototype.connectCore = function(core) {
 };
 
 HuesSettings.prototype.show = function() {
-    if(this.core)
+    if(this.core) {
         this.core.hideLists();
+        if(this.core.editor)
+            this.core.editor.resize();
+    }
     this.window.style.display = "-webkit-flex";
     this.window.style.display = "flex";
-    if(this.core.editor)
-        this.core.editor.resize();
 };
 
 HuesSettings.prototype.hide = function() {
