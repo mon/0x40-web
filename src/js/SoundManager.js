@@ -48,6 +48,7 @@ function SoundManager(core) {
     // Visualiser
     this.vReady = false;
     this.vBars = 0;
+    this.vTotalBars = 0;
     this.splitter = null;
     this.analysers = [];
     this.analyserArrays = [];
@@ -246,6 +247,7 @@ SoundManager.prototype.seek = function(time, noPlayingUpdate) {
     if(!noPlayingUpdate) {
         this.playing = true;
     }
+    this.initVisualiser();
     this.core.recalcBeatIndex();
 }
 
@@ -349,11 +351,12 @@ SoundManager.prototype.createWorker = function() {
 };
 
 SoundManager.prototype.initVisualiser = function(bars) {
+    // When restarting the visualiser
     if(!bars) {
-        return;
+        bars = this.vTotalBars;
     }
     this.vReady = false;
-    this.vBars = bars;
+    this.vTotalBars = bars;
     for(var i = 0; i < this.analysers.length; i++) {
         this.analysers[i].disconnect();
     }
@@ -388,7 +391,7 @@ SoundManager.prototype.attachVisualiser = function() {
         this.buildSource.connect(this.splitter);
     }
     // Split display up into each channel
-    this.vBars = Math.floor(this.vBars/channels);
+    this.vBars = Math.floor(this.vTotalBars/channels);
     
     for(var i = 0; i < channels; i++) {
         var analyser = this.context.createAnalyser();
