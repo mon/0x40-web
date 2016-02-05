@@ -643,8 +643,6 @@ HuesEditor.prototype.uiCreateEditArea = function() {
         <br />\
          [DOUBLE] doubles the selected map length by padding it with "."s.<br />\
          [HALVE] shortens the map length by removing every other character.<br />\
-         [<< START] starts the song from the beginning.<br />\
-         [< LOOP] starts the song from the start of the loop.<br />\
         <br />\
          You can also add a buildup with [LOAD BUILDUP], or remove it<br />\
          with [REMOVE].<br />\
