@@ -92,10 +92,14 @@ Respack.prototype.getBlob = function(url, progress) {
         req.open('GET', url, true);
         req.responseType = 'blob';
         req.onload = () => {
-            resolve(req.response);
+            if(req.status == 200) {
+                resolve(req.response);
+            } else {
+                reject(Error(req.status + ": Could not fetch respack at " + url));
+            }
         };
         req.onerror = function() {
-            reject(Error("Could not fetch respack at URL" + url));
+            reject(Error(req.status + ": Could not fetch respack at " + url));
         };
         req.onprogress = event => {
             if (event.lengthComputable) {
@@ -109,8 +113,12 @@ Respack.prototype.getBlob = function(url, progress) {
         };
         req.send();
     }).catch(error => {
-        // Infinitely more useful than the error Same Origin gives
-        throw Error("Could not fetch respack at URL" + url);
+        // Infinitely more user friendly than the error Same Origin gives
+        if(error.code == 1012) {
+            throw Error("Respack at URL " + url + " is restricted. Check CORS.");
+        } else {
+            throw error;
+        }
     });
 }
 
