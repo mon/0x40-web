@@ -1027,6 +1027,8 @@ HalloweenUI.prototype.initUI = function() {
     this.vignette = document.createElement("div");
     this.vignette.className = "hues-h-vignette";
     this.root.appendChild(this.vignette);
+    
+    this.addCoreCallback("invert", this.invert.bind(this));
 }
 
 HalloweenUI.prototype.beat = function(beats, index) {
