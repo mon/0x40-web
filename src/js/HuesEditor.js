@@ -22,6 +22,9 @@
 (function(window, document) {
 "use strict";
 
+var WAVE_PIXELS_PER_SECOND = 100;
+var WAVE_HEIGHT_PIXELS = 20;
+
 function HuesEditor(core) {
     this.buildEditSize = 80; // pixels, including header
     this.buildEdit = null;
@@ -34,6 +37,14 @@ function HuesEditor(core) {
     
     this.undoBuffer = [];
     this.redoBuffer = [];
+    
+    // For rendering the waveform
+    this.buildWave = null;
+    this.loopWave = null;
+    this.buildWaveBuff = null;
+    this.loopWaveBuff = null;
+    this.waveContext = null;
+    this.waveCanvas = null;
     
     // for storing respacks created with "new"
     this.respack = null;
@@ -119,6 +130,8 @@ HuesEditor.prototype.resize = function(noHilightCalc) {
         this.hilightHeight = hilight.clientHeight;
         this.editorWidth = this.loopEdit._beatmap.clientWidth;
         this.root.removeChild(hilight);
+        
+        this.waveCanvas.width = this.waveCanvas.clientWidth;
     }
 }
 
@@ -185,6 +198,7 @@ HuesEditor.prototype.onNewSong = function(song) {
         if(song == this.song) {
             // Because you can "edit current" before it loads
             this.updateInfo();
+            this.updateWaveform();
         } else {
             this.linked = false;
             // Clear beat hilight
@@ -192,6 +206,9 @@ HuesEditor.prototype.onNewSong = function(song) {
             this.loopEdit._hilight.innerHTML = "&block;";
             this.buildEdit._hilight.className = "beat-hilight hidden";
             this.loopEdit._hilight.className = "beat-hilight hidden";
+            // Clear waveform
+            this.buildWave = null;
+            this.loopWave = null;
         }
     }
 }
@@ -277,6 +294,7 @@ HuesEditor.prototype.loadAudio = function(editor) {
         this.core.updateBeatLength();
         // We may have to go backwards in time
         this.core.recalcBeatIndex();
+        this.updateWaveform();
     }).catch(error => {
         console.log(error);
         alert("Couldn't load song! Is it a LAME encoded MP3?");
@@ -293,9 +311,13 @@ HuesEditor.prototype.removeAudio = function(editor) {
     this.reflow(editor, "");
     // Is the loop playable?
     if(this.song.sound) {
-        this.core.soundManager.playSong(this.song, true, true);
+        this.core.soundManager.playSong(this.song, true, true)
+        .then(() => {
+            this.updateWaveform();
+        });
     } else {
         this.core.soundManager.stop();
+        this.updateWaveform();
     }
 }
 
@@ -357,6 +379,7 @@ HuesEditor.prototype.newSong = function(song) {
     
     this.linked = true;
     this.updateInfo();
+    this.updateWaveform();
 }
 
 HuesEditor.prototype.updateInfo = function() {
@@ -937,10 +960,113 @@ HuesEditor.prototype.uiCreateControls = function() {
 
 HuesEditor.prototype.uiCreateVisualiser = function() {
     // TODO placeholder
-    var waveDiv = document.createElement("div");
-    waveDiv.id = "edit-waveform";
-    this.root.appendChild(waveDiv);
+    var wave = document.createElement("canvas");
+    wave.id = "edit-waveform";
+    wave.height = WAVE_HEIGHT_PIXELS;
+    this.root.appendChild(wave);
+    this.waveCanvas = wave;
+    this.waveContext = wave.getContext("2d");
+    
+    this.core.addEventListener("frame", this.drawWave.bind(this));
 };
+
+HuesEditor.prototype.updateWaveform = function() {
+    if(this.buildWaveBuff != this.core.soundManager.buildup) {
+        this.buildWaveBuff = this.core.soundManager.buildup;
+        this.buildWave = this.renderWave(this.buildWaveBuff, this.core.soundManager.buildLength);
+    }
+    if(this.loopWaveBuff != this.core.soundManager.loop) {
+        this.loopWaveBuff = this.core.soundManager.loop;
+        this.loopWave = this.renderWave(this.loopWaveBuff, this.core.soundManager.loopLength);
+    }
+}
+
+HuesEditor.prototype.renderWave = function(buffer, length) {
+    if(!buffer) {
+        return null;
+    }
+    // The individual wave section
+    var wave = document.createElement("canvas");
+    var waveContext = wave.getContext("2d");
+    
+    wave.height = WAVE_HEIGHT_PIXELS;
+    wave.width = Math.floor(WAVE_PIXELS_PER_SECOND * length);
+    
+    var samplesPerPixel = Math.floor(buffer.sampleRate / WAVE_PIXELS_PER_SECOND);
+    var waveData = [];
+    for(var i = 0; i < buffer.numberOfChannels; i++) {
+        waveData.push(buffer.getChannelData(i));
+    }
+    // Half pixel offset makes things look crisp
+    var pixel = 0.5;
+    waveContext.strokeStyle = "black";
+    var halfHeight = WAVE_HEIGHT_PIXELS/2;
+    for(var i = 0; i < buffer.length; i += samplesPerPixel) {
+        var min = 0, max = 0;
+        for(var j = 0; j < samplesPerPixel && i + j < buffer.length; j++) {
+            for(var chan = 0; chan < waveData.length; chan++) {
+                var sample = waveData[chan][i+j];
+                if(sample > max) max = sample;
+                if(sample < min) min = sample;
+            }
+        }
+        var maxPix = Math.floor(halfHeight + max * halfHeight);
+        // Min is negative, addition is correct
+        var minPix = Math.floor(halfHeight + min * halfHeight);
+        waveContext.beginPath();
+        waveContext.moveTo(pixel, maxPix);
+        waveContext.lineTo(pixel, minPix);
+        waveContext.stroke();
+        pixel+=1;
+    }
+    
+    return wave;
+}
+
+HuesEditor.prototype.drawWave = function() {
+    var width = this.waveCanvas.width;
+    var now = this.core.soundManager.currentTime();
+    var span = width / WAVE_PIXELS_PER_SECOND / 2;
+    var minTime = now - span;
+    var maxTime = now + span;
+    
+    this.waveContext.clearRect(0, 0, width, WAVE_HEIGHT_PIXELS);
+    
+    if(this.buildWave && minTime < 0) {
+        var bLen = this.core.soundManager.buildLength;
+        var center = Math.floor((now + bLen) / bLen * this.buildWave.width);
+        this.drawOneWave(this.buildWave, center, width);
+    }
+    
+    if(this.loopWave && maxTime > 0) {
+        var loopLen = this.core.soundManager.loopLength;
+        var clampedNow = (minTime % loopLen) + span;
+        var center = Math.floor(clampedNow / loopLen * this.loopWave.width);
+        this.drawOneWave(this.loopWave, center, width);
+        
+        var clampedNext = (maxTime % loopLen) - span;
+        // We've looped and need to draw 2 things
+        if(clampedNext < clampedNow) {
+            var center = Math.floor(clampedNext / loopLen * this.loopWave.width);
+            this.drawOneWave(this.loopWave, center, width);
+        }
+    }
+    
+    // trackbar
+    this.waveContext.strokeStyle = "red";
+    this.waveContext.beginPath();
+    this.waveContext.moveTo(width/2, 0);
+    this.waveContext.lineTo(width/2, WAVE_HEIGHT_PIXELS);
+    this.waveContext.stroke();
+}
+
+HuesEditor.prototype.drawOneWave = function(wave, center, width) {
+    this.waveContext.drawImage(wave,
+                               center - width/2, 0,        // source x/y
+                               width, WAVE_HEIGHT_PIXELS,  // source width/height
+                               0, 0,                       // dest x/y
+                               width, WAVE_HEIGHT_PIXELS); // dest width/height
+}
 
 HuesEditor.prototype.generateXML = function() {
     if(!this.song) {
@@ -1019,7 +1145,6 @@ HuesEditor.prototype.copyXML = function() {
     } else {
         alert("Copy failed! Try saving instead");
     }
-    
 }
     
 window.HuesEditor = HuesEditor;
