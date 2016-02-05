@@ -29,7 +29,7 @@ function HuesCore(defaults) {
     // Yes, we do indeed have Javascript
     this.clearMessage();
     // Bunch-o-initialisers
-    this.version = "0x0B";
+    this.version = "0x14";
     this.beatIndex = 0;
     
     // How long a beat lasts for in each section
