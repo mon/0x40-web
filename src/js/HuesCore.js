@@ -394,6 +394,9 @@ HuesCore.prototype.setSong = function(index) {
 HuesCore.prototype.updateBeatLength = function() {
     this.loopLength = this.soundManager.loopLength / this.currentSong.rhythm.length;
     if(this.currentSong.buildup) {
+        if (!this.currentSong.buildupRhythm) {
+            this.currentSong.buildupRhythm = ".";
+        }
         this.buildLength = this.soundManager.buildLength / this.currentSong.buildupRhythm.length;
     } else {
         this.buildLength = -1;
@@ -409,9 +412,6 @@ HuesCore.prototype.getBeatLength = function() {
 }
 
 HuesCore.prototype.fillBuildup = function() {
-    if (!this.currentSong.buildupRhythm) {
-        this.currentSong.buildupRhythm = ".";
-    }
     // update loop length for flash style filling
     this.updateBeatLength();
     if(this.currentSong.buildup) {
@@ -430,7 +430,7 @@ HuesCore.prototype.fillBuildup = function() {
         }
         console.log("Buildup length:", buildBeats);
     }
-    // update with a beatmap of possibly different length
+    // update with a buildup of possibly different length
     this.updateBeatLength();
     if(this.doBuildup) {
         this.beatIndex = -this.currentSong.buildupRhythm.length;
