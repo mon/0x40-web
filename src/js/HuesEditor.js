@@ -560,6 +560,8 @@ HuesEditor.prototype.uiCreateEditArea = function() {
         if(!this.song.independentBuild) {
             // Correct the lengths
             this.setText(this.loopEdit, this.getText(this.loopEdit));
+        } else {
+            this.updateInfo();
         }
     };
     this.timeLock._locker = locker;
