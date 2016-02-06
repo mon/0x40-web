@@ -19,7 +19,7 @@ Once you've made your loop, you can optionally add a Buildup and repeat the proc
 When you're finished, **don't forget** to copy or save the XML to save your work! You can then put your song into a [respack](Respacks.md) and share it!
 
 ### Editing tips  
-- Right click on the beatmap to seek to that position. Don't wait until the song repeats!
+- **Right click on the beatmap to seek** to that position. Don't wait until the song repeats!
 - Use the buttons at the bottom left to slow the song down and make tricky sections easier to map.
 - Rewind to the start of the song or the start of the buildup with the arrows next to the `Buildup` and `Rhythm` labels.
 - If you need more room to edit a part, resize it with the handle in between the sections.
