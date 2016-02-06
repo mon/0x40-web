@@ -29,13 +29,13 @@
   * like a custom info page, simply leave them out.
   */
 
-var huesInfo = {
+let huesInfo = {
     versionID: "versionText",
     referenceID: "reference",
     referenceClass: "info-ref"
 };
 
-var beatGlossary = [
+let beatGlossary = [
     "x Vertical blur (snare)",
     "o Horizontal blur (bass)",
     "- No blur",
@@ -51,7 +51,7 @@ var beatGlossary = [
     "I Invert & change image"
 ];
 
-var shortcuts = [
+let shortcuts = [
     "↑↓  Change song",
     "←→  Change image",
     "[N] Random song",
@@ -69,9 +69,9 @@ var shortcuts = [
 ];
 
 function populateHuesInfo(version) {
-    var versionInt = parseInt(version);
+    let versionInt = parseInt(version);
     
-    var versionElem = document.getElementById(huesInfo.versionID);
+    let versionElem = document.getElementById(huesInfo.versionID);
     if(versionElem) {
         versionElem.textContent = "v" + (versionInt/10).toFixed(1);
     }
@@ -80,23 +80,23 @@ function populateHuesInfo(version) {
     addInfo("Keyboard shortcuts", shortcuts);
 }
 
-var addInfo = function(titleText, list) {
-    var refElem = document.getElementById(huesInfo.referenceID);
+let addInfo = function(titleText, list) {
+    let refElem = document.getElementById(huesInfo.referenceID);
     if(!refElem) {
         return;
     }
     
-    var info = document.createElement("div");
+    let info = document.createElement("div");
     info.className = huesInfo.referenceClass;
     refElem.appendChild(info);
     
-    var title = document.createElement("h3");
+    let title = document.createElement("h3");
     title.textContent = titleText;
     info.appendChild(title);
     
-    var listElem = document.createElement("ul");
+    let listElem = document.createElement("ul");
     list.forEach(function(elem) {
-        var item = document.createElement("li");
+        let item = document.createElement("li");
         item.textContent = elem;
         listElem.appendChild(item);
     });

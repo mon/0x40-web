@@ -124,7 +124,7 @@ function HuesCore(defaults) {
         return false;
     };
     
-    var versionString = "v" + (parseInt(this.version)/10).toFixed(1);
+    let versionString = "v" + (parseInt(this.version)/10).toFixed(1);
     console.log("0x40 Hues " + versionString + " - start your engines!");
     populateHuesInfo(this.version);
     this.colours = this.oldColours;
@@ -157,9 +157,9 @@ function HuesCore(defaults) {
         
         if(defaults.load) {
             return this.resourceManager.addAll(defaults.respacks, function(progress) {
-                var prog = document.getElementById("preMain");
-                var scale = Math.floor(progress * defaults.preloadMax);
-                var padding = defaults.preloadMax.toString(defaults.preloadBase).length;
+                let prog = document.getElementById("preMain");
+                let scale = Math.floor(progress * defaults.preloadMax);
+                let padding = defaults.preloadMax.toString(defaults.preloadBase).length;
                 prog.textContent = defaults.preloadPrefix + (Array(padding).join("0")+scale.toString(defaults.preloadBase)).slice(-padding);
             });
         } else {
@@ -198,13 +198,13 @@ function HuesCore(defaults) {
             e.target.contentEditable === "true") {
             return true;
         }
-        var key = e.keyCode || e.which;
+        let key = e.keyCode || e.which;
         return this.keyHandler(key);
     };
 }
 
 HuesCore.prototype.callEventListeners = function(ev) {
-    var args = Array.prototype.slice.call(arguments, 1);
+    let args = Array.prototype.slice.call(arguments, 1);
     this.eventListeners[ev].forEach(function(callback) {
         callback.apply(null, args);
     });
@@ -239,25 +239,25 @@ HuesCore.prototype.updateVisualiser = function() {
         return;
     }
     
-    var logArrays = this.soundManager.getVisualiserData();
+    let logArrays = this.soundManager.getVisualiserData();
     if(!logArrays) {
         return;
     }
 
     this.vCtx.clearRect(0, 0, this.vCtx.canvas.width, this.vCtx.canvas.height);
     
-    var gradient=this.vCtx.createLinearGradient(0,64,0,0);
+    let gradient=this.vCtx.createLinearGradient(0,64,0,0);
     gradient.addColorStop(1,"rgba(255,255,255,0.6)");
     gradient.addColorStop(0,"rgba(20,20,20,0.6)");
     this.vCtx.fillStyle = gradient;
     
-    var barWidth = 2;
-    var barHeight;
-    var x = 0;
-    for(var a = 0; a < logArrays.length; a++) {
-        var vals = logArrays[a];
-        for(var i = 0; i < vals.length; i++) {
-            var index = 0;
+    let barWidth = 2;
+    let barHeight;
+    let x = 0;
+    for(let a = 0; a < logArrays.length; a++) {
+        let vals = logArrays[a];
+        for(let i = 0; i < vals.length; i++) {
+            let index = 0;
             if(logArrays.length == 2 && a === 0) {
                 index = vals.length - i - 1;
             } else {
@@ -279,7 +279,7 @@ HuesCore.prototype.animationLoop = function() {
         return;
     }
     this.updateVisualiser();
-    var now = this.soundManager.currentTime();
+    let now = this.soundManager.currentTime();
     if(now < 0) {
         this.callEventListeners("time", 0);
     } else {
@@ -288,9 +288,9 @@ HuesCore.prototype.animationLoop = function() {
             this.currentSong.buildupPlayed = true;
         }
     }
-    for(var beatTime = this.beatIndex * this.getBeatLength(); beatTime < now;
+    for(let beatTime = this.beatIndex * this.getBeatLength(); beatTime < now;
             beatTime = ++this.beatIndex * this.getBeatLength()) {
-        var beat = this.getBeat(this.beatIndex);
+        let beat = this.getBeat(this.beatIndex);
         this.beater(beat);
     }
     this.callEventListeners("frame");
@@ -300,9 +300,9 @@ HuesCore.prototype.recalcBeatIndex = function() {
     this.beatIndex = Math.floor(this.soundManager.currentTime() / this.getBeatLength());
     
     // We should sync up to how many inverts there are
-    var build = this.currentSong.buildupRhythm;
-    var rhythm = this.currentSong.rhythm;
-    var mapSoFar;
+    let build = this.currentSong.buildupRhythm;
+    let rhythm = this.currentSong.rhythm;
+    let mapSoFar;
     if(this.beatIndex < 0) {
         mapSoFar = build.slice(0, this.beatIndex + build.length);
     } else {
@@ -314,7 +314,7 @@ HuesCore.prototype.recalcBeatIndex = function() {
         mapSoFar = build + rhythm.slice(0, this.beatIndex);
     }
     // If there's an odd amount of inverts thus far, invert our display
-    var invertCount = (mapSoFar.match(/i|I/g)||[]).length;
+    let invertCount = (mapSoFar.match(/i|I/g)||[]).length;
     this.setInvert(invertCount % 2);
 };
 
@@ -329,7 +329,7 @@ HuesCore.prototype.getBeatIndex = function() {
 };
 
 HuesCore.prototype.getSafeBeatIndex = function() {
-    var index = this.getBeatIndex();
+    let index = this.getBeatIndex();
     if(index < 0) {
         return 0;
     } else {
@@ -343,19 +343,19 @@ HuesCore.prototype.blurUpdated = function(x, y) {
 
 HuesCore.prototype.nextSong = function() {
     this.lastSongArray = [];
-    var index = (this.songIndex + 1) % this.resourceManager.enabledSongs.length;
+    let index = (this.songIndex + 1) % this.resourceManager.enabledSongs.length;
     this.setSong(index);
 };
 
 HuesCore.prototype.previousSong = function() {
     this.lastSongArray = [];
-    var index = ((this.songIndex - 1) + this.resourceManager.enabledSongs.length) % this.resourceManager.enabledSongs.length;
+    let index = ((this.songIndex - 1) + this.resourceManager.enabledSongs.length) % this.resourceManager.enabledSongs.length;
     this.setSong(index);
 };
 
 HuesCore.prototype.setSongByName = function(name) {
-    var songs = this.resourceManager.enabledSongs;
-    for(var i = 0; i < songs.length; i++) {
+    let songs = this.resourceManager.enabledSongs;
+    for(let i = 0; i < songs.length; i++) {
         if(songs[i].title == name) {
             return this.setSong(i);
         }
@@ -365,7 +365,7 @@ HuesCore.prototype.setSongByName = function(name) {
 
 /* To set songs via reference instead of index - used in HuesEditor */
 HuesCore.prototype.setSongOject = function(song) {
-    for(var i = 0; i < this.resourceManager.enabledSongs.length; i++) {
+    for(let i = 0; i < this.resourceManager.enabledSongs.length; i++) {
         if(this.resourceManager.enabledSongs[i] === song) {
             return this.setSong(i);
         }
@@ -438,7 +438,7 @@ HuesCore.prototype.fillBuildup = function() {
             // Do nothing
         } else {
             console.log("Flash behaviour - filling buildup");
-            var buildBeats = Math.floor(this.soundManager.buildLength / this.loopLength);
+            let buildBeats = Math.floor(this.soundManager.buildLength / this.loopLength);
             if(buildBeats < 1) {
                 buildBeats = 1;
             }
@@ -455,14 +455,14 @@ HuesCore.prototype.fillBuildup = function() {
 };
 
 HuesCore.prototype.randomSong = function() {
-    var songCount = this.resourceManager.enabledSongs.length;
-    var index=Math.floor((Math.random() * songCount));
+    let songCount = this.resourceManager.enabledSongs.length;
+    let index=Math.floor((Math.random() * songCount));
     if (songCount > 1 && (index == this.songIndex || this.lastSongArray.indexOf(index) != -1)) {
         this.randomSong();
     } else {
         console.log("Randoming a song!");
         this.setSong(index);
-        var noRepeat = Math.min(5, Math.floor(songCount / 2));
+        let noRepeat = Math.min(5, Math.floor(songCount / 2));
         while (this.lastSongArray.length > noRepeat && noRepeat >= 0) {
             this.lastSongArray.shift();
         }
@@ -498,7 +498,7 @@ HuesCore.prototype.onLoop = function() {
 };
 
 HuesCore.prototype.doAutoSong = function() {
-    var func = null;
+    let func = null;
     if(localStorage["autoSongShuffle"] == "on") {
         func = this.randomSong;
     } else {
@@ -530,20 +530,20 @@ HuesCore.prototype.resetAudio = function() {
 
 HuesCore.prototype.randomImage = function() {
     if(localStorage["shuffleImages"] == "on") {
-        var len = this.resourceManager.enabledImages.length;
-        var index = Math.floor(Math.random() * len);
+        let len = this.resourceManager.enabledImages.length;
+        let index = Math.floor(Math.random() * len);
         if ((index == this.imageIndex || this.lastImageArray.indexOf(index) != -1) && len > 1) {
             this.randomImage();
         } else {
             this.setImage(index);
             this.lastImageArray.push(index);
-            var cull = Math.min(20, Math.floor((len / 2)));
+            let cull = Math.min(20, Math.floor((len / 2)));
             while (this.lastImageArray.length > cull && cull >= 0) {
                 this.lastImageArray.shift();
             }
         }
     } else { // jk, not actually random
-        var img=(this.imageIndex + 1) % this.resourceManager.enabledImages.length;
+        let img=(this.imageIndex + 1) % this.resourceManager.enabledImages.length;
         this.setImage(img);
     }
 };
@@ -551,7 +551,7 @@ HuesCore.prototype.randomImage = function() {
 HuesCore.prototype.setImage = function(index) {
     // If there are no images, this corrects NaN to 0
     this.imageIndex = index ? index : 0;
-    var img=this.resourceManager.enabledImages[this.imageIndex];
+    let img=this.resourceManager.enabledImages[this.imageIndex];
     if (img == this.currentImage && img !== null) {
         return;
     }
@@ -566,8 +566,8 @@ HuesCore.prototype.setImage = function(index) {
 };
 
 HuesCore.prototype.setImageByName = function(name) {
-    var images = this.resourceManager.enabledImages;
-    for(var i = 0; i < images.length; i++) {
+    let images = this.resourceManager.enabledImages;
+    for(let i = 0; i < images.length; i++) {
         if(images[i].name == name || images[i].fullname == name) {
             this.setImage(i);
             return;
@@ -578,20 +578,20 @@ HuesCore.prototype.setImageByName = function(name) {
 
 HuesCore.prototype.nextImage = function() {
     this.setIsFullAuto(false);
-    var img=(this.imageIndex + 1) % this.resourceManager.enabledImages.length;
+    let img=(this.imageIndex + 1) % this.resourceManager.enabledImages.length;
     this.setImage(img);
     this.lastImageArray = [];
 };
 
 HuesCore.prototype.previousImage = function() {
     this.setIsFullAuto(false);
-    var img=((this.imageIndex - 1) + this.resourceManager.enabledImages.length) % this.resourceManager.enabledImages.length;
+    let img=((this.imageIndex - 1) + this.resourceManager.enabledImages.length) % this.resourceManager.enabledImages.length;
     this.setImage(img);
     this.lastImageArray = [];
 };
 
 HuesCore.prototype.randomColourIndex = function() {
-    var index=Math.floor((Math.random() * 64));
+    let index=Math.floor((Math.random() * 64));
     if (index == this.colourIndex) {
         return this.randomColourIndex();
     }
@@ -599,13 +599,13 @@ HuesCore.prototype.randomColourIndex = function() {
 };
 
 HuesCore.prototype.randomColour = function(isFade) {
-    var index=this.randomColourIndex();
+    let index=this.randomColourIndex();
     this.setColour(index, isFade);
 };
 
 HuesCore.prototype.setColour = function(index, isFade) {
     this.colourIndex = index;
-    var colour = this.colours[this.colourIndex];
+    let colour = this.colours[this.colourIndex];
     this.callEventListeners("newcolour", colour, isFade);
 };
 
@@ -655,11 +655,11 @@ HuesCore.prototype.beater = function(beat) {
             /* falls through */
         case '~':
             // case: fade in build, not in rhythm. Must max out fade timer.
-            var maxSearch = this.currentSong.rhythm.length;
+            let maxSearch = this.currentSong.rhythm.length;
             if(this.beatIndex < 0) {
                 maxSearch -= this.beatIndex;
             }
-            var fadeLen;
+            let fadeLen;
             for (fadeLen = 1; fadeLen <= maxSearch; fadeLen++) {
                 if (this.getBeat(fadeLen + this.beatIndex) != ".") {
                     break;
@@ -691,8 +691,8 @@ HuesCore.prototype.beater = function(beat) {
 HuesCore.prototype.getBeatString = function(length) {
     length = length ? length : 256;
 
-    var beatString = "";
-    var song = this.currentSong;
+    let beatString = "";
+    let song = this.currentSong;
     if (song) {
         if(this.beatIndex < 0) {
             beatString = song.buildupRhythm.slice(

@@ -108,7 +108,7 @@ HuesCanvas.prototype.settingsUpdated = function() {
 
 HuesCanvas.prototype.resize = function() {
     // height is constant 720px, we expand width to suit
-    var ratio = window.innerWidth / window.innerHeight;
+    let ratio = window.innerWidth / window.innerHeight;
     this.canvas.width = Math.ceil(720 * ratio);
     this.offCanvas.height = this.canvas.height;
     this.offCanvas.width = this.canvas.width;
@@ -118,11 +118,11 @@ HuesCanvas.prototype.resize = function() {
 };
 
 HuesCanvas.prototype.redraw = function() {
-    var offset; // for centering/right/left align
-    var bOpacity;
-    var width = this.canvas.width;
+    let offset; // for centering/right/left align
+    let bOpacity;
+    let width = this.canvas.width;
 
-    var cTime = this.audio.currentTime;
+    let cTime = this.audio.currentTime;
     // white BG for the hard light filter
     this.context.globalAlpha = 1;
     this.context.globalCompositeOperation = "source-over";
@@ -141,7 +141,7 @@ HuesCanvas.prototype.redraw = function() {
     }
 
     if(this.image && (this.image.bitmap || this.image.bitmaps)) {
-        var bitmap = this.image.animated ?
+        let bitmap = this.image.animated ?
             this.image.bitmaps[this.animFrame] : this.image.bitmap;
         if(this.smartAlign) {
             switch(this.image.align) {
@@ -191,9 +191,9 @@ HuesCanvas.prototype.redraw = function() {
         // x blur moves inwards from the corners, y comes out
         // So the base colour is inverted for y, normal for x
         // Thus if the y start is more recent, we invert
-        var baseInvert = this.trippyStart[1] > this.trippyStart[0];
-        var invertC = this.intToHex(0xFFFFFF ^ this.colour);
-        var normalC = this.intToHex(this.colour);
+        let baseInvert = this.trippyStart[1] > this.trippyStart[0];
+        let invertC = this.intToHex(0xFFFFFF ^ this.colour);
+        let normalC = this.intToHex(this.colour);
         this.offContext.fillStyle = baseInvert ? invertC : normalC;
         this.offContext.fillRect(0,0,width,720);
         
@@ -202,7 +202,7 @@ HuesCanvas.prototype.redraw = function() {
             return b - a;
         });
         
-        var invert = !baseInvert;
+        let invert = !baseInvert;
         for(let i = 0; i < 2; i++) {
             if(this.trippyRadii[i] === 0) {
                 continue;
@@ -242,7 +242,7 @@ HuesCanvas.prototype.intToHex = function(num) {
 HuesCanvas.prototype.animationLoop = function() {
     if (this.colourFade) {
         let delta = this.audio.currentTime - this.colourFadeStart;
-        var fadeVal = delta / this.colourFadeLength;
+        let fadeVal = delta / this.colourFadeLength;
         if (fadeVal >= 1) {
             this.stopFade();
             this.colour = this.newColour;
@@ -256,7 +256,7 @@ HuesCanvas.prototype.animationLoop = function() {
     }
     if(this.image && this.image.animated){
         if(this.image.beatsPerAnim && this.core.currentSong && this.core.currentSong.charsPerBeat) {
-            var a = this.animFrame;
+            let a = this.animFrame;
             this.syncAnim();
             if(this.animFrame != a) {
                 this.needsRedraw = true;
@@ -277,7 +277,7 @@ HuesCanvas.prototype.animationLoop = function() {
         this.blurDistance = this.blurAmount * Math.exp(-this.blurDecay * delta);
         
         // Update UI
-        var dist = this.blurDistance / this.blurAmount;
+        let dist = this.blurDistance / this.blurAmount;
         if(this.xBlur)
             this.core.blurUpdated(dist, 0);
         else
@@ -343,20 +343,20 @@ HuesCanvas.prototype.beat = function() {
 };
 
 HuesCanvas.prototype.syncAnim = function() {
-    var song = this.core.currentSong;
+    let song = this.core.currentSong;
     if(!song) { // fallback to default
        return;
     }
-    var index = this.core.beatIndex;
+    let index = this.core.beatIndex;
     // When animation has more frames than song has beats, or part thereof
     if(this.lastBeat && this.core.getBeatLength()) {
-        var interp = (this.audio.currentTime - this.lastBeat) / this.core.getBeatLength();
+        let interp = (this.audio.currentTime - this.lastBeat) / this.core.getBeatLength();
         index += Math.min(interp, 1);
     }
     // This loops A-OK because the core's beatIndex never rolls over for a new loop
-    var beatLoc = (index / song.charsPerBeat) % this.image.beatsPerAnim;
+    let beatLoc = (index / song.charsPerBeat) % this.image.beatsPerAnim;
 
-    var aLen = this.image.bitmaps.length;
+    let aLen = this.image.bitmaps.length;
     this.animFrame = Math.floor(aLen * (beatLoc / this.image.beatsPerAnim));
     if(this.image.syncOffset) {
         this.animFrame += this.image.syncOffset;
@@ -426,15 +426,15 @@ HuesCanvas.prototype.stopFade = function() {
 
 HuesCanvas.prototype.mixColours = function(percent) {
     percent = Math.min(1, percent);
-    var oldR = this.oldColour >> 16 & 0xFF;
-    var oldG = this.oldColour >> 8  & 0xFF;
-    var oldB = this.oldColour       & 0xFF;
-    var newR = this.newColour >> 16 & 0xFF;
-    var newG = this.newColour >> 8  & 0xFF;
-    var newB = this.newColour       & 0xFF;
-    var mixR = oldR * (1 - percent) + newR * percent;
-    var mixG = oldG * (1 - percent) + newG * percent;
-    var mixB = oldB * (1 - percent) + newB * percent;
+    let oldR = this.oldColour >> 16 & 0xFF;
+    let oldG = this.oldColour >> 8  & 0xFF;
+    let oldB = this.oldColour       & 0xFF;
+    let newR = this.newColour >> 16 & 0xFF;
+    let newG = this.newColour >> 8  & 0xFF;
+    let newB = this.newColour       & 0xFF;
+    let mixR = oldR * (1 - percent) + newR * percent;
+    let mixG = oldG * (1 - percent) + newG * percent;
+    let mixB = oldB * (1 - percent) + newB * percent;
     this.colour = mixR << 16 | mixG << 8 | mixB;
 };
 
@@ -486,8 +486,8 @@ HuesCanvas.prototype.setAnimating = function(anim) {
 HuesCanvas.prototype.startSnow = function() {
     this.snowing = true;
     this.snowCanvas.style.display = "block";
-    var height = this.canvas.height;
-    var width = this.canvas.width;
+    let height = this.canvas.height;
+    let width = this.canvas.width;
     this.snowAngle = 0;
     this.snowflakes = [];
 	for(let i = 0; i < this.maxSnow; i++) {
@@ -507,9 +507,9 @@ HuesCanvas.prototype.stopSnow = function() {
 };
 
 HuesCanvas.prototype.drawSnow = function() {
-    var width = this.snowCanvas.width;
-    var height = this.snowCanvas.height;
-    var delta = this.lastSnow - this.audio.currentTime;
+    let width = this.snowCanvas.width;
+    let height = this.snowCanvas.height;
+    let delta = this.lastSnow - this.audio.currentTime;
     this.snowContext.clearRect(0, 0, width, height);
 
     this.snowContext.fillStyle = "rgba(255, 255, 255, 0.8)";

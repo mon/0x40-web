@@ -163,7 +163,7 @@ HuesSettings.prototype.settingsOptions = {
                 }
             },
             {type:"varText", text:function() {
-                var ret = "";
+                let ret = "";
                 switch(localStorage["autoSong"]) {
                     case "loop":
                         ret = "loop";
@@ -210,7 +210,7 @@ function HuesSettings(defaults) {
     this.textCallbacks = [];
     this.visCallbacks = [];
 
-    for(var attr in this.defaultSettings) {
+    for(let attr in this.defaultSettings) {
       if(this.defaultSettings.hasOwnProperty(attr)) {
           if(defaults[attr] === undefined) {
               defaults[attr] = this.defaultSettings[attr];
@@ -241,15 +241,15 @@ function HuesSettings(defaults) {
     document.getElementById("closeButton").onclick = this.hide.bind(this);
     
     // we also care about tabs looking nice.
-    var checkListener = function() { 
+    let checkListener = function() { 
         for(let i = 0; i < tabs.length; i++) {
             tabs[i].className = "tab-label";
         }
         this._label.className = "tab-label checked";
     };
-    var tabs = document.getElementsByClassName("tab-label");
+    let tabs = document.getElementsByClassName("tab-label");
     for(let i = 0; i < tabs.length; i++) {
-        var check = document.getElementById(tabs[i].htmlFor);
+        let check = document.getElementById(tabs[i].htmlFor);
         check._label = tabs[i];
         check.addEventListener("change", checkListener);
     }
@@ -306,10 +306,10 @@ HuesSettings.prototype.showInfo = function() {
 };
 
 HuesSettings.prototype.initUI = function() {
-    var doc = this.root.ownerDocument;
+    let doc = this.root.ownerDocument;
         
     // Don't make in every loop
-    var intValidator = function(self, variable) {
+    let intValidator = function(self, variable) {
         this.value = this.value.replace(/\D/g,'');
         if(this.value === "" || this.value < 1) {
             this.value = "";
@@ -321,25 +321,25 @@ HuesSettings.prototype.initUI = function() {
     };
 
     // To order things nicely
-    for(var cat in this.settingsCategories) {
+    for(let cat in this.settingsCategories) {
             if(this.settingsCategories.hasOwnProperty(cat)) {
-            var catContainer = doc.createElement("div");
+            let catContainer = doc.createElement("div");
             catContainer.textContent = cat;
             catContainer.className = "settings-category";
-            var cats = this.settingsCategories[cat];
+            let cats = this.settingsCategories[cat];
             for(let i = 0; i < cats.length; i++) {
-                var setName = cats[i];
-                var setContainer = doc.createElement("div");
-                var setting = this.settingsOptions[setName];
+                let setName = cats[i];
+                let setContainer = doc.createElement("div");
+                let setting = this.settingsOptions[setName];
                 setContainer.textContent = setting.name;
                 setContainer.className = "settings-individual";
-                var buttonContainer = doc.createElement("div");
+                let buttonContainer = doc.createElement("div");
                 buttonContainer.className = "settings-buttons";
                 
-                for(var j = 0; j < setting.options.length; j++) {
-                    var option = setting.options[j];
+                for(let j = 0; j < setting.options.length; j++) {
+                    let option = setting.options[j];
                     if(typeof option === "string") {
-                        var checkbox = doc.createElement("input");
+                        let checkbox = doc.createElement("input");
                         checkbox.className = "settings-checkbox";
                         checkbox.type = "radio";
                         checkbox.name = setName;
@@ -353,19 +353,19 @@ HuesSettings.prototype.initUI = function() {
                         }.bind(checkbox, this);
                         buttonContainer.appendChild(checkbox);
                         // So we can style this nicely
-                        var label = doc.createElement("label");
+                        let label = doc.createElement("label");
                         label.className = "settings-label";
                         label.htmlFor = checkbox.id;
                         label.textContent = option.toUpperCase();
                         buttonContainer.appendChild(label);
                     } else { // special option
                         if(option.type == "varText") {
-                            var text = doc.createElement("span");
+                            let text = doc.createElement("span");
                             text.textContent = option.text();
                             buttonContainer.appendChild(text);
                             this.textCallbacks.push({func:option.text, element:text});
                         } else if(option.type == "input") {
-                            var input = doc.createElement("input");
+                            let input = doc.createElement("input");
                             input.setAttribute("type", "text");
                             input.className = "settings-input";
                             input.value = localStorage[option.variable];
@@ -395,7 +395,7 @@ HuesSettings.prototype.initUI = function() {
 // Set a named index to its named value, returns false if name doesn't exist
 HuesSettings.prototype.set = function(setting, value) {
     value = value.toLowerCase();
-    var opt = this.settingsOptions[setting];
+    let opt = this.settingsOptions[setting];
     if(!opt || opt.options.indexOf(value) == -1) {
         console.log(value, "is not a valid value for", setting);
         return false;
@@ -413,11 +413,11 @@ HuesSettings.prototype.set = function(setting, value) {
 HuesSettings.prototype.updateConditionals = function() {
     // update any conditionally formatted settings text
     for(let i = 0; i < this.textCallbacks.length; i++) {
-        var text = this.textCallbacks[i];
+        let text = this.textCallbacks[i];
         text.element.textContent = text.func();
     }
     for(let i = 0; i < this.visCallbacks.length; i++) {
-        var callback = this.visCallbacks[i];
+        let callback = this.visCallbacks[i];
         callback.element.style.visibility = callback.func() ? "visible" : "hidden";
     }
 };
@@ -425,7 +425,7 @@ HuesSettings.prototype.updateConditionals = function() {
 // Note: This is not defaults as per defaultSettings, but those merged with
 // the defaults given in the initialiser
 HuesSettings.prototype.setDefaults = function() {
-    for(var attr in this.defaults) {
+    for(let attr in this.defaults) {
         if(this.defaults.hasOwnProperty(attr)) {
             if(this.ephemeralSettings.indexOf(attr) != -1) {
                 continue;

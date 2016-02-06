@@ -22,8 +22,8 @@
 (function(window, document) {
 "use strict";
 
-var WAVE_PIXELS_PER_SECOND = 100;
-var WAVE_HEIGHT_PIXELS = 20;
+let WAVE_PIXELS_PER_SECOND = 100;
+let WAVE_HEIGHT_PIXELS = 20;
 
 function HuesEditor(core) {
     this.buildEditSize = 80; // pixels, including header
@@ -64,7 +64,7 @@ function HuesEditor(core) {
 }
 
 HuesEditor.prototype.initUI = function() {
-    var titleButtons = document.createElement("div");
+    let titleButtons = document.createElement("div");
     titleButtons.id = "edit-titlebuttons";
     this.root.appendChild(titleButtons);
     this.saveBtn = this.createButton("Save XML", titleButtons, true);
@@ -73,7 +73,7 @@ HuesEditor.prototype.initUI = function() {
     this.copyBtn.onclick = this.copyXML.bind(this);
     this.undoBtn = this.createButton("Undo", titleButtons, true);
     this.redoBtn = this.createButton("Redo", titleButtons, true);
-    var help = this.createButton("Help?", titleButtons);
+    let help = this.createButton("Help?", titleButtons);
     help.style.backgroundColor = "rgba(0,160,0,0.3)";
     help.onclick = function() {
         window.open("http://0x40hues.blogspot.com/p/0x40-hues-creation-tutorial.html", '_blank');
@@ -98,16 +98,16 @@ HuesEditor.prototype.initUI = function() {
 
 HuesEditor.prototype.resize = function(noHilightCalc) {
     this.root.style.height = (window.innerHeight - 200) + "px";
-    var boxHeight = this.editArea.offsetHeight;
-    var bHeadHeight = this.buildEdit._header.offsetHeight;
-    var lHeadHeight = this.loopEdit._header.offsetHeight;
-    var handleHeight = this.resizeHandle.offsetHeight;
-    var minHeight = bHeadHeight;
-    var maxHeight = boxHeight - handleHeight - lHeadHeight - bHeadHeight;
-    var buildHeight = Math.min(maxHeight, Math.max(minHeight, this.buildEditSize - handleHeight));
+    let boxHeight = this.editArea.offsetHeight;
+    let bHeadHeight = this.buildEdit._header.offsetHeight;
+    let lHeadHeight = this.loopEdit._header.offsetHeight;
+    let handleHeight = this.resizeHandle.offsetHeight;
+    let minHeight = bHeadHeight;
+    let maxHeight = boxHeight - handleHeight - lHeadHeight - bHeadHeight;
+    let buildHeight = Math.min(maxHeight, Math.max(minHeight, this.buildEditSize - handleHeight));
     this.buildEdit.style.height = buildHeight + "px";
     this.buildEdit._box.style.height = (buildHeight - bHeadHeight) + "px";
-    var loopHeight = maxHeight - buildHeight + lHeadHeight;
+    let loopHeight = maxHeight - buildHeight + lHeadHeight;
     this.loopEdit.style.height = loopHeight + "px";
     this.loopEdit._box.style.height = (loopHeight - lHeadHeight) + "px";
     
@@ -122,7 +122,7 @@ HuesEditor.prototype.resize = function(noHilightCalc) {
     // Save to fix Chrome rendering and to enable right click to seek
     // We only resize on a window resize event, not when dragging the handle
     if(!noHilightCalc) {
-        var hilight = document.createElement("div");
+        let hilight = document.createElement("div");
         hilight.className = "beat-hilight";
         hilight.innerHTML = "&block;";
         this.root.appendChild(hilight);
@@ -136,15 +136,15 @@ HuesEditor.prototype.resize = function(noHilightCalc) {
 };
 
 HuesEditor.prototype.createTextInput = function(label, id, subtitle, parent) {
-    var div = document.createElement("div");
+    let div = document.createElement("div");
     div.className = "edit-label";
-    var caption = document.createElement("label");
+    let caption = document.createElement("label");
     caption.innerHTML = label;
     caption.htmlFor = id;
     div.appendChild(caption);
-    var container = document.createElement("span");
+    let container = document.createElement("span");
     container.className = "edit-textbox-container";
-    var input = document.createElement("input");
+    let input = document.createElement("input");
     input.className = "edit-textbox";
     input.type = "text";
     input.id = id;
@@ -158,7 +158,7 @@ HuesEditor.prototype.createTextInput = function(label, id, subtitle, parent) {
 };
 
 HuesEditor.prototype.createButton = function(label, parent, disabled, extraClass) {
-    var button = document.createElement("span");
+    let button = document.createElement("span");
     button.className = "hues-button";
     if(disabled) {
         button.className += " disabled";
@@ -172,11 +172,11 @@ HuesEditor.prototype.createButton = function(label, parent, disabled, extraClass
 };
 
 HuesEditor.prototype.uiCreateInfo = function() {
-    var info = document.createElement("div");
+    let info = document.createElement("div");
     this.topBar.appendChild(info);
     info.id = "edit-info";
     
-    var songUpdate = function(name) {
+    let songUpdate = function(name) {
         if(!this.song ) {
             return;
         }
@@ -217,7 +217,7 @@ HuesEditor.prototype.onBeat = function(map, index) {
     if(!this.song || this.core.currentSong != this.song) {
         return;
     }
-    var editor;
+    let editor;
     if(index < 0) {
         index += this.core.currentSong.buildupRhythm.length;
         editor = this.buildEdit;
@@ -229,8 +229,8 @@ HuesEditor.prototype.onBeat = function(map, index) {
         }
     }
     editor._hilight.className = "beat-hilight";
-    var offsetX = index % editor._breakAt;
-    var offsetY = Math.floor(index / editor._breakAt);
+    let offsetX = index % editor._breakAt;
+    let offsetY = Math.floor(index / editor._breakAt);
     // Not computing width/height here due to Chrome bug
     editor._hilight.style.left = (offsetX * this.hilightWidth) + "px";
     editor._hilight.style.top = (offsetY * this.hilightHeight) + "px";
@@ -248,13 +248,13 @@ HuesEditor.prototype.reflow = function(editor, map) {
     } else {
         editor._hilight.innerHTML = "&block;";
     }
-    var charsPerLine = Math.floor(this.editorWidth / this.hilightWidth);
+    let charsPerLine = Math.floor(this.editorWidth / this.hilightWidth);
     // if it's too long to wrap, just give up
-    var wrap = Math.min(this.wrapAt, charsPerLine);
+    let wrap = Math.min(this.wrapAt, charsPerLine);
     charsPerLine -= charsPerLine % wrap;
     editor._beatCount.textContent = map.length + " beats";
     // http://stackoverflow.com/a/27012001
-    var regex = new RegExp("(.{" + charsPerLine + "})", "g");
+    let regex = new RegExp("(.{" + charsPerLine + "})", "g");
     editor._beatmap.innerHTML = map.replace(regex, "$1<br />");
     editor._breakAt = charsPerLine;
 };
@@ -264,7 +264,7 @@ HuesEditor.prototype.loadAudio = function(editor) {
         return;
     }
     // Disable load button TODO
-    var file = editor._fileInput.files[0];
+    let file = editor._fileInput.files[0];
     // load audio
     this.blobToArrayBuffer(file)
     .then(buffer => {
@@ -273,7 +273,7 @@ HuesEditor.prototype.loadAudio = function(editor) {
         
         this.song[editor._sound] = buffer;
         // Save filename for XML export
-        var noExt = file.name.replace(/\.[^/.]+$/, "");
+        let noExt = file.name.replace(/\.[^/.]+$/, "");
         if(editor._sound == "sound") {
             this.song.name = noExt;
         } else {
@@ -323,7 +323,7 @@ HuesEditor.prototype.removeAudio = function(editor) {
 
 HuesEditor.prototype.blobToArrayBuffer = function(blob) {
     return new Promise((resolve, reject) => {
-        var fr = new FileReader();
+        let fr = new FileReader();
         fr.onload = () => {
             resolve(fr.result);
         };
@@ -387,9 +387,9 @@ HuesEditor.prototype.updateInfo = function() {
         return;
     }
     
-    var loopLen = this.core.soundManager.loopLength;
-    var buildLen = this.core.soundManager.buildLength;
-    var beatLen = (loopLen / this.song.rhythm.length) * 1000;
+    let loopLen = this.core.soundManager.loopLength;
+    let buildLen = this.core.soundManager.buildLength;
+    let beatLen = (loopLen / this.song.rhythm.length) * 1000;
     
     this.loopLen.textContent = loopLen.toFixed(2);
     this.buildLen.textContent = buildLen.toFixed(2);
@@ -451,7 +451,7 @@ HuesEditor.prototype.undoRedo = function(from, to) {
         return;
     }
     // Remove old data
-    var fromData = from.pop();
+    let fromData = from.pop();
     // Make restore from current
     to.push({songVar: fromData.songVar, editor: fromData.editor, text: this.song[fromData.songVar]});
     // Restore to editor
@@ -491,7 +491,7 @@ HuesEditor.prototype.halveBeats = function(editor) {
     }
     if(!this.song.independentBuild) {
         // halve them both
-        var other = editor._rhythm == "rhythm" ? this.buildEdit : this.loopEdit;
+        let other = editor._rhythm == "rhythm" ? this.buildEdit : this.loopEdit;
         if(this.getText(other).length < 2) {
             return;
         }
@@ -508,7 +508,7 @@ HuesEditor.prototype.doubleBeats = function(editor) {
     }
     if(!this.song.independentBuild) {
         // Double them both
-        var other = editor._rhythm == "rhythm" ? this.buildEdit : this.loopEdit;
+        let other = editor._rhythm == "rhythm" ? this.buildEdit : this.loopEdit;
         if(this.getText(other).length === 0) {
             return;
         }
@@ -520,18 +520,18 @@ HuesEditor.prototype.doubleBeats = function(editor) {
 };
 
 HuesEditor.prototype.uiCreateImport = function() {
-    var imports = document.createElement("div");
+    let imports = document.createElement("div");
     this.topBar.appendChild(imports);
     imports.id = "edit-imports";
     
-    var songEdits = document.createElement("div");
+    let songEdits = document.createElement("div");
     imports.appendChild(songEdits);
-    var newSongBtn = this.createButton("New song", songEdits, false, "glow");
+    let newSongBtn = this.createButton("New song", songEdits, false, "glow");
     newSongBtn.onclick = () => {
         this.newSong();
     };
     this.newSongBtn = newSongBtn;
-    var fromSong = this.createButton("Edit current song", songEdits, false, "glow");
+    let fromSong = this.createButton("Edit current song", songEdits, false, "glow");
     fromSong.onclick = () => {
         if(this.core.currentSong) {
             this.newSong(this.core.currentSong);
@@ -539,7 +539,7 @@ HuesEditor.prototype.uiCreateImport = function() {
     };
     this.fromSongBtn = fromSong;
     
-    var songInfos = document.createElement("div");
+    let songInfos = document.createElement("div");
     songInfos.className = "settings-individual";
     songInfos.id = "edit-songstats";
     imports.appendChild(songInfos);
@@ -550,12 +550,12 @@ HuesEditor.prototype.uiCreateImport = function() {
 };
 
 HuesEditor.prototype.uiCreateSongStat = function(name, value, parent) {
-    var container = document.createElement("div");
+    let container = document.createElement("div");
     parent.appendChild(container);
-    var label = document.createElement("span");
+    let label = document.createElement("span");
     label.textContent = name;
     container.appendChild(label);
-    var valueSpan = document.createElement("span");
+    let valueSpan = document.createElement("span");
     valueSpan.textContent = value;
     valueSpan.className = "edit-songstat-value";
     container.appendChild(valueSpan);
@@ -563,7 +563,7 @@ HuesEditor.prototype.uiCreateSongStat = function(name, value, parent) {
 };
 
 HuesEditor.prototype.uiCreateEditArea = function() {
-    var editArea = document.createElement("div");
+    let editArea = document.createElement("div");
     this.editArea = editArea;
     editArea.id = "edit-area";
     this.root.appendChild(editArea);
@@ -574,7 +574,7 @@ HuesEditor.prototype.uiCreateEditArea = function() {
     this.timeLock.id = "edit-timelock";
     this.timeLock.className = "hues-icon";
     // CHAIN, use &#xe904; for CHAIN-BROKEN
-    var locker = this.createButton("&#xe905;", this.timeLock);
+    let locker = this.createButton("&#xe905;", this.timeLock);
     locker.onclick = () => {
         if(!this.song) {
             return;
@@ -598,10 +598,10 @@ HuesEditor.prototype.uiCreateEditArea = function() {
     };
     
     // drag handle
-    var handleContainer = document.createElement("div");
+    let handleContainer = document.createElement("div");
     handleContainer.id = "edit-resize-handle-container";
     editArea.appendChild(handleContainer);
-    var handle = document.createElement("div");
+    let handle = document.createElement("div");
     handle.id = 'edit-resize-handle';
     handle.className = 'hues-icon';
     handle.innerHTML = "&#xe908;"; // DRAG HANDLE
@@ -610,15 +610,15 @@ HuesEditor.prototype.uiCreateEditArea = function() {
     
     handleContainer.addEventListener("mousedown", (e) => {
         e.preventDefault();
-        var editTop = this.editArea.getBoundingClientRect().top;
-        var handleSize = this.resizeHandle.clientHeight;
+        let editTop = this.editArea.getBoundingClientRect().top;
+        let handleSize = this.resizeHandle.clientHeight;
         
-        var resizer = (e) => {
+        let resizer = (e) => {
             this.buildEditSize = Math.floor(e.clientY - editTop + handleSize/2);
             this.resize(true);
         };
         
-        var mouseup = function(e) {
+        let mouseup = function(e) {
             document.removeEventListener("mousemove", resizer);
             document.removeEventListener("mouseup", mouseup);
         };
@@ -655,23 +655,23 @@ HuesEditor.prototype.uiCreateEditArea = function() {
 };
 
 HuesEditor.prototype.uiCreateSingleEditor = function(title, soundName, rhythmName, id, parent) {
-    var container = document.createElement("div");
+    let container = document.createElement("div");
     container.id = id;
     parent.appendChild(container);
     
-    var header = document.createElement("div");
+    let header = document.createElement("div");
     header.className = "edit-area-header";
     container.appendChild(header);
     
-    var nameLabel = document.createElement("span");
+    let nameLabel = document.createElement("span");
     header.appendChild(nameLabel);
     nameLabel.innerHTML = title;
     
-    var seek = this.createButton("", header, true, "hues-icon");
+    let seek = this.createButton("", header, true, "hues-icon");
     header.appendChild(seek);
     container._seek = seek;
     
-    var beatCount = document.createElement("span");
+    let beatCount = document.createElement("span");
     header.appendChild(beatCount);
     beatCount.className = "beat-count";
     beatCount.textContent = "0 beats";
@@ -680,12 +680,12 @@ HuesEditor.prototype.uiCreateSingleEditor = function(title, soundName, rhythmNam
         if(container._locked) {
             this.setLocked(container, 0);
         } else {
-            var textLen = this.getText(container).length;
+            let textLen = this.getText(container).length;
             this.setLocked(container, textLen);
         }
     };
     
-    var rightHeader = document.createElement("span");
+    let rightHeader = document.createElement("span");
     rightHeader.className = "edit-area-right-header";
     header.appendChild(rightHeader);
     
@@ -694,27 +694,27 @@ HuesEditor.prototype.uiCreateSingleEditor = function(title, soundName, rhythmNam
     container._doubleBtn = this.createButton("Double", rightHeader);
     container._doubleBtn.onclick = this.doubleBeats.bind(this, container);
     
-    var fileInput = document.createElement("input");
+    let fileInput = document.createElement("input");
     fileInput.type ="file";
     fileInput.accept="audio/mpeg3";
     fileInput.multiple = false;
     fileInput.onchange = this.loadAudio.bind(this, container);
-    var load = this.createButton("Load " + title.replace(/&nbsp;/g,""), rightHeader);
+    let load = this.createButton("Load " + title.replace(/&nbsp;/g,""), rightHeader);
     load.onclick = () => {fileInput.click();};
     
     container._removeBtn = this.createButton("Remove", rightHeader, true);
     container._removeBtn.onclick = this.removeAudio.bind(this, container);
     
-    var editBox = document.createElement("div");
+    let editBox = document.createElement("div");
     editBox.className = "edit-box";
-    var beatmap = document.createElement("div");
+    let beatmap = document.createElement("div");
     beatmap.className = "beatmap";
     beatmap.contentEditable = true;
     beatmap.spellcheck = false;
     beatmap.oninput = this.textUpdated.bind(this, container);
     beatmap.oncontextmenu = this.rightClick.bind(this, container);
     
-    var beatHilight = document.createElement("div");
+    let beatHilight = document.createElement("div");
     beatHilight.className = "beat-hilight";
     
     editBox.appendChild(beatHilight);
@@ -742,15 +742,15 @@ HuesEditor.prototype.rightClick = function(editor, event) {
         return;
     }
     // We abuse the fact that right clicking moves the caret. Hooray!
-    var caret = this.getCaret(editor._beatmap);
-    var totalLen = this.getText(editor).length;
-    var percent = caret / totalLen;
+    let caret = this.getCaret(editor._beatmap);
+    let totalLen = this.getText(editor).length;
+    let percent = caret / totalLen;
     if(caret <= totalLen) {
-        var seekTime = 0;
+        let seekTime = 0;
         if(editor._rhythm == "rhythm") { // loop
             seekTime = this.core.soundManager.loopLength * percent;
         } else { // build
-            var bLen = this.core.soundManager.buildLength;
+            let bLen = this.core.soundManager.buildLength;
             seekTime = -bLen + bLen * percent;
         }
         this.core.soundManager.seek(seekTime);
@@ -767,7 +767,7 @@ HuesEditor.prototype.textUpdated = function(editor) {
         return;
     }
     // Space at start of line is nonbreaking, get it with \u00a0
-    var input = editor._beatmap.textContent.replace(/ |\u00a0/g, "");
+    let input = editor._beatmap.textContent.replace(/ |\u00a0/g, "");
     if(input.length === 0) {
         input = ".";
     }
@@ -787,7 +787,7 @@ HuesEditor.prototype.setText = function(editor, text, caretFromEnd) {
         this.reflow(editor, "");
         return;
     }
-    var caret = caretFromEnd ? text.length : this.getCaret(editor._beatmap);
+    let caret = caretFromEnd ? text.length : this.getCaret(editor._beatmap);
     if(editor._locked) {
         caret = Math.min(editor._locked, caret);
         if(text.length > editor._locked) {
@@ -800,8 +800,8 @@ HuesEditor.prototype.setText = function(editor, text, caretFromEnd) {
         }
     // time to scale things to fit
     } else if(!this.song.independentBuild && this.song.buildupRhythm && this.song.rhythm) {
-        var ratio = this.core.soundManager.loopLength / this.core.soundManager.buildLength;
-        var newLen, otherMap;
+        let ratio = this.core.soundManager.loopLength / this.core.soundManager.buildLength;
+        let newLen, otherMap;
         if(editor._rhythm == "rhythm") { // editing rhythm, adjust beatmap
             otherMap = this.buildEdit;
             newLen = Math.floor(text.length / ratio);
@@ -809,7 +809,7 @@ HuesEditor.prototype.setText = function(editor, text, caretFromEnd) {
             otherMap = this.loopEdit;
             newLen = Math.floor(text.length * ratio);
         }
-        var wasLocked = otherMap._locked;
+        let wasLocked = otherMap._locked;
         // avoid infinite loop
         this.song.independentBuild = true;
         // clamp the length
@@ -840,10 +840,10 @@ HuesEditor.prototype.setText = function(editor, text, caretFromEnd) {
 };
 
 HuesEditor.prototype.getCaret = function(editable) {
-    var caret = 0;
-    var sel = window.getSelection();
+    let caret = 0;
+    let sel = window.getSelection();
     if (sel.rangeCount) {
-      var range = sel.getRangeAt(0);
+      let range = sel.getRangeAt(0);
       // <br> elements are empty, and pastes do weird things.
       // So don't go up in multiples of 2 for getCaret
       for(let i = 0; i < editable.childNodes.length; i++) {
@@ -859,11 +859,11 @@ HuesEditor.prototype.getCaret = function(editable) {
 };
 
 HuesEditor.prototype.setCaret = function(editable, caret) {
-    var range = document.createRange();
-    var sel = window.getSelection();
+    let range = document.createRange();
+    let sel = window.getSelection();
     // <br> elements mean children go up in multiples of 2
     for(let i = 0; i < editable.childNodes.length; i+= 2) {
-        var textLen = editable.childNodes[i].textContent.length;
+        let textLen = editable.childNodes[i].textContent.length;
         if(caret > textLen) {
             caret -= textLen;
         } else {
@@ -881,7 +881,7 @@ HuesEditor.prototype.updateHalveDoubleButtons = function(editor) {
     editor._doubleBtn.className = "hues-button disabled";
     
     if(!editor._locked) {
-        var txtLen = this.getText(editor).length;
+        let txtLen = this.getText(editor).length;
         if(txtLen > 0) {
             editor._doubleBtn.className = "hues-button";
         }
@@ -902,43 +902,43 @@ HuesEditor.prototype.setLocked = function(editor, locked) {
 };
 
 HuesEditor.prototype.uiCreateControls = function() {
-    var controls = document.createElement("div");
+    let controls = document.createElement("div");
     controls.id = "edit-controls";
     this.root.appendChild(controls);
     
-    var changeRate = function(change) {
-        var rate = this.core.soundManager.playbackRate;
+    let changeRate = function(change) {
+        let rate = this.core.soundManager.playbackRate;
         rate += change;
         this.core.soundManager.setRate(rate);
         // In case it gets clamped, check
-        var newRate = this.core.soundManager.playbackRate;
+        let newRate = this.core.soundManager.playbackRate;
         playRateLab.textContent = newRate.toFixed(2) + "x";
     };
     
-    var speedControl = document.createElement("div");
+    let speedControl = document.createElement("div");
     controls.appendChild(speedControl);
     
     // BACKWARD
-    var speedDown = this.createButton("&#xe909;", speedControl, false, "hues-icon");
+    let speedDown = this.createButton("&#xe909;", speedControl, false, "hues-icon");
     speedDown.onclick = changeRate.bind(this, -0.25);
     // FORWARD
-    var speedUp = this.createButton("&#xe90a;", speedControl, false, "hues-icon");
+    let speedUp = this.createButton("&#xe90a;", speedControl, false, "hues-icon");
     speedUp.onclick = changeRate.bind(this, 0.25);
         
-    var playRateLab = document.createElement("span");
+    let playRateLab = document.createElement("span");
     playRateLab.className = "settings-individual";
     playRateLab.textContent = "1.00x";
     speedControl.appendChild(playRateLab);
     
-    var wrapControl = document.createElement("div");
+    let wrapControl = document.createElement("div");
     controls.appendChild(wrapControl);
     
-    var wrapLab = document.createElement("span");
+    let wrapLab = document.createElement("span");
     wrapLab.className = "settings-individual";
     wrapLab.textContent = "New line at beat ";
     wrapControl.appendChild(wrapLab);
     
-    var wrapAt = document.createElement("input");
+    let wrapAt = document.createElement("input");
     wrapAt.className = "settings-input";
     wrapAt.value = this.wrapAt;
     wrapAt.type = "text";
@@ -958,7 +958,7 @@ HuesEditor.prototype.uiCreateControls = function() {
 
 HuesEditor.prototype.uiCreateVisualiser = function() {
     // TODO placeholder
-    var wave = document.createElement("canvas");
+    let wave = document.createElement("canvas");
     wave.id = "edit-waveform";
     wave.height = WAVE_HEIGHT_PIXELS;
     this.root.appendChild(wave);
@@ -984,33 +984,33 @@ HuesEditor.prototype.renderWave = function(buffer, length) {
         return null;
     }
     // The individual wave section
-    var wave = document.createElement("canvas");
-    var waveContext = wave.getContext("2d");
+    let wave = document.createElement("canvas");
+    let waveContext = wave.getContext("2d");
     
     wave.height = WAVE_HEIGHT_PIXELS;
     wave.width = Math.floor(WAVE_PIXELS_PER_SECOND * length);
     
-    var samplesPerPixel = Math.floor(buffer.sampleRate / WAVE_PIXELS_PER_SECOND);
-    var waveData = [];
+    let samplesPerPixel = Math.floor(buffer.sampleRate / WAVE_PIXELS_PER_SECOND);
+    let waveData = [];
     for(let i = 0; i < buffer.numberOfChannels; i++) {
         waveData.push(buffer.getChannelData(i));
     }
     // Half pixel offset makes things look crisp
-    var pixel = 0.5;
+    let pixel = 0.5;
     waveContext.strokeStyle = "black";
-    var halfHeight = WAVE_HEIGHT_PIXELS/2;
+    let halfHeight = WAVE_HEIGHT_PIXELS/2;
     for(let i = 0; i < buffer.length; i += samplesPerPixel) {
-        var min = 0, max = 0;
-        for(var j = 0; j < samplesPerPixel && i + j < buffer.length; j++) {
-            for(var chan = 0; chan < waveData.length; chan++) {
-                var sample = waveData[chan][i+j];
+        let min = 0, max = 0;
+        for(let j = 0; j < samplesPerPixel && i + j < buffer.length; j++) {
+            for(let chan = 0; chan < waveData.length; chan++) {
+                let sample = waveData[chan][i+j];
                 if(sample > max) max = sample;
                 if(sample < min) min = sample;
             }
         }
-        var maxPix = Math.floor(halfHeight + max * halfHeight);
+        let maxPix = Math.floor(halfHeight + max * halfHeight);
         // Min is negative, addition is correct
-        var minPix = Math.floor(halfHeight + min * halfHeight);
+        let minPix = Math.floor(halfHeight + min * halfHeight);
         waveContext.beginPath();
         waveContext.moveTo(pixel, maxPix);
         waveContext.lineTo(pixel, minPix);
@@ -1022,27 +1022,27 @@ HuesEditor.prototype.renderWave = function(buffer, length) {
 };
 
 HuesEditor.prototype.drawWave = function() {
-    var width = this.waveCanvas.width;
-    var now = this.core.soundManager.currentTime();
-    var span = width / WAVE_PIXELS_PER_SECOND / 2;
-    var minTime = now - span;
-    var maxTime = now + span;
+    let width = this.waveCanvas.width;
+    let now = this.core.soundManager.currentTime();
+    let span = width / WAVE_PIXELS_PER_SECOND / 2;
+    let minTime = now - span;
+    let maxTime = now + span;
     
     this.waveContext.clearRect(0, 0, width, WAVE_HEIGHT_PIXELS);
     
     if(this.buildWave && minTime < 0) {
-        var bLen = this.core.soundManager.buildLength;
+        let bLen = this.core.soundManager.buildLength;
         let center = Math.floor((now + bLen) / bLen * this.buildWave.width);
         this.drawOneWave(this.buildWave, center, width);
     }
     
     if(this.loopWave && maxTime > 0) {
-        var loopLen = this.core.soundManager.loopLength;
-        var clampedNow = (minTime % loopLen) + span;
+        let loopLen = this.core.soundManager.loopLength;
+        let clampedNow = (minTime % loopLen) + span;
         let center = Math.floor(clampedNow / loopLen * this.loopWave.width);
         this.drawOneWave(this.loopWave, center, width);
         
-        var clampedNext = (maxTime % loopLen) - span;
+        let clampedNext = (maxTime % loopLen) - span;
         // We've looped and need to draw 2 things
         if(clampedNext < clampedNow) {
             let center = Math.floor(clampedNext / loopLen * this.loopWave.width);
@@ -1072,7 +1072,7 @@ HuesEditor.prototype.generateXML = function() {
     }
     // Yes, this is just a bunch of strings. Simple XML, simple method.
 
-    var result = "  <song name=\"" + this.song.name + "\">\n";
+    let result = "  <song name=\"" + this.song.name + "\">\n";
     result += "    <title>" + this.song.title + "</title>\n";
     if(this.song.source) {
         result += "    <source>" + this.song.source + "</source>\n";
@@ -1090,16 +1090,16 @@ HuesEditor.prototype.generateXML = function() {
 };
 
 HuesEditor.prototype.saveXML = function() {
-    var xml = this.generateXML();
+    let xml = this.generateXML();
     if(!xml) {
         return;
     }
-    var result = "<songs>\n";
+    let result = "<songs>\n";
     result += xml;
     result += "</songs>\n";
     
     // http://stackoverflow.com/a/18197341
-    var element = document.createElement('a');
+    let element = document.createElement('a');
     element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(result));
     element.setAttribute('download', "0x40Hues - " + this.song.name + ".xml");
 
@@ -1113,14 +1113,14 @@ HuesEditor.prototype.saveXML = function() {
 
 // http://stackoverflow.com/a/30810322
 HuesEditor.prototype.copyXML = function() {
-    var text = this.generateXML();
+    let text = this.generateXML();
     
     // Clicking when disabled
     if(!text) {
         return;
     }
     
-    var textArea = document.createElement("textarea");
+    let textArea = document.createElement("textarea");
     textArea.id = "edit-copybox";
 
     textArea.value = text;
@@ -1129,7 +1129,7 @@ HuesEditor.prototype.copyXML = function() {
 
     textArea.select();
     
-    var success;
+    let success;
 
     try {
         success = document.execCommand('copy');

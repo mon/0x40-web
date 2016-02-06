@@ -80,14 +80,14 @@ SoundManager.prototype.init = function() {
         }).then(response => {
             return new Promise((resolve, reject) => {          
                 // See if our MP3 decoder is working
-                var mp3Worker;
+                let mp3Worker;
                 try {
                     mp3Worker = this.createWorker();
                 } catch(e) {
                     console.log(e);
                     reject(Error("MP3 Worker cannot be started - correct path set in defaults?"));
                 }
-                var pingListener = event => {
+                let pingListener = event => {
                     mp3Worker.removeEventListener('message', pingListener);
                     mp3Worker.terminate();
                     resolve();
@@ -104,10 +104,10 @@ SoundManager.prototype.init = function() {
                 // it starts in a suspended state
                 if(this.context.state != "running") {
                     this.core.warning("We're about to load about 10MB of stuff. Tap to begin!");
-                    var unlocker = () => {
+                    let unlocker = () => {
                         // create empty buffer
-                        var buffer = this.context.createBuffer(1, 1, 22050);
-                        var source =  this.context.createBufferSource();
+                        let buffer = this.context.createBuffer(1, 1, 22050);
+                        let source =  this.context.createBufferSource();
                         source.buffer = buffer;
 
                         // connect to output (your speakers)
@@ -133,7 +133,7 @@ SoundManager.prototype.init = function() {
 };
 
 SoundManager.prototype.playSong = function(song, playBuild, forcePlay) {
-    var p = Promise.resolve();
+    let p = Promise.resolve();
     // Editor forces play on audio updates
     if(this.song == song && !forcePlay) {
         return p;
@@ -209,7 +209,7 @@ SoundManager.prototype.setRate = function(rate) {
     // Double speed is more than enough. Famous last words?
     rate = Math.max(Math.min(rate, 2), 0.25);
     
-    var time = this.clampedTime();
+    let time = this.clampedTime();
     this.playbackRate = rate;
     this.seek(time);
 };
@@ -260,7 +260,7 @@ SoundManager.prototype.currentTime = function() {
 };
 
 SoundManager.prototype.clampedTime = function() {
-    var time = this.currentTime();
+    let time = this.currentTime();
     
     if(time > 0) {
         time %= this.loopLength;
@@ -269,7 +269,7 @@ SoundManager.prototype.clampedTime = function() {
 };
 
 SoundManager.prototype.displayableTime = function() {
-    var time = this.clampedTime();
+    let time = this.clampedTime();
     if(time < 0) {
         return 0;
     } else {
@@ -284,9 +284,9 @@ SoundManager.prototype.loadSong = function(song) {
         return;
     }
     
-    var buffers = {loop: null, buildup: null};
+    let buffers = {loop: null, buildup: null};
     
-    var promises = [this.loadBuffer(song, "sound").then(buffer => {
+    let promises = [this.loadBuffer(song, "sound").then(buffer => {
         buffers.loop = buffer;
     })];
     if(song.buildup) {
@@ -306,20 +306,20 @@ SoundManager.prototype.loadSong = function(song) {
 
 SoundManager.prototype.loadBuffer = function(song, soundName) {
     return new Promise((resolve, reject) => {
-        var mp3Worker = this.createWorker();
+        let mp3Worker = this.createWorker();
         
         mp3Worker.addEventListener('error', () => {
             reject(Error("MP3 Worker failed to convert track"));
         }, false);
         
         mp3Worker.addEventListener('message', e => {
-            var decoded = e.data;
+            let decoded = e.data;
             mp3Worker.terminate();
             
             // restore transferred buffer
             song[soundName] = decoded.arrayBuffer;
             // Convert to real audio buffer
-            var audio = this.audioBufFromRaw(decoded.rawAudio);
+            let audio = this.audioBufFromRaw(decoded.rawAudio);
             resolve(audio);
         }, false);
         
@@ -330,16 +330,16 @@ SoundManager.prototype.loadBuffer = function(song, soundName) {
 
 // Converts continuous PCM array to Web Audio API friendly format
 SoundManager.prototype.audioBufFromRaw = function(raw) {
-    var buffer = raw.array;
-    var channels = raw.channels;
-    var samples = buffer.length/channels;
-    var audioBuf = this.context.createBuffer(channels, samples, raw.sampleRate);
-    //var audioBuf = this.context.createBuffer(1, buffer.length, raw.sampleRate);
+    let buffer = raw.array;
+    let channels = raw.channels;
+    let samples = buffer.length/channels;
+    let audioBuf = this.context.createBuffer(channels, samples, raw.sampleRate);
+    //let audioBuf = this.context.createBuffer(1, buffer.length, raw.sampleRate);
     //audioBuf.copyToChannel(buffer, 0, 0);
     for(let i = 0; i < channels; i++) {
         //console.log("Making buffer at offset",i*samples,"and length",samples,".Original buffer is",channels,"channels and",buffer.length,"elements");
         // Offset is in bytes, length is in elements
-        var channel = new Float32Array(buffer.buffer , i * samples * 4, samples);
+        let channel = new Float32Array(buffer.buffer , i * samples * 4, samples);
         //console.log(channel);
         audioBuf.copyToChannel(channel, i, 0);
     }
@@ -382,7 +382,7 @@ SoundManager.prototype.attachVisualiser = function() {
     }
 
     // Get our info from the loop
-    var channels = this.loopSource.channelCount;
+    let channels = this.loopSource.channelCount;
     // In case channel counts change, this is changed each time
     this.splitter = this.context.createChannelSplitter(channels);
     // Connect to the gainNode so we get buildup stuff too
@@ -394,7 +394,7 @@ SoundManager.prototype.attachVisualiser = function() {
     this.vBars = Math.floor(this.vTotalBars/channels);
     
     for(let i = 0; i < channels; i++) {
-        var analyser = this.context.createAnalyser();
+        let analyser = this.context.createAnalyser();
         // big fft buffers are new-ish
         try {
             analyser.fftSize = 8192;
@@ -411,29 +411,29 @@ SoundManager.prototype.attachVisualiser = function() {
         this.analysers.push(analyser);
         this.logArrays.push(new Uint8Array(this.vBars));
     }
-    var binCount = this.analysers[0].frequencyBinCount;
-    var binWidth = this.loopSource.buffer.sampleRate / binCount;
+    let binCount = this.analysers[0].frequencyBinCount;
+    let binWidth = this.loopSource.buffer.sampleRate / binCount;
     // first 2kHz are linear
     this.maxBinLin = Math.floor(2000/binWidth);
     // Don't stretch the first 2kHz, it looks awful
     this.linBins = Math.min(this.maxBinLin, Math.floor(this.vBars/2));
     // Only go up to 22KHz
-    var maxBinLog = Math.floor(22000/binWidth);
-    var logBins = this.vBars - this.linBins;
+    let maxBinLog = Math.floor(22000/binWidth);
+    let logBins = this.vBars - this.linBins;
 
-    var logLow = Math.log2(2000);
-    var logDiff = Math.log2(22000) - logLow;
+    let logLow = Math.log2(2000);
+    let logDiff = Math.log2(22000) - logLow;
     for(let i = 0; i < logBins; i++) {
-        var cutoff = i * (logDiff/logBins) + logLow;
-        var freqCutoff = Math.pow(2, cutoff);
-        var binCutoff = Math.floor(freqCutoff / binWidth);
+        let cutoff = i * (logDiff/logBins) + logLow;
+        let freqCutoff = Math.pow(2, cutoff);
+        let binCutoff = Math.floor(freqCutoff / binWidth);
         this.binCutoffs.push(binCutoff);
     }
     this.vReady = true;
 };
 
 SoundManager.prototype.sumArray = function(array, low, high) {
-    var total = 0;
+    let total = 0;
     for(let i = low; i <= high; i++) {
         total += array[i];
     }
@@ -444,18 +444,18 @@ SoundManager.prototype.getVisualiserData = function() {
     if(!this.vReady) {
         return null;
     }
-    for(var a = 0; a < this.analyserArrays.length; a++) {
-        var data = this.analyserArrays[a];
-        var result = this.logArrays[a];
+    for(let a = 0; a < this.analyserArrays.length; a++) {
+        let data = this.analyserArrays[a];
+        let result = this.logArrays[a];
         this.analysers[a].getByteFrequencyData(data);
         
         for(let i = 0; i < this.linBins; i++) {
-            var scaled = Math.round(i * this.maxBinLin / this.linBins);
+            let scaled = Math.round(i * this.maxBinLin / this.linBins);
             result[i] = data[scaled];
         }
         result[this.linBins] = data[this.binCutoffs[0]];
         for(let i = this.linBins+1; i < this.vBars; i++) {
-            var cutoff = i - this.linBins;
+            let cutoff = i - this.linBins;
             result[i] = this.sumArray(data, this.binCutoffs[cutoff-1], 
                                             this.binCutoffs[cutoff]);
         }
@@ -483,13 +483,13 @@ SoundManager.prototype.toggleMute = function() {
 
 SoundManager.prototype.decreaseVolume = function() {
     this.setMute(false);
-    var val = Math.max(this.gainNode.gain.value - 0.1, 0);
+    let val = Math.max(this.gainNode.gain.value - 0.1, 0);
     this.setVolume(val);
 };
 
 SoundManager.prototype.increaseVolume = function() {
     this.setMute(false);
-    var val = Math.min(this.gainNode.gain.value + 0.1, 1);
+    let val = Math.min(this.gainNode.gain.value + 0.1, 1);
     this.setVolume(val);
 };
 
