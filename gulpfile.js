@@ -40,15 +40,18 @@ gulp.task("mp3", function () {
 
 gulp.task("minify", function () {
   return gulp.src("src/js/*.js")
-    // Enable later
-    .pipe(jshint('.jshintrc'))
-    .pipe(jshint.reporter('default'))
     .pipe(sourcemaps.init())
     .pipe(babel())
     .pipe(uglify())
     .pipe(concat("hues-min.js"))
     .pipe(sourcemaps.write("."))
     .pipe(gulp.dest("lib"));
+});
+
+gulp.task("lint", function () {
+  return gulp.src("src/js/*.js")
+    .pipe(jshint('.jshintrc'))
+    .pipe(jshint.reporter('default'));
 });
 
 gulp.task('watch', ['default'], function() {
@@ -65,7 +68,7 @@ gulp.task('clean', function() {
         'release']);
 });
 
-gulp.task('release', ['default'], function() {
+gulp.task('release', ['default', 'lint'], function() {
     gulp.src([
         'css/hues-min.css',
         'lib/hues-min.js',
