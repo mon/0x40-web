@@ -76,7 +76,7 @@ HuesEditor.prototype.initUI = function() {
     let help = this.createButton("Help?", titleButtons);
     help.style.backgroundColor = "rgba(0,160,0,0.3)";
     help.onclick = function() {
-        window.open("http://0x40hues.blogspot.com/p/0x40-hues-creation-tutorial.html", '_blank');
+        window.open("https://github.com/mon/0x40-web/tree/master/docs/Editor.md", '_blank');
     };
     
     this.topBar = document.createElement("div");
