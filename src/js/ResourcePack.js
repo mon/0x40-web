@@ -421,8 +421,6 @@ Respack.prototype.parseSongFile = function(text) {
                 debug("  WARNING!!", song.name, "has no rhythm!!");
             }
 
-            song.startSilence = el.getTag("startSilence");
-            song.endSilence = el.getTag("endSilence");
             song.buildupName = el.getTag("buildup");
             if(song.buildupName) {
                 debug("  Finding a buildup '" + song.buildupName + "' for ", song.name);
