@@ -1,5 +1,5 @@
 ﻿# Resource Packs  
-Resource Packs (respacks) are what makes Hues tick. They contain the songs and images that are played when it is loaded.
+Resource Packs (respacks) are what make Hues tick. They contain the songs and images that are played when it is loaded.
 
 It helps to examine a pre-existing respack to understand how they work. There are several available on the [0x40 Hues Blogspot](http://0x40hues.blogspot.com/p/blog-page_5.html).
 
