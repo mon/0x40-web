@@ -342,13 +342,11 @@ HuesCore.prototype.blurUpdated = function(x, y) {
 };
 
 HuesCore.prototype.nextSong = function() {
-    this.lastSongArray = [];
     let index = (this.songIndex + 1) % this.resourceManager.enabledSongs.length;
     this.setSong(index);
 };
 
 HuesCore.prototype.previousSong = function() {
-    this.lastSongArray = [];
     let index = ((this.songIndex - 1) + this.resourceManager.enabledSongs.length) % this.resourceManager.enabledSongs.length;
     this.setSong(index);
 };
@@ -372,9 +370,13 @@ HuesCore.prototype.setSongOject = function(song) {
     }
 };
 
-HuesCore.prototype.setSong = function(index) {
+HuesCore.prototype.setSong = function(index, leaveArray) {
     if(this.currentSong == this.resourceManager.enabledSongs[index]) {
         return;
+    }
+    // When not randoming, clear this
+    if(!leaveArray) {
+        this.lastSongArray = [];
     }
     this.lastSongArray.push(index);
     this.songIndex = index;
@@ -461,7 +463,7 @@ HuesCore.prototype.randomSong = function() {
         this.randomSong();
     } else {
         console.log("Randoming a song!");
-        this.setSong(index);
+        this.setSong(index, true);
         let noRepeat = Math.min(5, Math.floor(songCount / 2));
         while (this.lastSongArray.length > noRepeat && noRepeat >= 0) {
             this.lastSongArray.shift();
