@@ -53,8 +53,8 @@ Additional options for animations are:
 Name | Options | Default | Description
 --- | --- | --- | --- 
 frameDuration | Comma separated numbers, eg `33,45,20`| `33` | How long (in ms) each frame will display. Each frame can have a different length. If there are more listed durations than frames, they are ignored. If there are fewer listed durations than frames, the last duration is reused for any extra frames. For example, if every frame is 40ms long, just use `40`.
-beatsPerAnim (*web Hues only*) | Any number | None | For synchronising animations to songs. Sets how many beats a single loop of this animation runs for. If the currently playing song has a matching `charsPerBeat` setting, the animation will be synchronised. Otherwise, it will fall back to the frameDuration set.
-syncOffset (*web Hues only*) | Any number | `0` | If the "beat" of your synchronised animation does not occur on frame 1, use this value to shift it.
+beatsPerAnim (**web Hues only**) | Any number | None | For synchronising animations to songs. Sets how many beats a single loop of this animation runs for. If the currently playing song has a matching `charsPerBeat` setting, the animation will be synchronised. Otherwise, it will fall back to the `frameDuration` set.
+syncOffset (**web Hues only**) | Any number | `0` | If the "beat" of your synchronised animation does not occur on frame 1, use this value to shift it.
 
 
 ## Songs and songs.xml  
@@ -83,6 +83,8 @@ Here is an example song structure:
 
 Like `image` elements, each `song` element must have a `name`. This refers to the filename of the loop, minus extension.
 
+The [editor](Editor.md) can export song XML data. It is recommended you use it to avoid making spelling or formatting mistakes when doing it manually.
+
 Possible options for songs are:
 
 Name | Options | Default | Description
@@ -92,5 +94,5 @@ source | Any text | None | The source URL of the song, clickable in the UI
 rhythm (*required*) | Any text | None | The beatmap of the song. Create one in the [editor](Editor.md).
 buildup | Filename minus extension | None | The filename of the buildup - the lead-in to the main loop.
 buildupRhythm | Any text | `.` for the entire build | A rhythm for the buildup, if any.
-independentBuild (*web Hues only*) | Anything | None | By default, the length of a buildup is set so the buildup beatmap runs at the same speed as the main loop. If this is set, the buildup's beatmap can be any length, and will run faster or slower than the main loop. Best set using the [editor](Editor.md).
-charsPerBeat (*web Hues only*) | Any number | None | For synchronising animations. Specifies how many characters of the beatmap make up a beat in the song. If an animation is playing and has a matching `beatsPerAnim` setting, the animation will be synchronised.
+independentBuild (**web Hues only**) | Anything | None | By default, the length of a buildup is set so the buildup beatmap runs at the same speed as the main loop. If this is set, the buildup's beatmap can be any length, and will run faster or slower than the main loop. Best set using the [editor](Editor.md).
+charsPerBeat (**web Hues only**) | Any number | None | For synchronising animations. Specifies how many characters of the beatmap make up a beat in the song. If an animation is playing and has a matching `beatsPerAnim` setting, the animation will be synchronised.
