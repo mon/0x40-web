@@ -13,7 +13,7 @@ You can also have animations that sync perfectly with the beats of the songs. In
 ["Montegral"](http://0x40.mon.im/montegral.html) 
 
 ## Install (Make your own Hues)
-1. Start by downloading the latest [release](https://github.com/mon/0x40-web/releases). These are minified and load faster.
+1. Start by downloading the latest [release](./releases). These are minified and load faster.
 2. Put your respack zips somewhere they can be found by your web server. My hues have a `respacks/` folder under the main directory.
 3. Edit the Javascript that runs on page load
   1. If your html is in a different location to your `lib` folder:
@@ -34,7 +34,7 @@ var defaults = {
 ```
 
 ## Settings object  
-See [HuesSettings.js](https://github.com/mon/0x40-web/blob/master/src/js/HuesSettings.js#L29) for the possible options you can put into the `defaults` object.
+See [HuesSettings.js](./src/js/HuesSettings.js#L29) for the possible options you can put into the `defaults` object.
 
 ## Building
 Install [Node.js](https://nodejs.org/en/), v5 preferred.  
