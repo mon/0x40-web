@@ -7,6 +7,7 @@ var minifyCSS = require('gulp-cssnano');
 var autoprefixer = require('gulp-autoprefixer');
 var order = require("gulp-order");
 var del = require('del');
+var jshint = require('gulp-jshint');
 
 gulp.task('default', ['css', 'mp3', 'minify'], function() {
     
@@ -40,8 +41,8 @@ gulp.task("mp3", function () {
 gulp.task("minify", function () {
   return gulp.src("src/js/*.js")
     // Enable later
-    //.pipe(jshint('.jshintrc'))
-    //.pipe(jshint.reporter('default'))
+    .pipe(jshint('.jshintrc'))
+    .pipe(jshint.reporter('default'))
     .pipe(sourcemaps.init())
     .pipe(babel())
     .pipe(uglify())

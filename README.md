@@ -41,6 +41,6 @@ Install [Node.js](https://nodejs.org/en/), v5 preferred.
 Install the required packages for the build:
 ```bash
 npm install gulp -g
-npm install gulp-sourcemaps gulp-babel babel-preset-es2015 gulp-uglify gulp-concat gulp-cssnano gulp-autoprefixer gulp-order del
+npm install gulp-sourcemaps gulp-babel babel-preset-es2015 gulp-uglify gulp-concat gulp-cssnano gulp-autoprefixer gulp-order del jshint gulp-jshint
 ```
 Build with `gulp`. Make a release folder with `gulp release`. For seamless development, auto-minify changed files with `gulp watch`.
