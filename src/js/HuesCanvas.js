@@ -104,7 +104,7 @@ HuesCanvas.prototype.settingsUpdated = function() {
     this.setBlurDecay(localStorage["blurDecay"]);
     this.setBlurQuality(localStorage["blurQuality"]);
     this.trippyOn = localStorage["trippyMode"] == "on";
-}
+};
 
 HuesCanvas.prototype.resize = function() {
     // height is constant 720px, we expand width to suit
@@ -167,7 +167,7 @@ HuesCanvas.prototype.redraw = function() {
                 this.context.drawImage(bitmap, Math.floor(offset - this.blurDistance/2), 0,
                     bitmap.width + this.blurDistance, bitmap.height);
             } else {
-                for(var i=-1; i<=1; i+= this.blurDelta) {
+                for(let i=-1; i<=1; i+= this.blurDelta) {
                     this.context.drawImage(bitmap, Math.floor(this.blurDistance * i) + offset, 0);
                 }
             }
@@ -177,7 +177,7 @@ HuesCanvas.prototype.redraw = function() {
                 this.context.drawImage(bitmap, offset, Math.floor(-this.blurDistance/2),
                     bitmap.width, bitmap.height + this.blurDistance);
             } else {
-                for(var i=-1; i<=1; i+= this.blurDelta) {
+                for(let i=-1; i<=1; i+= this.blurDelta) {
                     this.context.drawImage(bitmap, offset, Math.floor(this.blurDistance * i));
                 }
             }
@@ -203,8 +203,8 @@ HuesCanvas.prototype.redraw = function() {
         });
         
         var invert = !baseInvert;
-        for(var i = 0; i < 2; i++) {
-            if(this.trippyRadii[i] == 0) {
+        for(let i = 0; i < 2; i++) {
+            if(this.trippyRadii[i] === 0) {
                 continue;
             }
             // Invert for each subsequent draw
@@ -241,7 +241,7 @@ HuesCanvas.prototype.intToHex = function(num) {
 
 HuesCanvas.prototype.animationLoop = function() {
     if (this.colourFade) {
-        var delta = this.audio.currentTime - this.colourFadeStart;
+        let delta = this.audio.currentTime - this.colourFadeStart;
         var fadeVal = delta / this.colourFadeLength;
         if (fadeVal >= 1) {
             this.stopFade();
@@ -273,7 +273,7 @@ HuesCanvas.prototype.animationLoop = function() {
     }
     if(this.blurStart) {
         // flash offsets blur gen by a frame
-        var delta = this.audio.currentTime - this.blurStart + (1/30);
+        let delta = this.audio.currentTime - this.blurStart + (1/30);
         this.blurDistance = this.blurAmount * Math.exp(-this.blurDecay * delta);
         
         // Update UI
@@ -284,7 +284,7 @@ HuesCanvas.prototype.animationLoop = function() {
             this.core.blurUpdated(0, dist);
     }
     if(this.trippyOn && (this.trippyStart[0] || this.trippyStart[1])) {
-        for(var i = 0; i < 2; i++) {
+        for(let i = 0; i < 2; i++) {
             this.trippyRadii[i] = Math.floor((this.audio.currentTime - this.trippyStart[i]) * this.trippyRadius) * 2;
             if(this.trippyRadii[i] > this.trippyRadius) {
                 this.trippyStart[i] = 0;
@@ -292,7 +292,7 @@ HuesCanvas.prototype.animationLoop = function() {
                 continue;
             }
             // x comes from outside the window
-            if(i % 2 == 0) {
+            if(i % 2 === 0) {
                 this.trippyRadii[i] = this.trippyRadius - this.trippyRadii[i];
             }
         }
@@ -490,7 +490,7 @@ HuesCanvas.prototype.startSnow = function() {
     var width = this.canvas.width;
     this.snowAngle = 0;
     this.snowflakes = [];
-	for(var i = 0; i < this.maxSnow; i++) {
+	for(let i = 0; i < this.maxSnow; i++) {
 		this.snowflakes.push({
 			x: Math.random()*width, //x-coordinate
 			y: Math.random()*height, //y-coordinate
@@ -514,16 +514,16 @@ HuesCanvas.prototype.drawSnow = function() {
 
     this.snowContext.fillStyle = "rgba(255, 255, 255, 0.8)";
     this.snowContext.beginPath();
-    for(var i = 0; i < this.maxSnow; i++) {
-        var flake = this.snowflakes[i];
+    for(let i = 0; i < this.maxSnow; i++) {
+        let flake = this.snowflakes[i];
         this.snowContext.moveTo(flake.x, flake.y);
         this.snowContext.arc(flake.x, flake.y, flake.r, 0, Math.PI * 2, true);
     }
     this.snowContext.fill();
 
     this.snowAngle += delta / 6;
-    for(var i = 0; i < this.maxSnow; i++) {
-        var flake = this.snowflakes[i];
+    for(let i = 0; i < this.maxSnow; i++) {
+        let flake = this.snowflakes[i];
         //Updating X and Y coordinates
         //We will add 1 to the cos function to prevent negative values which will lead flakes to move upwards
         //Every particle has its own density which can be used to make the downward movement different for each flake

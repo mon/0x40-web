@@ -83,17 +83,17 @@ Resources.prototype.addAll = function(urls, progressCallback) {
         this.progressCallback = progressCallback;
         this.progressState = Array.apply(null, Array(urls.length)).map(Number.prototype.valueOf,0);
     }
-    var r;
     
-    var respackPromises = []
-    for(var i = 0; i < urls.length; i++) {
-        r = new Respack();
-        ((r) => {
-            respackPromises.push(r.loadFromURL(urls[i], function(index, progress, pack) {
-                    this.progressState[index] = progress;
-                    this.updateProgress(pack);
-            }.bind(this, i)));
-        })(r);
+    var respackPromises = [];
+    
+    var progressFunc = function(index, progress, pack) {
+            this.progressState[index] = progress;
+            this.updateProgress(pack);
+    };
+    
+    for(let i = 0; i < urls.length; i++) {
+        let r = new Respack();
+        respackPromises.push(r.loadFromURL(urls[i], progressFunc.bind(this, i)));
     }
     // Start all the promises at once, but add in sequence
     return respackPromises.reduce((sequence, packPromise) => {
@@ -107,7 +107,7 @@ Resources.prototype.addAll = function(urls, progressCallback) {
 
 Resources.prototype.updateProgress = function(pack) {
     var total = 0;
-    for(var i = 0; i < this.progressState.length; i++) {
+    for(let i = 0; i < this.progressState.length; i++) {
         total += this.progressState[i];
     }
     total /= this.progressState.length;
@@ -143,7 +143,7 @@ Resources.prototype.rebuildArrays = function() {
     this.allImages = [];
     this.allAnimations = [];
 
-    for(var i = 0; i < this.resourcePacks.length; i++) {
+    for(let i = 0; i < this.resourcePacks.length; i++) {
         this.addResourcesToArrays(this.resourcePacks[i]);
     }
 };
@@ -152,19 +152,19 @@ Resources.prototype.rebuildEnabled = function() {
     this.enabledSongs = [];
     this.enabledImages = [];
 
-    for(var i = 0; i < this.resourcePacks.length; i++) {
+    for(let i = 0; i < this.resourcePacks.length; i++) {
         var pack = this.resourcePacks[i];
         if (pack.enabled !== true) {
             continue;
         }
-        for(var j = 0; j < pack.songs.length; j++) {
-            var song = pack.songs[j];
+        for(let j = 0; j < pack.songs.length; j++) {
+            let song = pack.songs[j];
             if (song.enabled && this.enabledSongs.indexOf(song) == -1) {
                 this.enabledSongs.push(song);
             }
         }
-        for(var j = 0; j < pack.images.length; j++) {
-            var image = pack.images[j];
+        for(let j = 0; j < pack.images.length; j++) {
+            let image = pack.images[j];
             if (image.enabled && this.enabledImages.indexOf(image) == -1) {
                this.enabledImages.push(image);
             }
@@ -179,14 +179,14 @@ Resources.prototype.rebuildEnabled = function() {
         while(imageList.firstElementChild) {
             imageList.removeChild(imageList.firstElementChild);
         }
-        for(var i = 0; i < this.enabledSongs.length; i++) {
-            var song = this.enabledSongs[i];
+        for(let i = 0; i < this.enabledSongs.length; i++) {
+            let song = this.enabledSongs[i];
             this.appendSimpleListItem(song.title, songList, function(index) {
                 this.core.setSong(index);
             }.bind(this, i));
         }
-        for(var i = 0; i < this.enabledImages.length; i++) {
-            var image = this.enabledImages[i];
+        for(let i = 0; i < this.enabledImages.length; i++) {
+            let image = this.enabledImages[i];
             this.appendSimpleListItem(image.name, imageList, function(index) {
                 this.core.setImage(index);
                 this.core.setIsFullAuto(false);
@@ -211,7 +211,7 @@ Resources.prototype.removeAllPacks = function() {
 
 Resources.prototype.getSongNames = function() {
     var names = [];
-    for(var i = 0; i < this.allSongs.length; i++) {
+    for(let i = 0; i < this.allSongs.length; i++) {
         names.push(this.allSongs[i]);
     }
     return names;
@@ -220,22 +220,19 @@ Resources.prototype.getSongNames = function() {
 Resources.prototype.loadLocal = function() {
     console.log("Loading local zip(s)");
     
-    var r;
     var files = this.fileInput.files;
     var p = Promise.resolve();
-    for(var i = 0; i < files.length; i++) {
-        r = new Respack();
-        // closure required
-        ((file, r) => {
-            p = p.then(() => {
-                return r.loadFromBlob(file, (progress, respack) => {
-                    this.localProgress(progress, respack);
-                });
-            }).then(pack => {
-                this.addPack(pack);
-                this.localComplete();
+    for(let i = 0; i < files.length; i++) {
+        let r = new Respack();
+        /*jshint -W083 */
+        p = p.then(() => {
+            return r.loadFromBlob(files[i], (progress, respack) => {
+                this.localProgress(progress, respack);
             });
-        })(files[i], r);
+        }).then(pack => {
+            this.addPack(pack);
+            this.localComplete();
+        });
     }
     return p.then(() => {
         console.log("Local respack parsing complete");
@@ -303,7 +300,7 @@ Resources.prototype.initUI = function() {
     var loadLocal = document.createElement("div");
     loadLocal.className = "hues-button";
     loadLocal.textContent = "LOAD ZIPS";
-    loadLocal.onclick = () => {this.fileInput.click()};
+    loadLocal.onclick = () => {this.fileInput.click();};
     buttons.appendChild(loadLocal);
     buttons.appendChild(loadRemote);
     this.packsView.loadRemote = loadRemote;
@@ -556,7 +553,7 @@ Resources.prototype.selectPack = function(id) {
         imageList.removeChild(imageList.firstElementChild);
     }
 
-    for(var i = 0; i < pack.songs.length; i++) {
+    for(let i = 0; i < pack.songs.length; i++) {
         var song = pack.songs[i];
         this.appendListItem("songs", song.title, "song" + i, songList,
             this.selectResourceCallback(song),
@@ -564,7 +561,7 @@ Resources.prototype.selectPack = function(id) {
             song.enabled);
     }
 
-    for(var i = 0; i < pack.images.length; i++) {
+    for(let i = 0; i < pack.images.length; i++) {
         var image = pack.images[i];
         this.appendListItem("images", image.name, "image" + i, imageList,
             this.selectResourceCallback(image),
@@ -614,7 +611,7 @@ Resources.prototype.enableAll = function() {
     var tab = this.getEnabledTabContents();
     if(!tab)
         return;
-    for(var i = 0; i < tab.arr.length; i++) {
+    for(let i = 0; i < tab.arr.length; i++) {
         tab.arr[i].enabled = true;
         document.getElementById(tab.elName + i).checked = true;
     }
@@ -625,7 +622,7 @@ Resources.prototype.disableAll = function() {
     var tab = this.getEnabledTabContents();
     if(!tab)
         return;
-    for(var i = 0; i < tab.arr.length; i++) {
+    for(let i = 0; i < tab.arr.length; i++) {
         tab.arr[i].enabled = false;
         document.getElementById(tab.elName + i).checked = false;
     }
@@ -636,7 +633,7 @@ Resources.prototype.invert = function() {
     var tab = this.getEnabledTabContents();
     if(!tab)
         return;
-    for(var i = 0; i < tab.arr.length; i++) {
+    for(let i = 0; i < tab.arr.length; i++) {
         tab.arr[i].enabled = !tab.arr[i].enabled;
         document.getElementById(tab.elName + i).checked = tab.arr[i].enabled;
     }
@@ -697,7 +694,7 @@ Resources.prototype.populateRemotes = function() {
     while(remoteList.firstElementChild) {
         remoteList.removeChild(remoteList.firstElementChild);
     }
-    for(var i = 0; i < this.remotes.length; i++) {
+    for(let i = 0; i < this.remotes.length; i++) {
         this.remotes[i].loaded = false;
         this.appendSimpleListItem(this.remotes[i].name, remoteList,
             function(index) {
@@ -741,29 +738,29 @@ Resources.prototype.selectRemotePack = function(id) {
         imageList.removeChild(imageList.firstElementChild);
     }
 
-    for(var i = 0; i < pack.songs.length; i++) {
+    for(let i = 0; i < pack.songs.length; i++) {
         var song = pack.songs[i];
         this.appendSimpleListItem(song, songList);
     }
     var moreSongs = pack.songcount - pack.songs.length;
     if(moreSongs > 0) {
-        var text = "... and " + moreSongs + " more song";
+        let text = "... and " + moreSongs + " more song";
         if(moreSongs > 1) {
-            text += "s"
+            text += "s";
         }
         this.appendSimpleListItem(text + ".", songList);
         this.appendSimpleListItem("Load the respack to show the rest!", songList);
     }
 
-    for(var i = 0; i < pack.images.length; i++) {
+    for(let i = 0; i < pack.images.length; i++) {
         var image = pack.images[i];
         this.appendSimpleListItem(image, imageList);
     }
     var moreImages = pack.imagecount - pack.images.length;
     if(moreImages > 0) {
-        var text = "... and " + moreImages + " more image";
+        let text = "... and " + moreImages + " more image";
         if(moreImages > 1) {
-            text += "s"
+            text += "s";
         }
         this.appendSimpleListItem(text + ".", imageList);
         this.appendSimpleListItem("Load the respack to show the rest!", imageList);

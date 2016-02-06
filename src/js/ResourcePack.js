@@ -120,7 +120,7 @@ Respack.prototype.getBlob = function(url, progress) {
             throw error;
         }
     });
-}
+};
 
 Respack.prototype.loadFromBlob = function(blob, progress) {
     if(progress) {
@@ -141,7 +141,7 @@ Respack.prototype.loadFromBlob = function(blob, progress) {
         return this.parseZip(zip);
     }).then(() => {
         return this;
-    });;
+    });
 };
 
 Respack.prototype.parseZip = function(zip) {
@@ -257,7 +257,7 @@ Respack.prototype.parseSongQueue = function() {
             return songPromise;
         });
     }, Promise.resolve());
-}
+};
 
 Respack.prototype.parseImage = function(file) {
     var match;
@@ -266,7 +266,7 @@ Respack.prototype.parseImage = function(file) {
 
     // Animation
     if((match = name.match(new RegExp("^(.*)_(\\d+)$")))) {
-        var img = this.getImage(match[1]);
+        img = this.getImage(match[1]);
         if(!img) { // make a fresh one
             img = {"name":match[1],
                     "fullname":match[1],
@@ -282,7 +282,7 @@ Respack.prototype.parseImage = function(file) {
         }
     // Normal image
     } else if (!this.containsImage(name)) {
-        var img = {"name":name,
+        img = {"name":name,
                 "fullname":name,
                 "bitmap":null,
                 "align":"center",
@@ -342,7 +342,7 @@ Respack.prototype.parseImageQueue = function() {
             }
         });
     }, Promise.resolve());
-}
+};
 
 Respack.prototype.loadXML = function(file) {
     return new Promise((resolve, reject) => {
@@ -353,7 +353,7 @@ Respack.prototype.loadXML = function(file) {
             resolve(text);
         });
     });
-}
+};
 
 Respack.prototype.parseXML = function() {
     var p = Promise.resolve();
@@ -496,7 +496,7 @@ Respack.prototype.parseImageFile = function(text) {
     // var imagesXML = oDOM.documentElement.children;
     var el = oDOM.documentElement.firstElementChild;
     for(; el; el = el.nextElementSibling) {
-        var image = this.getImage(el.attributes[0].value);
+        let image = this.getImage(el.attributes[0].value);
         if(image) {
             image.fullname = el.getTag("fullname");
             if(!image.fullname) {
@@ -532,7 +532,7 @@ Respack.prototype.parseImageFile = function(text) {
         }
     }
     for(var i = 0; i < this.images.length; i++) {
-        var image = this.images[i];
+        let image = this.images[i];
         // Add all images with no info
         if(newImages.indexOf(image) == -1) {
             newImages.push(image);

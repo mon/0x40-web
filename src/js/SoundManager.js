@@ -97,7 +97,7 @@ SoundManager.prototype.init = function() {
                     reject(Error("MP3 Worker cannot be started - correct path set in defaults?"));
                 }, false);
                 mp3Worker.postMessage({ping:true});
-            })
+            });
         }).then(response => {
             return new Promise((resolve, reject) => {
                 // iOS and other some mobile browsers - unlock the context as
@@ -126,11 +126,11 @@ SoundManager.prototype.init = function() {
                 } else {
                     resolve();
                 }
-            })
+            });
         });
     }
     return this.initPromise;
-}
+};
 
 SoundManager.prototype.playSong = function(song, playBuild, forcePlay) {
     var p = Promise.resolve();
@@ -167,7 +167,7 @@ SoundManager.prototype.playSong = function(song, playBuild, forcePlay) {
         this.loopLength = this.loop.duration;
 
         // This fixes sync issues on Firefox and slow machines.
-        return this.context.suspend()
+        return this.context.suspend();
     }).then(() => {
         if(playBuild) {
             this.seek(-this.buildLength, true);
@@ -212,7 +212,7 @@ SoundManager.prototype.setRate = function(rate) {
     var time = this.clampedTime();
     this.playbackRate = rate;
     this.seek(time);
-}
+};
 
 SoundManager.prototype.seek = function(time, noPlayingUpdate) {
     if(!this.song) {
@@ -249,7 +249,7 @@ SoundManager.prototype.seek = function(time, noPlayingUpdate) {
     }
     this.initVisualiser();
     this.core.recalcBeatIndex();
-}
+};
 
 // In seconds, relative to the loop start
 SoundManager.prototype.currentTime = function() {
@@ -266,7 +266,7 @@ SoundManager.prototype.clampedTime = function() {
         time %= this.loopLength;
     }
     return time;
-}
+};
 
 SoundManager.prototype.displayableTime = function() {
     var time = this.clampedTime();
@@ -326,17 +326,17 @@ SoundManager.prototype.loadBuffer = function(song, soundName) {
         // transfer the buffer to save time
         mp3Worker.postMessage(song[soundName], [song[soundName]]);
     });
-}
+};
 
 // Converts continuous PCM array to Web Audio API friendly format
 SoundManager.prototype.audioBufFromRaw = function(raw) {
-    var buffer = raw.array
+    var buffer = raw.array;
     var channels = raw.channels;
     var samples = buffer.length/channels;
     var audioBuf = this.context.createBuffer(channels, samples, raw.sampleRate);
     //var audioBuf = this.context.createBuffer(1, buffer.length, raw.sampleRate);
     //audioBuf.copyToChannel(buffer, 0, 0);
-    for(var i = 0; i < channels; i++) {
+    for(let i = 0; i < channels; i++) {
         //console.log("Making buffer at offset",i*samples,"and length",samples,".Original buffer is",channels,"channels and",buffer.length,"elements");
         // Offset is in bytes, length is in elements
         var channel = new Float32Array(buffer.buffer , i * samples * 4, samples);
@@ -357,7 +357,7 @@ SoundManager.prototype.initVisualiser = function(bars) {
     }
     this.vReady = false;
     this.vTotalBars = bars;
-    for(var i = 0; i < this.analysers.length; i++) {
+    for(let i = 0; i < this.analysers.length; i++) {
         this.analysers[i].disconnect();
     }
     if(this.splitter) {
@@ -374,7 +374,7 @@ SoundManager.prototype.initVisualiser = function(bars) {
     this.maxBinLin = 0;
     
     this.attachVisualiser();
-}
+};
 
 SoundManager.prototype.attachVisualiser = function() {
     if(!this.playing || this.vReady) {
@@ -393,7 +393,7 @@ SoundManager.prototype.attachVisualiser = function() {
     // Split display up into each channel
     this.vBars = Math.floor(this.vTotalBars/channels);
     
-    for(var i = 0; i < channels; i++) {
+    for(let i = 0; i < channels; i++) {
         var analyser = this.context.createAnalyser();
         // big fft buffers are new-ish
         try {
@@ -423,22 +423,22 @@ SoundManager.prototype.attachVisualiser = function() {
 
     var logLow = Math.log2(2000);
     var logDiff = Math.log2(22000) - logLow;
-    for(var i = 0; i < logBins; i++) {
+    for(let i = 0; i < logBins; i++) {
         var cutoff = i * (logDiff/logBins) + logLow;
         var freqCutoff = Math.pow(2, cutoff);
         var binCutoff = Math.floor(freqCutoff / binWidth);
         this.binCutoffs.push(binCutoff);
     }
     this.vReady = true;
-}
+};
 
 SoundManager.prototype.sumArray = function(array, low, high) {
     var total = 0;
-    for(var i = low; i <= high; i++) {
+    for(let i = low; i <= high; i++) {
         total += array[i];
     }
     return total/(high-low+1);
-}
+};
 
 SoundManager.prototype.getVisualiserData = function() {
     if(!this.vReady) {
@@ -449,19 +449,19 @@ SoundManager.prototype.getVisualiserData = function() {
         var result = this.logArrays[a];
         this.analysers[a].getByteFrequencyData(data);
         
-        for(var i = 0; i < this.linBins; i++) {
+        for(let i = 0; i < this.linBins; i++) {
             var scaled = Math.round(i * this.maxBinLin / this.linBins);
             result[i] = data[scaled];
         }
         result[this.linBins] = data[this.binCutoffs[0]];
-        for(var i = this.linBins+1; i < this.vBars; i++) {
+        for(let i = this.linBins+1; i < this.vBars; i++) {
             var cutoff = i - this.linBins;
             result[i] = this.sumArray(data, this.binCutoffs[cutoff-1], 
                                             this.binCutoffs[cutoff]);
         }
     }
     return this.logArrays;
-}
+};
 
 SoundManager.prototype.setMute = function(mute) {
     if(!this.mute && mute) { // muting
@@ -506,7 +506,7 @@ SoundManager.prototype.fadeOut = function(callback) {
         this.gainNode.gain.exponentialRampToValueAtTime(0.01, this.context.currentTime + 2);
     }
     setTimeout(callback, 2000);
-}
+};
 
 window.SoundManager = SoundManager;
 

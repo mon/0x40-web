@@ -76,7 +76,7 @@ function HuesUI(parent) {
 
 HuesUI.prototype.addCoreCallback = function(name, func) {
     this.callbacks.push({name : name, func : func});
-}
+};
 
 HuesUI.prototype.initUI = function() {
     // Major info, image, song names
@@ -1029,7 +1029,7 @@ HalloweenUI.prototype.initUI = function() {
     this.root.appendChild(this.vignette);
     
     this.addCoreCallback("invert", this.invert.bind(this));
-}
+};
 
 HalloweenUI.prototype.beat = function(beats, index) {
     ModernUI.prototype.beat.call(this, beats, index);
@@ -1039,7 +1039,7 @@ HalloweenUI.prototype.beat = function(beats, index) {
         eyes.className = "hues-m-beatcenter hues-h-eyes";
         this.beatCenter.appendChild(eyes);
     }
-}
+};
 
 HalloweenUI.prototype.invert = function(invert) {
     if(invert) {
@@ -1055,7 +1055,7 @@ HalloweenUI.prototype.connectCore = function(core) {
     ModernUI.prototype.connectCore.call(this, core);
     
     document.getElementById("preloadHelper").classList.add("hues-h-text");
-}
+};
 
 HalloweenUI.prototype.disconnect = function() {
     ModernUI.prototype.disconnect.call(this, core);

@@ -1,4 +1,4 @@
-﻿/* Copyright (c) 2015 William Toohey <will@mon.im>
+/* Copyright (c) 2015 William Toohey <will@mon.im>
  * Portions Copyright (c) 2015 Calvin Walton <calvin.walton@kepstin.ca>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -78,7 +78,7 @@ function populateHuesInfo(version) {
     
     addInfo("Beat glossary", beatGlossary);
     addInfo("Keyboard shortcuts", shortcuts);
-};
+}
 
 var addInfo = function(titleText, list) {
     var refElem = document.getElementById(huesInfo.referenceID);

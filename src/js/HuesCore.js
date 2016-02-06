@@ -194,8 +194,8 @@ function HuesCore(defaults) {
             return true;
         }
         // If we've focused a text input, let the input go through!
-        if((e.target.tagName.toLowerCase() == "input" && e.target.type == "text")
-            || e.target.contentEditable === "true") {
+        if((e.target.tagName.toLowerCase() == "input" && e.target.type == "text") ||
+            e.target.contentEditable === "true") {
             return true;
         }
         var key = e.keyCode || e.which;
@@ -208,7 +208,7 @@ HuesCore.prototype.callEventListeners = function(ev) {
     this.eventListeners[ev].forEach(function(callback) {
         callback.apply(null, args);
     });
-}
+};
 
 HuesCore.prototype.addEventListener = function(ev, callback) {
     ev = ev.toLowerCase();
@@ -232,7 +232,7 @@ HuesCore.prototype.removeEventListener = function(ev, callback) {
 
 HuesCore.prototype.resizeVisualiser = function() {
     this.soundManager.initVisualiser(this.visualiser.width/2);
-}
+};
 
 HuesCore.prototype.updateVisualiser = function() {
     if(localStorage["visualiser"] != "on") {
@@ -258,7 +258,7 @@ HuesCore.prototype.updateVisualiser = function() {
         var vals = logArrays[a];
         for(var i = 0; i < vals.length; i++) {
             var index = 0;
-            if(logArrays.length == 2 && a == 0) {
+            if(logArrays.length == 2 && a === 0) {
                 index = vals.length - i - 1;
             } else {
                 index = i;
@@ -270,7 +270,7 @@ HuesCore.prototype.updateVisualiser = function() {
             x += barWidth;
         }
     }
-}
+};
 
 HuesCore.prototype.animationLoop = function() {
     requestAnimationFrame(this.animationLoop.bind(this));
@@ -314,7 +314,7 @@ HuesCore.prototype.recalcBeatIndex = function() {
         mapSoFar = build + rhythm.slice(0, this.beatIndex);
     }
     // If there's an odd amount of inverts thus far, invert our display
-    var invertCount = (mapSoFar.match(/i|I/g)||[]).length
+    var invertCount = (mapSoFar.match(/i|I/g)||[]).length;
     this.setInvert(invertCount % 2);
 };
 
@@ -370,7 +370,7 @@ HuesCore.prototype.setSongOject = function(song) {
             return this.setSong(i);
         }
     }
-}
+};
 
 HuesCore.prototype.setSong = function(index) {
     if(this.currentSong == this.resourceManager.enabledSongs[index]) {
@@ -419,7 +419,7 @@ HuesCore.prototype.updateBeatLength = function() {
     } else {
         this.buildLength = -1;
     }
-}
+};
 
 HuesCore.prototype.getBeatLength = function() {
     if(this.beatIndex < 0) {
@@ -427,7 +427,7 @@ HuesCore.prototype.getBeatLength = function() {
     } else {
         return this.loopLength;
     }
-}
+};
 
 HuesCore.prototype.fillBuildup = function() {
     // update loop length for flash style filling
@@ -445,8 +445,8 @@ HuesCore.prototype.fillBuildup = function() {
             while (this.currentSong.buildupRhythm.length < buildBeats) {
                 this.currentSong.buildupRhythm = this.currentSong.buildupRhythm + ".";
             }
+            console.log("Buildup length:", buildBeats);
         }
-        console.log("Buildup length:", buildBeats);
     }
     // update with a buildup of possibly different length
     this.updateBeatLength();
@@ -477,7 +477,7 @@ HuesCore.prototype.loopCheck = function() {
     if(Math.floor(this.soundManager.currentTime() / this.soundManager.loopLength) > this.loopCount) {
         this.onLoop();
     }
-}
+};
 
 HuesCore.prototype.onLoop = function() {
     this.loopCount++;
@@ -495,7 +495,7 @@ HuesCore.prototype.onLoop = function() {
         }
         break;
     }
-}
+};
 
 HuesCore.prototype.doAutoSong = function() {
     var func = null;
@@ -511,7 +511,7 @@ HuesCore.prototype.doAutoSong = function() {
     } else {
         func.call(this);
     }
-}
+};
 
 HuesCore.prototype.songDataUpdated = function() {
     if (this.currentSong) {
@@ -632,7 +632,7 @@ HuesCore.prototype.beater = function(beat) {
             this.renderer.doXBlur();
             this.renderer.doBlackout();
             break;
-        case '¤':
+        case 'Â¤':
             this.renderer.doXBlur();
             this.renderer.doBlackout(true);
             break;
@@ -677,7 +677,7 @@ HuesCore.prototype.beater = function(beat) {
             this.toggleInvert();
             break;
         }
-        if ([".", "+", "|", "¤"].indexOf(beat) == -1) {
+        if ([".", "+", "|", "Â¤"].indexOf(beat) == -1) {
             this.renderer.clearBlackout();
         }
         if([".", "+", ":", "*", "X", "O", "~", "=", "i", "I"].indexOf(beat) == -1) {
@@ -729,11 +729,11 @@ HuesCore.prototype.setInvert = function(invert) {
         document.documentElement.style.webkitFilter = "";
     }
     this.callEventListeners("invert", invert);
-}
+};
 
 HuesCore.prototype.toggleInvert = function() {
     this.setInvert(!this.invert);
-}
+};
 
 HuesCore.prototype.respackLoaded = function() {
     this.init();

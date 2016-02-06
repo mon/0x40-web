@@ -172,6 +172,7 @@ HuesSettings.prototype.settingsOptions = {
                         ret = "min";
                         break;
                     case "off":
+                        /* falls through */
                     default:
                         return "";
                 }
@@ -238,17 +239,19 @@ function HuesSettings(defaults) {
 
     // because we still care about the main window
     document.getElementById("closeButton").onclick = this.hide.bind(this);
+    
     // we also care about tabs looking nice.
+    var checkListener = function() { 
+        for(let i = 0; i < tabs.length; i++) {
+            tabs[i].className = "tab-label";
+        }
+        this._label.className = "tab-label checked";
+    };
     var tabs = document.getElementsByClassName("tab-label");
-    for(var i = 0; i < tabs.length; i++) {
+    for(let i = 0; i < tabs.length; i++) {
         var check = document.getElementById(tabs[i].htmlFor);
         check._label = tabs[i];
-        check.addEventListener("change", function() { // Uses 'this' of check!
-            for(var i = 0; i < tabs.length; i++) {
-                tabs[i].className = "tab-label";
-            }
-            this._label.className = "tab-label checked";
-        });
+        check.addEventListener("change", checkListener);
     }
     if(!this.defaults.noUI) {
         this.initUI();
@@ -304,6 +307,18 @@ HuesSettings.prototype.showInfo = function() {
 
 HuesSettings.prototype.initUI = function() {
     var doc = this.root.ownerDocument;
+        
+    // Don't make in every loop
+    var intValidator = function(self, variable) {
+        this.value = this.value.replace(/\D/g,'');
+        if(this.value === "" || this.value < 1) {
+            this.value = "";
+            return;
+        }
+        localStorage[variable] = this.value;
+        self.updateConditionals();
+        self.core.settingsUpdated();
+    };
 
     // To order things nicely
     for(var cat in this.settingsCategories) {
@@ -312,7 +327,7 @@ HuesSettings.prototype.initUI = function() {
             catContainer.textContent = cat;
             catContainer.className = "settings-category";
             var cats = this.settingsCategories[cat];
-            for(var i = 0; i < cats.length; i++) {
+            for(let i = 0; i < cats.length; i++) {
                 var setName = cats[i];
                 var setContainer = doc.createElement("div");
                 var setting = this.settingsOptions[setName];
@@ -320,6 +335,7 @@ HuesSettings.prototype.initUI = function() {
                 setContainer.className = "settings-individual";
                 var buttonContainer = doc.createElement("div");
                 buttonContainer.className = "settings-buttons";
+                
                 for(var j = 0; j < setting.options.length; j++) {
                     var option = setting.options[j];
                     if(typeof option === "string") {
@@ -355,16 +371,7 @@ HuesSettings.prototype.initUI = function() {
                             input.value = localStorage[option.variable];
                             // TODO: support more than just positive ints when the need arises
                             if(option.inputType == "int") {
-                                input.oninput = (function(self, variable) {
-                                    this.value = this.value.replace(/\D/g,'');
-                                    if(this.value == "" || this.value < 1) {
-                                        this.value = "";
-                                        return;
-                                    }
-                                    localStorage[variable] = this.value;
-                                    self.updateConditionals();
-                                    self.core.settingsUpdated();
-                                }.bind(input, this, option.variable));
+                                input.oninput = intValidator.bind(input, this, option.variable);
                             }
                             input.autofocus = false;
                             buttonContainer.appendChild(input);
@@ -405,15 +412,15 @@ HuesSettings.prototype.set = function(setting, value) {
 
 HuesSettings.prototype.updateConditionals = function() {
     // update any conditionally formatted settings text
-    for(var i = 0; i < this.textCallbacks.length; i++) {
+    for(let i = 0; i < this.textCallbacks.length; i++) {
         var text = this.textCallbacks[i];
         text.element.textContent = text.func();
     }
-    for(var i = 0; i < this.visCallbacks.length; i++) {
+    for(let i = 0; i < this.visCallbacks.length; i++) {
         var callback = this.visCallbacks[i];
         callback.element.style.visibility = callback.func() ? "visible" : "hidden";
     }
-}
+};
 
 // Note: This is not defaults as per defaultSettings, but those merged with
 // the defaults given in the initialiser

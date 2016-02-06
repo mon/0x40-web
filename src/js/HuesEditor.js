@@ -133,7 +133,7 @@ HuesEditor.prototype.resize = function(noHilightCalc) {
         
         this.waveCanvas.width = this.waveCanvas.clientWidth;
     }
-}
+};
 
 HuesEditor.prototype.createTextInput = function(label, id, subtitle, parent) {
     var div = document.createElement("div");
@@ -155,7 +155,7 @@ HuesEditor.prototype.createTextInput = function(label, id, subtitle, parent) {
     parent.appendChild(div);
     
     return input;
-}
+};
 
 HuesEditor.prototype.createButton = function(label, parent, disabled, extraClass) {
     var button = document.createElement("span");
@@ -169,7 +169,7 @@ HuesEditor.prototype.createButton = function(label, parent, disabled, extraClass
     button.innerHTML = label.toUpperCase();
     parent.appendChild(button);
     return button;
-}
+};
 
 HuesEditor.prototype.uiCreateInfo = function() {
     var info = document.createElement("div");
@@ -185,7 +185,7 @@ HuesEditor.prototype.uiCreateInfo = function() {
             return;
         }
         this.core.callEventListeners("newsong", this.song);
-    }
+    };
     
     this.title = this.createTextInput("Title:", "edit-title", "Song name", info);
     this.title.oninput = songUpdate.bind(this, "title");
@@ -211,7 +211,7 @@ HuesEditor.prototype.onNewSong = function(song) {
             this.loopWave = null;
         }
     }
-}
+};
 
 HuesEditor.prototype.onBeat = function(map, index) {
     if(!this.song || this.core.currentSong != this.song) {
@@ -234,7 +234,7 @@ HuesEditor.prototype.onBeat = function(map, index) {
     // Not computing width/height here due to Chrome bug
     editor._hilight.style.left = (offsetX * this.hilightWidth) + "px";
     editor._hilight.style.top = (offsetY * this.hilightHeight) + "px";
-}
+};
 
 HuesEditor.prototype.reflow = function(editor, map) {
     if(!map) { // NOTHING TO SEE HERE
@@ -257,7 +257,7 @@ HuesEditor.prototype.reflow = function(editor, map) {
     var regex = new RegExp("(.{" + charsPerLine + "})", "g");
     editor._beatmap.innerHTML = map.replace(regex, "$1<br />");
     editor._breakAt = charsPerLine;
-}
+};
 
 HuesEditor.prototype.loadAudio = function(editor) {
     if(editor._fileInput.files.length < 1) {
@@ -299,7 +299,7 @@ HuesEditor.prototype.loadAudio = function(editor) {
         console.log(error);
         alert("Couldn't load song! Is it a LAME encoded MP3?");
     });
-}
+};
 
 HuesEditor.prototype.removeAudio = function(editor) {
     if(!this.song) {
@@ -319,7 +319,7 @@ HuesEditor.prototype.removeAudio = function(editor) {
         this.core.soundManager.stop();
         this.updateWaveform();
     }
-}
+};
 
 HuesEditor.prototype.blobToArrayBuffer = function(blob) {
     return new Promise((resolve, reject) => {
@@ -332,7 +332,7 @@ HuesEditor.prototype.blobToArrayBuffer = function(blob) {
         };
         fr.readAsArrayBuffer(blob);
     });
-}
+};
 
 HuesEditor.prototype.newSong = function(song) {
     if(!song) {
@@ -380,7 +380,7 @@ HuesEditor.prototype.newSong = function(song) {
     this.linked = true;
     this.updateInfo();
     this.updateWaveform();
-}
+};
 
 HuesEditor.prototype.updateInfo = function() {
     if(!this.linked) {
@@ -423,7 +423,7 @@ HuesEditor.prototype.updateInfo = function() {
             }
         }
     }
-}
+};
 
 HuesEditor.prototype.pushUndo = function(name, editor, oldText, newText) {
     if(oldText == newText) {
@@ -436,18 +436,18 @@ HuesEditor.prototype.pushUndo = function(name, editor, oldText, newText) {
         this.undoBuffer.pop();
     }
     this.updateUndoUI();
-}
+};
 
 HuesEditor.prototype.undo = function() {
     this.undoRedo(this.undoBuffer, this.redoBuffer);
-}
+};
 
 HuesEditor.prototype.redo = function() {
     this.undoRedo(this.redoBuffer, this.undoBuffer);
-}
+};
 
 HuesEditor.prototype.undoRedo = function(from, to) {
-    if(from.length == 0 || !this.song) {
+    if(from.length === 0 || !this.song) {
         return;
     }
     // Remove old data
@@ -461,13 +461,13 @@ HuesEditor.prototype.undoRedo = function(from, to) {
     this.updateHalveDoubleButtons(fromData.editor);
     this.core.updateBeatLength();
     this.core.recalcBeatIndex();
-}
+};
 
 HuesEditor.prototype.clearUndoRedo = function() {
     this.undoBuffer = [];
     this.redoBuffer = [];
     this.updateUndoUI();
-}
+};
 
 HuesEditor.prototype.updateUndoUI = function() {
     this.undoBtn.className = "hues-button disabled";
@@ -483,7 +483,7 @@ HuesEditor.prototype.updateUndoUI = function() {
         this.redoBtn.classList.remove("disabled");
         this.redoBtn.onclick = this.redo.bind(this);
     }
-}
+};
 
 HuesEditor.prototype.halveBeats = function(editor) {
     if(!this.song || this.getText(editor).length < 2) {
@@ -500,16 +500,16 @@ HuesEditor.prototype.halveBeats = function(editor) {
         this.song.independentBuild = false;
     }
     this.setText(editor, this.song[editor._rhythm].replace(/(.)./g, "$1"));
-}
+};
 
 HuesEditor.prototype.doubleBeats = function(editor) {
-    if(!this.song || this.getText(editor).length == 0) {
+    if(!this.song || this.getText(editor).length === 0) {
         return;
     }
     if(!this.song.independentBuild) {
         // Double them both
         var other = editor._rhythm == "rhythm" ? this.buildEdit : this.loopEdit;
-        if(this.getText(other).length == 0) {
+        if(this.getText(other).length === 0) {
             return;
         }
         this.song.independentBuild = true;
@@ -517,7 +517,7 @@ HuesEditor.prototype.doubleBeats = function(editor) {
         this.song.independentBuild = false;
     }
     this.setText(editor, this.song[editor._rhythm].replace(/(.)/g, "$1."));
-}
+};
 
 HuesEditor.prototype.uiCreateImport = function() {
     var imports = document.createElement("div");
@@ -560,7 +560,7 @@ HuesEditor.prototype.uiCreateSongStat = function(name, value, parent) {
     valueSpan.className = "edit-songstat-value";
     container.appendChild(valueSpan);
     return valueSpan;
-}
+};
 
 HuesEditor.prototype.uiCreateEditArea = function() {
     var editArea = document.createElement("div");
@@ -574,7 +574,7 @@ HuesEditor.prototype.uiCreateEditArea = function() {
     this.timeLock.id = "edit-timelock";
     this.timeLock.className = "hues-icon";
     // CHAIN, use &#xe904; for CHAIN-BROKEN
-    var locker = this.createButton("&#xe905;", this.timeLock)
+    var locker = this.createButton("&#xe905;", this.timeLock);
     locker.onclick = () => {
         if(!this.song) {
             return;
@@ -637,21 +637,21 @@ HuesEditor.prototype.uiCreateEditArea = function() {
     
     this.buildEdit._hilight.textContent = "[none]";
     this.loopEdit._hilight.innerHTML = 
-        '<br />\
-         Click [LOAD RHYTHM] to load a loop! LAME encoded MP3s work best.<br />\
-         (LAME is important for seamless MP3 loops)<br />\
-        <br />\
-         [DOUBLE] doubles the selected map length by padding it with "."s.<br />\
-         [HALVE] shortens the map length by removing every other character.<br />\
-        <br />\
-         You can also add a buildup with [LOAD BUILDUP], or remove it<br />\
-         with [REMOVE].<br />\
-        <br />\
-         [NEW SONG] adds a completely empty song for you to edit, and<br />\
-         [EDIT CURRENT SONG] takes the current playing song to the editor.<br />\
-        <br />\
-         [COPY/SAVE XML] allow for storing the rhythms and easy <br />\
-         inclusion into a Resource Pack!';
+        '<br />' + 
+         'Click [LOAD RHYTHM] to load a loop! LAME encoded MP3s work best.<br />' + 
+         '(LAME is important for seamless MP3 loops)<br />' +
+         '<br />' +
+         '[DOUBLE] doubles the selected map length by padding it with "."s.<br />' +
+         '[HALVE] shortens the map length by removing every other character.<br />' +
+         '<br />' +
+         'You can also add a buildup with [LOAD BUILDUP], or remove it<br />' +
+         'with [REMOVE].<br />' +
+         '<br />' +
+         '[NEW SONG] adds a completely empty song for you to edit, and<br />' +
+         '[EDIT CURRENT SONG] takes the current playing song to the editor.<br />' +
+         '<br />' +
+         '[COPY/SAVE XML] allow for storing the rhythms and easy <br />' +
+         'inclusion into a Resource Pack!';
 };
 
 HuesEditor.prototype.uiCreateSingleEditor = function(title, soundName, rhythmName, id, parent) {
@@ -690,9 +690,9 @@ HuesEditor.prototype.uiCreateSingleEditor = function(title, soundName, rhythmNam
     header.appendChild(rightHeader);
     
     container._halveBtn = this.createButton("Halve", rightHeader);
-    container._halveBtn.onclick = this.halveBeats.bind(this, container)
+    container._halveBtn.onclick = this.halveBeats.bind(this, container);
     container._doubleBtn = this.createButton("Double", rightHeader);
-    container._doubleBtn.onclick = this.doubleBeats.bind(this, container)
+    container._doubleBtn.onclick = this.doubleBeats.bind(this, container);
     
     var fileInput = document.createElement("input");
     fileInput.type ="file";
@@ -700,7 +700,7 @@ HuesEditor.prototype.uiCreateSingleEditor = function(title, soundName, rhythmNam
     fileInput.multiple = false;
     fileInput.onchange = this.loadAudio.bind(this, container);
     var load = this.createButton("Load " + title.replace(/&nbsp;/g,""), rightHeader);
-    load.onclick = () => {fileInput.click()};
+    load.onclick = () => {fileInput.click();};
     
     container._removeBtn = this.createButton("Remove", rightHeader, true);
     container._removeBtn.onclick = this.removeAudio.bind(this, container);
@@ -735,7 +735,7 @@ HuesEditor.prototype.uiCreateSingleEditor = function(title, soundName, rhythmNam
     this.setLocked(container, 0);
     
     return container;
-}
+};
 
 HuesEditor.prototype.rightClick = function(editor, event) {
     if(!this.linked) {
@@ -759,7 +759,7 @@ HuesEditor.prototype.rightClick = function(editor, event) {
     } else {
         return true;
     }
-}
+};
 
 HuesEditor.prototype.textUpdated = function(editor) {
     if(!this.song || !this.song[editor._sound]) {
@@ -768,11 +768,11 @@ HuesEditor.prototype.textUpdated = function(editor) {
     }
     // Space at start of line is nonbreaking, get it with \u00a0
     var input = editor._beatmap.textContent.replace(/ |\u00a0/g, "");
-    if(input.length == 0) {
+    if(input.length === 0) {
         input = ".";
     }
     this.setText(editor, input);
-}
+};
 
 HuesEditor.prototype.getText = function(editor) {
     if(!this.song || !this.song[editor._rhythm]) {
@@ -792,7 +792,7 @@ HuesEditor.prototype.setText = function(editor, text, caretFromEnd) {
         caret = Math.min(editor._locked, caret);
         if(text.length > editor._locked) {
             // Works for pastes too! Removes the different between sizes from the caret position
-            text = text.slice(0, caret) + text.slice(caret + (text.length - editor._locked), text.length)
+            text = text.slice(0, caret) + text.slice(caret + (text.length - editor._locked), text.length);
         } else {
             while(text.length < editor._locked) {
                 text += ".";
@@ -828,7 +828,7 @@ HuesEditor.prototype.setText = function(editor, text, caretFromEnd) {
         this.updateHalveDoubleButtons(otherMap);
     }
     this.pushUndo(editor._rhythm, editor, this.song[editor._rhythm], text);
-    this.song[editor._rhythm] = text
+    this.song[editor._rhythm] = text;
     this.reflow(editor, this.song[editor._rhythm]);
     this.setCaret(editor._beatmap, caret);
     this.updateHalveDoubleButtons(editor);
@@ -837,7 +837,7 @@ HuesEditor.prototype.setText = function(editor, text, caretFromEnd) {
     // We may have to go backwards in time
     this.core.recalcBeatIndex();
     this.updateInfo();
-}
+};
 
 HuesEditor.prototype.getCaret = function(editable) {
     var caret = 0;
@@ -846,7 +846,7 @@ HuesEditor.prototype.getCaret = function(editable) {
       var range = sel.getRangeAt(0);
       // <br> elements are empty, and pastes do weird things.
       // So don't go up in multiples of 2 for getCaret
-      for(var i = 0; i < editable.childNodes.length; i++) {
+      for(let i = 0; i < editable.childNodes.length; i++) {
           if (range.commonAncestorContainer == editable.childNodes[i]) {
               caret += range.endOffset;
             return caret;
@@ -856,13 +856,13 @@ HuesEditor.prototype.getCaret = function(editable) {
       }
     }
     return 0;
-}
+};
 
 HuesEditor.prototype.setCaret = function(editable, caret) {
     var range = document.createRange();
     var sel = window.getSelection();
     // <br> elements mean children go up in multiples of 2
-    for(var i = 0; i < editable.childNodes.length; i+= 2) {
+    for(let i = 0; i < editable.childNodes.length; i+= 2) {
         var textLen = editable.childNodes[i].textContent.length;
         if(caret > textLen) {
             caret -= textLen;
@@ -874,7 +874,7 @@ HuesEditor.prototype.setCaret = function(editable, caret) {
             break;
         }
     }
-}
+};
 
 HuesEditor.prototype.updateHalveDoubleButtons = function(editor) {
     editor._halveBtn.className = "hues-button disabled";
@@ -889,7 +889,7 @@ HuesEditor.prototype.updateHalveDoubleButtons = function(editor) {
             editor._halveBtn.className = "hues-button";
         }
     }
-}
+};
 
 HuesEditor.prototype.setLocked = function(editor, locked) {
     editor._locked = locked;
@@ -899,7 +899,7 @@ HuesEditor.prototype.setLocked = function(editor, locked) {
         editor._lockedBtn.innerHTML = "&#xe907;"; // UNLOCKED
     }
     this.updateHalveDoubleButtons(editor);
-}
+};
 
 HuesEditor.prototype.uiCreateControls = function() {
     var controls = document.createElement("div");
@@ -913,7 +913,7 @@ HuesEditor.prototype.uiCreateControls = function() {
         // In case it gets clamped, check
         var newRate = this.core.soundManager.playbackRate;
         playRateLab.textContent = newRate.toFixed(2) + "x";
-    }
+    };
     
     var speedControl = document.createElement("div");
     controls.appendChild(speedControl);
@@ -944,7 +944,7 @@ HuesEditor.prototype.uiCreateControls = function() {
     wrapAt.type = "text";
     wrapAt.oninput = () => {
         wrapAt.value = wrapAt.value.replace(/\D/g,'');
-        if(wrapAt.value == "" || wrapAt.value < 1) {
+        if(wrapAt.value === "" || wrapAt.value < 1) {
             wrapAt.value = "";
             return;
         }
@@ -977,7 +977,7 @@ HuesEditor.prototype.updateWaveform = function() {
         this.loopWaveBuff = this.core.soundManager.loop;
         this.loopWave = this.renderWave(this.loopWaveBuff, this.core.soundManager.loopLength);
     }
-}
+};
 
 HuesEditor.prototype.renderWave = function(buffer, length) {
     if(!buffer) {
@@ -992,14 +992,14 @@ HuesEditor.prototype.renderWave = function(buffer, length) {
     
     var samplesPerPixel = Math.floor(buffer.sampleRate / WAVE_PIXELS_PER_SECOND);
     var waveData = [];
-    for(var i = 0; i < buffer.numberOfChannels; i++) {
+    for(let i = 0; i < buffer.numberOfChannels; i++) {
         waveData.push(buffer.getChannelData(i));
     }
     // Half pixel offset makes things look crisp
     var pixel = 0.5;
     waveContext.strokeStyle = "black";
     var halfHeight = WAVE_HEIGHT_PIXELS/2;
-    for(var i = 0; i < buffer.length; i += samplesPerPixel) {
+    for(let i = 0; i < buffer.length; i += samplesPerPixel) {
         var min = 0, max = 0;
         for(var j = 0; j < samplesPerPixel && i + j < buffer.length; j++) {
             for(var chan = 0; chan < waveData.length; chan++) {
@@ -1019,7 +1019,7 @@ HuesEditor.prototype.renderWave = function(buffer, length) {
     }
     
     return wave;
-}
+};
 
 HuesEditor.prototype.drawWave = function() {
     var width = this.waveCanvas.width;
@@ -1032,20 +1032,20 @@ HuesEditor.prototype.drawWave = function() {
     
     if(this.buildWave && minTime < 0) {
         var bLen = this.core.soundManager.buildLength;
-        var center = Math.floor((now + bLen) / bLen * this.buildWave.width);
+        let center = Math.floor((now + bLen) / bLen * this.buildWave.width);
         this.drawOneWave(this.buildWave, center, width);
     }
     
     if(this.loopWave && maxTime > 0) {
         var loopLen = this.core.soundManager.loopLength;
         var clampedNow = (minTime % loopLen) + span;
-        var center = Math.floor(clampedNow / loopLen * this.loopWave.width);
+        let center = Math.floor(clampedNow / loopLen * this.loopWave.width);
         this.drawOneWave(this.loopWave, center, width);
         
         var clampedNext = (maxTime % loopLen) - span;
         // We've looped and need to draw 2 things
         if(clampedNext < clampedNow) {
-            var center = Math.floor(clampedNext / loopLen * this.loopWave.width);
+            let center = Math.floor(clampedNext / loopLen * this.loopWave.width);
             this.drawOneWave(this.loopWave, center, width);
         }
     }
@@ -1056,7 +1056,7 @@ HuesEditor.prototype.drawWave = function() {
     this.waveContext.moveTo(width/2, 0);
     this.waveContext.lineTo(width/2, WAVE_HEIGHT_PIXELS);
     this.waveContext.stroke();
-}
+};
 
 HuesEditor.prototype.drawOneWave = function(wave, center, width) {
     this.waveContext.drawImage(wave,
@@ -1064,7 +1064,7 @@ HuesEditor.prototype.drawOneWave = function(wave, center, width) {
                                width, WAVE_HEIGHT_PIXELS,  // source width/height
                                0, 0,                       // dest x/y
                                width, WAVE_HEIGHT_PIXELS); // dest width/height
-}
+};
 
 HuesEditor.prototype.generateXML = function() {
     if(!this.song) {
@@ -1087,7 +1087,7 @@ HuesEditor.prototype.generateXML = function() {
     }
 	result += "  </song>\n";
     return result;
-}
+};
 
 HuesEditor.prototype.saveXML = function() {
     var xml = this.generateXML();
@@ -1109,7 +1109,7 @@ HuesEditor.prototype.saveXML = function() {
     element.click();
 
     document.body.removeChild(element);
-}
+};
 
 // http://stackoverflow.com/a/30810322
 HuesEditor.prototype.copyXML = function() {
@@ -1143,7 +1143,7 @@ HuesEditor.prototype.copyXML = function() {
     } else {
         alert("Copy failed! Try saving instead");
     }
-}
+};
     
 window.HuesEditor = HuesEditor;
 
