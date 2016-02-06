@@ -537,7 +537,7 @@ HuesCore.prototype.randomImage = function() {
         if ((index == this.imageIndex || this.lastImageArray.indexOf(index) != -1) && len > 1) {
             this.randomImage();
         } else {
-            this.setImage(index);
+            this.setImage(index, true);
             this.lastImageArray.push(index);
             let cull = Math.min(20, Math.floor((len / 2)));
             while (this.lastImageArray.length > cull && cull >= 0) {
@@ -550,12 +550,16 @@ HuesCore.prototype.randomImage = function() {
     }
 };
 
-HuesCore.prototype.setImage = function(index) {
+HuesCore.prototype.setImage = function(index, leaveArray) {
     // If there are no images, this corrects NaN to 0
     this.imageIndex = index ? index : 0;
     let img=this.resourceManager.enabledImages[this.imageIndex];
     if (img == this.currentImage && img !== null) {
         return;
+    }
+    // When not randoming, clear this
+    if(!leaveArray) {
+        this.lastImageArray = [];
     }
     if (img) {
         this.currentImage = img;
@@ -582,14 +586,12 @@ HuesCore.prototype.nextImage = function() {
     this.setIsFullAuto(false);
     let img=(this.imageIndex + 1) % this.resourceManager.enabledImages.length;
     this.setImage(img);
-    this.lastImageArray = [];
 };
 
 HuesCore.prototype.previousImage = function() {
     this.setIsFullAuto(false);
     let img=((this.imageIndex - 1) + this.resourceManager.enabledImages.length) % this.resourceManager.enabledImages.length;
     this.setImage(img);
-    this.lastImageArray = [];
 };
 
 HuesCore.prototype.randomColourIndex = function() {
