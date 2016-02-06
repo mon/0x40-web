@@ -139,7 +139,8 @@
     position: absolute;
     color: rgba(127,127,127,0.8);
     visibility: visible;
-    text-align: center;
+    margin: 0;
+    padding: 0;
 }
 
 .beat-hilight.hidden {

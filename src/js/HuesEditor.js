@@ -124,12 +124,22 @@ HuesEditor.prototype.resize = function(noHilightCalc) {
     if(!noHilightCalc) {
         let hilight = document.createElement("div");
         hilight.className = "beat-hilight";
-        hilight.innerHTML = "&block;";
-        this.root.appendChild(hilight);
-        this.hilightWidth = hilight.clientWidth;
-        this.hilightHeight = hilight.clientHeight;
+        // Because clientWidth is rounded, we need to take the average. 100 is plenty.
+        let grid = "";
+        // height goes to 99 because we always have 1 line
+        for(let i = 0; i < 99; i++) {
+            grid += "<br />";
+        }
+        // width
+        for(let i = 0; i < 100; i++) {
+            grid += "&nbsp;";
+        }
+        hilight.innerHTML = grid;
+        this.loopEdit.appendChild(hilight);
+        this.hilightWidth = hilight.clientWidth / 100;
+        this.hilightHeight = hilight.clientHeight / 100;
         this.editorWidth = this.loopEdit._beatmap.clientWidth;
-        this.root.removeChild(hilight);
+        this.loopEdit.removeChild(hilight);
         
         this.waveCanvas.width = this.waveCanvas.clientWidth;
     }
@@ -232,8 +242,8 @@ HuesEditor.prototype.onBeat = function(map, index) {
     let offsetX = index % editor._breakAt;
     let offsetY = Math.floor(index / editor._breakAt);
     // Not computing width/height here due to Chrome bug
-    editor._hilight.style.left = (offsetX * this.hilightWidth) + "px";
-    editor._hilight.style.top = (offsetY * this.hilightHeight) + "px";
+    editor._hilight.style.left = Math.floor(offsetX * this.hilightWidth) + "px";
+    editor._hilight.style.top = Math.floor(offsetY * this.hilightHeight) + "px";
 };
 
 HuesEditor.prototype.reflow = function(editor, map) {
