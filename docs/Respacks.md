@@ -1,6 +1,8 @@
 ﻿# Resource Packs  
-Resource Packs (respacks) are what makes Hues tick. They contain the songs and images that are played when it is loaded.  
-It helps to examine a pre-existing respack to understand how they work. There are several available on the [0x40 Hues Blogspot](http://0x40hues.blogspot.com/p/blog-page_5.html).  
+Resource Packs (respacks) are what makes Hues tick. They contain the songs and images that are played when it is loaded.
+
+It helps to examine a pre-existing respack to understand how they work. There are several available on the [0x40 Hues Blogspot](http://0x40hues.blogspot.com/p/blog-page_5.html).
+
 Respacks are a simple .zip file and contain .xml files for information, and image and music files to be loaded. Folders and locations do not matter, but it can help to organise your respacks so that images, animated images and songs are in separate folders, and information xml files are in the top level.
 
 ## info.xml  
@@ -91,7 +93,7 @@ Name | Options | Default | Description
 --- | --- | --- | --- 
 title | Any text | `<no name>` | The full name of the song
 source | Any text | None | The source URL of the song, clickable in the UI
-rhythm (*required*) | Any text | None | The beatmap of the song. Create one in the [editor](Editor.md).
+rhythm (**required**) | Any text | None | The beatmap of the song. Create one in the [editor](Editor.md).
 buildup | Filename minus extension | None | The filename of the buildup - the lead-in to the main loop.
 buildupRhythm | Any text | `.` for the entire build | A rhythm for the buildup, if any.
 independentBuild (**web Hues only**) | Anything | None | By default, the length of a buildup is set so the buildup beatmap runs at the same speed as the main loop. If this is set, the buildup's beatmap can be any length, and will run faster or slower than the main loop. Best set using the [editor](Editor.md).
