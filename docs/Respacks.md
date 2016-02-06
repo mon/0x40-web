@@ -37,7 +37,8 @@ An example structure is as follows:
 
 Each `image` element must have a `name`. This refers to the filename (minus extension) of the image we are talking about.
 
-Possible options for images are:  
+Possible options for images are:
+
 Name | Options | Default | Description
 --- | --- | --- | --- 
 fullname | Any text | The image filename | If you would like a longer name than your file, specify one here. Some UIs display the longer name, some display the shorter name.
@@ -48,6 +49,7 @@ source | Any link | None | If you would like to provide a link to where you foun
 Animations are a special class of image. Because of limitations with using either gifs or videos, animations must be individual frames saved in the respack. The name of animated files must be `Name_x.ext` where `x` is the frame number and `ext` is png/jpg etc.
 
 Additional options for animations are:
+
 Name | Options | Default | Description
 --- | --- | --- | --- 
 frameDuration | Comma separated numbers, eg `33,45,20`| `33` | How long (in ms) each frame will display. Each frame can have a different length. If there are more listed durations than frames, they are ignored. If there are fewer listed durations than frames, the last duration is reused for any extra frames. For example, if every frame is 40ms long, just use `40`.
@@ -81,7 +83,8 @@ Here is an example song structure:
 
 Like `image` elements, each `song` element must have a `name`. This refers to the filename of the loop, minus extension.
 
-Possible options for songs are:  
+Possible options for songs are:
+
 Name | Options | Default | Description
 --- | --- | --- | --- 
 title | Any text | `<no name>` | The full name of the song
