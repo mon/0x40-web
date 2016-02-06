@@ -298,6 +298,24 @@ HuesCore.prototype.animationLoop = function() {
 
 HuesCore.prototype.recalcBeatIndex = function() {
     this.beatIndex = Math.floor(this.soundManager.currentTime() / this.getBeatLength());
+    
+    // We should sync up to how many inverts there are
+    var build = this.currentSong.buildupRhythm;
+    var rhythm = this.currentSong.rhythm;
+    var mapSoFar;
+    if(this.beatIndex < 0) {
+        mapSoFar = build.slice(0, this.beatIndex + build.length);
+    } else {
+        // If the rhythm has an odd number of inverts, don't reset because it
+        // alternates on each loop anyway
+        if((rhythm.match(/i|I/g)||[]).length % 2) {
+            return;
+        }
+        mapSoFar = build + rhythm.slice(0, this.beatIndex);
+    }
+    // If there's an odd amount of inverts thus far, invert our display
+    var invertCount = (mapSoFar.match(/i|I/g)||[]).length
+    this.setInvert(invertCount % 2);
 };
 
 HuesCore.prototype.getBeatIndex = function() {
@@ -432,16 +450,8 @@ HuesCore.prototype.fillBuildup = function() {
     }
     // update with a buildup of possibly different length
     this.updateBeatLength();
-    if(this.doBuildup) {
-        this.beatIndex = -this.currentSong.buildupRhythm.length;
-    } else {
-        this.beatIndex = 0;
-        // If there's an odd amount of inverts in the build, invert our display
-        var invertCount = (this.currentSong.buildupRhythm.match(/i|I/g)||[]).length
-        if(invertCount % 2) {
-            this.setInvert(true);
-        }
-    }
+    // If we're in the build or loop this will adjust
+    this.recalcBeatIndex();
 };
 
 HuesCore.prototype.randomSong = function() {
