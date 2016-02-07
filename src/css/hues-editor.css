@@ -135,6 +135,11 @@
     position: relative;
 }
 
+.beatmap:focus {
+    outline-width: 0;
+    outline: none;
+}
+
 .beat-hilight {
     position: absolute;
     color: rgba(127,127,127,0.8);
