@@ -30,7 +30,7 @@ function HuesEditor(core) {
     this.buildEdit = null;
     this.loopEdit = null;
     this.editArea = null;
-    this.wrapAt = 16;
+    this.wrapAt = 32;
     
     this.hilightWidth = 0;
     this.hilightHeight = 0;
@@ -138,7 +138,6 @@ HuesEditor.prototype.resize = function(noHilightCalc) {
         this.loopEdit.appendChild(hilight);
         this.hilightWidth = hilight.clientWidth / 100;
         this.hilightHeight = hilight.clientHeight / 100;
-        this.editorWidth = this.loopEdit._beatmap.clientWidth;
         this.loopEdit.removeChild(hilight);
         
         this.waveCanvas.width = this.waveCanvas.clientWidth;
@@ -239,8 +238,8 @@ HuesEditor.prototype.onBeat = function(map, index) {
         }
     }
     editor._hilight.className = "beat-hilight";
-    let offsetX = index % editor._breakAt;
-    let offsetY = Math.floor(index / editor._breakAt);
+    let offsetX = index % this.wrapAt;
+    let offsetY = Math.floor(index / this.wrapAt);
     // Not computing width/height here due to Chrome bug
     editor._hilight.style.left = Math.floor(offsetX * this.hilightWidth) + "px";
     editor._hilight.style.top = Math.floor(offsetY * this.hilightHeight) + "px";
@@ -258,15 +257,11 @@ HuesEditor.prototype.reflow = function(editor, map) {
     } else {
         editor._hilight.innerHTML = "&block;";
     }
-    let charsPerLine = Math.floor(this.editorWidth / this.hilightWidth);
-    // if it's too long to wrap, just give up
-    let wrap = Math.min(this.wrapAt, charsPerLine);
-    charsPerLine -= charsPerLine % wrap;
     editor._beatCount.textContent = map.length + " beats";
     // http://stackoverflow.com/a/27012001
-    let regex = new RegExp("(.{" + charsPerLine + "})", "g");
+    // if it's too long to wrap, scroll in the x direction
+    let regex = new RegExp("(.{" + this.wrapAt + "})", "g");
     editor._beatmap.innerHTML = map.replace(regex, "$1<br />");
-    editor._breakAt = charsPerLine;
 };
 
 HuesEditor.prototype.loadAudio = function(editor) {
