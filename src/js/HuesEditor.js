@@ -380,7 +380,7 @@ HuesEditor.prototype.pushUndo = function(name, editor, oldText, newText) {
 
     this.undoBuffer.push({songVar: name, editor: editor, text: oldText});
     while(this.undoBuffer.length > 50) {
-        this.undoBuffer.pop();
+        this.undoBuffer.shift();
     }
     this.updateUndoUI();
 };
