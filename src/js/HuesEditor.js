@@ -1000,15 +1000,21 @@ HuesEditor.prototype.renderWave = function(buffer, length) {
     for(let i = 0; i < buffer.numberOfChannels; i++) {
         waveData.push(buffer.getChannelData(i));
     }
+    let channels = buffer.numberOfChannels;
     // Half pixel offset makes things look crisp
     let pixel = 0.5;
-    waveContext.strokeStyle = "black";
     let halfHeight = WAVE_HEIGHT_PIXELS/2;
     for(let i = 0; i < buffer.length; i += samplesPerPixel) {
-        let min = 0, max = 0;
-        for(let j = 0; j < samplesPerPixel && i + j < buffer.length; j++) {
-            for(let chan = 0; chan < waveData.length; chan++) {
+        let min = 0, max = 0, avgHi = 0, avgLo = 0;
+        let j;
+        for(j = 0; j < samplesPerPixel && i + j < buffer.length; j++) {
+            for(let chan = 0; chan < channels; chan++) {
                 let sample = waveData[chan][i+j];
+                if(sample > 0) {
+                    avgHi += sample;
+                } else {
+                    avgLo += sample;
+                }
                 if(sample > max) max = sample;
                 if(sample < min) min = sample;
             }
@@ -1016,10 +1022,25 @@ HuesEditor.prototype.renderWave = function(buffer, length) {
         let maxPix = Math.floor(halfHeight + max * halfHeight);
         // Min is negative, addition is correct
         let minPix = Math.floor(halfHeight + min * halfHeight);
+        waveContext.strokeStyle = "black";
+        waveContext.globalAlpha = "1";
         waveContext.beginPath();
         waveContext.moveTo(pixel, maxPix);
         waveContext.lineTo(pixel, minPix);
         waveContext.stroke();
+        
+        // Draw the average too, gives a better feel for the wave
+        avgHi /= j * channels;
+        avgLo /= j * channels;
+        let maxAvg = Math.floor(halfHeight + avgHi * halfHeight);
+        let minAvg = Math.floor(halfHeight + avgLo * halfHeight);
+        waveContext.strokeStyle = "white";
+        waveContext.globalAlpha = "0.5";
+        waveContext.beginPath();
+        waveContext.moveTo(pixel, maxAvg);
+        waveContext.lineTo(pixel, minAvg);
+        waveContext.stroke();
+        
         pixel+=1;
     }
     
