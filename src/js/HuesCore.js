@@ -408,6 +408,7 @@ HuesCore.prototype.setSong = function(index, leaveArray) {
         }
     }
     this.setInvert(false);
+    this.renderer.doBlackout();
     return this.soundManager.playSong(this.currentSong, this.doBuildup)
     .then(() => {
         this.resetAudio();
