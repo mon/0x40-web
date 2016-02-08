@@ -260,6 +260,7 @@ function HuesSettings(defaults) {
 
 HuesSettings.prototype.connectCore = function(core) {
     this.core = core;
+    core.addEventListener("invert", this.onInvert.bind(this));
     core.settingsUpdated();
 };
 
@@ -304,6 +305,17 @@ HuesSettings.prototype.showInfo = function() {
     this.show();
     document.getElementById("tab-info").click();
 };
+
+// We don't want the settings window inverted, it makes editing annoying
+HuesSettings.prototype.onInvert = function(invert) {
+    if(invert) {
+        this.window.style.filter = "invert(100%)";
+        this.window.style.webkitFilter = "invert(100%)";
+    } else {
+        this.window.style.filter = "";
+        this.window.style.webkitFilter = "";
+    }
+}
 
 HuesSettings.prototype.initUI = function() {
     let doc = this.root.ownerDocument;
