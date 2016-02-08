@@ -144,64 +144,6 @@ HuesEditor.prototype.resize = function(noHilightCalc) {
     }
 };
 
-HuesEditor.prototype.createTextInput = function(label, id, subtitle, parent) {
-    let div = document.createElement("div");
-    div.className = "edit-label";
-    let caption = document.createElement("label");
-    caption.innerHTML = label;
-    caption.htmlFor = id;
-    div.appendChild(caption);
-    let container = document.createElement("span");
-    container.className = "edit-textbox-container";
-    let input = document.createElement("input");
-    input.className = "edit-textbox";
-    input.type = "text";
-    input.id = id;
-    input.value = subtitle;
-    container.appendChild(input);
-    div.appendChild(container);
-    
-    parent.appendChild(div);
-    
-    return input;
-};
-
-HuesEditor.prototype.createButton = function(label, parent, disabled, extraClass) {
-    let button = document.createElement("span");
-    button.className = "hues-button";
-    if(disabled) {
-        button.className += " disabled";
-    }
-    if(extraClass) {
-        button.className += " " + extraClass;
-    }
-    button.innerHTML = label.toUpperCase();
-    parent.appendChild(button);
-    return button;
-};
-
-HuesEditor.prototype.uiCreateInfo = function() {
-    let info = document.createElement("div");
-    this.topBar.appendChild(info);
-    info.id = "edit-info";
-    
-    let songUpdate = function(name) {
-        if(!this.song ) {
-            return;
-        }
-        this.song[name] = this[name].value;
-        if(this.song != this.core.currentSong) {
-            return;
-        }
-        this.core.callEventListeners("newsong", this.song);
-    };
-    
-    this.title = this.createTextInput("Title:", "edit-title", "Song name", info);
-    this.title.oninput = songUpdate.bind(this, "title");
-    this.source = this.createTextInput("Link:&nbsp;", "edit-source", "Source link", info);
-    this.source.oninput = songUpdate.bind(this, "source");
-};
-
 HuesEditor.prototype.onNewSong = function(song) {
     if(this.linked) {
         if(song == this.song) {
@@ -262,6 +204,49 @@ HuesEditor.prototype.reflow = function(editor, map) {
     // if it's too long to wrap, scroll in the x direction
     let regex = new RegExp("(.{" + this.wrapAt + "})", "g");
     editor._beatmap.innerHTML = map.replace(regex, "$1<br />");
+};
+
+HuesEditor.prototype.updateInfo = function() {
+    if(!this.linked) {
+        return;
+    }
+    
+    let loopLen = this.core.soundManager.loopLength;
+    let buildLen = this.core.soundManager.buildLength;
+    let beatLen = (loopLen / this.song.rhythm.length) * 1000;
+    
+    this.loopLen.textContent = loopLen.toFixed(2);
+    this.buildLen.textContent = buildLen.toFixed(2);
+    this.beatLen.textContent = beatLen.toFixed(2);
+    
+    // Avoid a bunch of nested elses
+    this.seekStart.classList.add("disabled");
+    this.seekLoop.classList.add("disabled");
+    this.saveBtn.classList.add("disabled");
+    this.copyBtn.classList.add("disabled");
+    this.buildEdit._removeBtn.classList.add("disabled");
+    this.loopEdit._removeBtn.classList.add("disabled");
+    
+    if(this.song) {
+        if(this.song.independentBuild) {
+            this.timeLock._locker.innerHTML = "&#xe904;";
+            this.timeLock.classList.add("unlocked");
+        } else {
+            this.timeLock._locker.innerHTML = "&#xe905;";
+            this.timeLock.classList.remove("unlocked");
+        }
+    
+        this.saveBtn.classList.remove("disabled");
+        this.copyBtn.classList.remove("disabled");
+        if(this.song.sound) {
+            this.seekLoop.classList.remove("disabled");
+            this.loopEdit._removeBtn.classList.remove("disabled");
+            if(this.song.buildup) {
+                this.seekStart.classList.remove("disabled");
+                this.buildEdit._removeBtn.classList.remove("disabled");
+            }
+        }
+    }
 };
 
 HuesEditor.prototype.loadAudio = function(editor) {
@@ -387,49 +372,6 @@ HuesEditor.prototype.newSong = function(song) {
     this.updateWaveform();
 };
 
-HuesEditor.prototype.updateInfo = function() {
-    if(!this.linked) {
-        return;
-    }
-    
-    let loopLen = this.core.soundManager.loopLength;
-    let buildLen = this.core.soundManager.buildLength;
-    let beatLen = (loopLen / this.song.rhythm.length) * 1000;
-    
-    this.loopLen.textContent = loopLen.toFixed(2);
-    this.buildLen.textContent = buildLen.toFixed(2);
-    this.beatLen.textContent = beatLen.toFixed(2);
-    
-    // Avoid a bunch of nested elses
-    this.seekStart.classList.add("disabled");
-    this.seekLoop.classList.add("disabled");
-    this.saveBtn.classList.add("disabled");
-    this.copyBtn.classList.add("disabled");
-    this.buildEdit._removeBtn.classList.add("disabled");
-    this.loopEdit._removeBtn.classList.add("disabled");
-    
-    if(this.song) {
-        if(this.song.independentBuild) {
-            this.timeLock._locker.innerHTML = "&#xe904;";
-            this.timeLock.classList.add("unlocked");
-        } else {
-            this.timeLock._locker.innerHTML = "&#xe905;";
-            this.timeLock.classList.remove("unlocked");
-        }
-    
-        this.saveBtn.classList.remove("disabled");
-        this.copyBtn.classList.remove("disabled");
-        if(this.song.sound) {
-            this.seekLoop.classList.remove("disabled");
-            this.loopEdit._removeBtn.classList.remove("disabled");
-            if(this.song.buildup) {
-                this.seekStart.classList.remove("disabled");
-                this.buildEdit._removeBtn.classList.remove("disabled");
-            }
-        }
-    }
-};
-
 HuesEditor.prototype.pushUndo = function(name, editor, oldText, newText) {
     if(oldText == newText) {
         return;
@@ -522,6 +464,79 @@ HuesEditor.prototype.doubleBeats = function(editor) {
         this.song.independentBuild = false;
     }
     this.setText(editor, this.song[editor._rhythm].replace(/(.)/g, "$1."));
+};
+
+HuesEditor.prototype.updateHalveDoubleButtons = function(editor) {
+    editor._halveBtn.className = "hues-button disabled";
+    editor._doubleBtn.className = "hues-button disabled";
+    
+    if(!editor._locked) {
+        let txtLen = this.getText(editor).length;
+        if(txtLen > 0) {
+            editor._doubleBtn.className = "hues-button";
+        }
+        if(txtLen > 1) {
+            editor._halveBtn.className = "hues-button";
+        }
+    }
+};
+
+HuesEditor.prototype.createTextInput = function(label, id, subtitle, parent) {
+    let div = document.createElement("div");
+    div.className = "edit-label";
+    let caption = document.createElement("label");
+    caption.innerHTML = label;
+    caption.htmlFor = id;
+    div.appendChild(caption);
+    let container = document.createElement("span");
+    container.className = "edit-textbox-container";
+    let input = document.createElement("input");
+    input.className = "edit-textbox";
+    input.type = "text";
+    input.id = id;
+    input.value = subtitle;
+    container.appendChild(input);
+    div.appendChild(container);
+    
+    parent.appendChild(div);
+    
+    return input;
+};
+
+HuesEditor.prototype.createButton = function(label, parent, disabled, extraClass) {
+    let button = document.createElement("span");
+    button.className = "hues-button";
+    if(disabled) {
+        button.className += " disabled";
+    }
+    if(extraClass) {
+        button.className += " " + extraClass;
+    }
+    button.innerHTML = label.toUpperCase();
+    parent.appendChild(button);
+    return button;
+};
+
+HuesEditor.prototype.uiCreateInfo = function() {
+    let info = document.createElement("div");
+    this.topBar.appendChild(info);
+    info.id = "edit-info";
+    
+    let songUpdate = function(name) {
+        if(!this.song ) {
+            return;
+        }
+        this.song[name] = this[name].value;
+        if(this.song != this.core.currentSong) {
+            return;
+        }
+        this.core.callEventListeners("newsong", this.song);
+    };
+    
+    this.title = this.createTextInput("Title:", "edit-title", "Song name", info);
+    this.title.oninput = songUpdate.bind(this, "title");
+    this.source = this.createTextInput("Link:&nbsp;", "edit-source", "Source link", info);
+    this.source.oninput = songUpdate.bind(this, "source");
 };
 
 HuesEditor.prototype.uiCreateImport = function() {
@@ -742,6 +757,73 @@ HuesEditor.prototype.uiCreateSingleEditor = function(title, soundName, rhythmNam
     return container;
 };
 
+HuesEditor.prototype.uiCreateControls = function() {
+    let controls = document.createElement("div");
+    controls.id = "edit-controls";
+    this.root.appendChild(controls);
+    
+    let changeRate = function(change) {
+        let rate = this.core.soundManager.playbackRate;
+        rate += change;
+        this.core.soundManager.setRate(rate);
+        // In case it gets clamped, check
+        let newRate = this.core.soundManager.playbackRate;
+        playRateLab.textContent = newRate.toFixed(2) + "x";
+    };
+    
+    let speedControl = document.createElement("div");
+    controls.appendChild(speedControl);
+    
+    // BACKWARD
+    let speedDown = this.createButton("&#xe909;", speedControl, false, "hues-icon");
+    speedDown.onclick = changeRate.bind(this, -0.25);
+    // FORWARD
+    let speedUp = this.createButton("&#xe90a;", speedControl, false, "hues-icon");
+    speedUp.onclick = changeRate.bind(this, 0.25);
+        
+    let playRateLab = document.createElement("span");
+    playRateLab.className = "settings-individual";
+    playRateLab.textContent = "1.00x";
+    speedControl.appendChild(playRateLab);
+    
+    let wrapControl = document.createElement("div");
+    controls.appendChild(wrapControl);
+    
+    let wrapLab = document.createElement("span");
+    wrapLab.className = "settings-individual";
+    wrapLab.textContent = "New line at beat ";
+    wrapControl.appendChild(wrapLab);
+    
+    let wrapAt = document.createElement("input");
+    wrapAt.className = "settings-input";
+    wrapAt.value = this.wrapAt;
+    wrapAt.type = "text";
+    wrapAt.oninput = () => {
+        wrapAt.value = wrapAt.value.replace(/\D/g,'');
+        if(wrapAt.value === "" || wrapAt.value < 1) {
+            wrapAt.value = "";
+            return;
+        }
+        this.wrapAt = parseInt(wrapAt.value);
+        this.reflow(this.buildEdit, this.song.buildupRhythm);
+        this.reflow(this.loopEdit, this.song.rhythm);
+        
+    };
+    wrapControl.appendChild(wrapAt);
+};
+
+HuesEditor.prototype.uiCreateVisualiser = function() {
+    // TODO placeholder
+    let wave = document.createElement("canvas");
+    wave.id = "edit-waveform";
+    wave.height = WAVE_HEIGHT_PIXELS;
+    this.root.appendChild(wave);
+    this.waveCanvas = wave;
+    this.waveContext = wave.getContext("2d");
+    
+    this.core.addEventListener("frame", this.drawWave.bind(this));
+};
+
 HuesEditor.prototype.rightClick = function(editor, event) {
     if(!this.linked) {
         return;
@@ -881,21 +963,6 @@ HuesEditor.prototype.setCaret = function(editable, caret) {
     }
 };
 
-HuesEditor.prototype.updateHalveDoubleButtons = function(editor) {
-    editor._halveBtn.className = "hues-button disabled";
-    editor._doubleBtn.className = "hues-button disabled";
-    
-    if(!editor._locked) {
-        let txtLen = this.getText(editor).length;
-        if(txtLen > 0) {
-            editor._doubleBtn.className = "hues-button";
-        }
-        if(txtLen > 1) {
-            editor._halveBtn.className = "hues-button";
-        }
-    }
-};
-
 HuesEditor.prototype.setLocked = function(editor, locked) {
     editor._locked = locked;
     if(locked) {
@@ -904,73 +971,6 @@ HuesEditor.prototype.setLocked = function(editor, locked) {
         editor._lockedBtn.innerHTML = "&#xe907;"; // UNLOCKED
     }
     this.updateHalveDoubleButtons(editor);
-};
-
-HuesEditor.prototype.uiCreateControls = function() {
-    let controls = document.createElement("div");
-    controls.id = "edit-controls";
-    this.root.appendChild(controls);
-    
-    let changeRate = function(change) {
-        let rate = this.core.soundManager.playbackRate;
-        rate += change;
-        this.core.soundManager.setRate(rate);
-        // In case it gets clamped, check
-        let newRate = this.core.soundManager.playbackRate;
-        playRateLab.textContent = newRate.toFixed(2) + "x";
-    };
-    
-    let speedControl = document.createElement("div");
-    controls.appendChild(speedControl);
-    
-    // BACKWARD
-    let speedDown = this.createButton("&#xe909;", speedControl, false, "hues-icon");
-    speedDown.onclick = changeRate.bind(this, -0.25);
-    // FORWARD
-    let speedUp = this.createButton("&#xe90a;", speedControl, false, "hues-icon");
-    speedUp.onclick = changeRate.bind(this, 0.25);
-        
-    let playRateLab = document.createElement("span");
-    playRateLab.className = "settings-individual";
-    playRateLab.textContent = "1.00x";
-    speedControl.appendChild(playRateLab);
-    
-    let wrapControl = document.createElement("div");
-    controls.appendChild(wrapControl);
-    
-    let wrapLab = document.createElement("span");
-    wrapLab.className = "settings-individual";
-    wrapLab.textContent = "New line at beat ";
-    wrapControl.appendChild(wrapLab);
-    
-    let wrapAt = document.createElement("input");
-    wrapAt.className = "settings-input";
-    wrapAt.value = this.wrapAt;
-    wrapAt.type = "text";
-    wrapAt.oninput = () => {
-        wrapAt.value = wrapAt.value.replace(/\D/g,'');
-        if(wrapAt.value === "" || wrapAt.value < 1) {
-            wrapAt.value = "";
-            return;
-        }
-        this.wrapAt = parseInt(wrapAt.value);
-        this.reflow(this.buildEdit, this.song.buildupRhythm);
-        this.reflow(this.loopEdit, this.song.rhythm);
-        
-    };
-    wrapControl.appendChild(wrapAt);
-};
-
-HuesEditor.prototype.uiCreateVisualiser = function() {
-    // TODO placeholder
-    let wave = document.createElement("canvas");
-    wave.id = "edit-waveform";
-    wave.height = WAVE_HEIGHT_PIXELS;
-    this.root.appendChild(wave);
-    this.waveCanvas = wave;
-    this.waveContext = wave.getContext("2d");
-    
-    this.core.addEventListener("frame", this.drawWave.bind(this));
 };
 
 HuesEditor.prototype.updateWaveform = function() {
