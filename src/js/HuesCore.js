@@ -298,6 +298,11 @@ HuesCore.prototype.animationLoop = function() {
 
 HuesCore.prototype.recalcBeatIndex = function() {
     this.beatIndex = Math.floor(this.soundManager.currentTime() / this.getBeatLength());
+    // beatIndex is NaN, abort
+    if(this.beatIndex != this.beatIndex) {
+        this.setInvert(false);
+        return;
+    }
     
     // We should sync up to how many inverts there are
     let build = this.currentSong.buildupRhythm;
@@ -311,7 +316,7 @@ HuesCore.prototype.recalcBeatIndex = function() {
         if((rhythm.match(/i|I/g)||[]).length % 2) {
             return;
         }
-        mapSoFar = build + rhythm.slice(0, this.beatIndex);
+        mapSoFar = (build ? build : "") + rhythm.slice(0, this.beatIndex);
     }
     // If there's an odd amount of inverts thus far, invert our display
     let invertCount = (mapSoFar.match(/i|I/g)||[]).length;
