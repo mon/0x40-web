@@ -355,6 +355,10 @@ HuesEditor.prototype.newSong = function(song) {
     this.newSongBtn.classList.remove("glow");
     this.fromSongBtn.classList.remove("glow");
     
+    // Enable title edits
+    this.title.disabled = false;
+    this.source.disabled = false;
+    
     this.clearUndoRedo();
     
     this.song = song;
@@ -542,8 +546,10 @@ HuesEditor.prototype.uiCreateInfo = function() {
     
     this.title = this.createTextInput("Title:", "edit-title", "Song name", info);
     this.title.oninput = songUpdate.bind(this, "title");
+    this.title.disabled = true;
     this.source = this.createTextInput("Link:&nbsp;", "edit-source", "Source link", info);
     this.source.oninput = songUpdate.bind(this, "source");
+    this.source.disabled = true;
 };
 
 HuesEditor.prototype.uiCreateImport = function() {
@@ -723,7 +729,7 @@ HuesEditor.prototype.uiCreateSingleEditor = function(title, soundName, rhythmNam
     
     let fileInput = document.createElement("input");
     fileInput.type ="file";
-    fileInput.accept="audio/mpeg3";
+    fileInput.accept="audio/mp3";
     fileInput.multiple = false;
     fileInput.onchange = this.loadAudio.bind(this, container);
     let load = this.createButton("Load " + title.replace(/&nbsp;/g,""), rightHeader);
