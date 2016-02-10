@@ -187,20 +187,22 @@ SoundManager.prototype.playSong = function(song, playBuild, forcePlay) {
     return p;
 };
 
-SoundManager.prototype.stop = function() {
+SoundManager.prototype.stop = function(dontDeleteBuffers) {
     if (this.playing) {
         if(this.buildSource) {
             this.buildSource.stop(0);
             this.buildSource.disconnect();
             this.buildSource = null;
-            this.buildup = null;
+            if(!dontDeleteBuffers)
+                this.buildup = null;
         }        
         // arg required for mobile webkit
         this.loopSource.stop(0);
          // TODO needed?
         this.loopSource.disconnect();
         this.loopSource = null;
-        this.loop = null;
+        if(!dontDeleteBuffers)
+            this.loop = null;
         this.vReady = false;
         this.playing = false;
         this.startTime = 0;
@@ -224,7 +226,7 @@ SoundManager.prototype.seek = function(time, noPlayingUpdate) {
     // Clamp the blighter
     time = Math.min(Math.max(time, -this.buildLength), this.loopLength);
     
-    this.stop();
+    this.stop(true);
     
     if(!this.loop) {
         return;
