@@ -315,7 +315,7 @@ HuesSettings.prototype.onInvert = function(invert) {
         this.window.style.filter = "";
         this.window.style.webkitFilter = "";
     }
-}
+};
 
 HuesSettings.prototype.initUI = function() {
     let doc = this.root.ownerDocument;

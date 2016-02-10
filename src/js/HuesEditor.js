@@ -150,7 +150,7 @@ HuesEditor.prototype.resize = function(noHilightCalc) {
 
 HuesEditor.prototype.getOther = function(editor) {
     return editor == this.loopEdit ? this.buildEdit : this.loopEdit;
-}
+};
 
 HuesEditor.prototype.onNewSong = function(song) {
     if(this.linked) {
@@ -266,7 +266,7 @@ HuesEditor.prototype.loadAudio = function(editor) {
     
     // Have we just added a build to a song with a rhythm, or vice versa?
     // If so, link their lengths
-    let newlyLinked = !this.song[editor._sound] && !!this.song[this.getOther(editor)._sound]
+    let newlyLinked = !this.song[editor._sound] && !!this.song[this.getOther(editor)._sound];
     
     // Disable load button TODO
     let file = editor._fileInput.files[0];
@@ -402,10 +402,12 @@ HuesEditor.prototype.updateIndependentBuild = function() {
     // Force independent build if only 1 source is present
     
     // Effectively buildup XOR loop - does only 1 exist?
-    if(!this.song.buildup != !this.song.sound) {
+    let hasBuild = !!this.song.buildup;
+    let hasLoop = !!this.song.sound;
+    if(hasBuild != hasLoop) {
         this.setIndependentBuild(true);
     }
-}
+};
 
 HuesEditor.prototype.setIndependentBuild = function(indep) {
     this.song.independentBuild = indep;
@@ -424,12 +426,12 @@ HuesEditor.prototype.setIndependentBuild = function(indep) {
         }
     }
     this.updateInfo();
-}
+};
 
 HuesEditor.prototype.batchUndo = function() {
     if(!this.batchUndoArray)
         this.batchUndoArray = [];
-}
+};
 
 HuesEditor.prototype.commitUndo = function() {
     if(this.batchUndoArray) {
@@ -438,7 +440,7 @@ HuesEditor.prototype.commitUndo = function() {
         this.batchUndoArray = null;
         this.updateUndoUI();
     }
-}
+};
 
 HuesEditor.prototype.pushUndo = function(name, editor, oldText, newText) {
     if(oldText == newText) {
@@ -464,7 +466,7 @@ HuesEditor.prototype.trimUndo = function() {
     while(this.undoBuffer.length > 50) {
         this.undoBuffer.shift();
     }
-}
+};
 
 HuesEditor.prototype.undo = function() {
     this.undoRedo(this.undoBuffer, this.redoBuffer);
