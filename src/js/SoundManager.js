@@ -193,12 +193,14 @@ SoundManager.prototype.stop = function() {
             this.buildSource.stop(0);
             this.buildSource.disconnect();
             this.buildSource = null;
+            this.buildup = null;
         }        
         // arg required for mobile webkit
         this.loopSource.stop(0);
          // TODO needed?
         this.loopSource.disconnect();
         this.loopSource = null;
+        this.loop = null;
         this.vReady = false;
         this.playing = false;
         this.startTime = 0;
@@ -223,6 +225,10 @@ SoundManager.prototype.seek = function(time, noPlayingUpdate) {
     time = Math.min(Math.max(time, -this.buildLength), this.loopLength);
     
     this.stop();
+    
+    if(!this.loop) {
+        return;
+    }
         
     this.loopSource = this.context.createBufferSource();
     this.loopSource.buffer = this.loop;
@@ -232,7 +238,7 @@ SoundManager.prototype.seek = function(time, noPlayingUpdate) {
     this.loopSource.loopEnd = this.loopLength;
     this.loopSource.connect(this.gainNode);
     
-    if(time < 0) {
+    if(time < 0 && this.buildup) {
         this.buildSource = this.context.createBufferSource();
         this.buildSource.buffer = this.buildup;
         this.buildSource.playbackRate.value = this.playbackRate;

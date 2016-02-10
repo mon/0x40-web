@@ -37,6 +37,8 @@ function HuesEditor(core) {
     
     this.undoBuffer = [];
     this.redoBuffer = [];
+    // Will be an array if many actions are performed in one undo
+    this.batchUndoArray = null;
     
     // For rendering the waveform
     this.buildWave = null;
@@ -72,7 +74,9 @@ HuesEditor.prototype.initUI = function() {
     this.copyBtn = this.createButton("Copy XML", titleButtons, true);
     this.copyBtn.addEventListener("click", this.copyXML.bind(this));
     this.undoBtn = this.createButton("Undo", titleButtons, true);
+    this.undoBtn.addEventListener("click", this.undo.bind(this));
     this.redoBtn = this.createButton("Redo", titleButtons, true);
+    this.redoBtn.addEventListener("click", this.redo.bind(this));
     let help = this.createButton("Help?", titleButtons);
     help.style.backgroundColor = "rgba(0,160,0,0.3)";
     help.addEventListener("click", () => {
@@ -144,6 +148,10 @@ HuesEditor.prototype.resize = function(noHilightCalc) {
     }
 };
 
+HuesEditor.prototype.getOther = function(editor) {
+    return editor == this.loopEdit ? this.buildEdit : this.loopEdit;
+}
+
 HuesEditor.prototype.onNewSong = function(song) {
     if(this.linked) {
         if(song == this.song) {
@@ -207,6 +215,35 @@ HuesEditor.prototype.reflow = function(editor, map) {
 };
 
 HuesEditor.prototype.updateInfo = function() {
+    // Avoid a bunch of nested elses
+    this.seekStart.classList.add("disabled");
+    this.seekLoop.classList.add("disabled");
+    this.saveBtn.classList.add("disabled");
+    this.copyBtn.classList.add("disabled");
+    this.buildEdit._removeBtn.classList.add("disabled");
+    this.loopEdit._removeBtn.classList.add("disabled");
+    
+    if(this.song) {
+        this.saveBtn.classList.remove("disabled");
+        this.copyBtn.classList.remove("disabled");
+        
+        if(this.song.independentBuild) {
+            this.timeLock._locker.innerHTML = "&#xe904;";
+            this.timeLock.classList.add("unlocked");
+        } else {
+            this.timeLock._locker.innerHTML = "&#xe905;";
+            this.timeLock.classList.remove("unlocked");
+        }
+        if(this.song.sound) {
+            this.seekLoop.classList.remove("disabled");
+            this.loopEdit._removeBtn.classList.remove("disabled");
+        }
+        if(this.song.buildup) {
+            this.seekStart.classList.remove("disabled");
+            this.buildEdit._removeBtn.classList.remove("disabled");
+        }
+    }
+    
     if(!this.linked) {
         return;
     }
@@ -218,49 +255,25 @@ HuesEditor.prototype.updateInfo = function() {
     this.loopLen.textContent = loopLen.toFixed(2);
     this.buildLen.textContent = buildLen.toFixed(2);
     this.beatLen.textContent = beatLen.toFixed(2);
-    
-    // Avoid a bunch of nested elses
-    this.seekStart.classList.add("disabled");
-    this.seekLoop.classList.add("disabled");
-    this.saveBtn.classList.add("disabled");
-    this.copyBtn.classList.add("disabled");
-    this.buildEdit._removeBtn.classList.add("disabled");
-    this.loopEdit._removeBtn.classList.add("disabled");
-    
-    if(this.song) {
-        if(this.song.independentBuild) {
-            this.timeLock._locker.innerHTML = "&#xe904;";
-            this.timeLock.classList.add("unlocked");
-        } else {
-            this.timeLock._locker.innerHTML = "&#xe905;";
-            this.timeLock.classList.remove("unlocked");
-        }
-    
-        this.saveBtn.classList.remove("disabled");
-        this.copyBtn.classList.remove("disabled");
-        if(this.song.sound) {
-            this.seekLoop.classList.remove("disabled");
-            this.loopEdit._removeBtn.classList.remove("disabled");
-            if(this.song.buildup) {
-                this.seekStart.classList.remove("disabled");
-                this.buildEdit._removeBtn.classList.remove("disabled");
-            }
-        }
-    }
 };
 
 HuesEditor.prototype.loadAudio = function(editor) {
     if(editor._fileInput.files.length < 1) {
         return;
     }
+    // If first load, this makes fresh, gets the core synced up
+    this.newSong(this.song);
+    
+    // Have we just added a build to a song with a rhythm, or vice versa?
+    // If so, link their lengths
+    let newlyLinked = !this.song[editor._sound] && !!this.song[this.getOther(editor)._sound]
+    
     // Disable load button TODO
     let file = editor._fileInput.files[0];
+    
     // load audio
     this.blobToArrayBuffer(file)
     .then(buffer => {
-        // If first load, this makes fresh, gets the core synced up
-        this.newSong(this.song);
-        
         this.song[editor._sound] = buffer;
         // Save filename for XML export
         let noExt = file.name.replace(/\.[^/.]+$/, "");
@@ -279,8 +292,10 @@ HuesEditor.prototype.loadAudio = function(editor) {
             return this.core.soundManager.playSong(this.song, true, true);
         }
     }).then(() => {
+        if(newlyLinked) {
+            this.setIndependentBuild(false);
+        }
         this.updateInfo();
-        this.reflow(editor, this.getText(editor));
         this.core.updateBeatLength();
         // We may have to go backwards in time
         this.core.recalcBeatIndex();
@@ -298,9 +313,10 @@ HuesEditor.prototype.removeAudio = function(editor) {
     
     this.song[editor._sound] = null;
     this.song[editor._rhythm] = "";
+    this.setIndependentBuild(true);
     this.reflow(editor, "");
     // Is the loop playable?
-    if(this.song.sound) {
+    if(this.song.sound && this.linked) {
         this.core.soundManager.playSong(this.song, true, true)
         .then(() => {
             this.updateWaveform();
@@ -309,6 +325,8 @@ HuesEditor.prototype.removeAudio = function(editor) {
         this.core.soundManager.stop();
         this.updateWaveform();
     }
+    this.updateInfo();
+    this.updateHalveDoubleButtons(editor);
 };
 
 HuesEditor.prototype.blobToArrayBuffer = function(blob) {
@@ -334,7 +352,8 @@ HuesEditor.prototype.newSong = function(song) {
            "enabled":true,
            "filename":null,
            "charsPerBeat": null,
-           "independentBuild": false};
+           // Because new songs are empty
+           "independentBuild": true};
        if(!this.respack) {
            this.respack = new Respack();
            this.respack.name = "Editor Respack";
@@ -367,6 +386,9 @@ HuesEditor.prototype.newSong = function(song) {
     this.title.value = song.title;
     this.source.value = song.source;
     
+    // Force independent build if only 1 source is present
+    this.updateIndependentBuild();
+    
     // Unlock beatmap lengths
     this.setLocked(this.buildEdit, 0);
     this.setLocked(this.loopEdit, 0);
@@ -376,18 +398,73 @@ HuesEditor.prototype.newSong = function(song) {
     this.updateWaveform();
 };
 
+HuesEditor.prototype.updateIndependentBuild = function() {
+    // Force independent build if only 1 source is present
+    
+    // Effectively buildup XOR loop - does only 1 exist?
+    if(!this.song.buildup != !this.song.sound) {
+        this.setIndependentBuild(true);
+    }
+}
+
+HuesEditor.prototype.setIndependentBuild = function(indep) {
+    this.song.independentBuild = indep;
+    if(!indep) {
+        // If both are locked, we lock the result, otherwise unlock both
+        let lock = this.loopEdit._locked && this.buildEdit._locked;
+        // Then unlock both so text adjustment can occur
+        this.loopEdit._locked = 0;
+        this.buildEdit._locked = 0;
+        // Correct the lengths
+        this.setText(this.loopEdit, this.getText(this.loopEdit));
+        // Restore locked state
+        if(lock) {
+            this.loopEdit._locked = this.song.rhythm.length;
+            this.buildEdit._locked = this.song.buildupRhythm.length;
+        }
+    }
+    this.updateInfo();
+}
+
+HuesEditor.prototype.batchUndo = function() {
+    if(!this.batchUndoArray)
+        this.batchUndoArray = [];
+}
+
+HuesEditor.prototype.commitUndo = function() {
+    if(this.batchUndoArray) {
+        this.undoBuffer.push(this.batchUndoArray);
+        this.trimUndo();
+        this.batchUndoArray = null;
+        this.updateUndoUI();
+    }
+}
+
 HuesEditor.prototype.pushUndo = function(name, editor, oldText, newText) {
     if(oldText == newText) {
         return;
     }
     this.redoBuffer = [];
-
-    this.undoBuffer.push({songVar: name, editor: editor, text: oldText});
-    while(this.undoBuffer.length > 50) {
-        this.undoBuffer.shift();
+    
+    let undoObj = {songVar: name,
+                   editor: editor,
+                   text: oldText,
+                   indep: this.song.independentBuild};
+    if(this.batchUndoArray) {
+        this.batchUndoArray.push(undoObj);
+    } else {
+        // 1 element array so undoRedo is neater
+        this.undoBuffer.push([undoObj]);
+        this.trimUndo();
     }
     this.updateUndoUI();
 };
+
+HuesEditor.prototype.trimUndo = function() {
+    while(this.undoBuffer.length > 50) {
+        this.undoBuffer.shift();
+    }
+}
 
 HuesEditor.prototype.undo = function() {
     this.undoRedo(this.undoBuffer, this.redoBuffer);
@@ -402,14 +479,28 @@ HuesEditor.prototype.undoRedo = function(from, to) {
         return;
     }
     // Remove old data
-    let fromData = from.pop();
-    // Make restore from current
-    to.push({songVar: fromData.songVar, editor: fromData.editor, text: this.song[fromData.songVar]});
-    // Restore to editor
-    this.song[fromData.songVar] = fromData.text;
-    this.reflow(fromData.editor, this.song[fromData.songVar]);
+    let fromArray = from.pop();
+    let toArray = [];
+    for(let i = 0; i < fromArray.length; i++) {
+        let fromData = fromArray[i];
+        // Make restore from current
+        toArray.push({songVar: fromData.songVar,
+                      editor: fromData.editor,
+                      text: this.song[fromData.songVar],
+                      indep: this.song.independentBuild});
+        // Restore to editor
+        this.song[fromData.songVar] = fromData.text;
+        this.song.independentBuild = fromData.indep;
+        // Don't have weird behaviour there
+        if(fromData.editor._locked) {
+            fromData.editor._locked = fromData.text.length;
+        }
+        this.reflow(fromData.editor, this.song[fromData.songVar]);
+        this.updateHalveDoubleButtons(fromData.editor);
+    }
+    to.push(toArray);
     this.updateUndoUI();
-    this.updateHalveDoubleButtons(fromData.editor);
+    this.updateInfo();
     this.core.updateBeatLength();
     this.core.recalcBeatIndex();
 };
@@ -433,45 +524,51 @@ HuesEditor.prototype.updateUndoUI = function() {
 };
 
 HuesEditor.prototype.halveBeats = function(editor) {
-    if(!this.song || this.getText(editor).length < 2) {
-        return;
-    }
+    let commit = false;
     if(!this.song.independentBuild) {
+        commit = true;
+        this.batchUndo();
         // halve them both
-        let other = editor._rhythm == "rhythm" ? this.buildEdit : this.loopEdit;
-        if(this.getText(other).length < 2) {
-            return;
-        }
+        let other = this.getOther(editor);
         this.song.independentBuild = true;
         this.halveBeats(other);
-        this.song.independentBuild = false;
     }
     this.setText(editor, this.song[editor._rhythm].replace(/(.)./g, "$1"));
+    if(commit) {
+        this.commitUndo();
+        this.song.independentBuild = false;
+        this.updateInfo();
+    }
 };
 
 HuesEditor.prototype.doubleBeats = function(editor) {
-    if(!this.song || this.getText(editor).length === 0) {
-        return;
-    }
+    let commit = false;
     if(!this.song.independentBuild) {
+        commit = true;
+        this.batchUndo();
         // Double them both
-        let other = editor._rhythm == "rhythm" ? this.buildEdit : this.loopEdit;
-        if(this.getText(other).length === 0) {
-            return;
-        }
+        let other = this.getOther(editor);
         this.song.independentBuild = true;
         this.doubleBeats(other);
-        this.song.independentBuild = false;
     }
     this.setText(editor, this.song[editor._rhythm].replace(/(.)/g, "$1."));
+    if(commit) {
+        this.commitUndo();
+        this.song.independentBuild = false;
+        this.updateInfo();
+    }
 };
 
 HuesEditor.prototype.updateHalveDoubleButtons = function(editor) {
     editor._halveBtn.className = "hues-button disabled";
     editor._doubleBtn.className = "hues-button disabled";
-    
+
     if(!editor._locked) {
         let txtLen = this.getText(editor).length;
+        if(!this.song.independentBuild) {
+            let other = this.getOther(editor);
+            txtLen = Math.min(txtLen, this.getText(other).length);
+        }
         if(txtLen > 0) {
             editor._doubleBtn.className = "hues-button";
         }
@@ -605,20 +702,14 @@ HuesEditor.prototype.uiCreateEditArea = function() {
     this.timeLock = document.createElement("div");
     editArea.appendChild(this.timeLock);
     this.timeLock.id = "edit-timelock";
-    this.timeLock.className = "hues-icon";
-    // CHAIN, use &#xe904; for CHAIN-BROKEN
-    let locker = this.createButton("&#xe905;", this.timeLock);
+    this.timeLock.className = "hues-icon unlocked";
+    // CHAIN-BROKEN, use &#xe905; for CHAIN
+    let locker = this.createButton("&#xe904;", this.timeLock);
     locker.addEventListener("click", () => {
         if(!this.song) {
             return;
         }
-        this.song.independentBuild = !this.song.independentBuild;
-        if(!this.song.independentBuild) {
-            // Correct the lengths
-            this.setText(this.loopEdit, this.getText(this.loopEdit));
-        } else {
-            this.updateInfo();
-        }
+        this.setIndependentBuild(!this.song.independentBuild);
     });
     this.timeLock._locker = locker;
     
@@ -708,7 +799,7 @@ HuesEditor.prototype.uiCreateSingleEditor = function(title, soundName, rhythmNam
     header.appendChild(beatCount);
     beatCount.className = "beat-count";
     beatCount.textContent = "0 beats";
-    container._lockedBtn = this.createButton("", header, false, "hues-icon");
+    container._lockedBtn = this.createButton("&#xe907;", header, false, "hues-icon");
     container._lockedBtn.addEventListener("click", () => {
         if(container._locked) {
             this.setLocked(container, 0);
@@ -722,9 +813,9 @@ HuesEditor.prototype.uiCreateSingleEditor = function(title, soundName, rhythmNam
     rightHeader.className = "edit-area-right-header";
     header.appendChild(rightHeader);
     
-    container._halveBtn = this.createButton("Halve", rightHeader);
+    container._halveBtn = this.createButton("Halve", rightHeader, true);
     container._halveBtn.addEventListener("click", this.halveBeats.bind(this, container));
-    container._doubleBtn = this.createButton("Double", rightHeader);
+    container._doubleBtn = this.createButton("Double", rightHeader, true);
     container._doubleBtn.addEventListener("click", this.doubleBeats.bind(this, container));
     
     let fileInput = document.createElement("input");
@@ -765,7 +856,7 @@ HuesEditor.prototype.uiCreateSingleEditor = function(title, soundName, rhythmNam
     container._rhythm = rhythmName;
         
     // Are we in insert mode? Default = no
-    this.setLocked(container, 0);
+    container._locked = 0;
     
     return container;
 };
@@ -887,6 +978,7 @@ HuesEditor.prototype.setText = function(editor, text, caretFromEnd) {
         this.reflow(editor, "");
         return;
     }
+    let commitUndo = false;
     let caret = caretFromEnd ? text.length : this.getCaret(editor._beatmap);
     if(editor._locked) {
         caret = Math.min(editor._locked, caret);
@@ -900,20 +992,27 @@ HuesEditor.prototype.setText = function(editor, text, caretFromEnd) {
         }
     // time to scale things to fit
     } else if(!this.song.independentBuild && this.song.buildupRhythm && this.song.rhythm) {
-        let ratio = this.core.soundManager.loopLength / this.core.soundManager.buildLength;
-        let newLen, otherMap;
-        if(editor._rhythm == "rhythm") { // editing rhythm, adjust beatmap
-            otherMap = this.buildEdit;
-            newLen = Math.floor(text.length / ratio);
-        } else { // editing build, adjust rhythm
-            otherMap = this.loopEdit;
-            newLen = Math.floor(text.length * ratio);
+        let ratio;
+        if(editor == this.loopEdit) {
+             ratio = this.core.soundManager.loopLength / this.core.soundManager.buildLength;
+        } else {
+            ratio = this.core.soundManager.buildLength / this.core.soundManager.loopLength;
         }
+        let newLen = Math.floor(text.length / ratio);
+        // We've tried to make the other map impossibly short, force us to be longer
+        while(newLen === 0) {
+            text += ".";
+            newLen = Math.floor(text.length / ratio);
+        }
+        let otherMap = this.getOther(editor);
         let wasLocked = otherMap._locked;
         // avoid infinite loop
         this.song.independentBuild = true;
         // clamp the length
         otherMap._locked = newLen;
+        // Make undos also sync
+        this.batchUndo();
+        commitUndo = true;
         // Use setText to update undo state and fill/clamp beats
         this.setText(otherMap, this.song[otherMap._rhythm], true);
         // Restore
@@ -928,6 +1027,10 @@ HuesEditor.prototype.setText = function(editor, text, caretFromEnd) {
         this.updateHalveDoubleButtons(otherMap);
     }
     this.pushUndo(editor._rhythm, editor, this.song[editor._rhythm], text);
+    // If we were linked, commit our 2 edits as 1 undo state
+    if(commitUndo) {
+        this.commitUndo();
+    }
     this.song[editor._rhythm] = text;
     this.reflow(editor, this.song[editor._rhythm]);
     this.setCaret(editor._beatmap, caret);
@@ -982,6 +1085,12 @@ HuesEditor.prototype.setLocked = function(editor, locked) {
         editor._lockedBtn.innerHTML = "&#xe906;"; // LOCKED
     } else {
         editor._lockedBtn.innerHTML = "&#xe907;"; // UNLOCKED
+    }
+    // Synchronise locks when lengths are linked
+    if(!this.song.independentBuild) {
+        this.song.independentBuild = true;
+        this.setLocked(this.getOther(editor), locked);
+        this.song.independentBuild = false;
     }
     this.updateHalveDoubleButtons(editor);
 };
