@@ -20,6 +20,56 @@
     height: 15px;
 }
 
+#edit-status-msg {
+    font-size: 10px;
+    color: red;
+    opacity: 1;
+}
+
+#edit-status-msg.fade {
+    animation-duration: 10s;
+    animation-name: hues-pulsefade;
+    animation-fill-mode: forwards;
+}
+@keyframes hues-pulsefade {
+    from {
+    opacity: 0;
+    }
+    5% {
+    opacity: 1;
+    }
+    10% {
+    opacity: 0.5;
+    }
+    15% {
+    opacity: 1;
+    }
+    20% {
+    opacity: 0.5;
+    }
+    25% {
+    opacity: 1;
+    }
+    30% {
+    opacity: 0.5;
+    }
+    35% {
+    opacity: 1;
+    }
+    40% {
+    opacity: 0.5;
+    }
+    45% {
+    opacity: 1;
+    }
+    50% {
+    opacity: 0.5;
+    }
+    to {
+    opacity: 0;
+    }
+}
+
 #edit-topbar {
     display: flex;
     height: 60px;

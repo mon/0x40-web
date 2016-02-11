@@ -83,6 +83,10 @@ HuesEditor.prototype.initUI = function() {
         window.open("https://github.com/mon/0x40-web/tree/master/docs/Editor.md", '_blank');
     });
     
+    this.statusMsg = document.createElement("span");
+    this.statusMsg.id = "edit-status-msg";
+    titleButtons.appendChild(this.statusMsg);
+    
     this.topBar = document.createElement("div");
     this.topBar.id = "edit-topbar";
     this.root.appendChild(this.topBar);
@@ -302,7 +306,7 @@ HuesEditor.prototype.loadAudio = function(editor) {
         this.updateWaveform();
     }).catch(error => {
         console.log(error);
-        alert("Couldn't load song! Is it a LAME encoded MP3?");
+        this.alert("Couldn't load song! Is it a LAME encoded MP3?");
     });
 };
 
@@ -1208,6 +1212,14 @@ HuesEditor.prototype.drawWave = function() {
     this.waveContext.stroke();
 };
 
+HuesEditor.prototype.alert = function(msg) {
+    this.statusMsg.classList.remove("fade");
+    this.statusMsg.textContent = msg;
+    // Trigger a reflow and thus restart the animation
+    this.statusMsg.offsetWidth;
+    this.statusMsg.classList.add("fade");
+}
+
 HuesEditor.prototype.drawOneWave = function(wave, center, width) {
     this.waveContext.drawImage(wave,
                                center - width/2, 0,        // source x/y
@@ -1289,9 +1301,9 @@ HuesEditor.prototype.copyXML = function() {
     
     document.body.removeChild(textArea);
     if(success) {
-        alert("Beatmap XML copied to clipboard!");
+        this.alert("Beatmap XML copied to clipboard!");
     } else {
-        alert("Copy failed! Try saving instead");
+        this.alert("Copy failed! Try saving instead");
     }
 };
     
