@@ -938,24 +938,55 @@ HuesEditor.prototype.rightClick = function(editor, event) {
     if(!this.linked) {
         return;
     }
-    // We abuse the fact that right clicking moves the caret. Hooray!
-    let caret = this.getCaret(editor._beatmap);
-    let totalLen = this.getText(editor).length;
-    let percent = caret / totalLen;
-    if(caret <= totalLen) {
-        let seekTime = 0;
-        if(editor._rhythm == "rhythm") { // loop
-            seekTime = this.core.soundManager.loopLength * percent;
-        } else { // build
-            let bLen = this.core.soundManager.buildLength;
-            seekTime = -bLen + bLen * percent;
-        }
-        this.core.soundManager.seek(seekTime);
-        event.preventDefault();
-        return false;
-    } else {
+    // If the right click is also a focus event, caret doesn't move, so we have to use coords
+    let coords = this.getTextCoords(event);
+    
+    if(coords.x > this.wrapAt)
         return true;
+
+    let caret = coords.y * this.wrapAt + coords.x;
+    let totalLen = this.getText(editor).length;
+    if(caret > totalLen)
+        return true;
+    
+    // in case of focus event
+    this.setCaret(editor._beatmap, caret);
+    let percent = caret / totalLen;
+    let seekTime = 0;
+    if(editor == this.loopEdit) { // loop
+        seekTime = this.core.soundManager.loopLength * percent;
+    } else { // build
+        let bLen = this.core.soundManager.buildLength;
+        seekTime = -bLen + bLen * percent;
     }
+    this.core.soundManager.seek(seekTime);
+    
+    event.preventDefault();
+    return false;
+};
+
+HuesEditor.prototype.getTextCoords = function(event) {
+    // If we have it, don't bother
+    if(event.layerX && event.layerY) {
+        return {x: Math.floor(event.layerX / this.hilightWidth),
+                y: Math.floor(event.layerY / this.hilightHeight)};
+    }
+    
+    // http://stackoverflow.com/a/10816667
+    let el = event.target,
+        x = 0,
+        y = 0;
+
+    while (el && !isNaN(el.offsetLeft) && !isNaN(el.offsetTop)) {
+        x += el.offsetLeft - el.scrollLeft;
+        y += el.offsetTop - el.scrollTop;
+        el = el.offsetParent;
+    }
+
+    x = Math.floor((event.clientX - x) / this.hilightWidth);
+    y = Math.floor((event.clientY - y) / this.hilightHeight);
+    
+    return {x: x, y: y};
 };
 
 HuesEditor.prototype.textUpdated = function(editor) {
@@ -1218,7 +1249,7 @@ HuesEditor.prototype.alert = function(msg) {
     // Trigger a reflow and thus restart the animation
     var useless = this.statusMsg.offsetWidth;
     this.statusMsg.classList.add("fade");
-}
+};
 
 HuesEditor.prototype.drawOneWave = function(wave, center, width) {
     this.waveContext.drawImage(wave,
