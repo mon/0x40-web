@@ -1216,7 +1216,7 @@ HuesEditor.prototype.alert = function(msg) {
     this.statusMsg.classList.remove("fade");
     this.statusMsg.textContent = msg;
     // Trigger a reflow and thus restart the animation
-    this.statusMsg.offsetWidth;
+    var useless = this.statusMsg.offsetWidth;
     this.statusMsg.classList.add("fade");
 }
 
