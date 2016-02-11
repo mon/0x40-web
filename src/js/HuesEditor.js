@@ -712,7 +712,8 @@ HuesEditor.prototype.uiCreateEditArea = function() {
     // CHAIN-BROKEN, use &#xe905; for CHAIN
     let locker = this.createButton("&#xe904;", this.timeLock);
     locker.addEventListener("click", () => {
-        if(!this.song) {
+        // Only allow if both song bits exist
+        if(!this.song || !this.song.buildup || !this.song.sound) {
             return;
         }
         this.setIndependentBuild(!this.song.independentBuild);
