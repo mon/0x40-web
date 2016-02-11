@@ -386,7 +386,10 @@ HuesCanvas.prototype.doBlackout = function(whiteout) {
         this.blackoutColour = "#000";
     }
     this.blackoutTimeout = 0; // indefinite
-    this.blackoutStart = this.audio.currentTime;
+    // Don't restart the blackout animation if we're already blacked out
+    if(!this.blackout) {
+        this.blackoutStart = this.audio.currentTime;
+    }
     this.blackout = true;
     this.needsRedraw = true;
     if(localStorage["blackoutUI"] == "on") {
