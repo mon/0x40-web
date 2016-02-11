@@ -538,8 +538,8 @@ HuesEditor.prototype.halveBeats = function(editor) {
     this.setText(editor, this.song[editor._rhythm].replace(/(.)./g, "$1"));
     if(commit) {
         this.commitUndo();
-        this.song.independentBuild = false;
-        this.updateInfo();
+        // We set it so any rounding is padded
+        this.setIndependentBuild(false);
     }
 };
 
@@ -556,8 +556,8 @@ HuesEditor.prototype.doubleBeats = function(editor) {
     this.setText(editor, this.song[editor._rhythm].replace(/(.)/g, "$1."));
     if(commit) {
         this.commitUndo();
-        this.song.independentBuild = false;
-        this.updateInfo();
+        // We set it so any rounding is padded
+        this.setIndependentBuild(false);
     }
 };
 
@@ -1000,11 +1000,11 @@ HuesEditor.prototype.setText = function(editor, text, caretFromEnd) {
         } else {
             ratio = this.core.soundManager.buildLength / this.core.soundManager.loopLength;
         }
-        let newLen = Math.floor(text.length / ratio);
+        let newLen = Math.round(text.length / ratio);
         // We've tried to make the other map impossibly short, force us to be longer
         while(newLen === 0) {
             text += ".";
-            newLen = Math.floor(text.length / ratio);
+            newLen = Math.round(text.length / ratio);
         }
         let otherMap = this.getOther(editor);
         let wasLocked = otherMap._locked;
