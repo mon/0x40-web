@@ -1044,21 +1044,19 @@ HuesEditor.prototype.setText = function(editor, text, caretFromEnd) {
         }
         let otherMap = this.getOther(editor);
         let wasLocked = otherMap._locked;
-        // avoid infinite loop
-        this.song.independentBuild = true;
         // clamp the length
         otherMap._locked = newLen;
         // Make undos also sync
         this.batchUndo();
         commitUndo = true;
+        // avoid infinite loop
+        this.song.independentBuild = true;
         // Use setText to update undo state and fill/clamp beats
         this.setText(otherMap, this.song[otherMap._rhythm], true);
         // Restore
         this.song.independentBuild = false;
         // Otherwise we'll lose the new length on the next edit
-        if(wasLocked) {
-            otherMap._locked = newLen;
-        } else {
+        if(!wasLocked) {
             otherMap._locked = 0;
         }
         // Fix the buttons
@@ -1126,8 +1124,10 @@ HuesEditor.prototype.setLocked = function(editor, locked) {
     }
     // Synchronise locks when lengths are linked
     if(!this.song.independentBuild) {
+        let other = this.getOther(editor);
+        let otherLock = locked ? this.getText(other).length : 0;
         this.song.independentBuild = true;
-        this.setLocked(this.getOther(editor), locked);
+        this.setLocked(other, otherLock);
         this.song.independentBuild = false;
     }
     this.updateHalveDoubleButtons(editor);
