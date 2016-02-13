@@ -57,7 +57,7 @@ function Respack() {
     this.loadedFromURL = false;
 }
 
-Respack.prototype.audioExtensions = new RegExp("\\.(mp3|ogg)$", "i");
+Respack.prototype.audioExtensions = new RegExp("\\.(mp3|ogg|wav)$", "i");
 Respack.prototype.imageExtensions = new RegExp("\\.(png|gif|jpg|jpeg)$", "i");
 Respack.prototype.animRegex = new RegExp("(.*?)_\\d+$");
 
@@ -224,6 +224,9 @@ Respack.prototype.parseSong = function(file) {
                 break;
             case "ogg":
                 mime = "audio/ogg";
+                break;
+            case "wav":
+                mime = "audio/wav";
                 break;
             default:
                 mime = "application/octet-stream";

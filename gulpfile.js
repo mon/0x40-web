@@ -9,7 +9,7 @@ var order = require("gulp-order");
 var del = require('del');
 var jshint = require('gulp-jshint');
 
-gulp.task('default', ['css', 'mp3', 'minify'], function() {
+gulp.task('default', ['css', 'audio', 'minify'], function() {
     
 });
 
@@ -31,11 +31,16 @@ gulp.task('css', function(){
     .pipe(gulp.dest('css'));
 });
 
-gulp.task("mp3", function () {
-  return gulp.src("src/js/mp3/*.js")
-    .pipe(uglify())
-    .pipe(concat("mp3-min.js"))
-    .pipe(gulp.dest("lib"));
+gulp.task("audio", function () {
+  gulp.src(["src/js/audio/aurora.js", "src/js/audio/mp3.js"])
+  .pipe(concat("audio-min.js"))
+  .pipe(uglify())
+  .pipe(gulp.dest("lib"));
+    
+  gulp.src(["src/js/audio/ogg.js", "src/js/audio/vorbis.js"])
+  .pipe(concat("oggvorbis.js"))
+  .pipe(uglify())
+  .pipe(gulp.dest("lib"));
 });
 
 gulp.task("minify", function () {
@@ -63,7 +68,8 @@ gulp.task('clean', function() {
     return del([
         'lib/hues-min.js',
         'lib/hues-min.map',
-        'lib/mp3-min.js',
+        'lib/audio-min.js',
+        'lib/oggvorbis.js',
         'css',
         'release']);
 });
@@ -72,7 +78,8 @@ gulp.task('release', ['default', 'lint'], function() {
     gulp.src([
         'css/hues-min.css',
         'lib/hues-min.js',
-        'lib/mp3-min.js',
+        'lib/audio-min.js',
+        'lib/oggvorbis.js',
         'fonts/**/*',
         'img/**/*',
         'index.html',

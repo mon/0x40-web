@@ -27,7 +27,7 @@
    - Go to the HTML and edit the `defaults` object instead!
  */
 HuesSettings.prototype.defaultSettings = {
-    // Location relative to root - where do the mp3/zip workers live
+    // Location relative to root - where do the audio/zip workers live
     // This is required because Web Workers need an absolute path
     workersPath : "lib/workers/",
     // Debugging var, for loading zips or not

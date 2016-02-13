@@ -278,6 +278,15 @@ HuesEditor.prototype.loadAudio = function(editor) {
     // load audio
     this.blobToArrayBuffer(file)
     .then(buffer => {
+        // Is this buffer even decodable?
+        let testSong = {test: buffer};
+        return this.core.soundManager.loadBuffer(testSong, "test")
+               // keep the buffer moving through the chain
+               // remember it's been passed through to a worker, so we update the reference
+               .then(() => {
+                   return testSong.test;
+               });
+    }).then(buffer => {
         this.song[editor._sound] = buffer;
         // Save filename for XML export
         let noExt = file.name.replace(/\.[^/.]+$/, "");
@@ -827,7 +836,7 @@ HuesEditor.prototype.uiCreateSingleEditor = function(title, soundName, rhythmNam
     
     let fileInput = document.createElement("input");
     fileInput.type ="file";
-    fileInput.accept="audio/mp3";
+    fileInput.accept="audio/mp3|audio/wav|audio/ogg";
     fileInput.multiple = false;
     fileInput.onchange = this.loadAudio.bind(this, container);
     let load = this.createButton("Load " + title.replace(/&nbsp;/g,""), rightHeader);
