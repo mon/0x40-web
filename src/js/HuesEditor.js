@@ -1225,14 +1225,14 @@ HuesEditor.prototype.drawWave = function() {
     
     this.waveContext.clearRect(0, 0, width, WAVE_HEIGHT_PIXELS);
     
-    if(this.buildWave && minTime < 0) {
-        let bLen = this.core.soundManager.buildLength;
+    let bLen = this.core.soundManager.buildLength;
+    if(this.buildWave && bLen && minTime < 0) {
         let center = Math.floor((now + bLen) / bLen * this.buildWave.width);
         this.drawOneWave(this.buildWave, center, width);
     }
     
-    if(this.loopWave && maxTime > 0) {
-        let loopLen = this.core.soundManager.loopLength;
+    let loopLen = this.core.soundManager.loopLength;
+    if(this.loopWave && loopLen && maxTime > 0) {
         let clampedNow = (minTime % loopLen) + span;
         let center = Math.floor(clampedNow / loopLen * this.loopWave.width);
         this.drawOneWave(this.loopWave, center, width);
@@ -1253,20 +1253,20 @@ HuesEditor.prototype.drawWave = function() {
     this.waveContext.stroke();
 };
 
-HuesEditor.prototype.alert = function(msg) {
-    this.statusMsg.classList.remove("fade");
-    this.statusMsg.textContent = msg;
-    // Trigger a reflow and thus restart the animation
-    var useless = this.statusMsg.offsetWidth;
-    this.statusMsg.classList.add("fade");
-};
-
 HuesEditor.prototype.drawOneWave = function(wave, center, width) {
     this.waveContext.drawImage(wave,
                                center - width/2, 0,        // source x/y
                                width, WAVE_HEIGHT_PIXELS,  // source width/height
                                0, 0,                       // dest x/y
                                width, WAVE_HEIGHT_PIXELS); // dest width/height
+};
+
+HuesEditor.prototype.alert = function(msg) {
+    this.statusMsg.classList.remove("fade");
+    this.statusMsg.textContent = msg;
+    // Trigger a reflow and thus restart the animation
+    var useless = this.statusMsg.offsetWidth;
+    this.statusMsg.classList.add("fade");
 };
 
 HuesEditor.prototype.generateXML = function() {

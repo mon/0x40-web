@@ -67,10 +67,11 @@ SoundManager.prototype.init = function() {
             try {
                 // More info at http://caniuse.com/#feat=audio-api
                 window.AudioContext = window.AudioContext || window.webkitAudioContext;
-                this.context = new window.AudioContext();
                 // These don't always exist
-                this.context.suspend = this.context.suspend || Promise.resolve;
-                this.context.resume = this.context.resume || Promise.resolve;
+                AudioContext.prototype.suspend = AudioContext.prototype.suspend || (() => {return Promise.resolve();});
+                AudioContext.prototype.resume = AudioContext.prototype.resume || (() => {return Promise.resolve();});
+                
+                this.context = new window.AudioContext();
                 this.gainNode = this.context.createGain();
                 this.gainNode.connect(this.context.destination);
             } catch(e) {
