@@ -836,7 +836,7 @@ HuesEditor.prototype.uiCreateSingleEditor = function(title, soundName, rhythmNam
     
     let fileInput = document.createElement("input");
     fileInput.type ="file";
-    fileInput.accept="audio/mp3|audio/wav|audio/ogg";
+    fileInput.accept=".mp3, .wav, .ogg";
     fileInput.multiple = false;
     fileInput.onchange = this.loadAudio.bind(this, container);
     let load = this.createButton("Load " + title.replace(/&nbsp;/g,""), rightHeader);
