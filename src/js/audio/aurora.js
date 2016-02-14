@@ -1729,8 +1729,6 @@ Demuxer = (function(_super) {
   };
 
   formats = [];
-  
-  Demuxer.test = function() {return formats};
 
   Demuxer.register = function(demuxer) {
     return formats.push(demuxer);

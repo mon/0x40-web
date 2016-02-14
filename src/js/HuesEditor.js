@@ -976,12 +976,6 @@ HuesEditor.prototype.rightClick = function(editor, event) {
 };
 
 HuesEditor.prototype.getTextCoords = function(event) {
-    // If we have it, don't bother
-    if(event.layerX && event.layerY) {
-        return {x: Math.floor(event.layerX / this.hilightWidth),
-                y: Math.floor(event.layerY / this.hilightHeight)};
-    }
-    
     // http://stackoverflow.com/a/10816667
     let el = event.target,
         x = 0,
