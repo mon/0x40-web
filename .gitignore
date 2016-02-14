@@ -7,3 +7,5 @@ js/hues-min.js
 node_modules/
 *.map
 *-min.js
+lib/vorbis.js
+lib/ogg.js
