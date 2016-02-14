@@ -98,6 +98,27 @@ HuesEditor.prototype.initUI = function() {
     this.uiCreateControls();
     this.uiCreateVisualiser();
     
+    document.addEventListener("keydown", e => {
+        e = e || window.event;
+        if(e.defaultPrevented) {
+            return true;
+        }
+        let key = e.keyCode || e.which;
+        
+        if (e.ctrlKey) {
+            if(key == 90) { // Z
+                this.undo();
+            } else if(key == 89) { // Y
+                this.redo();
+            }
+            if(key == 90 || key == 89) {
+                e.preventDefault();
+                return false;
+            }
+        }
+        return true;
+    });
+    
     window.addEventListener('resize', this.resize.bind(this));
     // Fix Chrome rendering - redraw on tab load
     document.getElementById("tab-editor").addEventListener("change", this.resize.bind(this));

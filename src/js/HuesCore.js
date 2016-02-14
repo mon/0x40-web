@@ -184,7 +184,7 @@ function HuesCore(defaults) {
         this.error(error);
     });
 
-    document.onkeydown = (e) => {
+    document.addEventListener("keydown", e => {
         e = e || window.event;
         if(e.defaultPrevented) {
             return true;
@@ -200,7 +200,7 @@ function HuesCore(defaults) {
         }
         let key = e.keyCode || e.which;
         return this.keyHandler(key);
-    };
+    });
 }
 
 HuesCore.prototype.callEventListeners = function(ev) {
