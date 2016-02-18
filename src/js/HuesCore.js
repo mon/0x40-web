@@ -52,8 +52,8 @@ function HuesCore(defaults) {
     this.eventListeners = {
         /* callback time(hundredths)
          *
-         * When the song time is updated - 0 for buildup, integer 10ths
-         * of a second otherwise
+         * When the song time is updated - negative for buildup
+         * Returns a floating point number denoting seconds
          */
         time : [],
         /* callback blurUpdate(xPercent, yPercent)
@@ -280,13 +280,9 @@ HuesCore.prototype.animationLoop = function() {
     }
     this.updateVisualiser();
     let now = this.soundManager.currentTime();
-    if(now < 0) {
-        this.callEventListeners("time", 0);
-    } else {
-        this.callEventListeners("time", this.soundManager.displayableTime());
-        if(this.doBuildup) {
-            this.currentSong.buildupPlayed = true;
-        }
+    this.callEventListeners("time", this.soundManager.clampedTime());
+    if(now >= 0 && this.doBuildup) {
+        this.currentSong.buildupPlayed = true;
     }
     for(let beatTime = this.beatIndex * this.getBeatLength(); beatTime < now;
             beatTime = ++this.beatIndex * this.getBeatLength()) {

@@ -242,30 +242,22 @@ HuesUI.prototype.newColour = function(colour) {
 HuesUI.prototype.blurUpdated = function(x, y) {
     x = Math.floor(x * 0xFF);
     y = Math.floor(y * 0xFF);
-    this.xBlur.textContent = "X=" + this.intToHex2(x);
-    this.yBlur.textContent = "Y=" + this.intToHex2(y);
+    this.xBlur.textContent = "X=" + this.intToHex(x, 2);
+    this.yBlur.textContent = "Y=" + this.intToHex(y, 2);
 };
 
 HuesUI.prototype.updateTime = function(time) {
     time = Math.floor(time * 1000);
-    this.timer.textContent = "T=" + this.intToHex5(time);
+    this.timer.textContent = "T=" + this.intToHex(time, 5);
 };
 
-HuesUI.prototype.intToHex2 = function(num) {
-    return '$0x' + ("00"+num.toString(16)).slice(-2);
-};
-
-HuesUI.prototype.intToHex3 = function(num) {
-    return '$0x' + ("000"+num.toString(16)).slice(-3);
-};
-
-HuesUI.prototype.intToHex4 = function(num) {
-    return '$0x' + ("0000"+num.toString(16)).slice(-4);
-};
-
-HuesUI.prototype.intToHex5 = function(num) {
-    return '$0x' + ("00000"+num.toString(16)).slice(-5);
-};
+HuesUI.prototype.intToHex = function(num, pad) {
+    let str = Math.abs(num).toString(16);
+    while (str.length < pad)
+        str = "0" + str;
+    let prefix = num < 0 ? "-" : "$";
+    return prefix + "0x" + str;
+}
 
 /*
  Individual UIs ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -416,16 +408,13 @@ RetroUI.prototype.newImage = function(image) {
 RetroUI.prototype.newColour = function(colour) {
     HuesUI.prototype.newColour.call(this, colour);
 
-    this.colourIndex.textContent = "C=" + this.intToHex2(this.core.colourIndex);
+    this.colourIndex.textContent = "C=" + this.intToHex(this.core.colourIndex, 2);
 };
 
 RetroUI.prototype.beat = function(beats, index) {
     let rest = beats.slice(1);
     this.beatBar.textContent = ">>" + rest;
-    if(index < 0) {
-        index = 0;
-    }
-    this.beatCount.textContent = "B=" + this.intToHex4(index);
+    this.beatCount.textContent = "B=" + this.intToHex(index, 4);
 };
 
 RetroUI.prototype.resize = function() {
@@ -487,10 +476,7 @@ WeedUI.prototype.beat = function(beats, index) {
     this.beatLeft.textContent = rest;
     this.beatRight.textContent = rest;
     
-    if(index < 0) {
-        index = 0;
-    }
-    this.beatCount.textContent = "B=" + this.intToHex4(index);
+    this.beatCount.textContent = "B=" + this.intToHex(index, 4);
 
     if(["x", "o", "X", "O"].indexOf(beats[0]) != -1) {
         let beatCenter = document.createElement("div");
@@ -753,10 +739,7 @@ ModernUI.prototype.beat = function(beats, index) {
         span.textContent = this.currentBeat;
         this.beatCenter.appendChild(span);
     }
-    if(index < 0) {
-        index = 0;
-    }
-    this.beatCount.textContent = "B=" + this.intToHex4(index);
+    this.beatCount.textContent = "B=" + this.intToHex(index, 4);
 };
 
 ModernUI.prototype.resize = function() {

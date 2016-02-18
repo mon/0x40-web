@@ -296,15 +296,6 @@ SoundManager.prototype.clampedTime = function() {
     return time;
 };
 
-SoundManager.prototype.displayableTime = function() {
-    let time = this.clampedTime();
-    if(time < 0) {
-        return 0;
-    } else {
-        return time;
-    }
-};
-
 SoundManager.prototype.loadSong = function(song) {
     if(song._loadPromise) {
         // Someone went forward then immediately back then forward again
