@@ -38,7 +38,6 @@ gulp.task("audio", function () {
   .pipe(gulp.dest("lib"));
     
   gulp.src(["src/js/audio/ogg.js", "src/js/audio/vorbis.js"])
-  .pipe(concat("oggvorbis.js"))
   .pipe(uglify())
   .pipe(gulp.dest("lib"));
 });
