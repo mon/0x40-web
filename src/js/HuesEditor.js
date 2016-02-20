@@ -1269,11 +1269,13 @@ HuesEditor.prototype.drawWave = function() {
 };
 
 HuesEditor.prototype.drawOneWave = function(wave, center, width) {
-    this.waveContext.drawImage(wave,
-                               center - width/2, 0,        // source x/y
-                               width, WAVE_HEIGHT_PIXELS,  // source width/height
-                               0, 0,                       // dest x/y
-                               width, WAVE_HEIGHT_PIXELS); // dest width/height
+    try {
+        this.waveContext.drawImage(wave,
+                                   center - width/2, 0,        // source x/y
+                                   width, WAVE_HEIGHT_PIXELS,  // source width/height
+                                   0, 0,                       // dest x/y
+                                   width, WAVE_HEIGHT_PIXELS); // dest width/height
+    } catch(e) {}
 };
 
 HuesEditor.prototype.alert = function(msg) {
