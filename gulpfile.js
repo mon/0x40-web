@@ -68,7 +68,8 @@ gulp.task('clean', function() {
         'lib/hues-min.js',
         'lib/hues-min.map',
         'lib/audio-min.js',
-        'lib/oggvorbis.js',
+        'lib/ogg.js',
+        'lib/vorbis.js',
         'css',
         'release']);
 });
@@ -78,7 +79,8 @@ gulp.task('release', ['default', 'lint'], function() {
         'css/hues-min.css',
         'lib/hues-min.js',
         'lib/audio-min.js',
-        'lib/oggvorbis.js',
+        'lib/ogg.js',
+        'lib/vorbis.js',
         'fonts/**/*',
         'img/**/*',
         'index.html',
