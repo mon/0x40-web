@@ -51,7 +51,7 @@ var VorbisDecoder = AV.Decoder.extend(function() {
     
     this.callback = Vorbis.Runtime.addFunction(function(len) {
       var samples = Vorbis.HEAPF32.subarray(offset, offset + len);
-      self.decodedBuffer = new Float32Array(samples);
+      self.emit('data', new Float32Array(samples));
     });
   };
   
@@ -72,8 +72,6 @@ var VorbisDecoder = AV.Decoder.extend(function() {
     var status = 0;
     if ((status = Vorbis._VorbisDecode(this.vorbis, this.buf, packet.length, this.callback)) !== 0)
       throw new Error("Vorbis decoding error: " + status);
-      
-    return this.decodedBuffer;
   };
   
   this.prototype.destroy = function() {
@@ -103,20 +101,20 @@ OggDemuxer.plugins.push({
   
   init: function() {
     this.vorbis = Vorbis._VorbisInit();
-    this.buflen = 4096;
-    this.buf = Vorbis._malloc(this.buflen);
+    this.buflen = 4192;
+    this.vorBuf = Vorbis._malloc(this.buflen);
     this.headers = 3;
     this.headerBuffers = [];
   },
 
   readHeaders: function(packet) {
     if (this.buflen < packet.length) {
-      this.buf = Vorbis._realloc(this.buf, packet.length);
+      this.vorBuf = Vorbis._realloc(this.vorBuf, packet.length);
       this.buflen = packet.length;
     }
     
-    Vorbis.HEAPU8.set(packet, this.buf);
-    if (Vorbis._VorbisHeaderDecode(this.vorbis, this.buf, packet.length) !== 0)
+    Vorbis.HEAPU8.set(packet, this.vorBuf);
+    if (Vorbis._VorbisHeaderDecode(this.vorbis, this.vorBuf, packet.length) !== 0)
       throw new Error("Invalid vorbis header");
       
     this.headerBuffers.push(packet);
@@ -141,7 +139,7 @@ OggDemuxer.plugins.push({
       this.emit('metadata', this.metadata);
       
       Vorbis._VorbisDestroy(this.vorbis);
-      Vorbis._free(this.buf);
+      Vorbis._free(this.vorBuf);
       this.vorbis = null;
       
       for (var i = 0; i < 3; i++)
