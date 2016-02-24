@@ -257,7 +257,7 @@ HuesUI.prototype.intToHex = function(num, pad) {
         str = "0" + str;
     let prefix = num < 0 ? "-" : "$";
     return prefix + "0x" + str;
-}
+};
 
 /*
  Individual UIs ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
