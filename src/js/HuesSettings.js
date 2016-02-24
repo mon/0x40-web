@@ -241,17 +241,20 @@ function HuesSettings(defaults) {
     document.getElementById("closeButton").onclick = this.hide.bind(this);
     
     // we also care about tabs looking nice.
-    let checkListener = function() { 
+    let checkListener = function(check) { 
         for(let i = 0; i < tabs.length; i++) {
             tabs[i].className = "tab-label";
         }
-        this._label.className = "tab-label checked";
+        check._label.className = "tab-label checked";
+        // Fix the editor from having 0 size
+        if(check.id == "tab-editor" && this.core && this.core.editor)
+            this.core.editor.resize();
     };
     let tabs = document.getElementsByClassName("tab-label");
     for(let i = 0; i < tabs.length; i++) {
         let check = document.getElementById(tabs[i].htmlFor);
         check._label = tabs[i];
-        check.addEventListener("change", checkListener);
+        check.addEventListener("change", checkListener.bind(this, check));
     }
     if(!this.defaults.noUI) {
         this.initUI();
