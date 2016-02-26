@@ -170,7 +170,7 @@ SoundManager.prototype.playSong = function(song, playBuild, forcePlay) {
     }).then(buffers => {
         // To prevent race condition if you press "next" twice fast
         if(song != this.song) {
-            // Stop processing - silently ignored in the catch below
+            // Stop processing
             throw {
                 name: "SoundManagerRace",
                 message: "Song not playable - ignoring!"
@@ -194,15 +194,6 @@ SoundManager.prototype.playSong = function(song, playBuild, forcePlay) {
         return this.context.resume();
     }).then(() => {
         this.playing = true;
-    }).catch(error => {
-        if(error.name == "SoundManagerRace") {
-            // Just to ignore it if the song was invalid
-            // Log it in case it's something weird
-            console.log("SoundManager couldn't play song", error);
-            return;
-        } else {
-            throw error;
-        }
     });
     return p;
 };
