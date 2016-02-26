@@ -170,11 +170,7 @@ SoundManager.prototype.playSong = function(song, playBuild, forcePlay) {
     }).then(buffers => {
         // To prevent race condition if you press "next" twice fast
         if(song != this.song) {
-            // Stop processing
-            throw {
-                name: "SoundManagerRace",
-                message: "Song not playable - ignoring!"
-            };
+            return Promise.reject("Song changed between load and play - this message can be ignored");
         }
         
         this.buildup = buffers.buildup;
