@@ -300,7 +300,7 @@ SoundManager.prototype.loadSong = function(song) {
     if(song._loadPromise) {
         // Someone went forward then immediately back then forward again
         // Either way, the sound is still loading. It'll come back when it's ready
-        return;
+        return song._loadPromise;
     }
     
     let buffers = {loop: null, buildup: null};
