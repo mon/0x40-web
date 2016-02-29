@@ -23,7 +23,7 @@
 "use strict";
 
 // NOTE: Any packs referenced need CORS enabled or loads fail
-let packsURL = "http://cdn.0x40hu.es/getRespacks.php";
+let packsURL = "https://cdn.0x40hu.es/getRespacks.php";
 
 function Resources(core) {
     this.core = core;
