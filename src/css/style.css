@@ -41,6 +41,10 @@ html, body {
     font-family: 'PetMe64Web';
 }
 
+body {
+    position: relative;
+}
+
 h1 {
     font-size: 15pt;
 }
