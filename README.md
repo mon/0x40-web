@@ -15,7 +15,7 @@ You can also have animations that sync perfectly with the beats of the songs. In
 ## Install (Make your own Hues)
 1. Start by downloading the latest [release](https://github.com/mon/0x40-web/releases). These are minified and load faster.
 2. Put your respack zips somewhere they can be found by your web server. My hues have a `respacks/` folder under the main directory.
-3. Edit the Javascript that runs on page load
+3. Edit `index.html`:
   1. If your html is in a different location to your `lib` folder:
     * Edit `workersPath` to point to the correct (relative) location.
   3. Edit the `defaults` object so the `respacks` list contains the respacks you wish to load.
