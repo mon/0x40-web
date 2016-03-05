@@ -285,9 +285,11 @@ SoundManager.prototype.clampedTime = function() {
 
 SoundManager.prototype.loadSong = function(song) {
     if(song._loadPromise) {
-        // Someone went forward then immediately back then forward again
-        // Either way, the sound is still loading. It'll come back when it's ready
-        return song._loadPromise;
+        /* Caused when moving back/forwards rapidly.
+           The sound is still loading. We reject this promise, and the already
+           running decode will finish and resolve instead.
+           NOTE: If anything but playSong calls loadSong, this idea is broken. */
+        return Promise.reject("Song changed between load and play - this message can be ignored");
     }
     
     let buffers = {loop: null, buildup: null};
