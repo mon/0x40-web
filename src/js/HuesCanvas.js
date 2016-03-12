@@ -104,7 +104,7 @@ function HuesCanvas(element, audioContext, core) {
 HuesCanvas.prototype.setInvert = function(invert) {
     this.invert = invert;
     this.needsRedraw = true;
-}
+};
 
 HuesCanvas.prototype.settingsUpdated = function() {
     this.setSmartAlign(localStorage["smartAlign"]);
@@ -249,7 +249,7 @@ HuesCanvas.prototype.drawInvert = function() {
         this.context.fillStyle = "#FFF";
         this.context.fillRect(0,0,this.canvas.width,720);
     }
-}
+};
 
 /* Second fastest method from
  http://stackoverflow.com/questions/10073699/pad-a-number-with-leading-zeros-in-javascript

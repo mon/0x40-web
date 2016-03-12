@@ -266,7 +266,7 @@ HuesUI.prototype.invert = function(invert) {
     } else {
         this.root.classList.remove("inverted");
     }
-}
+};
 
 /*
  Individual UIs ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
