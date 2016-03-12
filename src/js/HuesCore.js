@@ -727,13 +727,6 @@ HuesCore.prototype.toggleFullAuto = function() {
 
 HuesCore.prototype.setInvert = function(invert) {
     this.invert = invert;
-    if(invert) {
-        document.documentElement.style.filter = "invert(100%)";
-        document.documentElement.style.webkitFilter = "invert(100%)";
-    } else {
-        document.documentElement.style.filter = "";
-        document.documentElement.style.webkitFilter = "";
-    }
     this.callEventListeners("invert", invert);
 };
 
@@ -758,6 +751,7 @@ HuesCore.prototype.changeUI = function(index) {
         this.callEventListeners("newimage", this.currentImage);
         this.callEventListeners("newcolour", this.colours[this.colourIndex], false);
         this.callEventListeners("beat", this.getBeatString(), this.getBeatIndex());
+        this.callEventListeners("invert", this.invert);
     }
 };
 

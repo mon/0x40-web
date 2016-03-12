@@ -3,6 +3,9 @@
 .hues-h-text {
     color: #ff3300;
 }
+.inverted .hues-h-text {
+    color: #00ccff;
+}
 
 #preloadHelper.hues-h-text {
     background-color: black;
@@ -10,6 +13,9 @@
 
 .hues-h-textfade {
     color: rgba(255, 51, 0, 0.6);
+}
+.inverted .hues-h-textfade {
+    color: rgba(0, 204, 255, 0.6);
 }
 
 .hues-m-beatbar.hues-h-beatbar {
@@ -26,6 +32,9 @@
     height: 43px;
     box-shadow: none;
     padding-top: 21px;
+}
+.inverted .hues-m-beatcenter.hues-h-text {
+    background-position: -42px 0;
 }
 
 .hues-m-beatcenter.hues-h-text > span {
@@ -48,6 +57,13 @@
     animation-name: hues-m-beatcenter;
     animation-fill-mode: forwards;
 }
+.inverted .hues-h-eyes {
+    /* Set as important to override the other .inverted selector from modern */
+    background: none !important;
+    background-image: url('../img/skull-eyes.png') !important;
+    box-shadow: none !important;
+    background-position: -42px 0 !important;
+}
 
 .hues-h-left-hand {
     background: url('../img/left-hand.png');
@@ -64,6 +80,9 @@
     height: 42px;
     position: absolute;
     background-repeat: no-repeat;
+}
+.inverted .hues-h-left-hand, .inverted  .hues-h-right-hand {
+    background-position: -63px 0;
 }
 
 .hues-m-controls.hues-h-controls {
@@ -84,7 +103,10 @@
     background: none;
     border-style: solid;
     border-width: 0px 19px 0px 18px;
-    border-image: url(../img/bones.png) 0 19 0 18 fill repeat stretch;
+    border-image: url(../img/bones.png) 29 19 0 18 fill repeat stretch;
+}
+.inverted .hues-m-songtitle.hues-h-text, .inverted .hues-m-imagename.hues-h-text {
+    border-image-slice: 0 19 29 18 fill;
 }
 
 .hues-m-huename.hues-h-text {
@@ -132,38 +154,60 @@
 }
 
 .hues-h-tombstone {
-    border-style: solid;
-    border-width: 22px 40px 0px 42px;
-    border-image: url(../img/tombstone.png) 22 42 0 42 fill repeat;
     height: 36px;
     position: absolute;
     bottom: 0;
     left: 0;
     right: 0;
     z-index: -10;
+    
+    border-style: solid;
+    border-width: 22px 40px 0px 42px;
+    border-image: url(../img/tombstone.png) 22 42 0 fill stretch;
+}
+.inverted .hues-h-tombstone {
+    border-image: url(../img/tombstone_invert.png) 22 42 0 fill stretch;
 }
 
 .hues-h-text + input[type=range]::-webkit-slider-runnable-track {
     background: #ff3300;
 }
+.inverted .hues-h-text + input[type=range]::-webkit-slider-runnable-track {
+    background: #00ccff;
+}
 
 .hues-h-text + input[type=range]::-webkit-slider-thumb {
     background: #ff3300;
+}
+.inverted .hues-h-text + input[type=range]::-webkit-slider-thumb {
+    background: #00ccff;
 }
 
 .hues-h-text + input[type=range]::-moz-range-track {
     background: #ff3300;
 }
+.inverted .hues-h-text + input[type=range]::-moz-range-track {
+    background: #00ccff;
+}
 
 .hues-h-text + input[type=range]::-moz-range-thumb {
     background: #ff3300;
+}
+.inverted .hues-h-text + input[type=range]::-moz-range-thumb {
+    background: #00ccff;
 }
 
 .hues-h-text + input[type=range]::-ms-fill-lower {
     background: #ff3300;
 }
+.inverted .hues-h-text + input[type=range]::-ms-fill-lower {
+    background: #00ccff;
+}
 .hues-h-text + input[type=range]::-ms-thumb {
     background: #ff3300;
+}
+.inverted .hues-h-text + input[type=range]::-ms-thumb {
+    background: #00ccff;
 }
 
 .hues-h-topleft, .hues-h-topright, .hues-h-bottomright {
@@ -185,11 +229,17 @@
     width: 269px;
     height: 237px;
 }
+.inverted .hues-h-topleft {
+    background-position: -269px 0;
+}
 
 .hues-h-topright {
     background-image: url("../img/web-topright.png");
     width: 215px;
     height: 220px;
+}
+.inverted .hues-h-topright {
+    background-position: -215px 0;
 }
 
 .hues-h-bottomright {
@@ -197,6 +247,9 @@
     bottom: 0px;
     width:358px;
     height: 284px;
+}
+.inverted .hues-h-bottomright {
+    background-position: -358px 0;
 }
 
 .hues-h-vignette {

@@ -44,6 +44,9 @@
     border-width: 0 4px 4px;
     border-style: solid;
 }
+.inverted .hues-m-beatbar {
+    border-color: rgba(255,255,255,0.5);
+}
 
 .hues-m-beatleft, .hues-m-beatright, .hues-m-songtitle, .hues-m-imagename, .hues-m-huename {
     color: white;
@@ -55,6 +58,10 @@
     white-space: nowrap;
     border-radius: 10px;
 }
+.inverted .hues-m-beatleft, .inverted .hues-m-beatright,
+.inverted .hues-m-songtitle, .inverted .hues-m-imagename, .inverted .hues-m-huename {
+    background: rgba(255,255,255,0.7);
+}
 
 .hues-m-leftinfo, .hues-m-rightinfo {
     position: absolute;
@@ -63,6 +70,9 @@
     color: rgba(255,255,255, 0.7);
     bottom: 79px;
     width: 100px;
+}
+.inverted .hues-m-leftinfo, .inverted .hues-m-rightinfo {
+    color: rgba(0,0,0, 0.7);
 }
 
 .hues-m-leftinfo {
@@ -106,12 +116,17 @@
     height: 40px;
     width: 40px;
     color: white;
-    background: rgb(80,80,80);
+    background: #505050;
     font-size: 20px;
     line-height: 40px;
     border-radius: 20px;
     text-align: center;
     box-shadow: inset 0 0 12px rgba(0,0,0,0.5);
+}
+.inverted .hues-m-beatcenter {
+    color: black;
+    background: #afafaf;
+    box-shadow: inset 0 0 12px rgba(255,255,255,0.5);
 }
 
 .hues-m-beatcenter > span {
@@ -144,6 +159,10 @@
     border-color: rgba(0,0,0,0.5);
     border-width: 4px 4px 0;
     border-style: solid;
+}
+.inverted .hues-m-controls {
+    color: rgba(0,0,0,0.7);
+    border-color: rgba(255,255,255,0.5);
 }
 
 .hues-m-songtitle, .hues-m-imagename, .hues-m-huename {
@@ -224,18 +243,27 @@
 }
 
 .hues-m-prevbutton:hover, .hues-m-nextbutton:hover, .hues-m-actbutton:hover {
-    background: rgb(100,100,100);
+    background: #646464;
+}
+.inverted .hues-m-prevbutton:hover,
+.inverted .hues-m-nextbutton:hover,
+.inverted .hues-m-actbutton:hover {
+    background: #9b9b9b;
 }
 
 .hues-m-prevbutton, .hues-m-nextbutton {
     color: white;
-    background: rgb(40,40,40);
+    background: #282828;
     height: 20px;
     line-height: 20px;
     font-size: 12px;
     white-space: nowrap;
     border-radius: 10px;
     top: 7.5px;
+}
+.inverted .hues-m-prevbutton, .inverted .hues-m-nextbutton {
+    color: black;
+    background: #D7D7D7;
 }
 
 .hues-m-prevbutton {
@@ -255,12 +283,16 @@
     width: 35px;
     left: 17.5px;
     color: white;
-    background: rgb(32,32,32);
+    background: #202020;
     font-size: 20px;
     line-height: 35px;
     border-radius: 20px;
     text-align: center;
     z-index: 1;
+}
+.inverted .hues-m-actbutton {
+    color: black;
+    background: #DFDFDF;
 }
 
 .hues-m-huename {
@@ -299,9 +331,15 @@
     border-top-right-radius: 100px;
     cursor: pointer;
 }
+.inverted .hues-m-hiderestore {
+    background: linear-gradient(rgba(255,255,255,0), rgba(255,255,255,0.2));
+}
 
 .hues-m-hiderestore:hover {
     background: linear-gradient(rgba(0,0,0,0), rgba(0,0,0,0.4));
+}
+.inverted .hues-m-hiderestore:hover {
+background: linear-gradient(rgba(255,255,255,0), rgba(255,255,255,0.4));
 }
 
 .hues-m-hiderestore.hidden {
@@ -374,6 +412,9 @@ input[type=range]::-webkit-slider-runnable-track {
     border: none;
     border-radius: 0;
 }
+.inverted input[type=range]::-webkit-slider-runnable-track {
+    background: rgba(0,0,0,0.7);
+}
 
 input[type=range]::-webkit-slider-thumb {
     -webkit-appearance: none;
@@ -382,8 +423,11 @@ input[type=range]::-webkit-slider-thumb {
     height: 12px;
     width: 4px;
     border-radius: 0;
-    background: rgb(255,255,255);
+    background: white;
     margin-top: -4px; /* You need to specify a margin in Chrome, but in Firefox and IE it is automatic */
+}
+.inverted input[type=range]::-webkit-slider-thumb {
+    background: white;
 }
 
 input[type=range]::-moz-range-track {
@@ -393,6 +437,9 @@ input[type=range]::-moz-range-track {
     border: none;
     border-radius: 0;
 }
+.inverted input[type=range]::-moz-range-track {
+    background: rgba(0,0,0,0.7);
+}
 
 input[type=range]::-moz-range-thumb {
     box-shadow: none;
@@ -400,7 +447,10 @@ input[type=range]::-moz-range-thumb {
     height: 12px;
     width: 4px;
     border-radius: 0;
-    background: rgb(255,255,255);
+    background: white;
+}
+.inverted input[type=range]::-moz-range-thumb {
+    background: black;
 }
 
 input[type=range]::-ms-track {
@@ -415,8 +465,14 @@ input[type=range]::-ms-track {
 input[type=range]::-ms-fill-lower {
     background: rgba(255,255,255,0.7);
 }
+.inverted input[type=range]::-ms-fill-lower {
+    background: rgba(0,0,0,0.7);
+}
 input[type=range]::-ms-fill-upper {
     background: rgba(0,0,0,0.7);
+}
+.inverted input[type=range]::-ms-fill-upper {
+    background: rgba(255,255,255,0.7);
 }
 
 input[type=range]::-ms-thumb {
@@ -425,7 +481,10 @@ input[type=range]::-ms-thumb {
     height: 12px;
     width: 4px;
     border-radius: 0;
-    background: rgb(255,255,255);
+    background: white;
+}
+.inverted input[type=range]::-ms-thumb {
+    background: black;
 }
 
 @media (min-width: 768px) {

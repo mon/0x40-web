@@ -27,12 +27,12 @@
     to put all your own elements under, but make a div
     underneath so it can be entirely hidden.
 */
-function HuesUI(parent) {
+function HuesUI(parent, name) {
     if(!parent) {
         parent = document.getElementById("huesUI");
     }
     this.root = document.createElement("div");
-    this.root.className = this.constructor.name;
+    this.root.className = name ? name : this.constructor.name;
     parent.appendChild(this.root);
     this.root.style.display = "none";
 
@@ -159,6 +159,7 @@ HuesUI.prototype.initUI = function() {
     this.addCoreCallback("newcolour", this.newColour.bind(this));
     this.addCoreCallback("blurupdate", this.blurUpdated.bind(this));
     this.addCoreCallback("time", this.updateTime.bind(this));
+    this.addCoreCallback("invert", this.invert.bind(this));
     this.resizeHandler = this.resize.bind(this);
 };
 
@@ -259,11 +260,19 @@ HuesUI.prototype.intToHex = function(num, pad) {
     return prefix + "0x" + str;
 };
 
+HuesUI.prototype.invert = function(invert) {
+    if (invert) {
+        this.root.classList.add("inverted");
+    } else {
+        this.root.classList.remove("inverted");
+    }
+}
+
 /*
  Individual UIs ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
 
-function RetroUI() {
+function RetroUI(parent, name) {
     this.container = null;
     this.mode = null;
     this.beatBar = null;
@@ -273,7 +282,7 @@ function RetroUI() {
     this.imageModeAuto = null;
     this.subControls = null;
 
-    HuesUI.call(this);
+    HuesUI.call(this, parent, name ? name : "RetroUI");
 }
 
 RetroUI.prototype = Object.create(HuesUI.prototype);
@@ -422,8 +431,8 @@ RetroUI.prototype.resize = function() {
     this.core.resizeVisualiser();
 };
 
-function WeedUI() {
-    RetroUI.call(this);
+function WeedUI(parent, name) {
+    RetroUI.call(this, parent, name ? name : "WeedUI");
 
     this.xVariance = 10;
     this.yVariance = 20;
@@ -502,7 +511,7 @@ WeedUI.prototype.removeBeat = function(element) {
     this.root.removeChild(element);
 };
 
-function ModernUI() {
+function ModernUI(parent, name) {
     this.beatBar = null;
     this.beatLeft = null;
     this.beatRight = null;
@@ -518,7 +527,7 @@ function ModernUI() {
 
     this.currentBeat = ".";
 
-    HuesUI.call(this);
+    HuesUI.call(this, parent, name ? name : "ModernUI");
 
     this.hidden = 0; // we have a 3 stage hide
 }
@@ -787,9 +796,11 @@ ModernUI.prototype.newImage = function(image) {
     this.resizeImage();
 };
 
-function XmasUI() {
-    ModernUI.call(this);
-
+function XmasUI(parent, name) {
+    ModernUI.call(this, parent, name ? name : "XmasUI");
+     // This will cache our inverted lights images
+    this.invert(true);
+    
     this.controls.removeChild(this.leftBox);
     this.controls.removeChild(this.rightBox);
     this.controls.removeChild(this.rightInfo);
@@ -883,8 +894,8 @@ XmasUI.prototype.lightFadeOut = function(light) {
 
 XmasUI.prototype.lightRecolour = function(light) {
     let hue = Math.floor(Math.random() * 7) * -56;
-    light.on.style.backgroundPosition = hue + "px, 0, center";
-    light.off.style.backgroundPosition = hue + "px, 0, center";
+    light.on.style.backgroundPosition = hue + "px 0";
+    light.off.style.backgroundPosition = hue + "px 0";
 };
 
 XmasUI.prototype.randomLight = function(light) {
@@ -936,8 +947,10 @@ XmasUI.prototype.newColour = function(colour) {};
 XmasUI.prototype.blurUpdated = function(x, y) {};
 XmasUI.prototype.updateTime = function(time) {};
 
-function HalloweenUI() {
-    ModernUI.call(this);
+function HalloweenUI(parent, name) {
+    ModernUI.call(this, parent, name ? name : "HalloweenUI");
+    // This will cache our inverted tombstone image
+    this.invert(true);
 }
 
 HalloweenUI.prototype = Object.create(ModernUI.prototype);
@@ -1010,8 +1023,6 @@ HalloweenUI.prototype.initUI = function() {
     this.vignette = document.createElement("div");
     this.vignette.className = "hues-h-vignette";
     this.root.appendChild(this.vignette);
-    
-    this.addCoreCallback("invert", this.invert.bind(this));
 };
 
 HalloweenUI.prototype.beat = function(beats, index) {
@@ -1021,16 +1032,6 @@ HalloweenUI.prototype.beat = function(beats, index) {
         let eyes = this.beatCenter.ownerDocument.createElement("div");
         eyes.className = "hues-m-beatcenter hues-h-eyes";
         this.beatCenter.appendChild(eyes);
-    }
-};
-
-HalloweenUI.prototype.invert = function(invert) {
-    if(invert) {
-        this.vignette.style.filter = "invert(100%)";
-        this.vignette.style.webkitFilter = "invert(100%)";
-    } else {
-        this.vignette.style.filter = "";
-        this.vignette.style.webkitFilter = "";
     }
 };
 

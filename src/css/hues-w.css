@@ -1,5 +1,9 @@
 /* WeedUI */
 
+.WeedUI.inverted {
+    color: white;
+}
+
 .hues-w-controls {
     display:flex;
     align-items:center;
@@ -71,6 +75,9 @@
     animation-name: fallspin;
     animation-timing-function: cubic-bezier(0.215, 0.61, 0.355, 1);
     animation-duration: 0.5s;
+}
+.inverted .hues-w-beataccent{
+    text-shadow: -2px 2px 0px #999;
 }
 
 @keyframes fallspin {

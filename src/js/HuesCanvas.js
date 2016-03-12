@@ -30,6 +30,7 @@ function HuesCanvas(element, audioContext, core) {
     core.addEventListener("newimage", this.setImage.bind(this));
     core.addEventListener("newcolour", this.setColour.bind(this));
     core.addEventListener("beat", this.beat.bind(this));
+    core.addEventListener("invert", this.setInvert.bind(this));
     core.addEventListener("settingsupdated", this.settingsUpdated.bind(this));
     this.core = core;
 
@@ -63,6 +64,8 @@ function HuesCanvas(element, audioContext, core) {
     this.blackout = false;
     this.blackoutColour = "#000"; // for the whiteout case we must store this
     this.blackoutTimeout = null;
+    
+    this.invert = false;
 
     this.colourFade = false;
     this.colourFadeStart=0;
@@ -96,6 +99,11 @@ function HuesCanvas(element, audioContext, core) {
 
     this.animating = true;
     requestAnimationFrame(this.animationLoop.bind(this));
+}
+
+HuesCanvas.prototype.setInvert = function(invert) {
+    this.invert = invert;
+    this.needsRedraw = true;
 }
 
 HuesCanvas.prototype.settingsUpdated = function() {
@@ -133,6 +141,7 @@ HuesCanvas.prototype.redraw = function() {
             this.context.fillStyle = this.blackoutColour;
             this.context.fillRect(0,0,width,720);
             this.needsRedraw = false;
+            this.drawInvert();
             return;
         }
     } else {
@@ -230,7 +239,17 @@ HuesCanvas.prototype.redraw = function() {
     } else {
         this.needsRedraw = false;
     }
+    this.drawInvert();
 };
+
+HuesCanvas.prototype.drawInvert = function() {
+    if(this.invert) {
+        this.context.globalAlpha = 1;
+        this.context.globalCompositeOperation = "difference";
+        this.context.fillStyle = "#FFF";
+        this.context.fillRect(0,0,this.canvas.width,720);
+    }
+}
 
 /* Second fastest method from
  http://stackoverflow.com/questions/10073699/pad-a-number-with-leading-zeros-in-javascript
@@ -515,7 +534,11 @@ HuesCanvas.prototype.drawSnow = function() {
     let delta = this.lastSnow - this.audio.currentTime;
     this.snowContext.clearRect(0, 0, width, height);
 
-    this.snowContext.fillStyle = "rgba(255, 255, 255, 0.8)";
+    if(this.invert) {
+        this.snowContext.fillStyle = "rgba(0, 0, 0, 0.8)";
+    } else {
+        this.snowContext.fillStyle = "rgba(255, 255, 255, 0.8)";
+    }
     this.snowContext.beginPath();
     for(let i = 0; i < this.maxSnow; i++) {
         let flake = this.snowflakes[i];

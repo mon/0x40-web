@@ -1,5 +1,9 @@
 /* RetroUI */
 
+.RetroUI.inverted {
+    color: white;
+}
+
 .hues-r-container {
     position: absolute;
     bottom: 0px;
