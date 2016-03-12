@@ -60,6 +60,7 @@
 }
 .inverted .hues-m-beatleft, .inverted .hues-m-beatright,
 .inverted .hues-m-songtitle, .inverted .hues-m-imagename, .inverted .hues-m-huename {
+    color: black;
     background: rgba(255,255,255,0.7);
 }
 
