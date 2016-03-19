@@ -1091,6 +1091,8 @@ HuesEditor.prototype.setText = function(editor, text, caretFromEnd) {
     if(commitUndo) {
         this.commitUndo();
     }
+    // Make sure you can't accidentally close the tab
+    window.onbeforeunload = this.confirmLeave;
     this.song[editor._rhythm] = text;
     this.reflow(editor, this.song[editor._rhythm]);
     this.setCaret(editor._beatmap, caret);
@@ -1278,6 +1280,10 @@ HuesEditor.prototype.drawOneWave = function(wave, center, width) {
     } catch(e) {}
 };
 
+HuesEditor.prototype.confirmLeave = function() {
+    return "Unsaved beatmap - leave anyway?";
+}
+
 HuesEditor.prototype.alert = function(msg) {
     this.statusMsg.classList.remove("fade");
     this.statusMsg.textContent = msg;
@@ -1329,6 +1335,8 @@ HuesEditor.prototype.saveXML = function() {
     element.click();
 
     document.body.removeChild(element);
+    
+    window.onbeforeunload = null;
 };
 
 // http://stackoverflow.com/a/30810322
