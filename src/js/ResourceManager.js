@@ -76,6 +76,39 @@ function Resources(core) {
     }
 }
 
+/* Uses HTTP HEAD requests to get the size of all the linked URLs
+   Returns an Promise.all which will resolve to an array of sizes */
+Resources.prototype.getSizes = function(urls) {
+    let promises = [];
+    
+    urls.forEach(url => {
+        let p = new Promise((resolve, reject) => {
+            let xhr = new XMLHttpRequest();
+            xhr.open("HEAD", url, true);
+            xhr.onreadystatechange = function() {
+                if (this.readyState == this.DONE) {
+                    let bytes = parseInt(xhr.getResponseHeader("Content-Length"));
+                    resolve(bytes / 1024 / 1024);
+                }
+            };
+            xhr.onerror = function() {
+                reject(Error(req.status + ": Could not fetch respack at " + url));
+            };
+            xhr.send();
+        }).catch(error => {
+            // Infinitely more user friendly than the error Same Origin gives
+            if(error.code == 1012) {
+                throw Error("Respack at URL " + url + " is restricted. Check CORS.");
+            } else {
+                throw error;
+            }
+        });
+        promises.push(p);
+    });
+    
+    return Promise.all(promises);
+};
+
 // Array of URLs to load, and a callback for when we're done
 // Preserves order of URLs being loaded
 Resources.prototype.addAll = function(urls, progressCallback) {

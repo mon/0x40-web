@@ -1282,7 +1282,7 @@ HuesEditor.prototype.drawOneWave = function(wave, center, width) {
 
 HuesEditor.prototype.confirmLeave = function() {
     return "Unsaved beatmap - leave anyway?";
-}
+};
 
 HuesEditor.prototype.alert = function(msg) {
     this.statusMsg.classList.remove("fade");

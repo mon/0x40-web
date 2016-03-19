@@ -146,7 +146,24 @@ function HuesCore(defaults) {
     this.vCtx = this.visualiser.getContext("2d");
     
     this.soundManager = new SoundManager(this);
-    this.soundManager.init().then(response => {
+    
+    this.resourceManager.getSizes(defaults.respacks).then( sizes => {
+        let size = sizes.reduce( (prev, curr) => {
+            return typeof curr === 'number' ? prev + curr : null;
+        });
+        if(typeof size === 'number') {
+            size = size.toFixed(1);
+        } else {
+            size = '<abbr title="Content-Length header not present for respack URLs">???</abbr>';
+        }
+        
+        this.warning(size + "MB of music/images.<br />" +
+            "Epilepsy warning.<br />" +
+            "<b>Tap or click to start</b>");
+        
+        return this.soundManager.init();
+    }).then(() => {
+        this.clearMessage();
         setInterval(this.loopCheck.bind(this), 1000);
         this.renderer = new HuesCanvas("waifu", this.soundManager.context, this);
         this.settings.connectCore(this);
@@ -168,7 +185,7 @@ function HuesCore(defaults) {
             document.getElementById("preloadHelper").style.display = "none";
             return;
         }
-    }).then(response => {
+    }).then(() => {
         document.getElementById("preloadHelper").classList.add("loaded");
         if(defaults.firstImage) {
             this.setImageByName(defaults.firstImage);
@@ -931,7 +948,7 @@ HuesCore.prototype.error = function(message) {
 
 HuesCore.prototype.warning = function(message) {
     console.log(message);
-    document.getElementById("preSub").textContent = message;
+    document.getElementById("preSub").innerHTML = message;
     document.getElementById("preMain").style.color = "#F93";
 };
 

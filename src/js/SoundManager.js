@@ -115,30 +115,25 @@ SoundManager.prototype.init = function() {
             return new Promise((resolve, reject) => {
                 // iOS and other some mobile browsers - unlock the context as
                 // it starts in a suspended state
-                if(this.context.state != "running") {
-                    this.core.warning("We're about to load about 10MB of stuff. Tap to begin!");
-                    let unlocker = () => {
-                        // create empty buffer
-                        let buffer = this.context.createBuffer(1, 1, 22050);
-                        let source =  this.context.createBufferSource();
-                        source.buffer = buffer;
+                let unlocker = () => {
+                    // create empty buffer
+                    let buffer = this.context.createBuffer(1, 1, 22050);
+                    let source =  this.context.createBufferSource();
+                    source.buffer = buffer;
 
-                        // connect to output (your speakers)
-                        source.connect( this.context.destination);
+                    // connect to output (your speakers)
+                    source.connect( this.context.destination);
 
-                        // play the file
-                        source.start(0);
-                        
-                        window.removeEventListener('touchend', unlocker);
-                        window.removeEventListener('click', unlocker);
-                        this.core.clearMessage();
-                        resolve();
-                    };
-                    window.addEventListener('touchend', unlocker, false);
-                    window.addEventListener('click', unlocker, false);
-                } else {
+                    // play the file
+                    source.start(0);
+                    
+                    window.removeEventListener('touchend', unlocker);
+                    window.removeEventListener('click', unlocker);
+                    this.core.clearMessage();
                     resolve();
-                }
+                };
+                window.addEventListener('touchend', unlocker, false);
+                window.addEventListener('click', unlocker, false);
             });
         });
     }
