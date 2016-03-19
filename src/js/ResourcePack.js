@@ -127,7 +127,7 @@ Respack.prototype.loadFromBlob = function(blob, progress) {
         this.progressCallback = progress;
     }
     // We don't get progress events for loading the zip, set 0 progress
-    this.updateProgress(0);
+    this.updateProgress(this.loadedFromURL ? 0.5 : 0);
     return new Promise((resolve, reject) => {
         this.size = blob.size;
         let file = new zip.fs.FS();
