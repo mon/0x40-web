@@ -8,7 +8,9 @@
 }
 
 #preloadHelper.hues-h-text {
-    background-color: black;
+    background: linear-gradient(to right, #000 0%,#000 50%,#222 50%,#222 100%);
+    background-size: 200% 100%;
+    background-position: 100% 0;
 }
 
 .hues-h-textfade {

@@ -158,6 +158,8 @@ function HuesCore(defaults) {
         if(defaults.load) {
             return this.resourceManager.addAll(defaults.respacks, function(progress) {
                 let prog = document.getElementById("preMain");
+                let helper = document.getElementById("preloadHelper");
+                helper.style.backgroundPosition = (100 - progress*100) + "% 0%";
                 let scale = Math.floor(progress * defaults.preloadMax);
                 let padding = defaults.preloadMax.toString(defaults.preloadBase).length;
                 prog.textContent = defaults.preloadPrefix + (Array(padding).join("0")+scale.toString(defaults.preloadBase)).slice(-padding);

@@ -61,13 +61,13 @@ Respack.prototype.audioExtensions = new RegExp("\\.(mp3|ogg|wav)$", "i");
 Respack.prototype.imageExtensions = new RegExp("\\.(png|gif|jpg|jpeg)$", "i");
 Respack.prototype.animRegex = new RegExp("(.*?)_\\d+$");
 
-Respack.prototype.updateProgress = function() {
+Respack.prototype.updateProgress = function(override) {
     if(this.progressCallback) {
         let percent = this.filesLoaded / this.filesToLoad;
         if(this.loadedFromURL) {
             percent = (percent / 2) + 0.5;
         }
-        this.progressCallback(percent, this);
+        this.progressCallback(typeof override === "number" ? override : percent, this);
     }
 };
 
@@ -126,6 +126,8 @@ Respack.prototype.loadFromBlob = function(blob, progress) {
     if(progress) {
         this.progressCallback = progress;
     }
+    // We don't get progress events for loading the zip, set 0 progress
+    this.updateProgress(0);
     return new Promise((resolve, reject) => {
         this.size = blob.size;
         let file = new zip.fs.FS();
