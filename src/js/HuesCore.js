@@ -158,7 +158,7 @@ function HuesCore(defaults) {
         }
         
         this.warning(size + "MB of music/images.<br />" +
-            "Epilepsy warning.<br />" +
+            "Flashing lights.<br />" +
             "<b>Tap or click to start</b>");
         
         return this.soundManager.init();
