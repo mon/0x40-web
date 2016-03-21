@@ -148,7 +148,7 @@ SoundManager.prototype.unlock = function() {
         window.addEventListener('click', unlocker, false);
     });
     return this.lockedPromise;
-}
+};
 
 SoundManager.prototype.playSong = function(song, playBuild, forcePlay) {
     let p = Promise.resolve();
