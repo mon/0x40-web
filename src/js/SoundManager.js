@@ -29,6 +29,8 @@ function SoundManager(core) {
     this.song = null;
     
     this.initPromise = null;
+    this.lockedPromise = null;
+    this.locked = true;
 
     /* Lower level audio and timing info */
     this.context = null; // Audio context, Web Audio API
@@ -112,33 +114,41 @@ SoundManager.prototype.init = function() {
                 audioWorker.postMessage({ping:true, ogg:this.oggSupport});
             });
         }).then(() => {
-            return new Promise((resolve, reject) => {
-                // iOS and other some mobile browsers - unlock the context as
-                // it starts in a suspended state
-                let unlocker = () => {
-                    // create empty buffer
-                    let buffer = this.context.createBuffer(1, 1, 22050);
-                    let source =  this.context.createBufferSource();
-                    source.buffer = buffer;
-
-                    // connect to output (your speakers)
-                    source.connect( this.context.destination);
-
-                    // play the file
-                    source.start(0);
-                    
-                    window.removeEventListener('touchend', unlocker);
-                    window.removeEventListener('click', unlocker);
-                    this.core.clearMessage();
-                    resolve();
-                };
-                window.addEventListener('touchend', unlocker, false);
-                window.addEventListener('click', unlocker, false);
-            });
+            this.locked = this.context.state != "running";
         });
     }
     return this.initPromise;
 };
+
+SoundManager.prototype.unlock = function() {
+    if(this.lockedPromise) {
+        return this.lockedPromise;
+    }
+    this.lockedPromise = new Promise((resolve, reject) => {
+        // iOS and other some mobile browsers - unlock the context as
+        // it starts in a suspended state
+        let unlocker = () => {
+            // create empty buffer
+            let buffer = this.context.createBuffer(1, 1, 22050);
+            let source =  this.context.createBufferSource();
+            source.buffer = buffer;
+
+            // connect to output (your speakers)
+            source.connect( this.context.destination);
+
+            // play the file
+            source.start(0);
+            
+            window.removeEventListener('touchend', unlocker);
+            window.removeEventListener('click', unlocker);
+            this.core.clearMessage();
+            resolve();
+        };
+        window.addEventListener('touchend', unlocker, false);
+        window.addEventListener('click', unlocker, false);
+    });
+    return this.lockedPromise;
+}
 
 SoundManager.prototype.playSong = function(song, playBuild, forcePlay) {
     let p = Promise.resolve();

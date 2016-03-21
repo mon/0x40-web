@@ -159,6 +159,11 @@ h1, h2, h3 {
     font-size: 12pt;
 }
 
+#preSub span {
+    font-size: 8pt;
+    opacity: 0.7;
+}
+
 #tabs {
     margin: -1px;
     padding-top: 22px;

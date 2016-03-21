@@ -67,7 +67,8 @@ HuesSettings.prototype.defaultSettings = {
     autoSongShuffle: "on",
     autoSongFadeout: "on",
     trippyMode: "off",
-    volume: 0.7
+    volume: 0.7,
+    skipPreloader: "off"
 };
 
 // Don't get saved to localStorage
@@ -109,7 +110,8 @@ HuesSettings.prototype.settingsCategories = {
     ],
     "Interface" : [
         "currentUI",
-        "blackoutUI"
+        "blackoutUI",
+        "skipPreloader"
     ]
 };
 
@@ -197,6 +199,10 @@ HuesSettings.prototype.settingsOptions = {
     },
     shuffleImages : {
         name : "Shuffle images",
+        options : ["off", "on"]
+    },
+    skipPreloader : {
+        name : "Skip preloader warning",
         options : ["off", "on"]
     }
 };

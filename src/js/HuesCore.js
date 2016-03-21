@@ -147,21 +147,36 @@ function HuesCore(defaults) {
     
     this.soundManager = new SoundManager(this);
     
-    this.resourceManager.getSizes(defaults.respacks).then( sizes => {
+    this.soundManager.init().then(() => {
+        if(!this.soundManager.locked && localStorage["skipPreloader"] == "on") {
+            return null;
+        } else {
+            return this.resourceManager.getSizes(defaults.respacks);
+        }
+    }).then( sizes => {
+        if(sizes === null) {
+            return;
+        }
+        
         let size = sizes.reduce( (prev, curr) => {
             return typeof curr === 'number' ? prev + curr : null;
-        });
+        }, 0);
         if(typeof size === 'number') {
             size = size.toFixed(1);
         } else {
             size = '<abbr title="Content-Length header not present for respack URLs">???</abbr>';
         }
         
-        this.warning(size + "MB of music/images.<br />" +
+        let warning = size + "MB of music/images.<br />" +
             "Flashing lights.<br />" +
-            "<b>Tap or click to start</b>");
-        
-        return this.soundManager.init();
+            "<b>Tap or click to start</b>";
+            
+        if(!this.soundManager.locked) {
+            warning += "<br /><span>Skip this screen from Options</span>";
+        }
+        this.warning(warning);
+        // Even if not locked, this steals clicks which is useful here
+        return this.soundManager.unlock();
     }).then(() => {
         this.clearMessage();
         setInterval(this.loopCheck.bind(this), 1000);
