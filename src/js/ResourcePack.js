@@ -299,7 +299,7 @@ Respack.prototype.parseImage = function(file) {
         this.images.push(img);
     } else {
         let existing = this.getImage(name);
-        debug("WARNING: Image", name, "already exists! Conflict with", file.name, "and", existing.name);
+        console.log("WARNING: Image", name, "already exists! Conflict with", file.name, "and", existing.name);
         return;
     }
     
@@ -338,6 +338,9 @@ Respack.prototype.parseImageQueue = function() {
             // Maintain order
             return imagePromise;
         }).then(response => {
+            // Don't crash if the respack had duplicate images
+            if(!response)
+                return;
             let newImg = new Image();
             newImg.src = response.bitmap;
             if (response.img.animated) {

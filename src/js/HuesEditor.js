@@ -126,6 +126,9 @@ HuesEditor.prototype.initUI = function() {
 };
 
 HuesEditor.prototype.resize = function(noHilightCalc) {
+    // If we were never instantiated but called externally
+    if(!this.root)
+        return;
     this.root.style.height = (window.innerHeight - 200) + "px";
     let boxHeight = this.editArea.offsetHeight;
     let bHeadHeight = this.buildEdit._header.offsetHeight;
