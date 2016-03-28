@@ -32,7 +32,7 @@ gulp.task('css', function(){
 });
 
 gulp.task("audio", function () {
-  gulp.src(["src/js/audio/aurora.js", "src/js/audio/mp3.js"])
+  gulp.src(["src/js/audio/aurora.js", "src/js/audio/mpg123.js"])
   .pipe(concat("audio-min.js"))
   .pipe(uglify())
   .pipe(gulp.dest("lib"));
