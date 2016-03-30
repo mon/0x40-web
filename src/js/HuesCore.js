@@ -344,7 +344,8 @@ HuesCore.prototype.recalcBeatIndex = function() {
     let rhythm = this.currentSong.rhythm;
     let mapSoFar;
     if(this.beatIndex < 0) {
-        mapSoFar = build.slice(0, this.beatIndex + build.length);
+        // Clamp to 0 in case we've juuust started
+        mapSoFar = build.slice(0, Math.max(this.beatIndex + build.length, 0));
     } else {
         // If the rhythm has an odd number of inverts, don't reset because it
         // alternates on each loop anyway
@@ -765,7 +766,7 @@ HuesCore.prototype.toggleFullAuto = function() {
 };
 
 HuesCore.prototype.setInvert = function(invert) {
-    this.invert = invert;
+    this.invert = !!invert;
     this.callEventListeners("invert", invert);
 };
 
