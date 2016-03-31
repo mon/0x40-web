@@ -331,8 +331,10 @@ HuesCore.prototype.animationLoop = function() {
     this.callEventListeners("frame");
 };
 
-HuesCore.prototype.recalcBeatIndex = function() {
-    this.beatIndex = Math.floor(this.soundManager.currentTime() / this.getBeatLength());
+HuesCore.prototype.recalcBeatIndex = function(forcedNow) {
+    let now = typeof forcedNow === "number" ? forcedNow : this.soundManager.currentTime();
+    // getBeatLength isn't updated with the right beatIndex yet
+    this.beatIndex = Math.floor(now / (now < 0 ? this.buildLength : this.loopLength));
     // beatIndex is NaN, abort
     if(this.beatIndex != this.beatIndex) {
         this.setInvert(false);
@@ -495,7 +497,8 @@ HuesCore.prototype.fillBuildup = function() {
     // update with a buildup of possibly different length
     this.updateBeatLength();
     // If we're in the build or loop this will adjust
-    this.recalcBeatIndex();
+    // If we've lagged a bit, we'll miss the first beat. Rewind!
+    this.recalcBeatIndex(this.doBuildup ? -this.soundManager.buildLength : 0);
 };
 
 HuesCore.prototype.randomSong = function() {
