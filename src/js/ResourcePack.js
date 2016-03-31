@@ -358,12 +358,12 @@ Respack.prototype.parseXML = function() {
                     if(this.songs.length > 0)
                         this.parseSongFile(dom);
                     break;
-                case "info":
-                    if(this.images.length > 0)
-                        this.parseInfoFile(dom);
-                    break;
                 case "images":
-                    this.parseImageFile(dom);
+                    if(this.images.length > 0)
+                        this.parseImageFile(dom);
+                    break;
+                case "info":
+                    this.parseInfoFile(dom);
                     break;
                 default:
                     console.log("XML found with no songs, images or info");
