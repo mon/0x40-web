@@ -44,9 +44,7 @@ function Respack() {
     this.downloaded = -1;
     this.enabled = true;
 
-    this._songXMLPromise = null;
-    this._imageXMLPromise = null;
-    this._infoXMLPromise = null;
+    this._xmlQueue = [];
 
     this.totalFiles = -1;
 
@@ -169,9 +167,7 @@ Respack.prototype.parseZip = function(zip) {
         return this.parseXML();
     }).then(() => {
         // Cleanup
-        this._songXMLPromise = null;
-        this._imageXMLPromise = null;
-        this._infoXMLPromise = null;
+        this._xmlQueue = [];
         console.log("Loaded", this.name, "successfully with", this.songs.length,
                     "songs and", this.images.length, "images.");
     });
@@ -186,19 +182,8 @@ Respack.prototype.parseFile = function(file) {
         this.imageQueue.push(this.parseImage(file));
         this.filesToLoad++;
     }
-    else {
-        switch(name.toLowerCase()) {
-            case "songs.xml":
-                this._songXMLPromise = this.loadXML(file);
-                break;
-            case "images.xml":
-                this._imageXMLPromise = this.loadXML(file);
-                break;
-            case "info.xml":
-                this._infoXMLPromise = this.loadXML(file);
-                break;
-            default:
-        }
+    else if(name.toLowerCase().endsWith(".xml")){
+        this._xmlQueue.push(this.loadXML(file));
     }
 };
 
@@ -358,42 +343,35 @@ Respack.prototype.loadXML = function(file) {
             //XML parser will complain about a bare '&', but some respacks use &amp
             text = text.replace(/&amp;/g, '&');
             text = text.replace(/&/g, '&amp;');
-            resolve(text);
+            let parser = new DOMParser();
+            let dom = parser.parseFromString(text, "text/xml");
+            resolve(dom);
         });
     });
 };
 
 Respack.prototype.parseXML = function() {
-    let p = Promise.resolve();
-    // info xml?
-    if(this._infoXMLPromise) {
-        p = p.then(() => {
-            return this._infoXMLPromise;
-        }).then(text => {
-            this.parseInfoFile(text);
+    for(let i = 0; i < this._xmlQueue.length; i++) {
+        this._xmlQueue[i] = this._xmlQueue[i].then(dom => {
+            switch(dom.documentElement.nodeName) {
+                case "songs":
+                    if(this.songs.length > 0)
+                        this.parseSongFile(dom);
+                    break;
+                case "info":
+                    if(this.images.length > 0)
+                        this.parseInfoFile(dom);
+                    break;
+                case "images":
+                    this.parseImageFile(dom);
+                    break;
+                default:
+                    console.log("XML found with no songs, images or info");
+                    break;
+            }
         });
     }
-    // song xml and songs exist?
-    if (this.songs.length > 0) {
-        if(this._songXMLPromise) {
-            p = p.then(() => {
-                return this._songXMLPromise;
-            }).then(text => {
-                this.parseSongFile(text);
-            });
-        } else {
-            console.log("!!!", "Got songs but no songs.xml!");
-        }
-    }
-    // images xml and images exist?
-    if (this.images.length > 0 && this._imageXMLPromise) {
-        p = p.then(() => {
-            return this._imageXMLPromise;
-        }).then(text => {
-            this.parseImageFile(text);
-        });
-    }
-    return p;
+    return Promise.all(this._xmlQueue);
 };
 
 // Save some chars
@@ -402,18 +380,11 @@ Element.prototype.getTag = function(tag, def) {
     return t ? t.textContent : (def ? def : null);
 };
 
-Respack.prototype.parseSongFile = function(text) {
+Respack.prototype.parseSongFile = function(dom) {
     debug(" - Parsing songFile");
 
-    let oParser = new DOMParser();
-    let oDOM = oParser.parseFromString(text, "text/xml");
-    if(oDOM.documentElement.nodeName !== "songs"){
-        console.log("songs.xml error, corrupt file?");
-        return;
-    }
-
     let newSongs = [];
-    let el = oDOM.documentElement.firstElementChild;
+    let el = dom.documentElement.firstElementChild;
     for(; el; el = el.nextElementSibling) {
         let song = this.getSong(el.attributes[0].value);
         if(song) {
@@ -467,16 +438,10 @@ Respack.prototype.parseSongFile = function(text) {
     this.songs = newSongs;
 };
 
-Respack.prototype.parseInfoFile = function(text) {
+Respack.prototype.parseInfoFile = function(dom) {
     debug(" - Parsing infoFile");
 
-    let oParser = new DOMParser();
-    let oDOM = oParser.parseFromString(text, "text/xml");
-    let info = oDOM.documentElement;
-    if(info.nodeName !== "info"){
-        console.log("info.xml error, corrupt file?");
-        return;
-    }
+    let info = dom.documentElement;
 
     // self reference strings to avoid changing strings twice in future
     this.name = info.getTag("name", this.name);
@@ -485,18 +450,11 @@ Respack.prototype.parseInfoFile = function(text) {
     this.link = info.getTag("link", this.link);
 };
 
-Respack.prototype.parseImageFile = function(text) {
+Respack.prototype.parseImageFile = function(dom) {
     debug(" - Parsing imagefile");
 
-    let oParser = new DOMParser();
-    let oDOM = oParser.parseFromString(text, "text/xml");
-    if(oDOM.documentElement.nodeName !== "images"){
-        console.log("images.xml error, corrupt file?");
-        return;
-    }
-
     let newImages = [];
-    let el = oDOM.documentElement.firstElementChild;
+    let el = dom.documentElement.firstElementChild;
     for(; el; el = el.nextElementSibling) {
         let image = this.getImage(el.attributes[0].value);
         if(image) {
