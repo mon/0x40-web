@@ -1237,50 +1237,76 @@ HuesEditor.prototype.renderWave = function(buffer, length) {
 };
 
 HuesEditor.prototype.drawWave = function() {
+    if(!this.buildWave && !this.loopWave)
+        return;
+    
     let width = this.waveCanvas.width;
     let now = this.core.soundManager.currentTime();
-    let span = width / WAVE_PIXELS_PER_SECOND / 2;
-    let minTime = now - span;
-    let maxTime = now + span;
+    let timespan = width / WAVE_PIXELS_PER_SECOND / 2;
+    let minTime = now - timespan;
+    let maxTime = now + timespan;
+    
+    let bLen = this.core.soundManager.buildLength;
+    let loopLen = this.core.soundManager.loopLength;
+    
+    let drawTime, drawOffset;
+    if(bLen) {
+        drawTime = Math.max(minTime, -bLen);
+    } else {
+        drawTime = Math.max(minTime, 0);
+    }
+    // drawOffset is "pixels from the left"
+    drawOffset = Math.floor((drawTime - minTime) * WAVE_PIXELS_PER_SECOND);
     
     this.waveContext.clearRect(0, 0, width, WAVE_HEIGHT_PIXELS);
     
-    let bLen = this.core.soundManager.buildLength;
     if(this.buildWave && bLen && minTime < 0) {
-        let center = Math.floor((now + bLen) / bLen * this.buildWave.width);
-        this.drawOneWave(this.buildWave, center, width);
+        // Bit of legwork to convert negative to positive
+        let waveOffset = Math.floor((1 - drawTime / -bLen) * (this.buildWave.width-1));
+        drawOffset = this.drawOneWave(this.buildWave, waveOffset, drawOffset, width);
+        // If there's more to draw after the build, it'll be from the start of the wave
+        drawTime = 0;
     }
     
-    let loopLen = this.core.soundManager.loopLength;
+    let loopPoints = [];
     if(this.loopWave && loopLen && maxTime > 0) {
-        let clampedNow = (minTime % loopLen) + span;
-        let center = Math.floor(clampedNow / loopLen * this.loopWave.width);
-        this.drawOneWave(this.loopWave, center, width);
-        
-        let clampedNext = (maxTime % loopLen) - span;
-        // We've looped and need to draw 2 things
-        if(clampedNext < clampedNow) {
-            let center = Math.floor(clampedNext / loopLen * this.loopWave.width);
-            this.drawOneWave(this.loopWave, center, width);
+        while(drawOffset < width) {
+            if(drawTime === 0) {
+                loopPoints.push(drawOffset);
+            }
+            
+            let waveOffset = Math.floor((drawTime / loopLen) * (this.loopWave.width-1));
+            drawOffset = this.drawOneWave(this.loopWave, waveOffset, drawOffset, width);
+            // If we're drawing more than 1 loop it's starting at 0
+            drawTime = 0;
         }
     }
     
     // trackbar
-    this.waveContext.strokeStyle = "red";
-    this.waveContext.beginPath();
-    this.waveContext.moveTo(width/2, 0);
-    this.waveContext.lineTo(width/2, WAVE_HEIGHT_PIXELS);
-    this.waveContext.stroke();
+    this.drawWaveBar("red", width/2);
+    // Signify loop point with a green bar, drawing over the wave
+    for(let point of loopPoints) {
+        this.drawWaveBar("green", point);
+    }
 };
 
-HuesEditor.prototype.drawOneWave = function(wave, center, width) {
-    try {
-        this.waveContext.drawImage(wave,
-                                   center - width/2, 0,        // source x/y
-                                   width, WAVE_HEIGHT_PIXELS,  // source width/height
-                                   0, 0,                       // dest x/y
-                                   width, WAVE_HEIGHT_PIXELS); // dest width/height
-    } catch(e) {}
+HuesEditor.prototype.drawOneWave = function(wave, waveOffset, drawOffset, width) {
+    let drawWidth = Math.min(width - drawOffset, wave.width - waveOffset);
+    this.waveContext.drawImage(wave,
+                               waveOffset, 0,                  // source x/y
+                               drawWidth, WAVE_HEIGHT_PIXELS,  // source width/height
+                               drawOffset, 0,                  // dest x/y
+                               drawWidth, WAVE_HEIGHT_PIXELS); // dest width/height
+    return drawOffset + drawWidth;
+};
+
+HuesEditor.prototype.drawWaveBar = function(colour, offset) {
+    this.waveContext.strokeStyle = colour;
+    this.waveContext.lineWidth = 2;
+    this.waveContext.beginPath();
+    this.waveContext.moveTo(offset, 0);
+    this.waveContext.lineTo(offset, WAVE_HEIGHT_PIXELS);
+    this.waveContext.stroke();
 };
 
 HuesEditor.prototype.confirmLeave = function() {
