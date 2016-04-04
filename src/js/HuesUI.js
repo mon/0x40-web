@@ -1038,13 +1038,13 @@ HalloweenUI.prototype.beat = function(beats, index) {
 HalloweenUI.prototype.connectCore = function(core) {
     ModernUI.prototype.connectCore.call(this, core);
     
-    document.getElementById("preloadHelper").classList.add("hues-h-text");
+    getElemWithFallback("preloadHelper").classList.add("hues-h-text");
 };
 
 HalloweenUI.prototype.disconnect = function() {
     ModernUI.prototype.disconnect.call(this, core);
     
-    document.getElementById("preloadHelper").classList.remove("hues-h-text");
+    getElemWithFallback("preloadHelper").classList.remove("hues-h-text");
 };
 
 // Positions and angles for the Xmas lights

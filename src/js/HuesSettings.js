@@ -210,8 +210,8 @@ HuesSettings.prototype.settingsOptions = {
 function HuesSettings(defaults) {
     this.core = null;
     this.hasUI = false;
-    this.root = document.getElementById("huesSettings");
-    this.window = document.getElementById("settingsHelper");
+    this.root = getElemWithFallback("huesSettings");
+    this.window = getElemWithFallback("settingsHelper");
     
     this.textCallbacks = [];
     this.visCallbacks = [];
@@ -244,7 +244,7 @@ function HuesSettings(defaults) {
     }
 
     // because we still care about the main window
-    document.getElementById("closeButton").onclick = this.hide.bind(this);
+    getElemWithFallback("closeButton").onclick = this.hide.bind(this);
     
     // we also care about tabs looking nice.
     let checkListener = function(check) { 
@@ -296,22 +296,22 @@ HuesSettings.prototype.toggle = function() {
 
 HuesSettings.prototype.showRespacks = function() {
     this.show();
-    document.getElementById("tab-resources").click();
+    getElemWithFallback("tab-resources").click();
 };
 
 HuesSettings.prototype.showEditor = function() {
     this.show();
-    document.getElementById("tab-editor").click();
+    getElemWithFallback("tab-editor").click();
 };
 
 HuesSettings.prototype.showOptions = function() {
     this.show();
-    document.getElementById("tab-options").click();
+    getElemWithFallback("tab-options").click();
 };
 
 HuesSettings.prototype.showInfo = function() {
     this.show();
-    document.getElementById("tab-info").click();
+    getElemWithFallback("tab-info").click();
 };
 
 HuesSettings.prototype.initUI = function() {

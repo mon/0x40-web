@@ -25,8 +25,21 @@
 (function(window, document) {
 "use strict";
 
+// Gets an element by ID. If it doesn't exist, return an empty div so you
+// don't litter your code with null checks
+window.getElemWithFallback = function(elemName) {
+    let elem = document.getElementById(elemName);
+    if(!elem) {
+        console.log("Couldn't find element '" + elemName + "'. Ignoring.");
+        elem = document.createElement("div");
+    }
+    return elem;
+};
+
 function HuesCore(defaults) {
     // Yes, we do indeed have Javascript
+    this.preloadMsg = getElemWithFallback("preMain");
+    this.preloadSubMsg = getElemWithFallback("preSub");
     this.clearMessage();
     // Bunch-o-initialisers
     this.version = "0x16";
@@ -144,6 +157,8 @@ function HuesCore(defaults) {
     this.visualiser.id = "visualiser";
     this.visualiser.height = "64";
     this.vCtx = this.visualiser.getContext("2d");
+
+    let preloadHelper = getElemWithFallback("preloadHelper");
     
     this.soundManager = new SoundManager(this);
     
@@ -188,20 +203,18 @@ function HuesCore(defaults) {
         this.animationLoop();
         
         if(defaults.load) {
-            return this.resourceManager.addAll(defaults.respacks, function(progress) {
-                let prog = document.getElementById("preMain");
-                let helper = document.getElementById("preloadHelper");
-                helper.style.backgroundPosition = (100 - progress*100) + "% 0%";
+            return this.resourceManager.addAll(defaults.respacks, progress => {
+                preloadHelper.style.backgroundPosition = (100 - progress*100) + "% 0%";
                 let scale = Math.floor(progress * defaults.preloadMax);
                 let padding = defaults.preloadMax.toString(defaults.preloadBase).length;
-                prog.textContent = defaults.preloadPrefix + (Array(padding).join("0")+scale.toString(defaults.preloadBase)).slice(-padding);
+                this.preloadMsg.textContent = defaults.preloadPrefix + (Array(padding).join("0")+scale.toString(defaults.preloadBase)).slice(-padding);
             });
         } else {
-            document.getElementById("preloadHelper").style.display = "none";
+            preloadHelper.style.display = "none";
             return;
         }
     }).then(() => {
-        document.getElementById("preloadHelper").classList.add("loaded");
+        preloadHelper.classList.add("loaded");
         if(defaults.firstImage) {
             this.setImageByName(defaults.firstImage);
         } else {
@@ -966,19 +979,19 @@ HuesCore.prototype.keyHandler = function(key) {
 
 HuesCore.prototype.error = function(message) {
     console.log(message);
-    document.getElementById("preSub").textContent = message;
-    document.getElementById("preMain").style.color = "#F00";
+    this.preloadSubMsg.textContent = message;
+    this.preloadMsg.style.color = "#F00";
 };
 
 HuesCore.prototype.warning = function(message) {
     console.log(message);
-    document.getElementById("preSub").innerHTML = message;
-    document.getElementById("preMain").style.color = "#F93";
+    this.preloadSubMsg.innerHTML = message;
+    this.preloadMsg.style.color = "#F93";
 };
 
 HuesCore.prototype.clearMessage = function() {
-    document.getElementById("preSub").textContent = "";
-    document.getElementById("preMain").style.color = "";
+    this.preloadSubMsg.textContent = "";
+    this.preloadMsg.style.color = "";
 };
 
 HuesCore.prototype.oldColours =
