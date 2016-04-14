@@ -7,22 +7,16 @@ var minifyCSS = require('gulp-cssnano');
 var autoprefixer = require('gulp-autoprefixer');
 var order = require("gulp-order");
 var del = require('del');
+var newer = require('gulp-newer');
 var jshint = require('gulp-jshint');
+var plumber = require('gulp-plumber');
 
-gulp.task('default', ['css', 'audio', 'minify'], function() {
-    
-});
+gulp.task('default', ['css', 'audio', 'minify']);
 
 gulp.task('css', function(){
   return gulp.src('src/css/**/*.css')
-    .pipe(order([
-        "style.css",    // base
-        "hues-m.css",   // modern
-        "hues-x.css",   //   xmas
-        "hues-h.css",   //   hlwn
-        "hues-r.css",   // retro
-        "hues-w.css"    //   weed
-    ]))
+    .pipe(plumber())
+    .pipe(newer('css/hues-min.css'))
     .pipe(sourcemaps.init())
     .pipe(autoprefixer('last 2 version', 'ios 6', 'android 4'))
     .pipe(concat('hues-min.css'))
@@ -31,19 +25,27 @@ gulp.task('css', function(){
     .pipe(gulp.dest('css'));
 });
 
-gulp.task("audio", function () {
-  gulp.src(["src/js/audio/aurora.js", "src/js/audio/mpg123.js"])
-  .pipe(concat("audio-min.js"))
-  .pipe(uglify())
-  .pipe(gulp.dest("lib"));
-    
-  gulp.src(["src/js/audio/ogg.js", "src/js/audio/vorbis.js"])
-  .pipe(uglify())
-  .pipe(gulp.dest("lib"));
+gulp.task("mp3", function () {
+  return gulp.src(["src/js/audio/aurora.js", "src/js/audio/mpg123.js"])
+    .pipe(newer('lib/audio-min.js'))
+    .pipe(concat("audio-min.js"))
+    .pipe(uglify())
+    .pipe(gulp.dest("lib"));
 });
+
+gulp.task("oggvorbis", function () {
+  return gulp.src(["src/js/audio/ogg.js", "src/js/audio/vorbis.js"])
+    .pipe(newer('lib'))
+    .pipe(uglify())
+    .pipe(gulp.dest("lib"));
+});
+
+gulp.task("audio", ["mp3", "oggvorbis"]);
 
 gulp.task("minify", function () {
   return gulp.src("src/js/*.js")
+    .pipe(plumber())
+    .pipe(newer('lib/hues-min.js'))
     .pipe(sourcemaps.init())
     .pipe(babel())
     .pipe(uglify())
@@ -92,3 +94,9 @@ gulp.task('release', ['default', 'lint'], function() {
     .pipe(uglify())
     .pipe(gulp.dest("release/lib"));
 });
+
+function onError(err) {
+  gutil.beep();
+  console.log(err);
+  this.emit('end');
+};
