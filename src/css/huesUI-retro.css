@@ -6,7 +6,7 @@
 
 .hues-r-container {
     position: absolute;
-    bottom: 0px;
+    bottom: 0;
     white-space: nowrap;
     overflow: hidden;
     width: 100%;
@@ -24,7 +24,7 @@
     display:flex;
     align-items:center;
     position: absolute;
-    right: 0px;
+    right: 0;
     bottom: 10px;
     font-size: 30px;
 }
@@ -42,7 +42,7 @@
 
 .hues-r-songs {
     font-size: 13px;
-    margin: 0px -8px;
+    margin: 0 -8px;
 }
 
 .hues-r-manualmode, .hues-r-automode {
@@ -60,7 +60,7 @@
 
 .hues-r-subcontrols {
     position: absolute;
-    right: 0px;
+    right: 0;
     bottom: 40px;
     font-size: 25px;
     text-align: center;
@@ -86,7 +86,7 @@
     opacity: 0.5;
 }
 
-.hues-r-hiderestore.hidden {
+.hues-r-hiderestore.hues-ui--hidden {
     display: block;
 }
 
@@ -100,7 +100,7 @@
     transition: visibility 0.5s linear, opacity 0.5s linear;
 }
 
-.hues-r-container.hidden, .hues-r-controls.hidden, .hues-r-subcontrols.hidden {
+.hues-r-container.hues-ui--hidden, .hues-r-controls.hues-ui--hidden, .hues-r-subcontrols.hues-ui--hidden {
     visibility: hidden;
     opacity: 0;
 }

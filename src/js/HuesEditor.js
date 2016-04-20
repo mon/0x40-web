@@ -25,7 +25,7 @@
 let WAVE_PIXELS_PER_SECOND = 100;
 let WAVE_HEIGHT_PIXELS = 20;
 
-function HuesEditor(core) {
+function HuesEditor(core, huesWin) {
     this.buildEditSize = 80; // pixels, including header
     this.buildEdit = null;
     this.loopEdit = null;
@@ -54,20 +54,19 @@ function HuesEditor(core) {
     this.linked = false;
     
     this.core = core;
-    this.root = document.getElementById("huesEditor");
-    if(!this.root) {
-        return;
-    }
-    if(!core.settings.defaults.noUI) {
+    if(core.settings.defaults.enableWindow) {
         this.initUI();
         core.addEventListener("beat", this.onBeat.bind(this));
         core.addEventListener("newsong", this.onNewSong.bind(this));
+        huesWin.addTab("EDITOR", this.root);
     }
 }
 
 HuesEditor.prototype.initUI = function() {
+    this.root = document.createElement("div");
+    this.root.className = "editor";
     let titleButtons = document.createElement("div");
-    titleButtons.id = "edit-titlebuttons";
+    titleButtons.className = "editor__title-buttons";
     this.root.appendChild(titleButtons);
     this.saveBtn = this.createButton("Save XML", titleButtons, true);
     this.saveBtn.addEventListener("click", this.saveXML.bind(this));
@@ -84,11 +83,11 @@ HuesEditor.prototype.initUI = function() {
     });
     
     this.statusMsg = document.createElement("span");
-    this.statusMsg.id = "edit-status-msg";
+    this.statusMsg.className = "editor__status-msg";
     titleButtons.appendChild(this.statusMsg);
     
     this.topBar = document.createElement("div");
-    this.topBar.id = "edit-topbar";
+    this.topBar.className = "editor__top-bar";
     this.root.appendChild(this.topBar);
     
     this.uiCreateInfo();
@@ -121,14 +120,12 @@ HuesEditor.prototype.initUI = function() {
     
     window.addEventListener('resize', this.resize.bind(this));
     // Fix Chrome rendering - redraw on tab load
-    document.getElementById("tab-editor").addEventListener("change", this.resize.bind(this));
+    // tabselected passes the name of the selected tab, we force noHilightCalc to false
+    this.core.window.addEventListener("tabselected", this.resize.bind(this, false));
     this.resize();
 };
 
 HuesEditor.prototype.resize = function(noHilightCalc) {
-    // If we were never instantiated but called externally
-    if(!this.root)
-        return;
     this.root.style.height = (window.innerHeight - 200) + "px";
     let boxHeight = this.editArea.offsetHeight;
     let bHeadHeight = this.buildEdit._header.offsetHeight;
@@ -191,12 +188,13 @@ HuesEditor.prototype.onNewSong = function(song) {
             // Clear beat hilight
             this.buildEdit._hilight.innerHTML = "&block;";
             this.loopEdit._hilight.innerHTML = "&block;";
-            this.buildEdit._hilight.className = "beat-hilight hidden";
-            this.loopEdit._hilight.className = "beat-hilight hidden";
-            // Clear waveform
-            this.buildWave = null;
-            this.loopWave = null;
+            this.buildEdit._hilight.className = "beat-hilight invisible";
+            this.loopEdit._hilight.className = "beat-hilight invisible";
+            // Clear the waveform
+            this.waveContext.clearRect(0, 0, this.waveCanvas.width, WAVE_HEIGHT_PIXELS);
         }
+    } else if(song == this.song) { // went to another song then came back
+        this.linked = true;
     }
 };
 
@@ -208,11 +206,11 @@ HuesEditor.prototype.onBeat = function(map, index) {
     if(index < 0) {
         index += this.core.currentSong.buildupRhythm.length;
         editor = this.buildEdit;
-        this.loopEdit._hilight.className = "beat-hilight hidden";
+        this.loopEdit._hilight.className = "beat-hilight invisible";
     } else {
         editor = this.loopEdit;
         if(this.song.buildup) {
-            this.buildEdit._hilight.className = "beat-hilight hidden";
+            this.buildEdit._hilight.className = "beat-hilight invisible";
         }
     }
     editor._hilight.className = "beat-hilight";
@@ -244,32 +242,34 @@ HuesEditor.prototype.reflow = function(editor, map) {
 
 HuesEditor.prototype.updateInfo = function() {
     // Avoid a bunch of nested elses
-    this.seekStart.classList.add("disabled");
-    this.seekLoop.classList.add("disabled");
-    this.saveBtn.classList.add("disabled");
-    this.copyBtn.classList.add("disabled");
-    this.buildEdit._removeBtn.classList.add("disabled");
-    this.loopEdit._removeBtn.classList.add("disabled");
+    this.seekStart.classList.add("hues-button--disabled");
+    this.seekLoop.classList.add("hues-button--disabled");
+    this.saveBtn.classList.add("hues-button--disabled");
+    this.copyBtn.classList.add("hues-button--disabled");
+    this.buildEdit._removeBtn.classList.add("hues-button--disabled");
+    this.loopEdit._removeBtn.classList.add("hues-button--disabled");
     
-    if(this.song) {
-        this.saveBtn.classList.remove("disabled");
-        this.copyBtn.classList.remove("disabled");
-        
-        if(this.song.independentBuild) {
-            this.timeLock._locker.innerHTML = "&#xe904;";
-            this.timeLock.classList.add("unlocked");
-        } else {
-            this.timeLock._locker.innerHTML = "&#xe905;";
-            this.timeLock.classList.remove("unlocked");
-        }
-        if(this.song.sound) {
-            this.seekLoop.classList.remove("disabled");
-            this.loopEdit._removeBtn.classList.remove("disabled");
-        }
-        if(this.song.buildup) {
-            this.seekStart.classList.remove("disabled");
-            this.buildEdit._removeBtn.classList.remove("disabled");
-        }
+    if(!this.song) {
+        return;
+    }
+    
+    this.saveBtn.classList.remove("hues-button--disabled");
+    this.copyBtn.classList.remove("hues-button--disabled");
+    
+    if(this.song.independentBuild) {
+        this.timeLock._locker.innerHTML = "&#xe904;";
+        this.timeLock.classList.add("unlocked");
+    } else {
+        this.timeLock._locker.innerHTML = "&#xe905;";
+        this.timeLock.classList.remove("unlocked");
+    }
+    if(this.song.sound) {
+        this.seekLoop.classList.remove("hues-button--disabled");
+        this.loopEdit._removeBtn.classList.remove("hues-button--disabled");
+    }
+    if(this.song.buildup) {
+        this.seekStart.classList.remove("hues-button--disabled");
+        this.buildEdit._removeBtn.classList.remove("hues-button--disabled");
     }
     
     if(!this.linked) {
@@ -404,12 +404,12 @@ HuesEditor.prototype.newSong = function(song) {
        this.core.setSongOject(song);
     }
     // Clear instructions
-    this.buildEdit._hilight.className = "beat-hilight hidden";
-    this.loopEdit._hilight.className = "beat-hilight hidden";
+    this.buildEdit._hilight.className = "beat-hilight invisible";
+    this.loopEdit._hilight.className = "beat-hilight invisible";
     
     // Clear helpful glows
-    this.newSongBtn.classList.remove("glow");
-    this.fromSongBtn.classList.remove("glow");
+    this.newSongBtn.classList.remove("hues-button--glow");
+    this.fromSongBtn.classList.remove("hues-button--glow");
     
     // Enable title edits
     this.title.disabled = false;
@@ -551,14 +551,14 @@ HuesEditor.prototype.clearUndoRedo = function() {
 };
 
 HuesEditor.prototype.updateUndoUI = function() {
-    this.undoBtn.className = "hues-button disabled";
-    this.redoBtn.className = "hues-button disabled";
+    this.undoBtn.className = "hues-button hues-button--disabled";
+    this.redoBtn.className = "hues-button hues-button--disabled";
     
     if(this.undoBuffer.length > 0) {
-        this.undoBtn.classList.remove("disabled");
+        this.undoBtn.classList.remove("hues-button--disabled");
     }
     if(this.redoBuffer.length > 0) {
-        this.redoBtn.classList.remove("disabled");
+        this.redoBtn.classList.remove("hues-button--disabled");
     }
 };
 
@@ -599,8 +599,8 @@ HuesEditor.prototype.doubleBeats = function(editor) {
 };
 
 HuesEditor.prototype.updateHalveDoubleButtons = function(editor) {
-    editor._halveBtn.className = "hues-button disabled";
-    editor._doubleBtn.className = "hues-button disabled";
+    editor._halveBtn.className = "hues-button hues-button--disabled";
+    editor._doubleBtn.className = "hues-button hues-button--disabled";
 
     if(!editor._locked) {
         let txtLen = this.getText(editor).length;
@@ -617,19 +617,17 @@ HuesEditor.prototype.updateHalveDoubleButtons = function(editor) {
     }
 };
 
-HuesEditor.prototype.createTextInput = function(label, id, subtitle, parent) {
+HuesEditor.prototype.createTextInput = function(label, subtitle, parent) {
     let div = document.createElement("div");
-    div.className = "edit-label";
+    div.className = "editor__label";
     let caption = document.createElement("label");
     caption.innerHTML = label;
-    caption.htmlFor = id;
     div.appendChild(caption);
     let container = document.createElement("span");
-    container.className = "edit-textbox-container";
+    container.className = "editor__textinput-container";
     let input = document.createElement("input");
-    input.className = "edit-textbox";
+    input.className = "editor__textinput";
     input.type = "text";
-    input.id = id;
     input.value = subtitle;
     container.appendChild(input);
     div.appendChild(container);
@@ -643,14 +641,14 @@ HuesEditor.prototype.createButton = function(label, parent, disabled, extraClass
     let button = document.createElement("span");
     button.className = "hues-button";
     if(disabled) {
-        button.className += " disabled";
+        button.classList.add("hues-button--disabled");
     }
     if(extraClass) {
         button.className += " " + extraClass;
     }
     // Automagically make disabled buttons ignore clicks
     button.addEventListener("click", event => {
-        if(button.classList.contains("disabled")) {
+        if(button.classList.contains("hues-button--disabled")) {
             event.preventDefault();
             event.stopPropagation();
             event.stopImmediatePropagation();
@@ -667,7 +665,7 @@ HuesEditor.prototype.createButton = function(label, parent, disabled, extraClass
 HuesEditor.prototype.uiCreateInfo = function() {
     let info = document.createElement("div");
     this.topBar.appendChild(info);
-    info.id = "edit-info";
+    info.className = "editor__info";
     
     let songUpdate = function(name) {
         if(!this.song ) {
@@ -680,10 +678,10 @@ HuesEditor.prototype.uiCreateInfo = function() {
         this.core.callEventListeners("newsong", this.song);
     };
     
-    this.title = this.createTextInput("Title:", "edit-title", "Song name", info);
+    this.title = this.createTextInput("Title:", "Song name", info);
     this.title.oninput = songUpdate.bind(this, "title");
     this.title.disabled = true;
-    this.source = this.createTextInput("Link:&nbsp;", "edit-source", "Source link", info);
+    this.source = this.createTextInput("Link:&nbsp;", "Source link", info);
     this.source.oninput = songUpdate.bind(this, "source");
     this.source.disabled = true;
 };
@@ -691,16 +689,16 @@ HuesEditor.prototype.uiCreateInfo = function() {
 HuesEditor.prototype.uiCreateImport = function() {
     let imports = document.createElement("div");
     this.topBar.appendChild(imports);
-    imports.id = "edit-imports";
+    imports.className = "editor__imports";
     
     let songEdits = document.createElement("div");
     imports.appendChild(songEdits);
-    let newSongBtn = this.createButton("New song", songEdits, false, "glow");
+    let newSongBtn = this.createButton("New song", songEdits, false, "hues-button--glow");
     newSongBtn.addEventListener("click", () => {
         this.newSong();
     });
     this.newSongBtn = newSongBtn;
-    let fromSong = this.createButton("Edit current song", songEdits, false, "glow");
+    let fromSong = this.createButton("Edit current song", songEdits, false, "hues-button--glow");
     fromSong.addEventListener("click", () => {
         if(this.core.currentSong) {
             this.newSong(this.core.currentSong);
@@ -709,8 +707,7 @@ HuesEditor.prototype.uiCreateImport = function() {
     this.fromSongBtn = fromSong;
     
     let songInfos = document.createElement("div");
-    songInfos.className = "settings-individual";
-    songInfos.id = "edit-songstats";
+    songInfos.className = "settings-individual editor__song-stats";
     imports.appendChild(songInfos);
     
     this.loopLen = this.uiCreateSongStat("Loop length (s):", "0.00", songInfos);
@@ -726,7 +723,7 @@ HuesEditor.prototype.uiCreateSongStat = function(name, value, parent) {
     container.appendChild(label);
     let valueSpan = document.createElement("span");
     valueSpan.textContent = value;
-    valueSpan.className = "edit-songstat-value";
+    valueSpan.className = "editor__song-stats__value";
     container.appendChild(valueSpan);
     return valueSpan;
 };
@@ -734,14 +731,13 @@ HuesEditor.prototype.uiCreateSongStat = function(name, value, parent) {
 HuesEditor.prototype.uiCreateEditArea = function() {
     let editArea = document.createElement("div");
     this.editArea = editArea;
-    editArea.id = "edit-area";
+    editArea.className = "edit-area";
     this.root.appendChild(editArea);
     
     // Lock build/loop lengths
     this.timeLock = document.createElement("div");
     editArea.appendChild(this.timeLock);
-    this.timeLock.id = "edit-timelock";
-    this.timeLock.className = "hues-icon unlocked";
+    this.timeLock.className = "hues-icon edit-area__timelock edit-area__timelock--unlocked";
     // CHAIN-BROKEN, use &#xe905; for CHAIN
     let locker = this.createButton("&#xe904;", this.timeLock);
     locker.addEventListener("click", () => {
@@ -753,7 +749,7 @@ HuesEditor.prototype.uiCreateEditArea = function() {
     });
     this.timeLock._locker = locker;
     
-    this.buildEdit = this.uiCreateSingleEditor("Buildup", "buildup", "buildupRhythm", "edit-build", editArea);
+    this.buildEdit = this.uiCreateSingleEditor("Buildup", "buildup", "buildupRhythm", editArea);
     this.seekStart = this.buildEdit._seek;
     // FIRST |<<
     this.seekStart.innerHTML = "&#xe90b;";
@@ -763,11 +759,10 @@ HuesEditor.prototype.uiCreateEditArea = function() {
     
     // drag handle
     let handleContainer = document.createElement("div");
-    handleContainer.id = "edit-resize-handle-container";
+    handleContainer.className = "resize-handle";
     editArea.appendChild(handleContainer);
     let handle = document.createElement("div");
-    handle.id = 'edit-resize-handle';
-    handle.className = 'hues-icon';
+    handle.className = 'hues-icon resize-handle__handle';
     handle.innerHTML = "&#xe908;"; // DRAG HANDLE
     handleContainer.appendChild(handle);
     this.resizeHandle = handleContainer;
@@ -791,7 +786,7 @@ HuesEditor.prototype.uiCreateEditArea = function() {
         document.addEventListener("mouseup", mouseup);
     });
 
-    this.loopEdit = this.uiCreateSingleEditor("Rhythm&nbsp;", "sound", "rhythm", "edit-loop", editArea);
+    this.loopEdit = this.uiCreateSingleEditor("Rhythm&nbsp;", "sound", "rhythm", editArea);
     this.seekLoop = this.loopEdit._seek;
     // FIRST |<<
     this.seekLoop.innerHTML = "&#xe90b;";
@@ -818,13 +813,12 @@ HuesEditor.prototype.uiCreateEditArea = function() {
          'inclusion into a Resource Pack!';
 };
 
-HuesEditor.prototype.uiCreateSingleEditor = function(title, soundName, rhythmName, id, parent) {
+HuesEditor.prototype.uiCreateSingleEditor = function(title, soundName, rhythmName, parent) {
     let container = document.createElement("div");
-    container.id = id;
     parent.appendChild(container);
     
     let header = document.createElement("div");
-    header.className = "edit-area-header";
+    header.className = "edit-area__header";
     container.appendChild(header);
     
     let nameLabel = document.createElement("span");
@@ -837,7 +831,7 @@ HuesEditor.prototype.uiCreateSingleEditor = function(title, soundName, rhythmNam
     
     let beatCount = document.createElement("span");
     header.appendChild(beatCount);
-    beatCount.className = "beat-count";
+    beatCount.className = "edit-area__beat-count";
     beatCount.textContent = "0 beats";
     container._lockedBtn = this.createButton("&#xe907;", header, false, "hues-icon");
     container._lockedBtn.addEventListener("click", () => {
@@ -850,7 +844,7 @@ HuesEditor.prototype.uiCreateSingleEditor = function(title, soundName, rhythmNam
     });
     
     let rightHeader = document.createElement("span");
-    rightHeader.className = "edit-area-right-header";
+    rightHeader.className = "edit-area__header__right";
     header.appendChild(rightHeader);
     
     container._halveBtn = this.createButton("Halve", rightHeader, true);
@@ -870,9 +864,9 @@ HuesEditor.prototype.uiCreateSingleEditor = function(title, soundName, rhythmNam
     container._removeBtn.addEventListener("click", this.removeAudio.bind(this, container));
     
     let editBox = document.createElement("div");
-    editBox.className = "edit-box";
+    editBox.className = "edit-area__box";
     let beatmap = document.createElement("div");
-    beatmap.className = "beatmap";
+    beatmap.className = "edit-area__beatmap";
     beatmap.contentEditable = true;
     beatmap.spellcheck = false;
     beatmap.oninput = this.textUpdated.bind(this, container);
@@ -903,7 +897,7 @@ HuesEditor.prototype.uiCreateSingleEditor = function(title, soundName, rhythmNam
 
 HuesEditor.prototype.uiCreateControls = function() {
     let controls = document.createElement("div");
-    controls.id = "edit-controls";
+    controls.className = "edit__controls";
     this.root.appendChild(controls);
     
     let changeRate = function(change) {
@@ -957,9 +951,8 @@ HuesEditor.prototype.uiCreateControls = function() {
 };
 
 HuesEditor.prototype.uiCreateVisualiser = function() {
-    // TODO placeholder
     let wave = document.createElement("canvas");
-    wave.id = "edit-waveform";
+    wave.className = "waveform";
     wave.height = WAVE_HEIGHT_PIXELS;
     this.root.appendChild(wave);
     this.waveCanvas = wave;
@@ -1237,7 +1230,7 @@ HuesEditor.prototype.renderWave = function(buffer, length) {
 };
 
 HuesEditor.prototype.drawWave = function() {
-    if(!this.buildWave && !this.loopWave)
+    if((!this.buildWave && !this.loopWave) || !this.linked)
         return;
     
     let width = this.waveCanvas.width;
@@ -1263,7 +1256,11 @@ HuesEditor.prototype.drawWave = function() {
     if(this.buildWave && bLen && minTime < 0) {
         // Bit of legwork to convert negative to positive
         let waveOffset = Math.floor((1 - drawTime / -bLen) * (this.buildWave.width-1));
-        drawOffset = this.drawOneWave(this.buildWave, waveOffset, drawOffset, width);
+        try {
+            drawOffset = this.drawOneWave(this.buildWave, waveOffset, drawOffset, width);
+        } catch (err) {
+            console.log(this.waveCanvas);
+        }
         // If there's more to draw after the build, it'll be from the start of the wave
         drawTime = 0;
     }
@@ -1314,11 +1311,11 @@ HuesEditor.prototype.confirmLeave = function() {
 };
 
 HuesEditor.prototype.alert = function(msg) {
-    this.statusMsg.classList.remove("fade");
+    this.statusMsg.classList.remove("editor__status-msg--fade");
     this.statusMsg.textContent = msg;
     // Trigger a reflow and thus restart the animation
     var useless = this.statusMsg.offsetWidth;
-    this.statusMsg.classList.add("fade");
+    this.statusMsg.classList.add("editor__status-msg--fade");
 };
 
 HuesEditor.prototype.generateXML = function() {
@@ -1378,7 +1375,7 @@ HuesEditor.prototype.copyXML = function() {
     }
     
     let textArea = document.createElement("textarea");
-    textArea.id = "edit-copybox";
+    textArea.className = "copybox";
 
     textArea.value = text;
 

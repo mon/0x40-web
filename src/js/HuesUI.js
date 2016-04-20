@@ -29,7 +29,7 @@
 */
 function HuesUI(parent, name) {
     if(!parent) {
-        parent = document.getElementById("huesUI");
+        return;
     }
     this.root = document.createElement("div");
     this.root.className = name ? name : this.constructor.name;
@@ -142,7 +142,7 @@ HuesUI.prototype.initUI = function() {
     this.settingsToggle.innerHTML = '&#xe900;'; // COG
     this.settingsToggle.className = 'hues-icon';
     this.settingsToggle.onclick = () => {
-        this.core.settings.toggle();
+        this.core.window.toggle();
     };
 
     this.hideToggle = document.createElement("div");
@@ -179,6 +179,9 @@ HuesUI.prototype.connectCore = function(core) {
 };
 
 HuesUI.prototype.disconnect = function() {
+    this.callbacks.forEach(callback => {
+        this.core.removeEventListener(callback.name, callback.func);
+    });
     this.core = null;
     this.root.style.display = "none";
     while (this.listContainer.firstElementChild) {
@@ -187,10 +190,6 @@ HuesUI.prototype.disconnect = function() {
     while (this.visualiserContainer.firstElementChild) {
         this.visualiserContainer.removeChild(this.visualiserContainer.firstElementChild);
     }
-    
-    this.callbacks.forEach(function(callback) {
-        core.removeEventListener(callback.name, callback.func);
-    });
     window.removeEventListener('resize', this.resizeHandler);
 };
 
@@ -207,9 +206,9 @@ HuesUI.prototype.hide = function() {
 HuesUI.prototype.toggleHide = function() {
     this.hidden = !this.hidden;
     if(this.hidden) {
-        this.root.className = this.constructor.name + " hidden";
+        this.root.classList.add("hues-ui--hidden");
     } else {
-        this.root.className = this.constructor.name;
+        this.root.classList.remove("hues-ui--hidden");
     }
 };
 
@@ -379,26 +378,25 @@ RetroUI.prototype.initUI = function() {
     this.addCoreCallback("newmode", this.newMode.bind(this));
 };
 
-RetroUI.prototype.toggleHide = function(stylename) {
-    stylename = stylename ? stylename : 'r';
-    if(this.hidden) {
-        this.subControls.className = "hues-" + stylename + "-subcontrols";
-        this.controls.className = "hues-" + stylename + "-controls";
-        this.container.className = "hues-r-container";
-        this.hideRestore.className = "hues-r-hiderestore";
-    } else {
-        this.subControls.className = "hues-" + stylename + "-subcontrols hidden";
-        this.controls.className = "hues-" + stylename + "-controls hidden";
-        this.container.className = "hues-r-container hidden";
-        this.hideRestore.className = "hues-r-hiderestore hidden";
-    }
+RetroUI.prototype.toggleHide = function() {
     this.hidden = !this.hidden;
+    if(this.hidden) {
+        this.subControls.classList.add("hues-ui--hidden");
+        this.controls.classList.add("hues-ui--hidden");
+        this.container.classList.add("hues-ui--hidden");
+        this.hideRestore.classList.add("hues-ui--hidden");
+    } else {
+        this.subControls.classList.remove("hues-ui--hidden");
+        this.controls.classList.remove("hues-ui--hidden");
+        this.container.classList.remove("hues-ui--hidden");
+        this.hideRestore.classList.remove("hues-ui--hidden");
+    }
 };
 
 RetroUI.prototype.connectCore = function(core) {
     HuesUI.prototype.connectCore.call(this, core);
 
-    this.version.textContent = "V=$" + core.version;
+    this.version.textContent = "V=$" + core.versionHex;
 };
 
 RetroUI.prototype.newMode = function(isAuto) {
@@ -430,6 +428,23 @@ RetroUI.prototype.resize = function() {
     this.core.visualiser.width = this.visualiserContainer.offsetWidth;
     this.core.resizeVisualiser();
 };
+
+function MinimalUI(parent, name) {
+    RetroUI.call(this, parent, name ? name : "MinimalUI");
+}
+
+MinimalUI.prototype = Object.create(RetroUI.prototype);
+MinimalUI.prototype.constructor = MinimalUI;
+
+MinimalUI.prototype.initUI = function() {
+    RetroUI.prototype.initUI.call(this);
+    
+    this.root.removeChild(this.controls);
+    this.root.removeChild(this.subControls);
+    this.container.removeChild(this.beatBar);
+    this.container.innerHTML = "";
+    this.container.appendChild(this.beatBar);
+}
 
 function WeedUI(parent, name) {
     RetroUI.call(this, parent, name ? name : "WeedUI");
@@ -471,12 +486,12 @@ WeedUI.prototype.initUI = function() {
 };
 
 WeedUI.prototype.toggleHide = function() {
+    RetroUI.prototype.toggleHide.call(this);
     if(this.hidden) {
-        this.beatBar.className = "hues-w-beatbar";
+        this.beatBar.classList.add("hues-ui--hidden");
     } else {
-        this.beatBar.className = "hues-w-beatbar hidden";
+        this.beatBar.classList.remove("hues-ui--hidden");
     }
-    RetroUI.prototype.toggleHide.call(this, 'w');
 };
 
 WeedUI.prototype.beat = function(beats, index) {
@@ -585,7 +600,7 @@ ModernUI.prototype.initUI = function() {
     this.infoToggle.innerHTML = '?';
     this.infoToggle.className = "hues-m-question";
     this.infoToggle.onclick = () => {
-        this.core.settings.showInfo();
+        this.core.window.selectTab("INFO");
     };
     volCluster.appendChild(this.infoToggle);
 
@@ -699,18 +714,18 @@ ModernUI.prototype.initUI = function() {
 
 ModernUI.prototype.toggleHide = function() {
     // classList is new-ish, but if you have web audio you'll have this
-    this.beatBar.classList.remove("hidden");
-    this.beatCenter.classList.remove("hidden");
-    this.controls.classList.remove("hidden");
-    this.hideRestore.classList.remove("hidden");
+    this.beatBar.classList.remove("hues-ui--hidden");
+    this.beatCenter.classList.remove("hues-ui--hidden");
+    this.controls.classList.remove("hues-ui--hidden");
+    this.hideRestore.classList.remove("hues-ui--hidden");
     switch(this.hidden) {
         case 1:
-            this.beatBar.classList.add("hidden");
-            this.beatCenter.classList.add("hidden");
+            this.beatBar.classList.add("hues-ui--hidden");
+            this.beatCenter.classList.add("hues-ui--hidden");
             /* falls through */
         case 0:
-            this.controls.classList.add("hidden");
-            this.hideRestore.classList.add("hidden");
+            this.controls.classList.add("hues-ui--hidden");
+            this.hideRestore.classList.add("hues-ui--hidden");
     }
     this.hidden = (this.hidden+1) % 3;
 };
@@ -798,6 +813,8 @@ ModernUI.prototype.newImage = function(image) {
 
 function XmasUI(parent, name) {
     ModernUI.call(this, parent, name ? name : "XmasUI");
+    this.initSnow();
+    
      // This will cache our inverted lights images
     this.invert(true);
     
@@ -867,13 +884,23 @@ function XmasUI(parent, name) {
 XmasUI.prototype = Object.create(ModernUI.prototype);
 XmasUI.prototype.constructor = XmasUI;
 
+XmasUI.prototype.invert = function(invert) {
+    HuesUI.prototype.invert.call(this, invert);
+    
+    if(invert) {
+        this.snowContext.fillStyle = "rgba(0, 0, 0, 0.8)";
+    } else {
+        this.snowContext.fillStyle = "rgba(255, 255, 255, 0.8)";
+    }
+};
+
 XmasUI.prototype.connectCore = function(core) {
     HuesUI.prototype.connectCore.call(this, core);
-    this.core.renderer.startSnow();
+    this.startSnow();
 };
 
 XmasUI.prototype.disconnect = function() {
-    this.core.renderer.stopSnow();
+    this.stopSnow();
     HuesUI.prototype.disconnect.call(this);
 };
 
@@ -941,6 +968,107 @@ XmasUI.prototype.beat = function(beats, index) {
             }
         }, this);
     }
+};
+
+XmasUI.prototype.initSnow = function() {
+    this.snowCanvas = document.createElement("canvas");
+    this.snowContext = this.snowCanvas.getContext("2d");
+    this.snowCanvas.width = 1280;
+    this.snowCanvas.height = 720;
+    this.snowCanvas.style.display = "none";
+    this.snowCanvas.className = "hues-canvas hues-x-snow";
+    
+    this.root.appendChild(this.snowCanvas);
+
+    this.snowing = false;
+    this.maxSnow = 30;
+    this.snowAngle = 0;
+    this.lastSnow = 0;
+    this.snowflakes = [];
+    
+    this.addCoreCallback("frame", this.drawSnow.bind(this));
+};
+
+// From http://thecodeplayer.com/walkthrough/html5-canvas-snow-effect
+
+XmasUI.prototype.startSnow = function() {
+    this.snowing = true;
+    this.snowCanvas.style.display = "block";
+    let height = this.snowCanvas.height;
+    let width = this.snowCanvas.width;
+    this.snowAngle = 0;
+    this.snowflakes = [];
+	for(let i = 0; i < this.maxSnow; i++) {
+		this.snowflakes.push({
+			x: Math.random()*width, //x-coordinate
+			y: Math.random()*height, //y-coordinate
+			r: Math.random()*4+1, //radius
+			d: Math.random()*25 //density
+		});
+	}
+    this.lastSnow = Date.now() / 1000;
+};
+
+XmasUI.prototype.stopSnow = function() {
+    this.snowing = false;
+    this.snowCanvas.style.display = "none";
+};
+
+XmasUI.prototype.drawSnow = function() {
+    let width = this.snowCanvas.width;
+    let height = this.snowCanvas.height;
+    let now = Date.now() / 1000;
+    let delta = this.lastSnow - now;
+    this.lastSnow = now;
+    this.snowContext.clearRect(0, 0, width, height);
+
+    this.snowContext.beginPath();
+    for(let i = 0; i < this.maxSnow; i++) {
+        let flake = this.snowflakes[i];
+        this.snowContext.moveTo(flake.x, flake.y);
+        this.snowContext.arc(flake.x, flake.y, flake.r, 0, Math.PI * 2, true);
+    }
+    this.snowContext.fill();
+
+    this.snowAngle += delta / 6;
+    for(let i = 0; i < this.maxSnow; i++) {
+        let flake = this.snowflakes[i];
+        //Updating X and Y coordinates
+        //We will add 1 to the cos function to prevent negative values which will lead flakes to move upwards
+        //Every particle has its own density which can be used to make the downward movement different for each flake
+        //Lets make it more random by adding in the radius
+        flake.y += Math.cos(this.snowAngle + flake.d) + 1 + flake.r / 2;
+        flake.x += Math.sin(this.snowAngle) * 2;
+
+        //Sending flakes back from the top when it exits
+        //Lets make it a bit more organic and let flakes enter from the left and right also.
+        if(flake.x > width + 5 || flake.x < -5 || flake.y > height) {
+            if(i % 3 > 0) {//66.67% of the flakes
+                this.snowflakes[i] = {x: Math.random() * width, y: -10, r: flake.r, d: flake.d};
+            }
+            else {
+                //If the flake is exitting from the right
+                if(Math.sin(this.snowAngle) > 0) {
+                    //Enter from the left
+                    this.snowflakes[i] = {x: -5, y: Math.random() * height, r: flake.r, d: flake.d};
+                }
+                else {
+                    //Enter from the right
+                    this.snowflakes[i] = {x: width+5, y: Math.random() * height, r: flake.r, d: flake.d};
+                }
+            }
+        }
+    }
+};
+
+XmasUI.prototype.resize = function() {
+    ModernUI.prototype.resize.call(this);
+    
+    let ratio = window.innerWidth / window.innerHeight;
+    // cleared on resize
+    let savedFill = this.snowContext.fillStyle;
+    this.snowCanvas.width = Math.ceil(720 * ratio);
+    this.snowContext.fillStyle = savedFill;
 };
 
 XmasUI.prototype.newColour = function(colour) {};
@@ -1038,13 +1166,13 @@ HalloweenUI.prototype.beat = function(beats, index) {
 HalloweenUI.prototype.connectCore = function(core) {
     ModernUI.prototype.connectCore.call(this, core);
     
-    getElemWithFallback("preloadHelper").classList.add("hues-h-text");
+    this.core.preloader.classList.add("hues-h-text");
 };
 
 HalloweenUI.prototype.disconnect = function() {
-    ModernUI.prototype.disconnect.call(this, core);
+    this.core.preloader.classList.remove("hues-h-text");
     
-    getElemWithFallback("preloadHelper").classList.remove("hues-h-text");
+    ModernUI.prototype.disconnect.call(this);
 };
 
 // Positions and angles for the Xmas lights
@@ -1129,5 +1257,6 @@ window.WeedUI = WeedUI;
 window.ModernUI = ModernUI;
 window.XmasUI = XmasUI;
 window.HalloweenUI = HalloweenUI;
+window.MinimalUI = MinimalUI;
 
 })(window, document);

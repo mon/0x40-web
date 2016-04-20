@@ -7,6 +7,10 @@
     border-style: none;
 }
 
+.hues-x-snow {
+    z-index: -9;
+}
+
 .hues-x-controls > .hues-m-songtitle {
     bottom: 5px;
 }
@@ -73,23 +77,17 @@
 
 .hues-x-wiresleft, .hues-x-wiresbottom, .hues-x-wiresright {
     position: absolute;
-    background-repeat: no-repeat;
-}
-.hues-x-wiresleft::before, .hues-x-wiresbottom::before, .hues-x-wiresright::before {
-    content: '';
-    position: absolute;
-    z-index: -1;
 }
 
 .hues-x-wiresleft, .hues-x-wiresright {
     height: 100%;
     width: 200px;
-    top: 0px;
+    top: 0;
     overflow: hidden;
 }
 
 .hues-x-wiresleft {
-    left: 0px;
+    left: 0;
 }
 .hues-x-wiresleft::before {
     width: 60px;
@@ -101,7 +99,7 @@
 }
 
 .hues-x-wiresright {
-    right: 0px;
+    right: 0;
 }
 .hues-x-wiresright::before {
     right: 0;
@@ -110,12 +108,12 @@
     background-image: url("../img/wiresright.png");
 }
 .inverted .hues-x-wiresright::before {
-    background-position: 58px 0px;
+    background-position: -58px 0;
 }
 
 .hues-x-wiresbottomhelper {
     position: absolute;
-    bottom: 0px;
+    bottom: 0;
     width: 100%;
     height: 200px;
     overflow: hidden;
@@ -133,10 +131,17 @@
     width: 2621px;
     height: 49px;
     background-image: url("../img/wiresbottom.png");
-    background-position: 127px 49px;
+    background-position: 127px -49px;
 }
 .inverted .hues-x-wiresbottom::before {
-    background-position: 127px 0px;
+    background-position: 127px 0;
+}
+
+.hues-x-wiresleft::before, .hues-x-wiresbottom::before, .hues-x-wiresright::before {
+    content: '';
+    position: absolute;
+    z-index: -1;
+    background-repeat: no-repeat;
 }
 
 .hues-x-visualisercontainer {

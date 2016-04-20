@@ -1,13 +1,13 @@
 /* HalloweenUI */
 
-.hues-h-text {
+.hues-h-text  {
     color: #ff3300;
 }
 .inverted .hues-h-text {
     color: #00ccff;
 }
 
-#preloadHelper.hues-h-text {
+.hues-preloader.hues-h-text {
     background: linear-gradient(to right, #000 0%,#000 50%,#222 50%,#222 100%);
     background-size: 200% 100%;
     background-position: 100% 0;
@@ -29,7 +29,7 @@
 .hues-m-beatcenter.hues-h-text {
     background: none;
     background-image: url('../img/skull.png');
-    top: 0px;
+    top: 0;
     width: 42px;
     height: 43px;
     box-shadow: none;
@@ -43,14 +43,14 @@
     font-size: 13px;
 }
 
-.hues-m-beatcenter.hues-h-text.hidden{
+.hues-m-beatcenter.hues-h-text.hues-ui--hidden{
     transform: translateY(-80px);
 }
 
 .hues-h-eyes {
     background: none;
     background-image: url('../img/skull-eyes.png');
-    top: 0px;
+    top: 0;
     width: 42px;
     height: 64px;
     box-shadow: none;
@@ -60,11 +60,11 @@
     animation-fill-mode: forwards;
 }
 .inverted .hues-h-eyes {
-    /* Set as important to override the other .inverted selector from modern */
-    background: none !important;
-    background-image: url('../img/skull-eyes.png') !important;
-    box-shadow: none !important;
-    background-position: -42px 0 !important;
+    /* Set again to override the other .inverted selector from modern */
+    background: none;
+    background-image: url('../img/skull-eyes.png');
+    box-shadow: none;
+    background-position: -42px 0;
 }
 
 .hues-h-left-hand {
@@ -94,17 +94,17 @@
 }
 
 @media (min-width: 768px) {
-  .hues-m-controls.hues-h-controls.hidden {
+  .hues-m-controls.hues-h-controls.hues-ui--hidden {
     transform: translateY(64px);
   }
 }
 
 .hues-m-songtitle.hues-h-text, .hues-m-imagename.hues-h-text {
-    padding: 4px 0px;
-    margin: 0px 5px;
+    padding: 4px 0;
+    margin: 0 5px;
     background: none;
     border-style: solid;
-    border-width: 0px 19px 0px 18px;
+    border-width: 0 19px 0 18px;
     border-image: url(../img/bones.png) 29 19 0 18 fill repeat stretch;
 }
 .inverted .hues-m-songtitle.hues-h-text, .inverted .hues-m-imagename.hues-h-text {
@@ -164,7 +164,7 @@
     z-index: -10;
     
     border-style: solid;
-    border-width: 22px 40px 0px 42px;
+    border-width: 22px 40px 0 42px;
     border-image: url(../img/tombstone.png) 22 42 0 fill stretch;
 }
 .inverted .hues-h-tombstone {
@@ -219,11 +219,11 @@
 }
 
 .hues-h-topleft, .hues-h-topright {
-    top: 0px;
+    top: 0;
 }
 
 .hues-h-bottomright, .hues-h-topright {
-    right: 0px;
+    right: 0;
 }
 
 .hues-h-topleft {
@@ -246,7 +246,7 @@
 
 .hues-h-bottomright {
     background-image: url("../img/web-bottomright.png");
-    bottom: 0px;
+    bottom: 0;
     width:358px;
     height: 284px;
 }

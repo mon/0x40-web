@@ -23,9 +23,9 @@
 (function(window, document) {
 "use strict";
 
-/*  Takes an element name to attach to, and an audio context element for
+/*  Takes root element to attach to, and an audio context element for
     getting the current time with reasonable accuracy */
-function HuesCanvas(element, audioContext, core) {
+function HuesCanvas(root, audioContext, core) {
     this.audio = audioContext;
     core.addEventListener("newimage", this.setImage.bind(this));
     core.addEventListener("newcolour", this.setColour.bind(this));
@@ -79,23 +79,18 @@ function HuesCanvas(element, audioContext, core) {
     this.setBlurQuality("high");
     this.setBlurDecay("fast");
     
-    this.canvas = document.getElementById(element);
+    this.canvas = document.createElement('canvas');
     this.context = this.canvas.getContext("2d");
+    this.canvas.width = 1280;
+    this.canvas.height = 720;
+    this.canvas.className = "hues-canvas";
+    root.appendChild(this.canvas);
     
     this.offCanvas = document.createElement('canvas');
     this.offContext = this.offCanvas.getContext('2d');
     
-    this.snowCanvas = document.getElementById("snow");
-    this.snowContext = this.snowCanvas.getContext("2d");
-    
     window.addEventListener('resize', this.resize.bind(this));
     this.resize();
-
-    this.snowing = false;
-    this.maxSnow = 30;
-    this.snowAngle = 0;
-    this.lastSnow = 0;
-    this.snowflakes = [];
 
     this.animating = true;
     requestAnimationFrame(this.animationLoop.bind(this));
@@ -115,12 +110,13 @@ HuesCanvas.prototype.settingsUpdated = function() {
 };
 
 HuesCanvas.prototype.resize = function() {
-    // height is constant 720px, we expand width to suit
-    let ratio = window.innerWidth / window.innerHeight;
-    this.canvas.width = Math.ceil(720 * ratio);
+    // height is max 720px, we expand width to suit
+    let height = this.core.root.clientHeight;
+    let ratio = this.core.root.clientWidth / height;
+    this.canvas.height = Math.min(height, 720);
+    this.canvas.width = Math.ceil(this.canvas.height * ratio);
     this.offCanvas.height = this.canvas.height;
     this.offCanvas.width = this.canvas.width;
-    this.snowCanvas.width = Math.ceil(720 * ratio);
     this.trippyRadius = Math.max(this.canvas.width, this.canvas.height) / 2;
     this.needsRedraw = true;
 };
@@ -129,6 +125,7 @@ HuesCanvas.prototype.redraw = function() {
     let offset; // for centering/right/left align
     let bOpacity;
     let width = this.canvas.width;
+    let height = this.canvas.height;
 
     let cTime = this.audio.currentTime;
     // white BG for the hard light filter
@@ -139,33 +136,35 @@ HuesCanvas.prototype.redraw = function() {
         bOpacity = (cTime - this.blackoutStart)*10;
         if(bOpacity > 1) { // optimise the draw
             this.context.fillStyle = this.blackoutColour;
-            this.context.fillRect(0,0,width,720);
+            this.context.fillRect(0,0,width,height);
             this.needsRedraw = false;
             this.drawInvert();
             return;
         }
     } else {
         this.context.fillStyle = "#FFF";
-        this.context.fillRect(0,0,width,720);
+        this.context.fillRect(0,0,width,height);
     }
 
     if(this.image && (this.image.bitmap || this.image.bitmaps)) {
         let bitmap = this.image.animated ?
             this.image.bitmaps[this.animFrame] : this.image.bitmap;
+        let drawHeight = bitmap.height * (height / bitmap.height);
+        let drawWidth = (bitmap.width / bitmap.height) * drawHeight;
         if(this.smartAlign) {
             switch(this.image.align) {
                 case "left":
                     offset = 0;
                     break;
                 case "right":
-                    offset = width - bitmap.width;
+                    offset = width - drawWidth;
                     break;
                 default:
-                    offset = width/2 - bitmap.width/2;
+                    offset = width/2 - drawWidth/2;
                     break;
             }
         } else {
-            offset = width/2 - bitmap.width/2;
+            offset = width/2 - drawWidth/2;
         }
         if(this.xBlur || this.yBlur) {
             this.context.globalAlpha = this.blurAlpha;
@@ -174,25 +173,25 @@ HuesCanvas.prototype.redraw = function() {
             if(this.blurIterations < 0) {
                 this.context.globalAlpha = 1;
                 this.context.drawImage(bitmap, Math.floor(offset - this.blurDistance/2), 0,
-                    bitmap.width + this.blurDistance, bitmap.height);
+                    drawWidth + this.blurDistance, drawHeight);
             } else {
                 for(let i=-1; i<=1; i+= this.blurDelta) {
-                    this.context.drawImage(bitmap, Math.floor(this.blurDistance * i) + offset, 0);
+                    this.context.drawImage(bitmap, Math.floor(this.blurDistance * i) + offset, 0, drawWidth, drawHeight);
                 }
             }
         } else if(this.yBlur) {
             if(this.blurIterations < 0) {
                 this.context.globalAlpha = 1;
                 this.context.drawImage(bitmap, offset, Math.floor(-this.blurDistance/2),
-                    bitmap.width, bitmap.height + this.blurDistance);
+                    drawWidth, drawHeight + this.blurDistance);
             } else {
                 for(let i=-1; i<=1; i+= this.blurDelta) {
-                    this.context.drawImage(bitmap, offset, Math.floor(this.blurDistance * i));
+                    this.context.drawImage(bitmap, offset, Math.floor(this.blurDistance * i), drawWidth, drawHeight);
                 }
             }
         } else {
             this.context.globalAlpha = 1;
-            this.context.drawImage(bitmap, offset, 0);
+            this.context.drawImage(bitmap, offset, 0, drawWidth, drawHeight);
         }
     }
     
@@ -204,7 +203,7 @@ HuesCanvas.prototype.redraw = function() {
         let invertC = this.intToHex(0xFFFFFF ^ this.colour);
         let normalC = this.intToHex(this.colour);
         this.offContext.fillStyle = baseInvert ? invertC : normalC;
-        this.offContext.fillRect(0,0,width,720);
+        this.offContext.fillRect(0,0,width,height);
         
         // sort high to low
         this.trippyRadii.sort(function(a,b) {
@@ -219,14 +218,14 @@ HuesCanvas.prototype.redraw = function() {
             // Invert for each subsequent draw
             this.offContext.beginPath();
             this.offContext.fillStyle = this.intToHex(invert ? invertC : normalC);
-            this.offContext.arc(width/2, this.canvas.height/2, this.trippyRadii[i], 0, 2 * Math.PI, false);
+            this.offContext.arc(width/2, height/2, this.trippyRadii[i], 0, 2 * Math.PI, false);
             this.offContext.fill();
             this.offContext.closePath();
             invert = !invert;
         }
     } else {
         this.offContext.fillStyle = this.intToHex(this.colour);
-        this.offContext.fillRect(0,0,width,720);
+        this.offContext.fillRect(0,0,width,height);
     }
     this.context.globalAlpha = 0.7;
     this.context.globalCompositeOperation = this.blendMode;
@@ -234,7 +233,7 @@ HuesCanvas.prototype.redraw = function() {
     if(this.blackout) {
         this.context.globalAlpha = bOpacity;
         this.context.fillStyle = this.blackoutColour;
-        this.context.fillRect(0,0,width,720);
+        this.context.fillRect(0,0,width,height);
         this.needsRedraw = true;
     } else {
         this.needsRedraw = false;
@@ -247,7 +246,7 @@ HuesCanvas.prototype.drawInvert = function() {
         this.context.globalAlpha = 1;
         this.context.globalCompositeOperation = "difference";
         this.context.fillStyle = "#FFF";
-        this.context.fillRect(0,0,this.canvas.width,720);
+        this.context.fillRect(0,0,this.canvas.width,this.canvas.height);
     }
 };
 
@@ -328,9 +327,6 @@ HuesCanvas.prototype.animationLoop = function() {
         this.redraw();
     } else if(this.needsRedraw){
         this.redraw();
-    }
-    if(this.snowing) {
-        this.drawSnow();
     }
     if(this.animating) {
         requestAnimationFrame(this.animationLoop.bind(this));
@@ -501,82 +497,6 @@ HuesCanvas.prototype.setAnimating = function(anim) {
         requestAnimationFrame(this.animationLoop);
     }
     this.animating = anim;
-};
-
-// From http://thecodeplayer.com/walkthrough/html5-canvas-snow-effect
-
-HuesCanvas.prototype.startSnow = function() {
-    this.snowing = true;
-    this.snowCanvas.style.display = "block";
-    let height = this.canvas.height;
-    let width = this.canvas.width;
-    this.snowAngle = 0;
-    this.snowflakes = [];
-	for(let i = 0; i < this.maxSnow; i++) {
-		this.snowflakes.push({
-			x: Math.random()*width, //x-coordinate
-			y: Math.random()*height, //y-coordinate
-			r: Math.random()*4+1, //radius
-			d: Math.random()*25 //density
-		});
-	}
-    this.lastSnow = this.audio.currentTime;
-};
-
-HuesCanvas.prototype.stopSnow = function() {
-    this.snowing = false;
-    this.snowCanvas.style.display = "none";
-};
-
-HuesCanvas.prototype.drawSnow = function() {
-    let width = this.snowCanvas.width;
-    let height = this.snowCanvas.height;
-    let delta = this.lastSnow - this.audio.currentTime;
-    this.snowContext.clearRect(0, 0, width, height);
-
-    if(this.invert) {
-        this.snowContext.fillStyle = "rgba(0, 0, 0, 0.8)";
-    } else {
-        this.snowContext.fillStyle = "rgba(255, 255, 255, 0.8)";
-    }
-    this.snowContext.beginPath();
-    for(let i = 0; i < this.maxSnow; i++) {
-        let flake = this.snowflakes[i];
-        this.snowContext.moveTo(flake.x, flake.y);
-        this.snowContext.arc(flake.x, flake.y, flake.r, 0, Math.PI * 2, true);
-    }
-    this.snowContext.fill();
-
-    this.snowAngle += delta / 6;
-    for(let i = 0; i < this.maxSnow; i++) {
-        let flake = this.snowflakes[i];
-        //Updating X and Y coordinates
-        //We will add 1 to the cos function to prevent negative values which will lead flakes to move upwards
-        //Every particle has its own density which can be used to make the downward movement different for each flake
-        //Lets make it more random by adding in the radius
-        flake.y += Math.cos(this.snowAngle + flake.d) + 1 + flake.r / 2;
-        flake.x += Math.sin(this.snowAngle) * 2;
-
-        //Sending flakes back from the top when it exits
-        //Lets make it a bit more organic and let flakes enter from the left and right also.
-        if(flake.x > width + 5 || flake.x < -5 || flake.y > height) {
-            if(i % 3 > 0) {//66.67% of the flakes
-                this.snowflakes[i] = {x: Math.random() * width, y: -10, r: flake.r, d: flake.d};
-            }
-            else {
-                //If the flake is exitting from the right
-                if(Math.sin(this.snowAngle) > 0) {
-                    //Enter from the left
-                    this.snowflakes[i] = {x: -5, y: Math.random() * height, r: flake.r, d: flake.d};
-                }
-                else {
-                    //Enter from the right
-                    this.snowflakes[i] = {x: width+5, y: Math.random() * height, r: flake.r, d: flake.d};
-                }
-            }
-        }
-    }
-    this.lastSnow = this.audio.currentTime;
 };
 
 window.HuesCanvas = HuesCanvas;

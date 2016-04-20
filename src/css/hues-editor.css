@@ -1,6 +1,6 @@
-#huesEditor {
+.editor {
     position: relative;
-    display: flex !important;
+    display: flex;
     flex-direction: column;
     max-width: calc(100% - 10px);
     width: 1000px;
@@ -11,22 +11,21 @@
     font-size: 13px;
 }
 
-#huesEditor > hr {
+.editor > hr {
     width: 100%;
 }
 
-#edit-titlebuttons {
-    margin: -2px 0 2px -2px;
+.editor__title-buttons {
     height: 15px;
 }
 
-#edit-status-msg {
+.editor__status-msg {
     font-size: 10px;
     color: red;
     opacity: 1;
 }
 
-#edit-status-msg.fade {
+.editor__status-msg--fade {
     animation-duration: 10s;
     animation-name: hues-pulsefade;
     animation-fill-mode: forwards;
@@ -70,42 +69,41 @@
     }
 }
 
-#edit-topbar {
+.editor__top-bar {
     display: flex;
     height: 60px;
 }
 
-
-#edit-info {
+.editor__info {
     flex-grow: 1;
 }
 
-#edit-imports {
+.editor__imports {
     padding-top: 6px;
 }
 
-#edit-songstats {
+.editor__song-stats {
     margin-top: 5px;
     margin-left: -8px;
 }
 
-.edit-songstat-value {
+.editor__song-stats__value {
     position: absolute;
     right: 2px;
 }
 
-.edit-label {
+.editor__label {
     display: flex;
     margin: 12px auto;
 }
 
-.edit-textbox-container {
+.editor__textinput-container {
     display: flex;
     margin-top: -2px;
     flex-grow: 1;
 }
 
-.edit-textbox {
+.editor__textinput {
     flex-grow: 1;
     font-family: 'PetMe64Web';
     font-size: 7pt;
@@ -115,7 +113,18 @@
     border-style: solid;
 }
 
-#edit-timelock {
+.edit-area {
+    flex-grow: 1;
+    /*height: initial !important;*/
+    margin: 0 auto;
+    width: 100%;
+}
+
+.edit_area__song-section {
+    height: auto;
+}
+
+.edit-area__timelock {
     display: flex;
     align-items: center;
     position: absolute;
@@ -123,7 +132,7 @@
     margin-left: -4px;
 }
 
-#edit-timelock:before { 
+.edit-area__timelock:before { 
   position: absolute;
   z-index: -1;
   content : "";
@@ -136,56 +145,48 @@
   border-bottom: 3px #666 solid;
 }
 
-#edit-timelock.unlocked:before {
+.edit-area__timelock--unlocked:before {
   border-left: 3px #666 dashed;
 }
 
-#edit-timelock > .hues-button {
+.edit-area__timelock > .hues-button {
     /* because of the pseudo element this one can't be transparent */
     background-color: rgb(171,171,171) !important;
 }
     
-#edit-timelock > .hues-button:hover {
+.edit-area__timelock > .hues-button:hover {
     background-color: rgb(236,236,236) !important;
 }
 
-
-#edit-area {
-    flex-grow: 1;
-    /*height: initial !important;*/
-    margin: 0 auto;
-    width: 100%;
-}
-
-.edit-area-header {
+.edit-area__header {
     padding-bottom: 8px;
     margin-left: 15px;
 }
 
-.beat-count {
+.edit-area__beat-count {
     font-size: 10px;
     margin-left: 4px;
 }
 
-.edit-area-right-header {
+.edit-area__header__right {
     position: absolute;
     right: 25px;
 }
 
-.edit-box {
+.edit-area__box {
     position: relative;
     overflow-y : scroll;
     background-color: white;
     margin: auto 20px;
 }
 
-.beatmap {
+.edit-area__beatmap {
     height: inherit;
     width: inherit;
     position: relative;
 }
 
-.beatmap:focus {
+.edit-area__beatmap:focus {
     outline-width: 0;
     outline: none;
 }
@@ -198,46 +199,38 @@
     padding: 0;
 }
 
-.beat-hilight.hidden {
-    visibility: hidden;
-}
-
-#edit-build, #edit-loop {
-    height: auto;
-}
-
-#edit-resize-handle-container {
+.resize-handle {
     width: 100%;
     height: 20px;
     cursor: row-resize;
     overflow: hidden;
 }
 
-#edit-resize-handle {
+.resize-handle__handle {
     transform: scale(10.0, 1.0);
     font-size: 20px;
     text-align:center;
     color: #999;
 }
 
-#edit-resize-handle:hover {
+.resize-handle__handle:hover {
     color: #000;
 }
 
-#edit-controls {
+.edit__controls {
     display: flex;
     justify-content: space-between;
     height: 25px !important;
     margin: 0 20px;
 }
 
-#edit-waveform {
+.waveform {
     width: 100%;
     height: 50px;
 }
 
 /* Make it as invisible as we can */
-#edit-copybox {
+.copybox {
     position : fixed;
     top : 0;
     left : 0;
@@ -245,6 +238,5 @@
     height : 2em;
     padding : 0;
     border : none;
-    outline : none;
     background : transparent;
 }

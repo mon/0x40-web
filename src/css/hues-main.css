@@ -1,0 +1,188 @@
+@font-face {
+    font-family: 'PetMe64Web';
+    font-style: normal;
+    font-weight: normal;
+    -webkit-font-smoothing: none;
+    font-smooth: never;
+    src: url("../fonts/PetMe64.woff") format('woff');
+}
+
+@font-face {
+    font-family: 'icomoon';
+    src:    url('../fonts/HuesExtra.eot?gmxg3s');
+    src:    url('../fonts/HuesExtra.eot?gmxg3s#iefix') format('embedded-opentype'),
+        url('../fonts/HuesExtra.ttf?gmxg3s') format('truetype'),
+        url('../fonts/HuesExtra.woff?gmxg3s') format('woff'),
+        url('../fonts/HuesExtra.svg?gmxg3s#icomoon') format('svg');
+    font-weight: normal;
+    font-style: normal;
+}
+
+.hues-root {
+    height: 100%;
+    margin: 0; padding: 0;
+    overflow: hidden;
+    font-family: 'PetMe64Web';
+    position: relative;
+}
+
+.hues-root h1, .hues-root h2, .hues-root h3 {
+    text-align: center;
+}
+
+.hues-root h1 {
+    font-size: 15pt;
+}
+
+.hues-root h2 {
+    font-size: 10pt;
+
+}
+
+.hues-root h3 {
+    font-size: 7pt;
+}
+
+.hidden {
+    display: none !important;
+}
+
+.invisible {
+    visibility: hidden !important;
+}
+
+.hues-icon {
+    /* use !important to prevent issues with browser extensions that change fonts */
+    font-family: 'icomoon' !important;
+    speak: none;
+    font-style: normal;
+    font-weight: normal;
+    font-variant: normal;
+    text-transform: none;
+    line-height: 1;
+
+    /* Better Font Rendering =========== */
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+.hues-canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    display: block;
+    height: 100%;
+    padding: 0;
+    z-index: -10;
+}
+
+.hues-visualiser {
+    position:absolute;
+    z-index: -1;
+}
+
+.hues-preloader {
+    /* first 2 colours are the loaded colour, next 2 are unloaded */
+    background: linear-gradient(to right, #fff 0%,#fff 50%,#ddd 50%,#ddd 100%);
+    background-size: 200% 100%;
+    background-position: 100% 0;
+    
+    width: 100%;
+    height: 100%;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    flex-direction: column;
+    font-size: 25pt;
+    
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 10;
+    visibility: visible;
+    opacity: 1;
+    transition: visibility 1s linear, opacity 1s linear, background-position 0.5s ease;
+}
+
+.hues-preloader--loaded {
+    visibility: hidden;
+    opacity: 0;
+}
+
+.hues-preloader__text {
+    display: block;
+    text-align: center;
+}
+
+.hues-preloader__subtext {
+    font-size: 12pt;
+}
+
+.hues-preloader__subtext span{
+    font-size: 8pt;
+    opacity: 0.7;
+}
+
+.unstyled-link {
+    color: inherit;
+    text-decoration: none;
+}
+
+.hues-button {
+    font-size: 10px;
+    margin: 3px 2px;
+    padding: 3px;
+    background-color: rgba(127,127,127, 0.5);
+    border-color: rgb(0,0,0);
+    border-width: 1px;
+    border-style: solid;
+    cursor: pointer;
+    /* Don't want double click to select */
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+}
+
+.hues-button--loaded {
+    background-color: rgba(0,127,0,0.5);
+    cursor: default;
+}
+
+.hues-button--disabled {
+    color: #777;
+    cursor: default;
+}
+
+.hues-button:hover {
+    background: rgba(255,255,255, 0.5);
+}
+
+.hues-button--loaded:hover {
+    background-color: rgba(0,127,0,0.5);
+    cursor: default;
+}
+
+.hues-button--disabled:hover {
+    background-color: rgba(127,127,127, 0.5);
+}
+
+.hues-button--glow {
+    animation-name: glow;
+    animation-duration: 2s;
+    animation-iteration-count: infinite;
+}
+
+@keyframes glow {
+    from {
+    background-color: rgba(127,127,127, 0.5);
+    }
+    50%  {
+    background-color: rgba(200,220,200, 0.5);
+    }
+    to {
+    background-color: rgba(127,127,127, 0.5);
+    }
+}

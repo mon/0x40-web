@@ -25,43 +25,7 @@
 (function(window, document) {
 "use strict";
 
-// Gets an element by ID. If it doesn't exist, return an empty div so you
-// don't litter your code with null checks
-window.getElemWithFallback = function(elemName) {
-    let elem = document.getElementById(elemName);
-    if(!elem) {
-        console.log("Couldn't find element '" + elemName + "'. Ignoring.");
-        elem = document.createElement("div");
-    }
-    return elem;
-};
-
 function HuesCore(defaults) {
-    // Yes, we do indeed have Javascript
-    this.preloadMsg = getElemWithFallback("preMain");
-    this.preloadSubMsg = getElemWithFallback("preSub");
-    this.clearMessage();
-    // Bunch-o-initialisers
-    this.version = "0x16";
-    this.beatIndex = 0;
-    
-    // How long a beat lasts for in each section
-    this.buildLength = -1;
-    this.loopLength = -1;
-    
-    this.currentSong = null;
-    this.currentImage = null;
-    
-    this.songIndex = -1;
-    this.colourIndex = 0x3f;
-    this.imageIndex = -1;
-    
-    this.isFullAuto = true;
-    this.invert = false;
-    this.loopCount = 0;
-    this.doBuildup = true;
-    this.userInterface = null;
-    
     this.eventListeners = {
         /* callback time(hundredths)
          *
@@ -131,36 +95,95 @@ function HuesCore(defaults) {
         settingsupdated : []
     };
 
+    // Bunch-o-initialisers
+    this.version = 30;
+    this.versionStr = (this.version/10).toFixed(1);
+    this.versionHex = this.version.toString(16);
+    this.beatIndex = 0;
+    
+    // How long a beat lasts for in each section
+    this.buildLength = -1;
+    this.loopLength = -1;
+    
+    this.currentSong = null;
+    this.currentImage = null;
+    this.songIndex = -1;
+    this.imageIndex = -1;
+    this.lastSongArray = [];
+    this.lastImageArray = [];
+    
+    this.colourIndex = 0x3f;
+    this.colours = this.oldColours;
+    
+    this.isFullAuto = true;
+    this.invert = false;
+    this.loopCount = 0;
+    this.doBuildup = true;
+    this.userInterface = null;
+    this.uiArray = [];
+    
+    // What's our root element?
+    this.root = null;;
+    if(!defaults.root) {
+        this.root = document.body;
+    } else if(typeof defaults.root === "string") {
+        if(defaults.root && document.getElementById(defaults.root)) {
+            this.root = document.getElementById(defaults.root);
+        } else {
+            this.root = document.body;
+        }
+    } else { // been given an element
+        this.root = defaults.root;
+    }
+    this.root.classList.add("hues-root");
+    // Special case for full page Hues
+    if(this.root === document.body) {
+        document.documentElement.className = "hues-root";
+    }
+    // Yes, we do indeed have Javascript
+    this.root.innerHTML = "";
+    
+    this.makePreloader(this.root);
+
     window.onerror = (msg, url, line, col, error) => {
         this.error(msg);
         // Get more info in console
         return false;
     };
     
-    let versionString = "v" + (parseInt(this.version)/10).toFixed(1);
-    console.log("0x40 Hues " + versionString + " - start your engines!");
-    populateHuesInfo(this.version);
-    this.colours = this.oldColours;
-    this.uiArray = [];
-    this.lastSongArray = [];
-    this.lastImageArray = [];
-    this.uiArray.push(new RetroUI(), new WeedUI(), new ModernUI(), new XmasUI(), new HalloweenUI());
-    
     this.settings = new HuesSettings(defaults);
-    zip.workerScriptsPath = this.settings.defaults.workersPath;
-    this.resourceManager = new Resources(this);
-    this.editor = new HuesEditor(this);
+    // Update with merged defaults
+    defaults = this.settings.defaults;
+    zip.workerScriptsPath = defaults.workersPath;
+    
+    this.window = new HuesWindow(this.root, defaults);
+    
+    console.log("0x40 Hues v" + this.versionStr + " - start your engines!");
+    
+    this.resourceManager = new Resources(this, this.window);
+    this.editor = new HuesEditor(this, this.window);
+    this.settings.initUI(this.window);
+    populateHuesInfo(this.versionStr, this.window, defaults);
+    
+    this.window.selectTab(defaults.firstWindow, true);
+
+    let ui = document.createElement("div");
+    ui.className = "hues-ui";
+    this.root.appendChild(ui);
+    this.uiArray.push(new RetroUI(ui), new WeedUI(ui), new ModernUI(ui),
+                      new XmasUI(ui), new HalloweenUI(ui), new MinimalUI(ui));
     
     this.autoSong = localStorage["autoSong"];
     
     this.visualiser = document.createElement("canvas");
-    this.visualiser.id = "visualiser";
+    this.visualiser.className = "hues-visualiser";
     this.visualiser.height = "64";
     this.vCtx = this.visualiser.getContext("2d");
-
-    let preloadHelper = getElemWithFallback("preloadHelper");
     
     this.soundManager = new SoundManager(this);
+    
+    this.settings.addEventListener("updated", this.settingsUpdated.bind(this));
+    this.settingsUpdated();
     
     this.soundManager.init().then(() => {
         if(!this.soundManager.locked && localStorage["skipPreloader"] == "on") {
@@ -195,26 +218,23 @@ function HuesCore(defaults) {
     }).then(() => {
         this.clearMessage();
         setInterval(this.loopCheck.bind(this), 1000);
-        this.renderer = new HuesCanvas("waifu", this.soundManager.context, this);
-        this.settings.connectCore(this);
-        // Update with merged
-        defaults = this.settings.defaults;
+        this.renderer = new HuesCanvas(this.root, this.soundManager.context, this);
         this.setColour(this.colourIndex);
         this.animationLoop();
         
         if(defaults.load) {
             return this.resourceManager.addAll(defaults.respacks, progress => {
-                preloadHelper.style.backgroundPosition = (100 - progress*100) + "% 0%";
+                this.preloader.style.backgroundPosition = (100 - progress*100) + "% 0%";
                 let scale = Math.floor(progress * defaults.preloadMax);
                 let padding = defaults.preloadMax.toString(defaults.preloadBase).length;
                 this.preloadMsg.textContent = defaults.preloadPrefix + (Array(padding).join("0")+scale.toString(defaults.preloadBase)).slice(-padding);
             });
         } else {
-            preloadHelper.style.display = "none";
+            this.preloader.style.display = "none";
             return;
         }
     }).then(() => {
-        preloadHelper.classList.add("loaded");
+        this.preloader.classList.add("hues-preloader--loaded");
         if(defaults.firstImage) {
             this.setImageByName(defaults.firstImage);
         } else {
@@ -231,23 +251,25 @@ function HuesCore(defaults) {
         this.error(error);
     });
 
-    document.addEventListener("keydown", e => {
-        e = e || window.event;
-        if(e.defaultPrevented) {
-            return true;
-        }
-        // Ignore modifiers so we don't steal other events
-        if (e.altKey || e.ctrlKey || e.metaKey || e.shiftKey) {
-            return true;
-        }
-        // If we've focused a text input, let the input go through!
-        if((e.target.tagName.toLowerCase() == "input" && e.target.type == "text") ||
-            e.target.contentEditable === "true") {
-            return true;
-        }
-        let key = e.keyCode || e.which;
-        return this.keyHandler(key);
-    });
+    if(!defaults.disableKeyboard) {
+        document.addEventListener("keydown", e => {
+            e = e || window.event;
+            if(e.defaultPrevented) {
+                return true;
+            }
+            // Ignore modifiers so we don't steal other events
+            if (e.altKey || e.ctrlKey || e.metaKey || e.shiftKey) {
+                return true;
+            }
+            // If we've focused a text input, let the input go through!
+            if((e.target.tagName.toLowerCase() == "input" && e.target.type == "text") ||
+                e.target.contentEditable === "true") {
+                return true;
+            }
+            let key = e.keyCode || e.which;
+            return this.keyHandler(key);
+        });
+    }
 }
 
 HuesCore.prototype.callEventListeners = function(ev) {
@@ -275,6 +297,21 @@ HuesCore.prototype.removeEventListener = function(ev, callback) {
     } else {
         throw Error("Unknown event: " + ev);
     }
+};
+
+HuesCore.prototype.makePreloader = function(root) {
+    this.preloader = document.createElement("div");
+    this.preloader.className = "hues-preloader";
+    root.appendChild(this.preloader);
+    
+    this.preloadMsg = document.createElement("div");
+    this.preloadMsg.className = "hues-preloader__text";
+    this.preloadMsg.textContent = "Initialising...";
+    this.preloader.appendChild(this.preloadMsg);
+    
+    this.preloadSubMsg = document.createElement("div");
+    this.preloadSubMsg.className = "hues-preloader__subtext";
+    this.preloader.appendChild(this.preloadSubMsg);
 };
 
 HuesCore.prototype.resizeVisualiser = function() {
@@ -829,6 +866,9 @@ HuesCore.prototype.settingsUpdated = function() {
     case "hlwn":
         this.changeUI(4);
         break;
+    case "mini":
+        this.changeUI(5);
+        break;
     }
     switch (localStorage["colourSet"]) {
     case "normal":
@@ -853,10 +893,10 @@ HuesCore.prototype.settingsUpdated = function() {
     }
     switch (localStorage["visualiser"]) {
     case "off":
-        document.getElementById("visualiser").className = "hidden";
+        this.visualiser.classList.add("hidden");
         break;
     case "on":
-        document.getElementById("visualiser").className = "";
+        this.visualiser.classList.remove("hidden");
         if(!this.soundManager.vReady) {
             this.soundManager.initVisualiser(this.visualiser.width/2);
         }
@@ -878,12 +918,12 @@ HuesCore.prototype.hideLists = function() {
 };
 
 HuesCore.prototype.toggleSongList = function() {
-    this.settings.hide();
+    this.window.hide();
     this.resourceManager.toggleSongList();
 };
 
 HuesCore.prototype.toggleImageList = function() {
-    this.settings.hide();
+    this.window.hide();
     this.resourceManager.toggleImageList();
 };
 
@@ -933,16 +973,16 @@ HuesCore.prototype.keyHandler = function(key) {
         this.userInterface.toggleHide();
         break;
     case 82: // R
-        this.settings.showRespacks();
+        this.window.selectTab("RESOURCES");
         break;
     case 69: // E
-        this.settings.showEditor();
+        this.window.selectTab("EDITOR");
         break;
     case 79: // O
-        this.settings.showOptions();
+        this.window.selectTab("OPTIONS");
         break;
     case 73: // I
-        this.settings.showInfo();
+        this.window.selectTab("INFO");
         break;
     case 49: // NUMBER_1
         this.settings.set("currentUI", "retro");
@@ -959,6 +999,9 @@ HuesCore.prototype.keyHandler = function(key) {
     case 53: // NUMBER_5
         this.settings.set("currentUI", "hlwn");
         break;
+    case 54: // NUMBER_6
+        this.settings.set("currentUI", "mini");
+        break;
     case 67: // C
         this.toggleImageList();
         break;
@@ -966,7 +1009,7 @@ HuesCore.prototype.keyHandler = function(key) {
         this.toggleSongList();
         break;
     case 87: // W
-        this.settings.toggle();
+        this.window.toggle();
         break;
     case 78: // N
         this.randomSong();

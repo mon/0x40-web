@@ -1,0 +1,201 @@
+.respacks {
+    display: flex;
+    box-sizing: border-box;
+    width: 640px;
+    
+    margin: 5px;
+    height: 400px;
+    font-size: 14px;
+}
+
+.respacks__manager, .respacks__display {
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+}
+
+.respacks__manager {
+    width: 40%;
+    margin-right: 5px;
+}
+
+.respacks__display {
+    width: 60%;
+    margin-left: 5px;
+}
+
+.respacks__header {
+    padding: 5px 0;
+    flex-shrink: 0;
+}
+
+.resource-list {
+    flex-grow: 1;
+    
+    border: 2px solid black;
+    background: rgba(255,255,255,0.3);
+    overflow: auto;
+    overflow-x: hidden;
+}
+
+.resource-list--fill {
+    height: 100%;
+}
+
+.respacks-listitem {
+    font-size: 10px;
+    border-bottom: 1px solid black;
+    display: flex;
+    align-items: center;
+}
+
+.respacks-listitem  > span {
+    display: block;
+    width: 100%;
+    height: 100%;
+    padding: 2px;
+    
+    cursor: pointer;
+}
+
+.respacks-listitem :hover {
+    background: rgba(255,255,255,0.5);
+}
+
+.respacks-listitem input[type=checkbox] {
+    display: none;
+}
+
+.respacks-listitem > label {
+    content: "";
+ 
+    width: 12px;
+    height: 10px;
+    margin: auto 2px;
+    
+    background-color: #ccc;
+    border: 1px solid black;
+    cursor: pointer;
+}
+
+.respacks-listitem input[type=checkbox]:before {
+    border-radius: 3px;
+}
+
+.respacks-listitem input[type=checkbox]:checked + label {
+    background-color: #222;
+    text-align: center;
+    line-height: 15px;
+}
+
+.respacks-buttons {
+    flex-shrink: 0;
+    display: flex;
+    justify-content: space-between;
+    padding: 0;
+}
+
+.respacks-buttons--fill > .hues-button {
+    flex-grow: 1;
+    text-align: center;
+}
+
+.respacks-bottom-container {
+    height: 35px;
+}
+
+.progress-container {
+    height: 35px;
+    font-size: 11px;
+}
+
+.progress-bar {
+    height:5px;  /* Can be anything */
+    position: relative;
+    background: #000;
+    border-radius: 25px;
+    padding: 2px;
+    margin: 2px;
+}
+
+.progress-bar--filled {
+  display: block;
+  height: 100%;
+  border-radius: 8px;
+  background-color: rgb(43,194,83);
+  position: relative;
+  overflow: hidden;
+}
+
+.stat-text {
+    flex-shrink: 0;
+    display: flex;
+    justify-content: space-between;
+    margin: 0 5px;
+    font-size: 9px;
+}
+
+.respack-description {
+    flex-shrink: 0;
+    border: 3px solid gray;
+    background: rgba(255,255,255,0.5);
+    font-size: 9px;
+    margin: 2px;
+    padding: 2px;
+}
+
+.respack-tab-container {
+    flex-shrink: 0;
+    display: flex;
+    width: 100%;
+}
+
+.respack-tab {
+    box-sizing: border-box;
+    border: 2px solid black;
+    padding: 5px;
+    cursor: pointer;
+    /* Actually wider than the container, but has a centering effect */
+    width: 50%;
+}
+
+.respack-tab--checked {
+    background: rgba(255,255,255,0.3);
+    border-bottom: none;
+}
+
+.respack-tab:hover {
+    background: rgba(255,255,255,0.3);
+}
+
+.respack-tab__content {
+    display: none;
+    border-top: none;
+}
+
+.respack-tab__content--checked {
+    display: block;
+}
+
+.respacks-count-container {
+    flex-shrink: 0;
+    display: flex;
+    justify-content: space-between;
+}
+
+.respacks-enabledsongs, .respacks-enabledimages {
+    display: block;
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    max-height: 150px;
+    overflow: auto;
+}
+
+.respacks-enabledsongs {
+    width: 515px;
+}
+
+.respacks-enabledimages {
+    width: 315px;
+}

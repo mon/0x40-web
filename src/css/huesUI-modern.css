@@ -11,11 +11,11 @@
     transition: transform 1s ease-out;
 }
 
-.hues-m-beatbar.hidden, .hues-m-beatcenter.hidden{
+.hues-m-beatbar.hues-ui--hidden, .hues-m-beatcenter.hues-ui--hidden{
     transform: translateY(-40px);   
 }
 
-.hues-m-controls.hidden {
+.hues-m-controls.hues-ui--hidden {
     transform: translateY(108px);
 }
 
@@ -23,10 +23,10 @@
     position: absolute;
     width: 100%;
     height: 64px;
-    bottom:108px;
-    left:-8px;
-    right:0px;
-    margin:0px auto;
+    bottom: 108px;
+    left: -8px;
+    right: 0;
+    margin: 0 auto;
 }
 
 .hues-m-beatbar {
@@ -323,7 +323,7 @@
     position: absolute;
     left: 8px;
     right: 8px;
-    bottom: 0px;
+    bottom: 0;
     margin: 0 auto;
     height: 30px;
     max-width: 992px;
@@ -343,7 +343,7 @@
 background: linear-gradient(rgba(255,255,255,0), rgba(255,255,255,0.4));
 }
 
-.hues-m-hiderestore.hidden {
+.hues-m-hiderestore.hues-ui--hidden {
     display: block;
 }
 
@@ -403,6 +403,7 @@ input[type=range] {
     padding: 0;
     height: 12px;
     background: transparent;
+    -moz-appearance: none;
     -webkit-appearance: none;
 }
 
@@ -418,6 +419,7 @@ input[type=range]::-webkit-slider-runnable-track {
 }
 
 input[type=range]::-webkit-slider-thumb {
+    -moz-appearance: none;
     -webkit-appearance: none;
     box-shadow: none;
     border: none;
@@ -492,7 +494,7 @@ input[type=range]::-ms-thumb {
   .hues-m-controls {
     height: 54px;
     }
-  .hues-m-controls.hidden {
+  .hues-m-controls.hues-ui--hidden {
     transform: translateY(54px);
   }
   .hues-m-imagename {

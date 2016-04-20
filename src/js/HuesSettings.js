@@ -42,14 +42,22 @@ HuesSettings.prototype.defaultSettings = {
     firstImage: null,
     // If set, will disable the remote resources menu. For custom pages.
     disableRemoteResources: false,
-    // You will rarely want this. Disables the generated UI elements in the tab box
-    noUI: false,
-    // Whether to show the info window on page load
-    showInfo: false,
+    // You will rarely want to change this. Enables/disables the Hues Window.
+    enableWindow: true,
+    // Whether to show the Hues Window on page load
+    showWindow: false,
+    // What tab will be displayed first in the Hues Window
+    firstWindow: "INFO",
     // Preloader customisation
     preloadPrefix: "0x",
     preloadBase: 16,
     preloadMax: 0x40,
+    // Info customisation
+    huesName: "0x40 Hues of JS, v%VERSION%",
+    // If unset, uses <body>, otherwise sets which element to turn hues-y
+    root: null,
+    // If set, keyboard shortcuts are ignored
+    disableKeyboard: false,
 
     // UI accessible config
     smartAlign: "on",
@@ -83,9 +91,12 @@ HuesSettings.prototype.ephemeralSettings = [
     "preloadPrefix",
     "preloadBase",
     "preloadMax",
-    "noUI",
-    "showInfo",
-    "workersPath"
+    "enableWindow",
+    "firstWindow",
+    "workersPath",
+    "huesName",
+    "root",
+    "disableKeyboard"
 ];
 
 // To dynamically build the UI like the cool guy I am
@@ -138,7 +149,7 @@ HuesSettings.prototype.settingsOptions = {
     },
     currentUI : {
         name : "UI style",
-        options : ["retro", "v4.20", "modern", "xmas", "hlwn"]
+        options : ["retro", "v4.20", "modern", "xmas", "hlwn", "mini"]
     },
     colourSet : {
         name : "Colour set",
@@ -208,10 +219,17 @@ HuesSettings.prototype.settingsOptions = {
 };
 
 function HuesSettings(defaults) {
-    this.core = null;
+    this.eventListeners = {
+        /* callback updated()
+         *
+         * Called when settings are updated
+         */
+        updated : []
+    };
+    
     this.hasUI = false;
-    this.root = getElemWithFallback("huesSettings");
-    this.window = getElemWithFallback("settingsHelper");
+    
+    this.settingCheckboxes = {};
     
     this.textCallbacks = [];
     this.visCallbacks = [];
@@ -236,86 +254,11 @@ function HuesSettings(defaults) {
     }
 
     this.defaults = defaults;
-    
-    if(this.defaults.showInfo) {
-        this.show();
-    } else {
-        this.hide();
-    }
-
-    // because we still care about the main window
-    getElemWithFallback("closeButton").onclick = this.hide.bind(this);
-    
-    // we also care about tabs looking nice.
-    let checkListener = function(check) { 
-        for(let i = 0; i < tabs.length; i++) {
-            tabs[i].className = "tab-label";
-        }
-        check._label.className = "tab-label checked";
-        // Fix the editor from having 0 size
-        if(check.id == "tab-editor" && this.core && this.core.editor)
-            this.core.editor.resize();
-    };
-    let tabs = document.getElementsByClassName("tab-label");
-    for(let i = 0; i < tabs.length; i++) {
-        let check = document.getElementById(tabs[i].htmlFor);
-        check._label = tabs[i];
-        check.addEventListener("change", checkListener.bind(this, check));
-    }
-    if(!this.defaults.noUI) {
-        this.initUI();
-    }
 }
 
-HuesSettings.prototype.connectCore = function(core) {
-    this.core = core;
-    core.settingsUpdated();
-};
-
-HuesSettings.prototype.show = function() {
-    this.window.style.display = "-webkit-flex";
-    this.window.style.display = "flex";
-    if(this.core) {
-        this.core.hideLists();
-        if(this.core.editor)
-            this.core.editor.resize();
-    }
-};
-
-HuesSettings.prototype.hide = function() {
-    this.window.style.display = "none";
-};
-
-HuesSettings.prototype.toggle = function() {
-    if(this.window.style.display == "none") {
-        this.show();
-    } else {
-        this.hide();
-    }
-};
-
-HuesSettings.prototype.showRespacks = function() {
-    this.show();
-    getElemWithFallback("tab-resources").click();
-};
-
-HuesSettings.prototype.showEditor = function() {
-    this.show();
-    getElemWithFallback("tab-editor").click();
-};
-
-HuesSettings.prototype.showOptions = function() {
-    this.show();
-    getElemWithFallback("tab-options").click();
-};
-
-HuesSettings.prototype.showInfo = function() {
-    this.show();
-    getElemWithFallback("tab-info").click();
-};
-
-HuesSettings.prototype.initUI = function() {
-    let doc = this.root.ownerDocument;
+HuesSettings.prototype.initUI = function(huesWin) {
+    let root = document.createElement("div");
+    root.className = "hues-options";
         
     // Don't make in every loop
     let intValidator = function(self, variable) {
@@ -326,55 +269,63 @@ HuesSettings.prototype.initUI = function() {
         }
         localStorage[variable] = this.value;
         self.updateConditionals();
-        self.core.settingsUpdated();
+        self.callEventListeners("updated");
     };
 
     // To order things nicely
     for(let cat in this.settingsCategories) {
             if(this.settingsCategories.hasOwnProperty(cat)) {
-            let catContainer = doc.createElement("div");
+            let catContainer = document.createElement("div");
             catContainer.textContent = cat;
             catContainer.className = "settings-category";
             let cats = this.settingsCategories[cat];
             for(let i = 0; i < cats.length; i++) {
                 let setName = cats[i];
-                let setContainer = doc.createElement("div");
+                let setContainer = document.createElement("div");
                 let setting = this.settingsOptions[setName];
                 setContainer.textContent = setting.name;
                 setContainer.className = "settings-individual";
-                let buttonContainer = doc.createElement("div");
+                let buttonContainer = document.createElement("div");
                 buttonContainer.className = "settings-buttons";
                 
                 for(let j = 0; j < setting.options.length; j++) {
                     let option = setting.options[j];
                     if(typeof option === "string") {
-                        let checkbox = doc.createElement("input");
+                        let checkbox = document.createElement("input");
+                        // Save checkbox so we can update UI stuff
+                        this.settingCheckboxes[setName + "-" + option] = checkbox;
                         checkbox.className = "settings-checkbox";
                         checkbox.type = "radio";
-                        checkbox.name = setName;
                         checkbox.value = option;
-                        checkbox.id = setName + "-" + option;
+                        let unique = 0;
+                        // Lets us have multiple hues on 1 page
+                        let id = setName + "-" + option + "-";
+                        while(document.getElementById(id + unique)) {
+                            unique++;
+                        }
+                        checkbox.name = setName + "-" + unique;
+                        checkbox.id = id + unique;
                         if(localStorage[setName] == option) {
                             checkbox.checked = true;
                         }
                         checkbox.onclick = function(self) {
-                            self.set(this.name, this.value);
+                            self.set(setName, this.value);
                         }.bind(checkbox, this);
                         buttonContainer.appendChild(checkbox);
                         // So we can style this nicely
-                        let label = doc.createElement("label");
+                        let label = document.createElement("label");
                         label.className = "settings-label";
                         label.htmlFor = checkbox.id;
                         label.textContent = option.toUpperCase();
                         buttonContainer.appendChild(label);
                     } else { // special option
                         if(option.type == "varText") {
-                            let text = doc.createElement("span");
+                            let text = document.createElement("span");
                             text.textContent = option.text();
                             buttonContainer.appendChild(text);
                             this.textCallbacks.push({func:option.text, element:text});
                         } else if(option.type == "input") {
-                            let input = doc.createElement("input");
+                            let input = document.createElement("input");
                             input.setAttribute("type", "text");
                             input.className = "settings-input";
                             input.value = localStorage[option.variable];
@@ -395,10 +346,24 @@ HuesSettings.prototype.initUI = function() {
                 setContainer.appendChild(buttonContainer);
                 catContainer.appendChild(setContainer);
             }
-            this.root.appendChild(catContainer);
+            root.appendChild(catContainer);
         }
     }
+    huesWin.addTab("OPTIONS", root);
     this.hasUI = true;
+};
+
+HuesSettings.prototype.get = function(setting) {
+    if(this.defaults.hasOwnProperty(setting)) {
+        if(this.ephemeralSettings.indexOf(setting) != -1) {
+            return this.defaults[setting];
+        } else {
+            return localStorage[setting];
+        }
+    } else {
+        console.log("WARNING: Attempted to fetch invalid setting:", setting);
+        return null;
+    }
 };
 
 // Set a named index to its named value, returns false if name doesn't exist
@@ -411,11 +376,11 @@ HuesSettings.prototype.set = function(setting, value) {
     }
     // for updating the UI selection
     try {
-        document.getElementById(setting + "-" + value).checked = true;
+        this.settingCheckboxes[setting + "-" + value].checked = true;
     } catch(e) {}
     localStorage[setting] = value;
     this.updateConditionals();
-    this.core.settingsUpdated();
+    this.callEventListeners("updated");
     return true;
 };
 
@@ -441,6 +406,33 @@ HuesSettings.prototype.setDefaults = function() {
             }
             localStorage[attr] = this.defaults[attr];
         }
+    }
+};
+
+HuesSettings.prototype.callEventListeners = function(ev) {
+    let args = Array.prototype.slice.call(arguments, 1);
+    this.eventListeners[ev].forEach(function(callback) {
+        callback.apply(null, args);
+    });
+};
+
+HuesSettings.prototype.addEventListener = function(ev, callback) {
+    ev = ev.toLowerCase();
+    if (typeof(this.eventListeners[ev]) !== "undefined") {
+        this.eventListeners[ev].push(callback);
+    } else {
+        throw Error("Unknown event: " + ev);
+    }
+};
+
+HuesSettings.prototype.removeEventListener = function(ev, callback) {
+    ev = ev.toLowerCase();
+    if (typeof(this.eventListeners[ev]) !== "undefined") {
+        this.eventListeners[ev] = this.eventListeners[ev].filter(function(a) {
+            return (a !== callback);
+        });
+    } else {
+        throw Error("Unknown event: " + ev);
     }
 };
 

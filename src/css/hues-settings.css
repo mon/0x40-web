@@ -1,0 +1,182 @@
+﻿.hues-win-helper {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: absolute;
+    margin-top: -15px;
+    width: 100%;
+    height: 100%;
+}
+
+.hues-win {
+    position: relative;
+    z-index: 9;
+    min-width: 640px;
+    min-height: 470px;
+    max-height: calc(100% - 50px);
+    margin: 10px;
+    
+    background: rgba(200,200,200, 0.7);
+    border-color: black;
+    border-width: 2px;
+    border-style: solid;
+}
+
+.hues-win__closebtn {
+    height: 20px;
+    width: 20px;
+    font-size: 20px;
+    color: white;
+    position: absolute;
+    right: 0;
+    background-color: rgb(128,128,128);
+    border: 1px solid black;
+    cursor: pointer;
+}
+
+.hues-win__tabs {
+    margin: -1px;
+    padding-top: 22px;
+    display: flex;
+}
+
+
+.tab-label{
+    flex-grow: 1;
+    cursor: pointer;
+    padding: 10px;
+    border: 2px solid black;
+    text-align: center;
+}
+
+.tab-label--active  {
+    border-bottom: 0;
+}
+
+l.tab-label:hover {
+    background: rgba(255,255,255,0.3);
+}
+
+.tab-content {
+    display: none;
+}
+
+.tab-content--active {
+    display: block;
+}
+
+.hues-about {
+    border-bottom: 2px solid black;
+}
+
+.hues-options {
+    display:flex;
+    flex-wrap: wrap;
+    width: 640px;
+    padding: 5px;
+}
+
+.hues-ref {
+    display:flex;
+    flex-wrap: wrap;
+    width: 640px;
+    align-items:center;
+    justify-content: center;
+    padding: 5px;
+}
+
+.hues-ref__info {
+    float: left;
+    font-size: 8pt;
+    text-align: left;
+    background: rgba(100,100,100,0.3);
+    border-radius: 15px;
+    margin: 10px;
+    padding: 0 5px;
+}
+
+.hues-ref__info h3 {
+    font-size: 10pt;
+    margin: 10px 0 0 10px;
+    text-align: left;
+}
+
+.hues-ref__info ul {
+    list-style-type: none;
+    padding: 0;
+    margin: 10px;
+}
+
+.hues-ref__info li {
+    /* Chrome rendering fix */
+    line-height: 9pt;
+}
+
+.hues-win__closebtn:hover {
+    background-color: rgb(200,200,200);
+}
+
+.hues-win__closebtn:after {
+    content : "x";
+}
+
+.settings-category {
+    font-size: 16px;
+    width: 50%;
+    float: left;
+    margin-bottom: 10px;
+}
+
+.settings-individual{
+    font-size: 8pt;
+    /* Chrome rendering fix */
+    line-height: 9pt;
+    padding-left: 10px;
+}
+
+.settings-buttons{
+    display: flex;
+    flex-wrap: wrap;
+}
+
+.settings-checkbox{
+    display: none;
+}
+
+.settings-label {
+    font-size: 7pt;
+    margin: 4px 2px;
+    padding: 3px;
+    background: rgba(127,127,127, 0.5);
+    border-color: rgb(0,0,0);
+    border-width: 1px;
+    border-style: solid;
+    cursor: pointer;
+    /* Don't want double click to select */
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+}
+
+.settings-label:hover {
+    background: rgba(200,200,200,0.5);
+}
+
+input[type="radio"]:checked + .settings-label {
+    background: rgba(255,255,255, 0.5);
+}
+
+.settings-input {
+    font-family: 'PetMe64Web';
+    font-size: 7pt;
+    padding: 3px;
+    margin: -6px 0;
+    background: rgba(127,127,127, 0.5);
+    border-color: rgb(0,0,0);
+    border-width: 1px;
+    border-style: solid;
+    width: 2em;
+}

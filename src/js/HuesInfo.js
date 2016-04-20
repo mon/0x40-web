@@ -23,17 +23,8 @@
 (function(window, document) {
 "use strict"; 
 
- /* HuesInfo.js populates the beat glossary, shortcut list, and version string.
-  * This means the HTML should rarely need to be updated.
-  * If the element IDs are not present, the DOM is not modified. If you would
-  * like a custom info page, simply leave them out.
+ /* HuesInfo.js populates the INFO tab in the Hues Window.
   */
-
-let huesInfo = {
-    versionID: "versionText",
-    referenceID: "reference",
-    referenceClass: "info-ref"
-};
 
 let beatGlossary = [
     "x Vertical blur (snare)",
@@ -68,31 +59,38 @@ let shortcuts = [
     "[1-5] Change UI"
 ];
 
-function populateHuesInfo(version) {
-    let versionInt = parseInt(version);
-    
-    let versionElem = document.getElementById(huesInfo.versionID);
-    if(versionElem) {
-        versionElem.textContent = "v" + (versionInt/10).toFixed(1);
-    }
-    
-    addInfo("Beat glossary", beatGlossary);
-    addInfo("Keyboard shortcuts", shortcuts);
-}
-
-let addInfo = function(titleText, list) {
-    let refElem = document.getElementById(huesInfo.referenceID);
-    if(!refElem) {
+function populateHuesInfo(version, huesWin, defaults) {
+    if(!defaults.enableWindow) {
         return;
     }
+    let verString = (parseInt(version)/10).toFixed(1);
     
     let info = document.createElement("div");
-    info.className = huesInfo.referenceClass;
-    refElem.appendChild(info);
+    info.className = "hues-ref";
+    
+    let huesName = defaults.huesName.replace("%VERSION%", version);
+    let about = document.createElement("div");
+    about.className = "hues-about";
+    about.innerHTML = "<h1>" + huesName + "</h1>" +
+        '<h2>Adapted from the <a target="_blank" href="http://0x40hues.blogspot.com">0x40 Flash</a></h2>' +
+        '<h2>Web-ified by <a target="_blank" href="https://github.com/mon">mon</a></h2>' +
+        '<h3>With help from <a target="_blank" href="https://github.com/kepstin/0x40hues-html5">Kepstin</a></h3>';
+    info.appendChild(about);
+    
+    addReference(info, "Beat glossary", beatGlossary);
+    addReference(info, "Keyboard shortcuts", shortcuts);
+    
+    huesWin.addTab("INFO", info);
+}
+
+let addReference = function(root, titleText, list) {
+    let ref = document.createElement("div");
+    ref.className = "hues-ref__info";
+    root.appendChild(ref);
     
     let title = document.createElement("h3");
     title.textContent = titleText;
-    info.appendChild(title);
+    ref.appendChild(title);
     
     let listElem = document.createElement("ul");
     list.forEach(function(elem) {
@@ -100,7 +98,7 @@ let addInfo = function(titleText, list) {
         item.textContent = elem;
         listElem.appendChild(item);
     });
-    info.appendChild(listElem);
+    ref.appendChild(listElem);
 };
 
 window.populateHuesInfo = populateHuesInfo;
