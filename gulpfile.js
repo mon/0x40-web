@@ -15,6 +15,13 @@ gulp.task('default', ['css', 'audio', 'minify']);
 
 gulp.task('css', function(){
   return gulp.src('src/css/**/*.css')
+    .pipe(order([
+        // hlwn must come after modern
+        // modern must come after main
+        "hues-main.css",
+        "huesUI-modern.css",
+        "huesUI-hlwn.css"
+    ]))
     .pipe(plumber())
     .pipe(newer('css/hues-min.css'))
     .pipe(sourcemaps.init())

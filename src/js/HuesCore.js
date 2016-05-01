@@ -219,6 +219,8 @@ function HuesCore(defaults) {
         this.clearMessage();
         setInterval(this.loopCheck.bind(this), 1000);
         this.renderer = new HuesCanvas(this.root, this.soundManager.context, this);
+        this.callEventListeners("settingsupdated");
+        this.settingsUpdated();
         this.setColour(this.colourIndex);
         this.animationLoop();
         
