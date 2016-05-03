@@ -36,6 +36,8 @@ let beatGlossary = [
     "* Image only",
     "X Vertical blur only",
     "O Horizontal blur only",
+    ">/< Trippy vertical blur",
+    "(/) Trippy horizontal blur",
     "~ Fade color",
     "= Fade and change image",
     "i Invert all colours",

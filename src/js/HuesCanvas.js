@@ -58,6 +58,7 @@ function HuesCanvas(root, audioContext, core) {
     // trippy mode
     this.trippyStart = [0, 0]; // x, y
     this.trippyRadii = [0, 0]; // x, y
+    // force trippy mode
     this.trippyOn = false;
     this.trippyRadius = 0;
 
@@ -195,7 +196,7 @@ HuesCanvas.prototype.redraw = function() {
         }
     }
     
-    if(this.trippyOn && (this.trippyStart[0] || this.trippyStart[1])) {
+    if(this.trippyStart[0] || this.trippyStart[1]) {
         // x blur moves inwards from the corners, y comes out
         // So the base colour is inverted for y, normal for x
         // Thus if the y start is more recent, we invert
@@ -301,7 +302,7 @@ HuesCanvas.prototype.animationLoop = function() {
         else
             this.core.blurUpdated(0, dist);
     }
-    if(this.trippyOn && (this.trippyStart[0] || this.trippyStart[1])) {
+    if(this.trippyStart[0] || this.trippyStart[1]) {
         for(let i = 0; i < 2; i++) {
             this.trippyRadii[i] = Math.floor((this.audio.currentTime - this.trippyStart[i]) * this.trippyRadius) * 2;
             if(this.trippyRadii[i] > this.trippyRadius) {
@@ -458,7 +459,8 @@ HuesCanvas.prototype.mixColours = function(percent) {
 
 HuesCanvas.prototype.doXBlur = function() {
     this.blurStart = this.audio.currentTime;
-    this.trippyStart[0] = this.blurStart;
+    if(this.trippyOn)
+        this.trippyStart[0] = this.blurStart;
     this.blurDistance = this.blurAmount;
     this.xBlur = true;
     this.yBlur = false;
@@ -467,12 +469,29 @@ HuesCanvas.prototype.doXBlur = function() {
 
 HuesCanvas.prototype.doYBlur = function() {
     this.blurStart = this.audio.currentTime;
-    this.trippyStart[1] = this.blurStart;
+    if(this.trippyOn)
+        this.trippyStart[1] = this.blurStart;
     this.blurDistance = this.blurAmount;
     this.xBlur = false;
     this.yBlur = true;
     this.needsRedraw = true;
 };
+
+HuesCanvas.prototype.doTrippyX = function() {
+    let saveTrippy = this.trippyOn;
+    // force trippy
+    this.trippyOn = true;
+    this.doXBlur();
+    this.trippyOn = saveTrippy;
+}
+
+HuesCanvas.prototype.doTrippyY = function() {
+    let saveTrippy = this.trippyOn;
+    // force trippy
+    this.trippyOn = true;
+    this.doYBlur();
+    this.trippyOn = saveTrippy;
+}
 
 HuesCanvas.prototype.setBlurDecay = function(decay) {
     this.blurDecay = {"slow" : 7.8, "medium" : 14.1, "fast" : 20.8, "faster!" : 28.7}[decay];

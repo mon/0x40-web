@@ -123,7 +123,7 @@ function HuesCore(defaults) {
     this.uiArray = [];
     
     // What's our root element?
-    this.root = null;;
+    this.root = null;
     if(!defaults.root) {
         this.root = document.body;
     } else if(typeof defaults.root === "string") {
@@ -728,6 +728,14 @@ HuesCore.prototype.beater = function(beat) {
         case 'O':
         case 'o':
             this.renderer.doXBlur();
+            break;
+        case '<':
+        case '>':
+            this.renderer.doTrippyX();
+            break;
+        case '(':
+        case ')':
+            this.renderer.doTrippyY();
             break;
         case '+':
             this.renderer.doXBlur();

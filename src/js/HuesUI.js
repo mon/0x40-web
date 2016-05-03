@@ -444,7 +444,7 @@ MinimalUI.prototype.initUI = function() {
     this.container.removeChild(this.beatBar);
     this.container.innerHTML = "";
     this.container.appendChild(this.beatBar);
-}
+};
 
 function WeedUI(parent, name) {
     RetroUI.call(this, parent, name ? name : "WeedUI");
