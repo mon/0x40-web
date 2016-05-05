@@ -483,7 +483,7 @@ HuesCanvas.prototype.doTrippyX = function() {
     this.trippyOn = true;
     this.doXBlur();
     this.trippyOn = saveTrippy;
-}
+};
 
 HuesCanvas.prototype.doTrippyY = function() {
     let saveTrippy = this.trippyOn;
@@ -491,7 +491,7 @@ HuesCanvas.prototype.doTrippyY = function() {
     this.trippyOn = true;
     this.doYBlur();
     this.trippyOn = saveTrippy;
-}
+};
 
 HuesCanvas.prototype.setBlurDecay = function(decay) {
     this.blurDecay = {"slow" : 7.8, "medium" : 14.1, "fast" : 20.8, "faster!" : 28.7}[decay];
