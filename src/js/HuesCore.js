@@ -729,12 +729,10 @@ HuesCore.prototype.beater = function(beat) {
         case 'o':
             this.renderer.doXBlur();
             break;
-        case '<':
-        case '>':
+        case ')':
             this.renderer.doTrippyX();
             break;
         case '(':
-        case ')':
             this.renderer.doTrippyY();
             break;
         case '+':
