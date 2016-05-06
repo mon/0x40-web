@@ -182,9 +182,6 @@ function HuesCore(defaults) {
     
     this.soundManager = new SoundManager(this);
     
-    this.settings.addEventListener("updated", this.settingsUpdated.bind(this));
-    this.settingsUpdated();
-    
     this.soundManager.init().then(() => {
         if(!this.soundManager.locked && localStorage["skipPreloader"] == "on") {
             return null;
@@ -219,7 +216,8 @@ function HuesCore(defaults) {
         this.clearMessage();
         setInterval(this.loopCheck.bind(this), 1000);
         this.renderer = new HuesCanvas(this.root, this.soundManager.context, this);
-        this.callEventListeners("settingsupdated");
+        // Now all our objects are instantiated, we fire the updated settings
+        this.settings.addEventListener("updated", this.settingsUpdated.bind(this));
         this.settingsUpdated();
         this.setColour(this.colourIndex);
         this.animationLoop();
