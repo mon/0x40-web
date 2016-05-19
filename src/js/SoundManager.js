@@ -376,7 +376,12 @@ SoundManager.prototype.audioBufFromRaw = function(raw) {
     for(let i = 0; i < channels; i++) {
         // Offset is in bytes, length is in elements
         let channel = new Float32Array(buffer.buffer , i * samples * 4, samples);
-        audioBuf.copyToChannel(channel, i, 0);
+        // Most browsers
+        if(typeof audioBuf.copyToChannel === "function") {
+            audioBuf.copyToChannel(channel, i, 0);
+        } else { // Safari, Edge sometimes
+            audioBuf.getChannelData(i).set(channel);
+        }
     }
     return audioBuf;
 };
