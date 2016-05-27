@@ -690,7 +690,7 @@ HuesCore.prototype.previousImage = function() {
 };
 
 HuesCore.prototype.randomColourIndex = function() {
-    let index=Math.floor((Math.random() * 64));
+    let index=Math.floor((Math.random() * this.colours.length));
     if (index == this.colourIndex) {
         return this.randomColourIndex();
     }
