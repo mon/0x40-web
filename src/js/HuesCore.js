@@ -972,6 +972,9 @@ HuesCore.prototype.keyHandler = function(key) {
     case 61: // EQUAL, legacy
         this.soundManager.increaseVolume();
         break;
+    case 66: // B
+        this.soundManager.seek(-this.soundManager.buildLength);
+        break;
     case 77: // M
         this.soundManager.toggleMute();
         break;

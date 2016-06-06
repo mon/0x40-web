@@ -50,6 +50,7 @@ let shortcuts = [
     "[N] Random song",
     "-+  Change volume",
     "[M] Toggle mute",
+    "[B] Restart song from build",
     "[F] Toggle automode",
     "[H] Toggle UI hide",
     "[C] Character list",
