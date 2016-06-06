@@ -22,6 +22,15 @@
  (function(window, document) {
 "use strict";
 
+let TAB_SONGS = 0;
+let TAB_IMAGES = 1;
+
+// For multiple Hues on one page
+let unique = 0;
+let getAndIncrementUnique = function() {
+    return unique++;
+}
+
 // NOTE: Any packs referenced need CORS enabled or loads fail
 let packsURL = "https://cdn.0x40hu.es/getRespacks.php";
 
@@ -67,6 +76,8 @@ function Resources(core, huesWin) {
         progressTop: null,
         progressPercent: null
     };
+    this.currentTab = TAB_SONGS;
+    this.unique = getAndIncrementUnique();
     this.remotes = null;
     this.fileInput = null;
     this.fileParseQueue = [];
@@ -424,6 +435,8 @@ Resources.prototype.initUI = function() {
         
         songList.classList.add("respack-tab__content--checked");
         imageList.classList.remove("respack-tab__content--checked");
+        
+        this.currentTab = TAB_SONGS;
     };
     
     imageCount.onclick = () => {
@@ -432,6 +445,8 @@ Resources.prototype.initUI = function() {
         
         imageList.classList.add("respack-tab__content--checked");
         songList.classList.remove("respack-tab__content--checked");
+        
+        this.currentTab = TAB_IMAGES;
     };
 
     let packButtons = document.createElement("div");
@@ -626,13 +641,13 @@ Resources.prototype.getEnabledTabContents = function() {
     if(!pack) {
         return null;
     }
-    let ret = {arr: pack.images,
-               elName: "image"};
-    if(document.getElementById("res-songtab").checked) {
-        ret.arr = pack.songs;
-        ret.elName = "song";
+    if(this.currentTab == TAB_SONGS) {
+        return {arr: pack.songs,
+                elName: "song"};
+    } else {
+        return {arr: pack.images,
+                elName: "image"};
     }
-    return ret;
 };
 
 Resources.prototype.enableAll = function() {
@@ -641,7 +656,7 @@ Resources.prototype.enableAll = function() {
         return;
     for(let i = 0; i < tab.arr.length; i++) {
         tab.arr[i].enabled = true;
-        document.getElementById(tab.elName + i).checked = true;
+        document.getElementById(tab.elName + i + "-" + this.unique).checked = true;
     }
     this.rebuildEnabled();
 };
@@ -652,7 +667,7 @@ Resources.prototype.disableAll = function() {
         return;
     for(let i = 0; i < tab.arr.length; i++) {
         tab.arr[i].enabled = false;
-        document.getElementById(tab.elName + i).checked = false;
+        document.getElementById(tab.elName + i + "-" + this.unique).checked = false;
     }
     this.rebuildEnabled();
 };
@@ -663,7 +678,7 @@ Resources.prototype.invert = function() {
         return;
     for(let i = 0; i < tab.arr.length; i++) {
         tab.arr[i].enabled = !tab.arr[i].enabled;
-        document.getElementById(tab.elName + i).checked = tab.arr[i].enabled;
+        document.getElementById(tab.elName + i + "-" + this.unique).checked = tab.arr[i].enabled;
     }
     this.rebuildEnabled();
 };
@@ -673,18 +688,13 @@ Resources.prototype.appendListItem = function(name, value, id, root, oncheck, on
     if(checked === undefined) {
         checked = true;
     }
-    // For multiple hues on one page
-    let unique = 0;
-    while(document.getElementById(id + "-" + unique)) {
-        unique++;
-    }
     let div = document.createElement("div");
     div.className = "respacks-listitem";
     let checkbox = document.createElement("input");
     checkbox.type = "checkbox";
     checkbox.name = name;
     checkbox.value = value;
-    checkbox.id = id + "-" + unique;
+    checkbox.id = id + "-" + this.unique;
     checkbox.checked = checked;
     checkbox.onclick = oncheck;
     let checkStyler = document.createElement("label");
