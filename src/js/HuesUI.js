@@ -539,6 +539,11 @@ function ModernUI(parent, name) {
     this.volInput = null;
     this.volLabel = null;
     this.hideRestore = null;
+    
+    this.textSize_normal = 0;
+    this.textSize_small = 0;
+    this.songLink_size = 0;
+    this.imageLink_size = 0;
 
     this.currentBeat = ".";
 
@@ -766,29 +771,56 @@ ModernUI.prototype.beat = function(beats, index) {
     this.beatCount.textContent = "B=" + this.intToHex(index, 4);
 };
 
+// get the width of a single character in the link box for a given classname
+ModernUI.prototype.textWidth = function(className) {
+    // Could be song or image link, don't care
+    let el = this.songLink;
+    let oldContent = el.innerHTML;
+
+    // offsetWidth is rounded, divide by 100
+    let text = "";
+    for(let i = 0; i < 100; i++) {
+        text += "&nbsp;";
+    }
+    el.innerHTML = text;
+    // We override this just after so don't bother to restore it
+    el.className = className;
+    let size = el.offsetWidth / 100;
+    
+    el.innerHTML = oldContent;
+    
+    return size;
+}
+
 ModernUI.prototype.resize = function() {
+    this.textSize_normal = this.textWidth("");
+    this.textSize_small = this.textWidth("small");
+    this.songLink_size = this.songName.clientWidth;
+    this.imageLink_size = this.imageName.clientWidth;
+
     this.resizeSong();
     this.resizeImage();
     this.core.visualiser.width = this.controls.offsetWidth;
     this.core.resizeVisualiser();
 };
 
-ModernUI.prototype.resizeElement = function(el, parent) {
-    el.className = "";
-    if (el.offsetWidth > parent.clientWidth) {
+ModernUI.prototype.resizeElement = function(el, parentSize) {
+    let chars = el.textContent.length;
+    if (chars * this.textSize_normal < parentSize) {
+        el.className = "";
+    } else if(chars * this.textSize_small < parentSize) {
         el.className = "small";
-    }
-    if (el.offsetWidth > parent.clientWidth) {
+    } else {
         el.className = "x-small";
     }
 };
 
 ModernUI.prototype.resizeSong = function() {
-    this.resizeElement(this.songLink, this.songName);
+    this.resizeElement(this.songLink, this.songLink_size);
 };
 
 ModernUI.prototype.resizeImage = function() {
-    this.resizeElement(this.imageLink, this.imageName);
+    this.resizeElement(this.imageLink, this.imageLink_size);
 };
 
 ModernUI.prototype.newSong = function(song) {
