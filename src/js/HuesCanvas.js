@@ -32,6 +32,7 @@ function HuesCanvas(root, audioContext, core) {
     core.addEventListener("beat", this.beat.bind(this));
     core.addEventListener("invert", this.setInvert.bind(this));
     core.addEventListener("settingsupdated", this.settingsUpdated.bind(this));
+    core.addEventListener("frame", this.animationLoop.bind(this));
     this.core = core;
 
     this.needsRedraw = false;
@@ -92,9 +93,6 @@ function HuesCanvas(root, audioContext, core) {
     
     window.addEventListener('resize', this.resize.bind(this));
     this.resize();
-
-    this.animating = true;
-    requestAnimationFrame(this.animationLoop.bind(this));
 }
 
 HuesCanvas.prototype.setInvert = function(invert) {
@@ -329,9 +327,6 @@ HuesCanvas.prototype.animationLoop = function() {
     } else if(this.needsRedraw){
         this.redraw();
     }
-    if(this.animating) {
-        requestAnimationFrame(this.animationLoop.bind(this));
-    }
 };
 
 HuesCanvas.prototype.setImage = function(image) {
@@ -509,13 +504,6 @@ HuesCanvas.prototype.setBlurAmount = function(amount) {
 
 HuesCanvas.prototype.setSmartAlign = function(align) {
     this.smartAlign = align == "on";
-};
-
-HuesCanvas.prototype.setAnimating = function(anim) {
-    if(!this.animating && anim) {
-        requestAnimationFrame(this.animationLoop);
-    }
-    this.animating = anim;
 };
 
 window.HuesCanvas = HuesCanvas;
