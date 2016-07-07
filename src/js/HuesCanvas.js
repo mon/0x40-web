@@ -26,8 +26,8 @@
 /*  Takes root element to attach to, and an audio context element for
     getting the current time with reasonable accuracy */
 class HuesCanvas {
-    constructor(root, audioContext, core) {
-        this.audio = audioContext;
+    constructor(root, soundManager, core) {
+        this.audio = soundManager;
         core.addEventListener("newimage", this.setImage.bind(this));
         core.addEventListener("newcolour", this.setColour.bind(this));
         core.addEventListener("beat", this.beat.bind(this));

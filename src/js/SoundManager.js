@@ -226,7 +226,7 @@ class SoundManager {
         // Double speed is more than enough. Famous last words?
         rate = Math.max(Math.min(rate, 2), 0.25);
         
-        let time = this.clampedTime();
+        let time = this.clampedTime;
         this.playbackRate = rate;
         this.seek(time);
     }
@@ -273,15 +273,15 @@ class SoundManager {
     }
 
     // In seconds, relative to the loop start
-    currentTime() {
+    get currentTime() {
         if(!this.playing) {
             return 0;
         }
         return (this.context.currentTime - this.startTime) * this.playbackRate;
     }
 
-    clampedTime() {
-        let time = this.currentTime();
+    get clampedTime() {
+        let time = this.currentTime;
         
         if(time > 0) {
             time %= this.loopLength;

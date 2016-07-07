@@ -216,7 +216,7 @@ class HuesCore {
         }).then(() => {
             this.clearMessage();
             setInterval(this.loopCheck.bind(this), 1000);
-            this.renderer = new HuesCanvas(this.root, this.soundManager.context, this);
+            this.renderer = new HuesCanvas(this.root, this.soundManager, this);
             // Now all our objects are instantiated, we fire the updated settings
             this.settings.addEventListener("updated", this.settingsUpdated.bind(this));
             this.settingsUpdated();
@@ -369,8 +369,8 @@ class HuesCore {
             return;
         }
         this.updateVisualiser();
-        let now = this.soundManager.currentTime();
-        this.callEventListeners("time", this.soundManager.clampedTime());
+        let now = this.soundManager.currentTime;
+        this.callEventListeners("time", this.soundManager.clampedTime);
         if(now >= 0 && this.doBuildup) {
             this.currentSong.buildupPlayed = true;
         }
@@ -383,7 +383,7 @@ class HuesCore {
     }
 
     recalcBeatIndex(forcedNow) {
-        let now = typeof forcedNow === "number" ? forcedNow : this.soundManager.currentTime();
+        let now = typeof forcedNow === "number" ? forcedNow : this.soundManager.currentTime;
         // getBeatLength isn't updated with the right beatIndex yet
         this.beatIndex = Math.floor(now / (now < 0 ? this.buildLength : this.loopLength));
         // beatIndex is NaN, abort
@@ -572,7 +572,7 @@ class HuesCore {
        music, it's important to keep checking the loop so songs don't go for too
        long. */
     loopCheck() {
-        if(Math.floor(this.soundManager.currentTime() / this.soundManager.loopLength) > this.loopCount) {
+        if(Math.floor(this.soundManager.currentTime / this.soundManager.loopLength) > this.loopCount) {
             this.onLoop();
         }
     }

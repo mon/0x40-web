@@ -1235,7 +1235,7 @@ class HuesEditor {
             return;
         
         let width = this.waveCanvas.width;
-        let now = this.core.soundManager.currentTime();
+        let now = this.core.soundManager.currentTime;
         let timespan = width / WAVE_PIXELS_PER_SECOND / 2;
         let minTime = now - timespan;
         let maxTime = now + timespan;
