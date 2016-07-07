@@ -25,1028 +25,1030 @@
 (function(window, document) {
 "use strict";
 
-function HuesCore(defaults) {
-    this.eventListeners = {
-        /* callback time(hundredths)
-         *
-         * When the song time is updated - negative for buildup
-         * Returns a floating point number denoting seconds
-         */
-        time : [],
-        /* callback blurUpdate(xPercent, yPercent)
-         *
-         * The current blur amounts, in percent of full blur
-         */
-        blurupdate : [],
-        
-        /* callback newsong(song)
-         *
-         * Called on song change, whether user triggered or autosong.
-         * Song object is passed.
-         */
-        newsong : [],
-        /* callback newimage(image)
-         *
-         * Called on image change, whether user triggered or FULL AUTO mode.
-         * Image object is passed.
-         */
-        newimage : [],
-        /* callback newcolour(colour, isFade)
-         *
-         * Called on colour change.
-         * colour: colour object.
-         * isFade: if the colour is fading from the previous value
-         */
-        newcolour : [],
-        /* callback newmode(mode)
-         *
-         * Called on mode change.
-         * Mode is passed as a boolean.
-         */
-        newmode : [],
-        /* callback beat(beatString, beatIndex)
-         *
-         * Called on every new beat.
-         * beatString is a 256 char long array of current and upcoming beat chars
-         * beatIndex is the beat index. Negative during buildups
-         */
-        beat : [],
-        /* callback invert(isInverted)
-         *
-         * Called whenever the invert state changes.
-         * Invert state is passed as a boolean.
-         */
-        invert : [],
-        /* callback frame()
-         *
-         * Called on each new frame, at the end of all other frame processing
-         */
-        frame : [],
-        /* callback songstarted()
-         *
-         * Called when the song actually begins to play, not just when the
-         * new song processing begins
-         */
-        songstarted : [],
-        /* callback settingsupdated()
-         *
-         * Called when settings are updated and should be re-read from localStorage
-         */
-        settingsupdated : []
-    };
-
-    // Bunch-o-initialisers
-    this.version = 30;
-    this.versionStr = (this.version/10).toFixed(1);
-    this.versionHex = this.version.toString(16);
-    this.beatIndex = 0;
-    
-    // How long a beat lasts for in each section
-    this.buildLength = -1;
-    this.loopLength = -1;
-    
-    this.currentSong = null;
-    this.currentImage = null;
-    this.songIndex = -1;
-    this.imageIndex = -1;
-    this.lastSongArray = [];
-    this.lastImageArray = [];
-    
-    this.colourIndex = 0x3f;
-    this.colours = this.oldColours;
-    
-    this.isFullAuto = true;
-    this.invert = false;
-    this.loopCount = 0;
-    this.doBuildup = true;
-    this.userInterface = null;
-    this.uiArray = [];
-    
-    // What's our root element?
-    this.root = null;
-    if(!defaults.root) {
-        this.root = document.body;
-    } else if(typeof defaults.root === "string") {
-        if(defaults.root && document.getElementById(defaults.root)) {
-            this.root = document.getElementById(defaults.root);
-        } else {
-            this.root = document.body;
-        }
-    } else { // been given an element
-        this.root = defaults.root;
-    }
-    this.root.classList.add("hues-root");
-    // Special case for full page Hues
-    if(this.root === document.body) {
-        document.documentElement.className = "hues-root";
-    }
-    // Yes, we do indeed have Javascript
-    this.root.innerHTML = "";
-    
-    this.makePreloader(this.root);
-
-    window.onerror = (msg, url, line, col, error) => {
-        this.error(msg);
-        // Get more info in console
-        return false;
-    };
-    
-    this.settings = new HuesSettings(defaults);
-    // Update with merged defaults
-    defaults = this.settings.defaults;
-    zip.workerScriptsPath = defaults.workersPath;
-    
-    this.window = new HuesWindow(this.root, defaults);
-    
-    console.log("0x40 Hues v" + this.versionStr + " - start your engines!");
-    
-    this.resourceManager = new Resources(this, this.window);
-    this.editor = new HuesEditor(this, this.window);
-    this.settings.initUI(this.window);
-    populateHuesInfo(this.versionStr, this.window, defaults);
-    
-    this.window.selectTab(defaults.firstWindow, true);
-
-    let ui = document.createElement("div");
-    ui.className = "hues-ui";
-    this.root.appendChild(ui);
-    this.uiArray.push(new RetroUI(ui), new WeedUI(ui), new ModernUI(ui),
-                      new XmasUI(ui), new HalloweenUI(ui), new MinimalUI(ui));
-    
-    this.autoSong = localStorage["autoSong"];
-    
-    this.visualiser = document.createElement("canvas");
-    this.visualiser.className = "hues-visualiser";
-    this.visualiser.height = "64";
-    this.vCtx = this.visualiser.getContext("2d");
-    
-    this.soundManager = new SoundManager(this);
-    
-    this.soundManager.init().then(() => {
-        if(!this.soundManager.locked && localStorage["skipPreloader"] == "on") {
-            return null;
-        } else {
-            return this.resourceManager.getSizes(defaults.respacks);
-        }
-    }).then( sizes => {
-        if(sizes === null) {
-            return;
-        }
-        
-        let size = sizes.reduce( (prev, curr) => {
-            return typeof curr === 'number' ? prev + curr : null;
-        }, 0);
-        if(typeof size === 'number') {
-            size = size.toFixed(1);
-        } else {
-            size = '<abbr title="Content-Length header not present for respack URLs">???</abbr>';
-        }
-        
-        let warning = size + "MB of music/images.<br />" +
-            "Flashing lights.<br />" +
-            "<b>Tap or click to start</b>";
+class HuesCore {
+    constructor(defaults) {
+        this.eventListeners = {
+            /* callback time(hundredths)
+             *
+             * When the song time is updated - negative for buildup
+             * Returns a floating point number denoting seconds
+             */
+            time : [],
+            /* callback blurUpdate(xPercent, yPercent)
+             *
+             * The current blur amounts, in percent of full blur
+             */
+            blurupdate : [],
             
-        if(!this.soundManager.locked) {
-            warning += "<br /><span>Skip this screen from Options</span>";
-        }
-        this.warning(warning);
-        // Even if not locked, this steals clicks which is useful here
-        return this.soundManager.unlock();
-    }).then(() => {
-        this.clearMessage();
-        setInterval(this.loopCheck.bind(this), 1000);
-        this.renderer = new HuesCanvas(this.root, this.soundManager.context, this);
-        // Now all our objects are instantiated, we fire the updated settings
-        this.settings.addEventListener("updated", this.settingsUpdated.bind(this));
-        this.settingsUpdated();
-        this.setColour(this.colourIndex);
-        this.animationLoop();
+            /* callback newsong(song)
+             *
+             * Called on song change, whether user triggered or autosong.
+             * Song object is passed.
+             */
+            newsong : [],
+            /* callback newimage(image)
+             *
+             * Called on image change, whether user triggered or FULL AUTO mode.
+             * Image object is passed.
+             */
+            newimage : [],
+            /* callback newcolour(colour, isFade)
+             *
+             * Called on colour change.
+             * colour: colour object.
+             * isFade: if the colour is fading from the previous value
+             */
+            newcolour : [],
+            /* callback newmode(mode)
+             *
+             * Called on mode change.
+             * Mode is passed as a boolean.
+             */
+            newmode : [],
+            /* callback beat(beatString, beatIndex)
+             *
+             * Called on every new beat.
+             * beatString is a 256 char long array of current and upcoming beat chars
+             * beatIndex is the beat index. Negative during buildups
+             */
+            beat : [],
+            /* callback invert(isInverted)
+             *
+             * Called whenever the invert state changes.
+             * Invert state is passed as a boolean.
+             */
+            invert : [],
+            /* callback frame()
+             *
+             * Called on each new frame, at the end of all other frame processing
+             */
+            frame : [],
+            /* callback songstarted()
+             *
+             * Called when the song actually begins to play, not just when the
+             * new song processing begins
+             */
+            songstarted : [],
+            /* callback settingsupdated()
+             *
+             * Called when settings are updated and should be re-read from localStorage
+             */
+            settingsupdated : []
+        };
+
+        // Bunch-o-initialisers
+        this.version = 30;
+        this.versionStr = (this.version/10).toFixed(1);
+        this.versionHex = this.version.toString(16);
+        this.beatIndex = 0;
         
-        if(defaults.load) {
-            return this.resourceManager.addAll(defaults.respacks, progress => {
-                this.preloader.style.backgroundPosition = (100 - progress*100) + "% 0%";
-                let scale = Math.floor(progress * defaults.preloadMax);
-                let padding = defaults.preloadMax.toString(defaults.preloadBase).length;
-                this.preloadMsg.textContent = defaults.preloadPrefix + (Array(padding).join("0")+scale.toString(defaults.preloadBase)).slice(-padding);
+        // How long a beat lasts for in each section
+        this.buildLength = -1;
+        this.loopLength = -1;
+        
+        this.currentSong = null;
+        this.currentImage = null;
+        this.songIndex = -1;
+        this.imageIndex = -1;
+        this.lastSongArray = [];
+        this.lastImageArray = [];
+        
+        this.colourIndex = 0x3f;
+        this.colours = HuesCore.oldColours;
+        
+        this.isFullAuto = true;
+        this.invert = false;
+        this.loopCount = 0;
+        this.doBuildup = true;
+        this.userInterface = null;
+        this.uiArray = [];
+        
+        // What's our root element?
+        this.root = null;
+        if(!defaults.root) {
+            this.root = document.body;
+        } else if(typeof defaults.root === "string") {
+            if(defaults.root && document.getElementById(defaults.root)) {
+                this.root = document.getElementById(defaults.root);
+            } else {
+                this.root = document.body;
+            }
+        } else { // been given an element
+            this.root = defaults.root;
+        }
+        this.root.classList.add("hues-root");
+        // Special case for full page Hues
+        if(this.root === document.body) {
+            document.documentElement.className = "hues-root";
+        }
+        // Yes, we do indeed have Javascript
+        this.root.innerHTML = "";
+        
+        this.makePreloader(this.root);
+
+        window.onerror = (msg, url, line, col, error) => {
+            this.error(msg);
+            // Get more info in console
+            return false;
+        };
+        
+        this.settings = new HuesSettings(defaults);
+        // Update with merged defaults
+        defaults = this.settings.defaults;
+        zip.workerScriptsPath = defaults.workersPath;
+        
+        this.window = new HuesWindow(this.root, defaults);
+        
+        console.log("0x40 Hues v" + this.versionStr + " - start your engines!");
+        
+        this.resourceManager = new Resources(this, this.window);
+        this.editor = new HuesEditor(this, this.window);
+        this.settings.initUI(this.window);
+        populateHuesInfo(this.versionStr, this.window, defaults);
+        
+        this.window.selectTab(defaults.firstWindow, true);
+
+        let ui = document.createElement("div");
+        ui.className = "hues-ui";
+        this.root.appendChild(ui);
+        this.uiArray.push(new RetroUI(ui), new WeedUI(ui), new ModernUI(ui),
+                          new XmasUI(ui), new HalloweenUI(ui), new MinimalUI(ui));
+        
+        this.autoSong = localStorage["autoSong"];
+        
+        this.visualiser = document.createElement("canvas");
+        this.visualiser.className = "hues-visualiser";
+        this.visualiser.height = "64";
+        this.vCtx = this.visualiser.getContext("2d");
+        
+        this.soundManager = new SoundManager(this);
+        
+        this.soundManager.init().then(() => {
+            if(!this.soundManager.locked && localStorage["skipPreloader"] == "on") {
+                return null;
+            } else {
+                return this.resourceManager.getSizes(defaults.respacks);
+            }
+        }).then( sizes => {
+            if(sizes === null) {
+                return;
+            }
+            
+            let size = sizes.reduce( (prev, curr) => {
+                return typeof curr === 'number' ? prev + curr : null;
+            }, 0);
+            if(typeof size === 'number') {
+                size = size.toFixed(1);
+            } else {
+                size = '<abbr title="Content-Length header not present for respack URLs">???</abbr>';
+            }
+            
+            let warning = size + "MB of music/images.<br />" +
+                "Flashing lights.<br />" +
+                "<b>Tap or click to start</b>";
+                
+            if(!this.soundManager.locked) {
+                warning += "<br /><span>Skip this screen from Options</span>";
+            }
+            this.warning(warning);
+            // Even if not locked, this steals clicks which is useful here
+            return this.soundManager.unlock();
+        }).then(() => {
+            this.clearMessage();
+            setInterval(this.loopCheck.bind(this), 1000);
+            this.renderer = new HuesCanvas(this.root, this.soundManager.context, this);
+            // Now all our objects are instantiated, we fire the updated settings
+            this.settings.addEventListener("updated", this.settingsUpdated.bind(this));
+            this.settingsUpdated();
+            this.setColour(this.colourIndex);
+            this.animationLoop();
+            
+            if(defaults.load) {
+                return this.resourceManager.addAll(defaults.respacks, progress => {
+                    this.preloader.style.backgroundPosition = (100 - progress*100) + "% 0%";
+                    let scale = Math.floor(progress * defaults.preloadMax);
+                    let padding = defaults.preloadMax.toString(defaults.preloadBase).length;
+                    this.preloadMsg.textContent = defaults.preloadPrefix + (Array(padding).join("0")+scale.toString(defaults.preloadBase)).slice(-padding);
+                });
+            } else {
+                this.preloader.style.display = "none";
+                return;
+            }
+        }).then(() => {
+            this.preloader.classList.add("hues-preloader--loaded");
+            if(defaults.firstImage) {
+                this.setImageByName(defaults.firstImage);
+            } else {
+                this.setImage(0);
+            }
+            if(defaults.autoplay) {
+                if(defaults.firstSong) {
+                    this.setSongByName(defaults.firstSong);
+                } else {
+                    this.setSong(0);
+                }
+            }
+        }).catch(error => { // Comment this out to get proper stack traces
+            this.error(error);
+        });
+
+        if(!defaults.disableKeyboard) {
+            document.addEventListener("keydown", e => {
+                e = e || window.event;
+                if(e.defaultPrevented) {
+                    return true;
+                }
+                // Ignore modifiers so we don't steal other events
+                if (e.altKey || e.ctrlKey || e.metaKey || e.shiftKey) {
+                    return true;
+                }
+                // If we've focused a text input, let the input go through!
+                if((e.target.tagName.toLowerCase() == "input" && e.target.type == "text") ||
+                    e.target.contentEditable === "true") {
+                    return true;
+                }
+                let key = e.keyCode || e.which;
+                return this.keyHandler(key);
+            });
+        }
+    }
+
+    callEventListeners(ev) {
+        let args = Array.prototype.slice.call(arguments, 1);
+        this.eventListeners[ev].forEach(function(callback) {
+            callback.apply(null, args);
+        });
+    }
+
+    addEventListener(ev, callback) {
+        ev = ev.toLowerCase();
+        if (typeof(this.eventListeners[ev]) !== "undefined") {
+            this.eventListeners[ev].push(callback);
+        } else {
+            throw Error("Unknown event: " + ev);
+        }
+    }
+
+    removeEventListener(ev, callback) {
+        ev = ev.toLowerCase();
+        if (typeof(this.eventListeners[ev]) !== "undefined") {
+            this.eventListeners[ev] = this.eventListeners[ev].filter(function(a) {
+                return (a !== callback);
             });
         } else {
-            this.preloader.style.display = "none";
-            return;
-        }
-    }).then(() => {
-        this.preloader.classList.add("hues-preloader--loaded");
-        if(defaults.firstImage) {
-            this.setImageByName(defaults.firstImage);
-        } else {
-            this.setImage(0);
-        }
-        if(defaults.autoplay) {
-            if(defaults.firstSong) {
-                this.setSongByName(defaults.firstSong);
-            } else {
-                this.setSong(0);
-            }
-        }
-    }).catch(error => { // Comment this out to get proper stack traces
-        this.error(error);
-    });
-
-    if(!defaults.disableKeyboard) {
-        document.addEventListener("keydown", e => {
-            e = e || window.event;
-            if(e.defaultPrevented) {
-                return true;
-            }
-            // Ignore modifiers so we don't steal other events
-            if (e.altKey || e.ctrlKey || e.metaKey || e.shiftKey) {
-                return true;
-            }
-            // If we've focused a text input, let the input go through!
-            if((e.target.tagName.toLowerCase() == "input" && e.target.type == "text") ||
-                e.target.contentEditable === "true") {
-                return true;
-            }
-            let key = e.keyCode || e.which;
-            return this.keyHandler(key);
-        });
-    }
-}
-
-HuesCore.prototype.callEventListeners = function(ev) {
-    let args = Array.prototype.slice.call(arguments, 1);
-    this.eventListeners[ev].forEach(function(callback) {
-        callback.apply(null, args);
-    });
-};
-
-HuesCore.prototype.addEventListener = function(ev, callback) {
-    ev = ev.toLowerCase();
-    if (typeof(this.eventListeners[ev]) !== "undefined") {
-        this.eventListeners[ev].push(callback);
-    } else {
-        throw Error("Unknown event: " + ev);
-    }
-};
-
-HuesCore.prototype.removeEventListener = function(ev, callback) {
-    ev = ev.toLowerCase();
-    if (typeof(this.eventListeners[ev]) !== "undefined") {
-        this.eventListeners[ev] = this.eventListeners[ev].filter(function(a) {
-            return (a !== callback);
-        });
-    } else {
-        throw Error("Unknown event: " + ev);
-    }
-};
-
-HuesCore.prototype.makePreloader = function(root) {
-    this.preloader = document.createElement("div");
-    this.preloader.className = "hues-preloader";
-    root.appendChild(this.preloader);
-    
-    this.preloadMsg = document.createElement("div");
-    this.preloadMsg.className = "hues-preloader__text";
-    this.preloadMsg.textContent = "Initialising...";
-    this.preloader.appendChild(this.preloadMsg);
-    
-    this.preloadSubMsg = document.createElement("div");
-    this.preloadSubMsg.className = "hues-preloader__subtext";
-    this.preloader.appendChild(this.preloadSubMsg);
-};
-
-HuesCore.prototype.resizeVisualiser = function() {
-    this.soundManager.initVisualiser(this.visualiser.width/2);
-};
-
-HuesCore.prototype.updateVisualiser = function() {
-    if(localStorage["visualiser"] != "on") {
-        return;
-    }
-    
-    let logArrays = this.soundManager.getVisualiserData();
-    if(!logArrays) {
-        return;
-    }
-
-    this.vCtx.clearRect(0, 0, this.vCtx.canvas.width, this.vCtx.canvas.height);
-    
-    let gradient=this.vCtx.createLinearGradient(0,64,0,0);
-    if(this.invert) {
-        gradient.addColorStop(1,"rgba(20,20,20,0.6)");
-        gradient.addColorStop(0,"rgba(255,255,255,0.6)");
-    } else {
-        gradient.addColorStop(1,"rgba(255,255,255,0.6)");
-        gradient.addColorStop(0,"rgba(20,20,20,0.6)");
-    }
-    this.vCtx.fillStyle = gradient;
-    
-    let barWidth = 2;
-    let barHeight;
-    let x = 0;
-    for(let a = 0; a < logArrays.length; a++) {
-        let vals = logArrays[a];
-        for(let i = 0; i < vals.length; i++) {
-            let index = 0;
-            if(logArrays.length == 2 && a === 0) {
-                index = vals.length - i - 1;
-            } else {
-                index = i;
-            }
-            barHeight = vals[index]/4;
-            
-            this.vCtx.fillRect(x,this.vCtx.canvas.height-barHeight,barWidth,barHeight);
-
-            x += barWidth;
+            throw Error("Unknown event: " + ev);
         }
     }
-};
 
-HuesCore.prototype.animationLoop = function() {
-    requestAnimationFrame(this.animationLoop.bind(this));
-    if(!this.soundManager.playing) {
-        this.callEventListeners("frame");
-        return;
+    makePreloader(root) {
+        this.preloader = document.createElement("div");
+        this.preloader.className = "hues-preloader";
+        root.appendChild(this.preloader);
+        
+        this.preloadMsg = document.createElement("div");
+        this.preloadMsg.className = "hues-preloader__text";
+        this.preloadMsg.textContent = "Initialising...";
+        this.preloader.appendChild(this.preloadMsg);
+        
+        this.preloadSubMsg = document.createElement("div");
+        this.preloadSubMsg.className = "hues-preloader__subtext";
+        this.preloader.appendChild(this.preloadSubMsg);
     }
-    this.updateVisualiser();
-    let now = this.soundManager.currentTime();
-    this.callEventListeners("time", this.soundManager.clampedTime());
-    if(now >= 0 && this.doBuildup) {
-        this.currentSong.buildupPlayed = true;
-    }
-    for(let beatTime = this.beatIndex * this.getBeatLength(); beatTime < now;
-            beatTime = ++this.beatIndex * this.getBeatLength()) {
-        let beat = this.getBeat(this.beatIndex);
-        this.beater(beat);
-    }
-    this.callEventListeners("frame");
-};
 
-HuesCore.prototype.recalcBeatIndex = function(forcedNow) {
-    let now = typeof forcedNow === "number" ? forcedNow : this.soundManager.currentTime();
-    // getBeatLength isn't updated with the right beatIndex yet
-    this.beatIndex = Math.floor(now / (now < 0 ? this.buildLength : this.loopLength));
-    // beatIndex is NaN, abort
-    if(this.beatIndex != this.beatIndex) {
-        this.setInvert(false);
-        return;
-    }
-    
-    // We should sync up to how many inverts there are
-    let build = this.currentSong.buildupRhythm;
-    let rhythm = this.currentSong.rhythm;
-    let mapSoFar;
-    if(this.beatIndex < 0) {
-        // Clamp to 0 in case we've juuust started
-        mapSoFar = build.slice(0, Math.max(this.beatIndex + build.length, 0));
-    } else {
-        // If the rhythm has an odd number of inverts, don't reset because it
-        // alternates on each loop anyway
-        if((rhythm.match(/i|I/g)||[]).length % 2) {
-            return;
-        }
-        mapSoFar = (build ? build : "") + rhythm.slice(0, this.beatIndex);
-    }
-    // If there's an odd amount of inverts thus far, invert our display
-    let invertCount = (mapSoFar.match(/i|I/g)||[]).length;
-    this.setInvert(invertCount % 2);
-};
-
-HuesCore.prototype.getBeatIndex = function() {
-    if(!this.soundManager.playing) {
-        return 0;
-    } else if(this.beatIndex < 0) {
-        return this.beatIndex;
-    } else {
-        return this.beatIndex % this.currentSong.rhythm.length;
-    }
-};
-
-HuesCore.prototype.getSafeBeatIndex = function() {
-    let index = this.getBeatIndex();
-    if(index < 0) {
-        return 0;
-    } else {
-        return index;
-    }
-};
-
-HuesCore.prototype.blurUpdated = function(x, y) {
-    this.callEventListeners("blurupdate", x, y);
-};
-
-HuesCore.prototype.nextSong = function() {
-    let index = (this.songIndex + 1) % this.resourceManager.enabledSongs.length;
-    this.setSong(index);
-};
-
-HuesCore.prototype.previousSong = function() {
-    let index = ((this.songIndex - 1) + this.resourceManager.enabledSongs.length) % this.resourceManager.enabledSongs.length;
-    this.setSong(index);
-};
-
-HuesCore.prototype.setSongByName = function(name) {
-    let songs = this.resourceManager.enabledSongs;
-    for(let i = 0; i < songs.length; i++) {
-        if(songs[i].title == name) {
-            return this.setSong(i);
-        }
-    }
-    return this.setSong(0); // fallback
-};
-
-/* To set songs via reference instead of index - used in HuesEditor */
-HuesCore.prototype.setSongOject = function(song) {
-    for(let i = 0; i < this.resourceManager.enabledSongs.length; i++) {
-        if(this.resourceManager.enabledSongs[i] === song) {
-            return this.setSong(i);
-        }
-    }
-};
-
-HuesCore.prototype.setSong = function(index, leaveArray) {
-    if(this.currentSong == this.resourceManager.enabledSongs[index]) {
-        return;
-    }
-    // When not randoming, clear this
-    if(!leaveArray) {
-        this.lastSongArray = [];
-    }
-    this.lastSongArray.push(index);
-    this.songIndex = index;
-    this.currentSong = this.resourceManager.enabledSongs[this.songIndex];
-    if (this.currentSong === undefined) {
-        this.currentSong = {"name":"None", "title":"None", "rhythm":".", "source":null, "crc":"none", "sound":null, "enabled":true, "filename":"none"};
-    }
-    console.log("Next song:", this.songIndex, this.currentSong);
-    this.callEventListeners("newsong", this.currentSong);
-    this.loopCount = 0;
-    if (this.currentSong.buildup) {
-        switch (localStorage["playBuildups"]) {
-        case "off":
-            this.currentSong.buildupPlayed = true;
-            this.doBuildup = false;
-            break;
-        case "on":
-            this.currentSong.buildupPlayed = false;
-            this.doBuildup = true;
-            break;
-        case "once":
-            this.doBuildup = !this.currentSong.buildupPlayed;
-            break;
-        }
-    }
-    this.setInvert(false);
-    this.renderer.doBlackout();
-    return this.soundManager.playSong(this.currentSong, this.doBuildup)
-    .then(() => {
-        this.resetAudio();
-        this.fillBuildup();
-        this.callEventListeners("songstarted");
-    });
-};
-
-HuesCore.prototype.updateBeatLength = function() {
-    this.loopLength = this.soundManager.loopLength / this.currentSong.rhythm.length;
-    if(this.currentSong.buildup) {
-        if (!this.currentSong.buildupRhythm) {
-            this.currentSong.buildupRhythm = ".";
-        }
-        this.buildLength = this.soundManager.buildLength / this.currentSong.buildupRhythm.length;
-    } else {
-        this.buildLength = -1;
-    }
-};
-
-HuesCore.prototype.getBeatLength = function() {
-    if(this.beatIndex < 0) {
-        return this.buildLength;
-    } else {
-        return this.loopLength;
-    }
-};
-
-HuesCore.prototype.fillBuildup = function() {
-    // update loop length for flash style filling
-    this.updateBeatLength();
-    if(this.currentSong.buildup) {
-        if(this.currentSong.independentBuild) {
-            console.log("New behaviour - separate build/loop lengths");
-            // Do nothing
-        } else {
-            console.log("Flash behaviour - filling buildup");
-            let buildBeats = Math.floor(this.soundManager.buildLength / this.loopLength);
-            if(buildBeats < 1) {
-                buildBeats = 1;
-            }
-            while (this.currentSong.buildupRhythm.length < buildBeats) {
-                this.currentSong.buildupRhythm = this.currentSong.buildupRhythm + ".";
-            }
-            console.log("Buildup length:", buildBeats);
-        }
-    }
-    // update with a buildup of possibly different length
-    this.updateBeatLength();
-    // If we're in the build or loop this will adjust
-    // If we've lagged a bit, we'll miss the first beat. Rewind!
-    this.recalcBeatIndex(this.doBuildup ? -this.soundManager.buildLength : 0);
-};
-
-HuesCore.prototype.randomSong = function() {
-    let songCount = this.resourceManager.enabledSongs.length;
-    let index=Math.floor((Math.random() * songCount));
-    if (songCount > 1 && (index == this.songIndex || this.lastSongArray.indexOf(index) != -1)) {
-        this.randomSong();
-    } else {
-        console.log("Randoming a song!");
-        this.setSong(index, true);
-        let noRepeat = Math.min(5, Math.floor(songCount / 2));
-        while (this.lastSongArray.length > noRepeat && noRepeat >= 0) {
-            this.lastSongArray.shift();
-        }
-    }
-};
-
-/* This is its own function because requestAnimationFrame is called very very
-   rarely when the tab is backgrounded. As autoSong is often used to chill with
-   music, it's important to keep checking the loop so songs don't go for too
-   long. */
-HuesCore.prototype.loopCheck = function() {
-    if(Math.floor(this.soundManager.currentTime() / this.soundManager.loopLength) > this.loopCount) {
-        this.onLoop();
-    }
-};
-
-HuesCore.prototype.onLoop = function() {
-    this.loopCount++;
-    switch (localStorage["autoSong"]) {
-    case "loop":
-        console.log("Checking loops");
-        if (this.loopCount >= localStorage["autoSongDelay"]) {
-            this.doAutoSong();
-        }
-        break;
-    case "time":
-        console.log("Checking times");
-        if (this.soundManager.loopLength * this.loopCount >= localStorage["autoSongDelay"] * 60) {
-            this.doAutoSong();
-        }
-        break;
-    }
-};
-
-HuesCore.prototype.doAutoSong = function() {
-    let func = null;
-    if(localStorage["autoSongShuffle"] == "on") {
-        func = this.randomSong;
-    } else {
-        func = this.nextSong;
-    }
-    if(localStorage["autoSongFadeout"] == "on") {
-        this.soundManager.fadeOut(() => {
-            func.call(this);
-        });
-    } else {
-        func.call(this);
-    }
-};
-
-HuesCore.prototype.songDataUpdated = function() {
-    if (this.currentSong) {
-        this.callEventListeners("newsong", this.currentSong);
-        this.callEventListeners("newimage", this.currentImage);
-    }
-};
-
-HuesCore.prototype.resetAudio = function() {
-    this.beatIndex = 0;
-    this.songDataUpdated();
-    if(localStorage["visualiser"] == "on") {
+    resizeVisualiser() {
         this.soundManager.initVisualiser(this.visualiser.width/2);
     }
-};
 
-HuesCore.prototype.randomImage = function() {
-    if(localStorage["shuffleImages"] == "on") {
-        let len = this.resourceManager.enabledImages.length;
-        let index = Math.floor(Math.random() * len);
-        if ((index == this.imageIndex || this.lastImageArray.indexOf(index) != -1) && len > 1) {
-            this.randomImage();
+    updateVisualiser() {
+        if(localStorage["visualiser"] != "on") {
+            return;
+        }
+        
+        let logArrays = this.soundManager.getVisualiserData();
+        if(!logArrays) {
+            return;
+        }
+
+        this.vCtx.clearRect(0, 0, this.vCtx.canvas.width, this.vCtx.canvas.height);
+        
+        let gradient=this.vCtx.createLinearGradient(0,64,0,0);
+        if(this.invert) {
+            gradient.addColorStop(1,"rgba(20,20,20,0.6)");
+            gradient.addColorStop(0,"rgba(255,255,255,0.6)");
         } else {
-            this.setImage(index, true);
-            this.lastImageArray.push(index);
-            let cull = Math.min(20, Math.floor((len / 2)));
-            while (this.lastImageArray.length > cull && cull >= 0) {
-                this.lastImageArray.shift();
+            gradient.addColorStop(1,"rgba(255,255,255,0.6)");
+            gradient.addColorStop(0,"rgba(20,20,20,0.6)");
+        }
+        this.vCtx.fillStyle = gradient;
+        
+        let barWidth = 2;
+        let barHeight;
+        let x = 0;
+        for(let a = 0; a < logArrays.length; a++) {
+            let vals = logArrays[a];
+            for(let i = 0; i < vals.length; i++) {
+                let index = 0;
+                if(logArrays.length == 2 && a === 0) {
+                    index = vals.length - i - 1;
+                } else {
+                    index = i;
+                }
+                barHeight = vals[index]/4;
+                
+                this.vCtx.fillRect(x,this.vCtx.canvas.height-barHeight,barWidth,barHeight);
+
+                x += barWidth;
             }
         }
-    } else { // jk, not actually random
+    }
+
+    animationLoop() {
+        requestAnimationFrame(this.animationLoop.bind(this));
+        if(!this.soundManager.playing) {
+            this.callEventListeners("frame");
+            return;
+        }
+        this.updateVisualiser();
+        let now = this.soundManager.currentTime();
+        this.callEventListeners("time", this.soundManager.clampedTime());
+        if(now >= 0 && this.doBuildup) {
+            this.currentSong.buildupPlayed = true;
+        }
+        for(let beatTime = this.beatIndex * this.getBeatLength(); beatTime < now;
+                beatTime = ++this.beatIndex * this.getBeatLength()) {
+            let beat = this.getBeat(this.beatIndex);
+            this.beater(beat);
+        }
+        this.callEventListeners("frame");
+    }
+
+    recalcBeatIndex(forcedNow) {
+        let now = typeof forcedNow === "number" ? forcedNow : this.soundManager.currentTime();
+        // getBeatLength isn't updated with the right beatIndex yet
+        this.beatIndex = Math.floor(now / (now < 0 ? this.buildLength : this.loopLength));
+        // beatIndex is NaN, abort
+        if(this.beatIndex != this.beatIndex) {
+            this.setInvert(false);
+            return;
+        }
+        
+        // We should sync up to how many inverts there are
+        let build = this.currentSong.buildupRhythm;
+        let rhythm = this.currentSong.rhythm;
+        let mapSoFar;
+        if(this.beatIndex < 0) {
+            // Clamp to 0 in case we've juuust started
+            mapSoFar = build.slice(0, Math.max(this.beatIndex + build.length, 0));
+        } else {
+            // If the rhythm has an odd number of inverts, don't reset because it
+            // alternates on each loop anyway
+            if((rhythm.match(/i|I/g)||[]).length % 2) {
+                return;
+            }
+            mapSoFar = (build ? build : "") + rhythm.slice(0, this.beatIndex);
+        }
+        // If there's an odd amount of inverts thus far, invert our display
+        let invertCount = (mapSoFar.match(/i|I/g)||[]).length;
+        this.setInvert(invertCount % 2);
+    }
+
+    getBeatIndex() {
+        if(!this.soundManager.playing) {
+            return 0;
+        } else if(this.beatIndex < 0) {
+            return this.beatIndex;
+        } else {
+            return this.beatIndex % this.currentSong.rhythm.length;
+        }
+    }
+
+    getSafeBeatIndex() {
+        let index = this.getBeatIndex();
+        if(index < 0) {
+            return 0;
+        } else {
+            return index;
+        }
+    }
+
+    blurUpdated(x, y) {
+        this.callEventListeners("blurupdate", x, y);
+    }
+
+    nextSong() {
+        let index = (this.songIndex + 1) % this.resourceManager.enabledSongs.length;
+        this.setSong(index);
+    }
+
+    previousSong() {
+        let index = ((this.songIndex - 1) + this.resourceManager.enabledSongs.length) % this.resourceManager.enabledSongs.length;
+        this.setSong(index);
+    }
+
+    setSongByName(name) {
+        let songs = this.resourceManager.enabledSongs;
+        for(let i = 0; i < songs.length; i++) {
+            if(songs[i].title == name) {
+                return this.setSong(i);
+            }
+        }
+        return this.setSong(0); // fallback
+    }
+
+    /* To set songs via reference instead of index - used in HuesEditor */
+    setSongOject(song) {
+        for(let i = 0; i < this.resourceManager.enabledSongs.length; i++) {
+            if(this.resourceManager.enabledSongs[i] === song) {
+                return this.setSong(i);
+            }
+        }
+    }
+
+    setSong(index, leaveArray) {
+        if(this.currentSong == this.resourceManager.enabledSongs[index]) {
+            return;
+        }
+        // When not randoming, clear this
+        if(!leaveArray) {
+            this.lastSongArray = [];
+        }
+        this.lastSongArray.push(index);
+        this.songIndex = index;
+        this.currentSong = this.resourceManager.enabledSongs[this.songIndex];
+        if (this.currentSong === undefined) {
+            this.currentSong = {"name":"None", "title":"None", "rhythm":".", "source":null, "crc":"none", "sound":null, "enabled":true, "filename":"none"};
+        }
+        console.log("Next song:", this.songIndex, this.currentSong);
+        this.callEventListeners("newsong", this.currentSong);
+        this.loopCount = 0;
+        if (this.currentSong.buildup) {
+            switch (localStorage["playBuildups"]) {
+            case "off":
+                this.currentSong.buildupPlayed = true;
+                this.doBuildup = false;
+                break;
+            case "on":
+                this.currentSong.buildupPlayed = false;
+                this.doBuildup = true;
+                break;
+            case "once":
+                this.doBuildup = !this.currentSong.buildupPlayed;
+                break;
+            }
+        }
+        this.setInvert(false);
+        this.renderer.doBlackout();
+        return this.soundManager.playSong(this.currentSong, this.doBuildup)
+        .then(() => {
+            this.resetAudio();
+            this.fillBuildup();
+            this.callEventListeners("songstarted");
+        });
+    }
+
+    updateBeatLength() {
+        this.loopLength = this.soundManager.loopLength / this.currentSong.rhythm.length;
+        if(this.currentSong.buildup) {
+            if (!this.currentSong.buildupRhythm) {
+                this.currentSong.buildupRhythm = ".";
+            }
+            this.buildLength = this.soundManager.buildLength / this.currentSong.buildupRhythm.length;
+        } else {
+            this.buildLength = -1;
+        }
+    }
+
+    getBeatLength() {
+        if(this.beatIndex < 0) {
+            return this.buildLength;
+        } else {
+            return this.loopLength;
+        }
+    }
+
+    fillBuildup() {
+        // update loop length for flash style filling
+        this.updateBeatLength();
+        if(this.currentSong.buildup) {
+            if(this.currentSong.independentBuild) {
+                console.log("New behaviour - separate build/loop lengths");
+                // Do nothing
+            } else {
+                console.log("Flash behaviour - filling buildup");
+                let buildBeats = Math.floor(this.soundManager.buildLength / this.loopLength);
+                if(buildBeats < 1) {
+                    buildBeats = 1;
+                }
+                while (this.currentSong.buildupRhythm.length < buildBeats) {
+                    this.currentSong.buildupRhythm = this.currentSong.buildupRhythm + ".";
+                }
+                console.log("Buildup length:", buildBeats);
+            }
+        }
+        // update with a buildup of possibly different length
+        this.updateBeatLength();
+        // If we're in the build or loop this will adjust
+        // If we've lagged a bit, we'll miss the first beat. Rewind!
+        this.recalcBeatIndex(this.doBuildup ? -this.soundManager.buildLength : 0);
+    }
+
+    randomSong() {
+        let songCount = this.resourceManager.enabledSongs.length;
+        let index=Math.floor((Math.random() * songCount));
+        if (songCount > 1 && (index == this.songIndex || this.lastSongArray.indexOf(index) != -1)) {
+            this.randomSong();
+        } else {
+            console.log("Randoming a song!");
+            this.setSong(index, true);
+            let noRepeat = Math.min(5, Math.floor(songCount / 2));
+            while (this.lastSongArray.length > noRepeat && noRepeat >= 0) {
+                this.lastSongArray.shift();
+            }
+        }
+    }
+
+    /* This is its own function because requestAnimationFrame is called very very
+       rarely when the tab is backgrounded. As autoSong is often used to chill with
+       music, it's important to keep checking the loop so songs don't go for too
+       long. */
+    loopCheck() {
+        if(Math.floor(this.soundManager.currentTime() / this.soundManager.loopLength) > this.loopCount) {
+            this.onLoop();
+        }
+    }
+
+    onLoop() {
+        this.loopCount++;
+        switch (localStorage["autoSong"]) {
+        case "loop":
+            console.log("Checking loops");
+            if (this.loopCount >= localStorage["autoSongDelay"]) {
+                this.doAutoSong();
+            }
+            break;
+        case "time":
+            console.log("Checking times");
+            if (this.soundManager.loopLength * this.loopCount >= localStorage["autoSongDelay"] * 60) {
+                this.doAutoSong();
+            }
+            break;
+        }
+    }
+
+    doAutoSong() {
+        let func = null;
+        if(localStorage["autoSongShuffle"] == "on") {
+            func = this.randomSong;
+        } else {
+            func = this.nextSong;
+        }
+        if(localStorage["autoSongFadeout"] == "on") {
+            this.soundManager.fadeOut(() => {
+                func.call(this);
+            });
+        } else {
+            func.call(this);
+        }
+    }
+
+    songDataUpdated() {
+        if (this.currentSong) {
+            this.callEventListeners("newsong", this.currentSong);
+            this.callEventListeners("newimage", this.currentImage);
+        }
+    }
+
+    resetAudio() {
+        this.beatIndex = 0;
+        this.songDataUpdated();
+        if(localStorage["visualiser"] == "on") {
+            this.soundManager.initVisualiser(this.visualiser.width/2);
+        }
+    }
+
+    randomImage() {
+        if(localStorage["shuffleImages"] == "on") {
+            let len = this.resourceManager.enabledImages.length;
+            let index = Math.floor(Math.random() * len);
+            if ((index == this.imageIndex || this.lastImageArray.indexOf(index) != -1) && len > 1) {
+                this.randomImage();
+            } else {
+                this.setImage(index, true);
+                this.lastImageArray.push(index);
+                let cull = Math.min(20, Math.floor((len / 2)));
+                while (this.lastImageArray.length > cull && cull >= 0) {
+                    this.lastImageArray.shift();
+                }
+            }
+        } else { // jk, not actually random
+            let img=(this.imageIndex + 1) % this.resourceManager.enabledImages.length;
+            this.setImage(img);
+        }
+    }
+
+    setImage(index, leaveArray) {
+        // If there are no images, this corrects NaN to 0
+        this.imageIndex = index ? index : 0;
+        let img=this.resourceManager.enabledImages[this.imageIndex];
+        if (img == this.currentImage && img !== null) {
+            return;
+        }
+        // When not randoming, clear this
+        if(!leaveArray) {
+            this.lastImageArray = [];
+        }
+        if (img) {
+            this.currentImage = img;
+        } else {
+            this.currentImage = {"name":"None", "fullname":"None", "align":"center", "bitmap":null, "source":null, "enabled":true};
+            this.imageIndex = -1;
+            this.lastImageArray = [];
+        }
+        this.callEventListeners("newimage", this.currentImage);
+    }
+
+    setImageByName(name) {
+        let images = this.resourceManager.enabledImages;
+        for(let i = 0; i < images.length; i++) {
+            if(images[i].name == name || images[i].fullname == name) {
+                this.setImage(i);
+                return;
+            }
+        }
+        this.setImage(0); // fallback
+    }
+
+    nextImage() {
+        this.setIsFullAuto(false);
         let img=(this.imageIndex + 1) % this.resourceManager.enabledImages.length;
         this.setImage(img);
     }
-};
 
-HuesCore.prototype.setImage = function(index, leaveArray) {
-    // If there are no images, this corrects NaN to 0
-    this.imageIndex = index ? index : 0;
-    let img=this.resourceManager.enabledImages[this.imageIndex];
-    if (img == this.currentImage && img !== null) {
-        return;
+    previousImage() {
+        this.setIsFullAuto(false);
+        let img=((this.imageIndex - 1) + this.resourceManager.enabledImages.length) % this.resourceManager.enabledImages.length;
+        this.setImage(img);
     }
-    // When not randoming, clear this
-    if(!leaveArray) {
-        this.lastImageArray = [];
-    }
-    if (img) {
-        this.currentImage = img;
-    } else {
-        this.currentImage = {"name":"None", "fullname":"None", "align":"center", "bitmap":null, "source":null, "enabled":true};
-        this.imageIndex = -1;
-        this.lastImageArray = [];
-    }
-    this.callEventListeners("newimage", this.currentImage);
-};
 
-HuesCore.prototype.setImageByName = function(name) {
-    let images = this.resourceManager.enabledImages;
-    for(let i = 0; i < images.length; i++) {
-        if(images[i].name == name || images[i].fullname == name) {
-            this.setImage(i);
-            return;
+    randomColourIndex() {
+        let index=Math.floor((Math.random() * this.colours.length));
+        if (index == this.colourIndex) {
+            return this.randomColourIndex();
         }
+        return index;
     }
-    this.setImage(0); // fallback
-};
 
-HuesCore.prototype.nextImage = function() {
-    this.setIsFullAuto(false);
-    let img=(this.imageIndex + 1) % this.resourceManager.enabledImages.length;
-    this.setImage(img);
-};
-
-HuesCore.prototype.previousImage = function() {
-    this.setIsFullAuto(false);
-    let img=((this.imageIndex - 1) + this.resourceManager.enabledImages.length) % this.resourceManager.enabledImages.length;
-    this.setImage(img);
-};
-
-HuesCore.prototype.randomColourIndex = function() {
-    let index=Math.floor((Math.random() * this.colours.length));
-    if (index == this.colourIndex) {
-        return this.randomColourIndex();
+    randomColour(isFade) {
+        let index=this.randomColourIndex();
+        this.setColour(index, isFade);
     }
-    return index;
-};
 
-HuesCore.prototype.randomColour = function(isFade) {
-    let index=this.randomColourIndex();
-    this.setColour(index, isFade);
-};
-
-HuesCore.prototype.setColour = function(index, isFade) {
-    this.colourIndex = index;
-    let colour = this.colours[this.colourIndex];
-    this.callEventListeners("newcolour", colour, isFade);
-};
-
-HuesCore.prototype.getBeat = function(index) {
-    if(index < 0) {
-        return this.currentSong.buildupRhythm[this.currentSong.buildupRhythm.length+index];
-    } else {
-        return this.currentSong.rhythm[index % this.currentSong.rhythm.length];
+    setColour(index, isFade) {
+        this.colourIndex = index;
+        let colour = this.colours[this.colourIndex];
+        this.callEventListeners("newcolour", colour, isFade);
     }
-};
 
-HuesCore.prototype.beater = function(beat) {
-    this.callEventListeners("beat", this.getBeatString(), this.getBeatIndex());
-    switch(beat) {
-        case 'X':
-        case 'x':
-            this.renderer.doYBlur();
-            break;
-        case 'O':
-        case 'o':
-            this.renderer.doXBlur();
-            break;
-        case ')':
-            this.renderer.doTrippyX();
-            break;
-        case '(':
-            this.renderer.doTrippyY();
-            break;
-        case '+':
-            this.renderer.doXBlur();
-            this.renderer.doBlackout();
-            break;
-        case '¤':
-            this.renderer.doXBlur();
-            this.renderer.doBlackout(true);
-            break;
-        case '|':
-            this.renderer.doShortBlackout(this.getBeatLength());
-            this.randomColour();
-            break;
-        case ':':
-            this.randomColour();
-            break;
-        case '*':
-            if(this.isFullAuto) {
-                this.randomImage();
-            }
-            break;
-        case '=':
-            if(this.isFullAuto) {
-                this.randomImage();
-            }
-            /* falls through */
-        case '~':
-            // case: fade in build, not in rhythm. Must max out fade timer.
-            let maxSearch = this.currentSong.rhythm.length;
-            if(this.beatIndex < 0) {
-                maxSearch -= this.beatIndex;
-            }
-            let fadeLen;
-            for (fadeLen = 1; fadeLen <= maxSearch; fadeLen++) {
-                if (this.getBeat(fadeLen + this.beatIndex) != ".") {
-                    break;
-                }
-            }
-            this.renderer.doColourFade((fadeLen * this.getBeatLength()) / this.soundManager.playbackRate);
-            this.randomColour(true);
-            break;
-        case 'I':
-            if (this.isFullAuto) {
-                this.randomImage();
-            }
-            /* falls through */
-        case 'i':
-            this.toggleInvert();
-            break;
-        }
-        if ([".", "+", "|", "¤"].indexOf(beat) == -1) {
-            this.renderer.clearBlackout();
-        }
-        if([".", "+", "¤", ":", "*", "X", "O", "~", "=", "i", "I"].indexOf(beat) == -1) {
-            this.randomColour();
-            if (this.isFullAuto) {
-                this.randomImage();
-            }
-    }
-};
-
-HuesCore.prototype.getBeatString = function(length) {
-    length = length ? length : 256;
-
-    let beatString = "";
-    let song = this.currentSong;
-    if (song) {
-        if(this.beatIndex < 0) {
-            beatString = song.buildupRhythm.slice(
-                    song.buildupRhythm.length + this.beatIndex);
+    getBeat(index) {
+        if(index < 0) {
+            return this.currentSong.buildupRhythm[this.currentSong.buildupRhythm.length+index];
         } else {
-            beatString = song.rhythm.slice(this.beatIndex % song.rhythm.length);
-        }
-        while (beatString.length < length) {
-            beatString += song.rhythm;
+            return this.currentSong.rhythm[index % this.currentSong.rhythm.length];
         }
     }
 
-    return beatString;
-};
-
-HuesCore.prototype.setIsFullAuto = function(auto) {
-    this.isFullAuto = auto;
-    if (this.userInterface) {
-        this.callEventListeners("newmode", this.isFullAuto);
-    }
-};
-
-HuesCore.prototype.toggleFullAuto = function() {
-    this.setIsFullAuto(!this.isFullAuto);
-};
-
-HuesCore.prototype.setInvert = function(invert) {
-    this.invert = !!invert;
-    this.callEventListeners("invert", invert);
-};
-
-HuesCore.prototype.toggleInvert = function() {
-    this.setInvert(!this.invert);
-};
-
-HuesCore.prototype.respackLoaded = function() {
-    this.init();
-};
-
-HuesCore.prototype.changeUI = function(index) {
-    if (index >= 0 && this.uiArray.length > index && this.userInterface != this.uiArray[index]) {
-        this.hideLists();
-        if(this.userInterface) {
-            this.userInterface.disconnect();
-        }
-        this.userInterface = this.uiArray[index];
-        this.userInterface.connectCore(this);
-        this.callEventListeners("newmode", this.isFullAuto);
-        this.callEventListeners("newsong", this.currentSong);
-        this.callEventListeners("newimage", this.currentImage);
-        this.callEventListeners("newcolour", this.colours[this.colourIndex], false);
+    beater(beat) {
         this.callEventListeners("beat", this.getBeatString(), this.getBeatIndex());
-        this.callEventListeners("invert", this.invert);
-    }
-};
-
-HuesCore.prototype.settingsUpdated = function() {
-    this.callEventListeners("settingsupdated");
-    switch (localStorage["currentUI"]) {
-    case "retro":
-        this.changeUI(0);
-        break;
-    case "v4.20":
-        this.changeUI(1);
-        break;
-    case "modern":
-        this.changeUI(2);
-        break;
-    case "xmas":
-        this.changeUI(3);
-        break;
-    case "hlwn":
-        this.changeUI(4);
-        break;
-    case "mini":
-        this.changeUI(5);
-        break;
-    }
-    switch (localStorage["colourSet"]) {
-    case "normal":
-        this.colours = this.oldColours;
-        break;
-    case "pastel":
-        this.colours = this.pastelColours;
-        break;
-    case "v4.20":
-        this.colours = this.weedColours;
-        break;
-    }
-    switch (localStorage["blackoutUI"]) {
-    case "off":
-        this.userInterface.show();
-        break;
-    case "on":
-        if(this.renderer.blackout) {
-            this.userInterface.hide();
+        switch(beat) {
+            case 'X':
+            case 'x':
+                this.renderer.doYBlur();
+                break;
+            case 'O':
+            case 'o':
+                this.renderer.doXBlur();
+                break;
+            case ')':
+                this.renderer.doTrippyX();
+                break;
+            case '(':
+                this.renderer.doTrippyY();
+                break;
+            case '+':
+                this.renderer.doXBlur();
+                this.renderer.doBlackout();
+                break;
+            case '¤':
+                this.renderer.doXBlur();
+                this.renderer.doBlackout(true);
+                break;
+            case '|':
+                this.renderer.doShortBlackout(this.getBeatLength());
+                this.randomColour();
+                break;
+            case ':':
+                this.randomColour();
+                break;
+            case '*':
+                if(this.isFullAuto) {
+                    this.randomImage();
+                }
+                break;
+            case '=':
+                if(this.isFullAuto) {
+                    this.randomImage();
+                }
+                /* falls through */
+            case '~':
+                // case: fade in build, not in rhythm. Must max out fade timer.
+                let maxSearch = this.currentSong.rhythm.length;
+                if(this.beatIndex < 0) {
+                    maxSearch -= this.beatIndex;
+                }
+                let fadeLen;
+                for (fadeLen = 1; fadeLen <= maxSearch; fadeLen++) {
+                    if (this.getBeat(fadeLen + this.beatIndex) != ".") {
+                        break;
+                    }
+                }
+                this.renderer.doColourFade((fadeLen * this.getBeatLength()) / this.soundManager.playbackRate);
+                this.randomColour(true);
+                break;
+            case 'I':
+                if (this.isFullAuto) {
+                    this.randomImage();
+                }
+                /* falls through */
+            case 'i':
+                this.toggleInvert();
+                break;
+            }
+            if ([".", "+", "|", "¤"].indexOf(beat) == -1) {
+                this.renderer.clearBlackout();
+            }
+            if([".", "+", "¤", ":", "*", "X", "O", "~", "=", "i", "I"].indexOf(beat) == -1) {
+                this.randomColour();
+                if (this.isFullAuto) {
+                    this.randomImage();
+                }
         }
-        break;
     }
-    switch (localStorage["visualiser"]) {
-    case "off":
-        this.visualiser.classList.add("hidden");
-        break;
-    case "on":
-        this.visualiser.classList.remove("hidden");
-        if(!this.soundManager.vReady) {
-            this.soundManager.initVisualiser(this.visualiser.width/2);
+
+    getBeatString(length) {
+        length = length ? length : 256;
+
+        let beatString = "";
+        let song = this.currentSong;
+        if (song) {
+            if(this.beatIndex < 0) {
+                beatString = song.buildupRhythm.slice(
+                        song.buildupRhythm.length + this.beatIndex);
+            } else {
+                beatString = song.rhythm.slice(this.beatIndex % song.rhythm.length);
+            }
+            while (beatString.length < length) {
+                beatString += song.rhythm;
+            }
         }
-        break;
+
+        return beatString;
     }
-    if (this.autoSong == "off" && localStorage["autoSong"] != "off") {
-        console.log("Resetting loopCount since AutoSong was enabled");
-        this.loopCount = 0;
+
+    setIsFullAuto(auto) {
+        this.isFullAuto = auto;
+        if (this.userInterface) {
+            this.callEventListeners("newmode", this.isFullAuto);
+        }
     }
-    this.autoSong = localStorage["autoSong"];
-};
 
-HuesCore.prototype.enabledChanged = function() {
-    this.resourceManager.rebuildEnabled();
-};
-
-HuesCore.prototype.hideLists = function() {
-    this.resourceManager.hideLists();
-};
-
-HuesCore.prototype.toggleSongList = function() {
-    this.window.hide();
-    this.resourceManager.toggleSongList();
-};
-
-HuesCore.prototype.toggleImageList = function() {
-    this.window.hide();
-    this.resourceManager.toggleImageList();
-};
-
-HuesCore.prototype.openSongSource = function() {
-    if (this.currentSong && this.currentSong.source) {
-        window.open(this.currentSong.source,'_blank');
-    }
-};
-
-HuesCore.prototype.openImageSource = function() {
-    if (this.currentImage && this.currentImage.source) {
-        window.open(this.currentImage.source,'_blank');
-    }
-};
-
-HuesCore.prototype.keyHandler = function(key) {
-    switch (key) {
-    case 37: // LEFT
-        this.previousImage();
-        break;
-    case 39: // RIGHT
-        this.nextImage();
-        break;
-    case 38: // UP
-        this.nextSong();
-        break;
-    case 40: // DOWN
-        this.previousSong();
-        break;
-    case 70: // F
+    toggleFullAuto() {
         this.setIsFullAuto(!this.isFullAuto);
-        break;
-    case 109: // NUMPAD_SUBTRACT
-    case 189: // MINUS
-    case 173: // MINUS, legacy
-        this.soundManager.decreaseVolume();
-        break;
-    case 107: // NUMPAD_ADD
-    case 187: // EQUAL
-    case 61: // EQUAL, legacy
-        this.soundManager.increaseVolume();
-        break;
-    case 66: // B
-        this.soundManager.seek(-this.soundManager.buildLength);
-        break;
-    case 77: // M
-        this.soundManager.toggleMute();
-        break;
-    case 72: // H
-        this.userInterface.toggleHide();
-        break;
-    case 82: // R
-        this.window.selectTab("RESOURCES");
-        break;
-    case 69: // E
-        this.window.selectTab("EDITOR");
-        break;
-    case 79: // O
-        this.window.selectTab("OPTIONS");
-        break;
-    case 73: // I
-        this.window.selectTab("INFO");
-        break;
-    case 49: // NUMBER_1
-        this.settings.set("currentUI", "retro");
-        break;
-    case 50: // NUMBER_2
-        this.settings.set("currentUI", "v4.20");
-        break;
-    case 51: // NUMBER_3
-        this.settings.set("currentUI", "modern");
-        break;
-    case 52: // NUMBER_4
-        this.settings.set("currentUI", "xmas");
-        break;
-    case 53: // NUMBER_5
-        this.settings.set("currentUI", "hlwn");
-        break;
-    case 54: // NUMBER_6
-        this.settings.set("currentUI", "mini");
-        break;
-    case 67: // C
-        this.toggleImageList();
-        break;
-    case 83: // S
-        this.toggleSongList();
-        break;
-    case 87: // W
-        this.window.toggle();
-        break;
-    case 78: // N
-        this.randomSong();
-        break;
-    default:
-        return true;
     }
-    return false;
-};
 
-HuesCore.prototype.error = function(message) {
-    console.log(message);
-    this.preloadSubMsg.textContent = message;
-    this.preloadMsg.style.color = "#F00";
-};
+    setInvert(invert) {
+        this.invert = !!invert;
+        this.callEventListeners("invert", invert);
+    }
 
-HuesCore.prototype.warning = function(message) {
-    console.log(message);
-    this.preloadSubMsg.innerHTML = message;
-    this.preloadMsg.style.color = "#F93";
-};
+    toggleInvert() {
+        this.setInvert(!this.invert);
+    }
 
-HuesCore.prototype.clearMessage = function() {
-    this.preloadSubMsg.textContent = "";
-    this.preloadMsg.style.color = "";
-};
+    respackLoaded() {
+        this.init();
+    }
 
-HuesCore.prototype.oldColours =
+    changeUI(index) {
+        if (index >= 0 && this.uiArray.length > index && this.userInterface != this.uiArray[index]) {
+            this.hideLists();
+            if(this.userInterface) {
+                this.userInterface.disconnect();
+            }
+            this.userInterface = this.uiArray[index];
+            this.userInterface.connectCore(this);
+            this.callEventListeners("newmode", this.isFullAuto);
+            this.callEventListeners("newsong", this.currentSong);
+            this.callEventListeners("newimage", this.currentImage);
+            this.callEventListeners("newcolour", this.colours[this.colourIndex], false);
+            this.callEventListeners("beat", this.getBeatString(), this.getBeatIndex());
+            this.callEventListeners("invert", this.invert);
+        }
+    }
+
+    settingsUpdated() {
+        this.callEventListeners("settingsupdated");
+        switch (localStorage["currentUI"]) {
+        case "retro":
+            this.changeUI(0);
+            break;
+        case "v4.20":
+            this.changeUI(1);
+            break;
+        case "modern":
+            this.changeUI(2);
+            break;
+        case "xmas":
+            this.changeUI(3);
+            break;
+        case "hlwn":
+            this.changeUI(4);
+            break;
+        case "mini":
+            this.changeUI(5);
+            break;
+        }
+        switch (localStorage["colourSet"]) {
+        case "normal":
+            this.colours = HuesCore.oldColours;
+            break;
+        case "pastel":
+            this.colours = HuesCore.pastelColours;
+            break;
+        case "v4.20":
+            this.colours = HuesCore.weedColours;
+            break;
+        }
+        switch (localStorage["blackoutUI"]) {
+        case "off":
+            this.userInterface.show();
+            break;
+        case "on":
+            if(this.renderer.blackout) {
+                this.userInterface.hide();
+            }
+            break;
+        }
+        switch (localStorage["visualiser"]) {
+        case "off":
+            this.visualiser.classList.add("hidden");
+            break;
+        case "on":
+            this.visualiser.classList.remove("hidden");
+            if(!this.soundManager.vReady) {
+                this.soundManager.initVisualiser(this.visualiser.width/2);
+            }
+            break;
+        }
+        if (this.autoSong == "off" && localStorage["autoSong"] != "off") {
+            console.log("Resetting loopCount since AutoSong was enabled");
+            this.loopCount = 0;
+        }
+        this.autoSong = localStorage["autoSong"];
+    }
+
+    enabledChanged() {
+        this.resourceManager.rebuildEnabled();
+    }
+
+    hideLists() {
+        this.resourceManager.hideLists();
+    }
+
+    toggleSongList() {
+        this.window.hide();
+        this.resourceManager.toggleSongList();
+    }
+
+    toggleImageList() {
+        this.window.hide();
+        this.resourceManager.toggleImageList();
+    }
+
+    openSongSource() {
+        if (this.currentSong && this.currentSong.source) {
+            window.open(this.currentSong.source,'_blank');
+        }
+    }
+
+    openImageSource() {
+        if (this.currentImage && this.currentImage.source) {
+            window.open(this.currentImage.source,'_blank');
+        }
+    }
+
+    keyHandler(key) {
+        switch (key) {
+        case 37: // LEFT
+            this.previousImage();
+            break;
+        case 39: // RIGHT
+            this.nextImage();
+            break;
+        case 38: // UP
+            this.nextSong();
+            break;
+        case 40: // DOWN
+            this.previousSong();
+            break;
+        case 70: // F
+            this.setIsFullAuto(!this.isFullAuto);
+            break;
+        case 109: // NUMPAD_SUBTRACT
+        case 189: // MINUS
+        case 173: // MINUS, legacy
+            this.soundManager.decreaseVolume();
+            break;
+        case 107: // NUMPAD_ADD
+        case 187: // EQUAL
+        case 61: // EQUAL, legacy
+            this.soundManager.increaseVolume();
+            break;
+        case 66: // B
+            this.soundManager.seek(-this.soundManager.buildLength);
+            break;
+        case 77: // M
+            this.soundManager.toggleMute();
+            break;
+        case 72: // H
+            this.userInterface.toggleHide();
+            break;
+        case 82: // R
+            this.window.selectTab("RESOURCES");
+            break;
+        case 69: // E
+            this.window.selectTab("EDITOR");
+            break;
+        case 79: // O
+            this.window.selectTab("OPTIONS");
+            break;
+        case 73: // I
+            this.window.selectTab("INFO");
+            break;
+        case 49: // NUMBER_1
+            this.settings.set("currentUI", "retro");
+            break;
+        case 50: // NUMBER_2
+            this.settings.set("currentUI", "v4.20");
+            break;
+        case 51: // NUMBER_3
+            this.settings.set("currentUI", "modern");
+            break;
+        case 52: // NUMBER_4
+            this.settings.set("currentUI", "xmas");
+            break;
+        case 53: // NUMBER_5
+            this.settings.set("currentUI", "hlwn");
+            break;
+        case 54: // NUMBER_6
+            this.settings.set("currentUI", "mini");
+            break;
+        case 67: // C
+            this.toggleImageList();
+            break;
+        case 83: // S
+            this.toggleSongList();
+            break;
+        case 87: // W
+            this.window.toggle();
+            break;
+        case 78: // N
+            this.randomSong();
+            break;
+        default:
+            return true;
+        }
+        return false;
+    }
+
+    error(message) {
+        console.log(message);
+        this.preloadSubMsg.textContent = message;
+        this.preloadMsg.style.color = "#F00";
+    }
+
+    warning(message) {
+        console.log(message);
+        this.preloadSubMsg.innerHTML = message;
+        this.preloadMsg.style.color = "#F93";
+    }
+
+    clearMessage() {
+        this.preloadSubMsg.textContent = "";
+        this.preloadMsg.style.color = "";
+    }
+}
+
+HuesCore.oldColours =
    [{'c': 0x000000, 'n': 'black'},
     {'c': 0x550000, 'n': 'brick'},
     {'c': 0xAA0000, 'n': 'crimson'},
@@ -1111,7 +1113,7 @@ HuesCore.prototype.oldColours =
     {'c': 0x55FFFF, 'n': 'turquoise'},
     {'c': 0xAAFFFF, 'n': 'powder'},
     {'c': 0xFFFFFF, 'n': 'white'}];
-HuesCore.prototype.pastelColours =
+HuesCore.pastelColours =
    [{'c': 0xCD4A4A, 'n': 'Mahogany'},
     {'c': 0xFAE7B5, 'n': 'Banana Mania'},
     {'c': 0x9F8170, 'n': 'Beaver'},
@@ -1176,7 +1178,7 @@ HuesCore.prototype.pastelColours =
     {'c': 0xFCE883, 'n': 'Yellow'},
     {'c': 0xC5E384, 'n': 'Yellow Green'},
     {'c': 0xFFB653, 'n': 'Yellow Orange'}];
-HuesCore.prototype.weedColours =
+HuesCore.weedColours =
    [{'c': 0x00FF00, 'n': 'Green'},
     {'c': 0x5A6351, 'n': 'Lizard'},
     {'c': 0x636F57, 'n': 'Cactus'},

@@ -26,7 +26,7 @@
  /* HuesInfo.js populates the INFO tab in the Hues Window.
   */
 
-let beatGlossary = [
+const beatGlossary = [
     "x Vertical blur (snare)",
     "o Horizontal blur (bass)",
     "- No blur",
@@ -44,7 +44,7 @@ let beatGlossary = [
     "I Invert & change image"
 ];
 
-let shortcuts = [
+const shortcuts = [
     "↑↓  Change song",
     "←→  Change image",
     "[N] Random song",

@@ -22,531 +22,533 @@
 (function(window, document) {
 "use strict";
 
-function SoundManager(core) {
-    this.core = core;
-    this.playing = false;
-    this.playbackRate = 1;
-    this.song = null;
-    
-    this.initPromise = null;
-    this.lockedPromise = null;
-    this.locked = true;
+class SoundManager {
+    constructor(core) {
+        this.core = core;
+        this.playing = false;
+        this.playbackRate = 1;
+        this.song = null;
+        
+        this.initPromise = null;
+        this.lockedPromise = null;
+        this.locked = true;
 
-    /* Lower level audio and timing info */
-    this.context = null; // Audio context, Web Audio API
-    this.oggSupport = false;
-    this.buildSource = null;
-    this.loopSource = null;
-    this.buildup = null;
-    this.loop = null;
-    this.startTime = 0;  // File start time - 0 is loop start, not build start
-    this.buildLength = 0;
-    this.loopLength = 0; // For calculating beat lengths
+        /* Lower level audio and timing info */
+        this.context = null; // Audio context, Web Audio API
+        this.oggSupport = false;
+        this.buildSource = null;
+        this.loopSource = null;
+        this.buildup = null;
+        this.loop = null;
+        this.startTime = 0;  // File start time - 0 is loop start, not build start
+        this.buildLength = 0;
+        this.loopLength = 0; // For calculating beat lengths
 
-    // Volume
-    this.gainNode = null;
-    this.mute = false;
-    this.lastVol = 1;
-    
-    // Visualiser
-    this.vReady = false;
-    this.vBars = 0;
-    this.vTotalBars = 0;
-    this.splitter = null;
-    this.analysers = [];
-    this.analyserArrays = [];
-    this.logArrays = [];
-    this.binCutoffs = [];
-    this.linBins = 0;
-    this.logBins = 0;
-    this.maxBinLin = 0;
-}
+        // Volume
+        this.gainNode = null;
+        this.mute = false;
+        this.lastVol = 1;
+        
+        // Visualiser
+        this.vReady = false;
+        this.vBars = 0;
+        this.vTotalBars = 0;
+        this.splitter = null;
+        this.analysers = [];
+        this.analyserArrays = [];
+        this.logArrays = [];
+        this.binCutoffs = [];
+        this.linBins = 0;
+        this.logBins = 0;
+        this.maxBinLin = 0;
+    }
 
-SoundManager.prototype.init = function() {
-    if(!this.initPromise) {
-        this.initPromise = new Promise((resolve, reject) => {
-            // Check Web Audio API Support
-            try {
-                // More info at http://caniuse.com/#feat=audio-api
-                window.AudioContext = window.AudioContext || window.webkitAudioContext;
-                // These don't always exist
-                AudioContext.prototype.suspend = AudioContext.prototype.suspend || (() => {return Promise.resolve();});
-                AudioContext.prototype.resume = AudioContext.prototype.resume || (() => {return Promise.resolve();});
-                
-                this.context = new window.AudioContext();
-                this.gainNode = this.context.createGain();
-                this.gainNode.connect(this.context.destination);
-            } catch(e) {
-                reject(Error("Web Audio API not supported in this browser."));
-                return;
-            }
-            resolve();
-        }).then(() => {
-            // check for .ogg support - if not, we'll have to load the ogg decoder
-            return new Promise((resolve, reject) => {
-                this.context.decodeAudioData(miniOgg, success => {
-                        this.oggSupport = true;
-                        resolve();
-                    }, error => {
-                        this.oggSupport = false;
-                        resolve();
-                });
-            });
-        }).then(() => {
-            return new Promise((resolve, reject) => {          
-                // See if our audio decoder is working
-                let audioWorker;
+    init() {
+        if(!this.initPromise) {
+            this.initPromise = new Promise((resolve, reject) => {
+                // Check Web Audio API Support
                 try {
-                    audioWorker = this.createWorker();
+                    // More info at http://caniuse.com/#feat=audio-api
+                    window.AudioContext = window.AudioContext || window.webkitAudioContext;
+                    // These don't always exist
+                    AudioContext.prototype.suspend = AudioContext.prototype.suspend || (() => {return Promise.resolve();});
+                    AudioContext.prototype.resume = AudioContext.prototype.resume || (() => {return Promise.resolve();});
+                    
+                    this.context = new window.AudioContext();
+                    this.gainNode = this.context.createGain();
+                    this.gainNode.connect(this.context.destination);
                 } catch(e) {
-                    console.log(e);
-                    reject(Error("Audio Worker cannot be started - correct path set in defaults?"));
+                    reject(Error("Web Audio API not supported in this browser."));
                     return;
                 }
-                let pingListener = event => {
-                    audioWorker.terminate();
-                    resolve();
-                };
-                audioWorker.addEventListener('message', pingListener, false);
-                audioWorker.addEventListener('error', () => {
-                    reject(Error("Audio Worker cannot be started - correct path set in defaults?"));
-                }, false);
-                audioWorker.postMessage({ping:true, ogg:this.oggSupport});
+                resolve();
+            }).then(() => {
+                // check for .ogg support - if not, we'll have to load the ogg decoder
+                return new Promise((resolve, reject) => {
+                    this.context.decodeAudioData(miniOgg, success => {
+                            this.oggSupport = true;
+                            resolve();
+                        }, error => {
+                            this.oggSupport = false;
+                            resolve();
+                    });
+                });
+            }).then(() => {
+                return new Promise((resolve, reject) => {          
+                    // See if our audio decoder is working
+                    let audioWorker;
+                    try {
+                        audioWorker = this.createWorker();
+                    } catch(e) {
+                        console.log(e);
+                        reject(Error("Audio Worker cannot be started - correct path set in defaults?"));
+                        return;
+                    }
+                    let pingListener = event => {
+                        audioWorker.terminate();
+                        resolve();
+                    };
+                    audioWorker.addEventListener('message', pingListener, false);
+                    audioWorker.addEventListener('error', () => {
+                        reject(Error("Audio Worker cannot be started - correct path set in defaults?"));
+                    }, false);
+                    audioWorker.postMessage({ping:true, ogg:this.oggSupport});
+                });
+            }).then(() => {
+                this.locked = this.context.state != "running";
             });
-        }).then(() => {
-            this.locked = this.context.state != "running";
-        });
+        }
+        return this.initPromise;
     }
-    return this.initPromise;
-};
 
-SoundManager.prototype.unlock = function() {
-    if(this.lockedPromise) {
+    unlock() {
+        if(this.lockedPromise) {
+            return this.lockedPromise;
+        }
+        this.lockedPromise = new Promise((resolve, reject) => {
+            // iOS and other some mobile browsers - unlock the context as
+            // it starts in a suspended state
+            let unlocker = () => {
+                // create empty buffer
+                let buffer = this.context.createBuffer(1, 1, 22050);
+                let source =  this.context.createBufferSource();
+                source.buffer = buffer;
+
+                // connect to output (your speakers)
+                source.connect( this.context.destination);
+
+                // play the file
+                source.start(0);
+                
+                window.removeEventListener('touchend', unlocker);
+                window.removeEventListener('click', unlocker);
+                this.core.clearMessage();
+                resolve();
+            };
+            window.addEventListener('touchend', unlocker, false);
+            window.addEventListener('click', unlocker, false);
+        });
         return this.lockedPromise;
     }
-    this.lockedPromise = new Promise((resolve, reject) => {
-        // iOS and other some mobile browsers - unlock the context as
-        // it starts in a suspended state
-        let unlocker = () => {
-            // create empty buffer
-            let buffer = this.context.createBuffer(1, 1, 22050);
-            let source =  this.context.createBufferSource();
-            source.buffer = buffer;
 
-            // connect to output (your speakers)
-            source.connect( this.context.destination);
+    playSong(song, playBuild, forcePlay) {
+        let p = Promise.resolve();
+        // Editor forces play on audio updates
+        if(this.song == song && !forcePlay) {
+            return p;
+        }
+        this.stop();
+        this.song = song;
+        if(!song || (!song.sound)) { // null song
+            return p;
+        }
+        
+        // if there's a fadeout happening from AutoSong, kill it
+        this.gainNode.gain.cancelScheduledValues(0);
+        // Reset original volume
+        this.setVolume(this.lastVol);
+        if(this.mute) {
+            this.setMute(true);
+        }
 
-            // play the file
-            source.start(0);
+        p = p.then(() => {
+            return this.loadSong(song);
+        }).then(buffers => {
+            // To prevent race condition if you press "next" twice fast
+            if(song != this.song) {
+                return Promise.reject("Song changed between load and play - this message can be ignored");
+            }
             
-            window.removeEventListener('touchend', unlocker);
-            window.removeEventListener('click', unlocker);
-            this.core.clearMessage();
-            resolve();
-        };
-        window.addEventListener('touchend', unlocker, false);
-        window.addEventListener('click', unlocker, false);
-    });
-    return this.lockedPromise;
-};
+            this.buildup = buffers.buildup;
+            this.buildLength = this.buildup ? this.buildup.duration : 0;
+            this.loop = buffers.loop;
+            this.loopLength = this.loop.duration;
 
-SoundManager.prototype.playSong = function(song, playBuild, forcePlay) {
-    let p = Promise.resolve();
-    // Editor forces play on audio updates
-    if(this.song == song && !forcePlay) {
+            // This fixes sync issues on Firefox and slow machines.
+            return this.context.suspend();
+        }).then(() => {
+            if(playBuild) {
+                this.seek(-this.buildLength, true);
+            } else {
+                this.seek(0, true);
+            }
+            
+            return this.context.resume();
+        }).then(() => {
+            this.playing = true;
+        });
         return p;
     }
-    this.stop();
-    this.song = song;
-    if(!song || (!song.sound)) { // null song
-        return p;
-    }
-    
-    // if there's a fadeout happening from AutoSong, kill it
-    this.gainNode.gain.cancelScheduledValues(0);
-    // Reset original volume
-    this.setVolume(this.lastVol);
-    if(this.mute) {
-        this.setMute(true);
+
+    stop(dontDeleteBuffers) {
+        if (this.playing) {
+            if(this.buildSource) {
+                this.buildSource.stop(0);
+                this.buildSource.disconnect();
+                this.buildSource = null;
+                if(!dontDeleteBuffers)
+                    this.buildup = null;
+            }        
+            // arg required for mobile webkit
+            this.loopSource.stop(0);
+             // TODO needed?
+            this.loopSource.disconnect();
+            this.loopSource = null;
+            if(!dontDeleteBuffers)
+                this.loop = null;
+            this.vReady = false;
+            this.playing = false;
+            this.startTime = 0;
+        }
     }
 
-    p = p.then(() => {
-        return this.loadSong(song);
-    }).then(buffers => {
-        // To prevent race condition if you press "next" twice fast
-        if(song != this.song) {
+    setRate(rate) {
+        // Double speed is more than enough. Famous last words?
+        rate = Math.max(Math.min(rate, 2), 0.25);
+        
+        let time = this.clampedTime();
+        this.playbackRate = rate;
+        this.seek(time);
+    }
+
+    seek(time, noPlayingUpdate) {
+        if(!this.song) {
+            return;
+        }
+        //console.log("Seeking to " + time);
+        // Clamp the blighter
+        time = Math.min(Math.max(time, -this.buildLength), this.loopLength);
+        
+        this.stop(true);
+        
+        if(!this.loop) {
+            return;
+        }
+            
+        this.loopSource = this.context.createBufferSource();
+        this.loopSource.buffer = this.loop;
+        this.loopSource.playbackRate.value = this.playbackRate;
+        this.loopSource.loop = true;
+        this.loopSource.loopStart = 0;
+        this.loopSource.loopEnd = this.loopLength;
+        this.loopSource.connect(this.gainNode);
+        
+        if(time < 0 && this.buildup) {
+            this.buildSource = this.context.createBufferSource();
+            this.buildSource.buffer = this.buildup;
+            this.buildSource.playbackRate.value = this.playbackRate;
+            this.buildSource.connect(this.gainNode);
+            this.buildSource.start(0, this.buildLength + time);
+            this.loopSource.start(this.context.currentTime - (time / this.playbackRate));
+        } else {
+            this.loopSource.start(0, time);
+        }
+        
+        this.startTime = this.context.currentTime - (time / this.playbackRate);
+        if(!noPlayingUpdate) {
+            this.playing = true;
+        }
+        this.initVisualiser();
+        this.core.recalcBeatIndex();
+    }
+
+    // In seconds, relative to the loop start
+    currentTime() {
+        if(!this.playing) {
+            return 0;
+        }
+        return (this.context.currentTime - this.startTime) * this.playbackRate;
+    }
+
+    clampedTime() {
+        let time = this.currentTime();
+        
+        if(time > 0) {
+            time %= this.loopLength;
+        }
+        return time;
+    }
+
+    loadSong(song) {
+        if(song._loadPromise) {
+            /* Caused when moving back/forwards rapidly.
+               The sound is still loading. We reject this promise, and the already
+               running decode will finish and resolve instead.
+               NOTE: If anything but playSong calls loadSong, this idea is broken. */
             return Promise.reject("Song changed between load and play - this message can be ignored");
         }
         
-        this.buildup = buffers.buildup;
-        this.buildLength = this.buildup ? this.buildup.duration : 0;
-        this.loop = buffers.loop;
-        this.loopLength = this.loop.duration;
-
-        // This fixes sync issues on Firefox and slow machines.
-        return this.context.suspend();
-    }).then(() => {
-        if(playBuild) {
-            this.seek(-this.buildLength, true);
+        let buffers = {loop: null, buildup: null};
+        
+        let promises = [this.loadBuffer(song, "sound").then(buffer => {
+            buffers.loop = buffer;
+        })];
+        if(song.buildup) {
+            promises.push(this.loadBuffer(song, "buildup").then(buffer => {
+                buffers.buildup = buffer;
+            }));
         } else {
-            this.seek(0, true);
+            this.buildLength = 0;
         }
+        song._loadPromise = Promise.all(promises)
+        .then(() => {
+            song._loadPromise = null;
+            return buffers;
+        });
+        return song._loadPromise;
+    }
+
+    loadBuffer(song, soundName) {
+        let buffer = song[soundName];
         
-        return this.context.resume();
-    }).then(() => {
-        this.playing = true;
-    });
-    return p;
-};
-
-SoundManager.prototype.stop = function(dontDeleteBuffers) {
-    if (this.playing) {
-        if(this.buildSource) {
-            this.buildSource.stop(0);
-            this.buildSource.disconnect();
-            this.buildSource = null;
-            if(!dontDeleteBuffers)
-                this.buildup = null;
-        }        
-        // arg required for mobile webkit
-        this.loopSource.stop(0);
-         // TODO needed?
-        this.loopSource.disconnect();
-        this.loopSource = null;
-        if(!dontDeleteBuffers)
-            this.loop = null;
-        this.vReady = false;
-        this.playing = false;
-        this.startTime = 0;
-    }
-};
-
-SoundManager.prototype.setRate = function(rate) {
-    // Double speed is more than enough. Famous last words?
-    rate = Math.max(Math.min(rate, 2), 0.25);
-    
-    let time = this.clampedTime();
-    this.playbackRate = rate;
-    this.seek(time);
-};
-
-SoundManager.prototype.seek = function(time, noPlayingUpdate) {
-    if(!this.song) {
-        return;
-    }
-    //console.log("Seeking to " + time);
-    // Clamp the blighter
-    time = Math.min(Math.max(time, -this.buildLength), this.loopLength);
-    
-    this.stop(true);
-    
-    if(!this.loop) {
-        return;
-    }
-        
-    this.loopSource = this.context.createBufferSource();
-    this.loopSource.buffer = this.loop;
-    this.loopSource.playbackRate.value = this.playbackRate;
-    this.loopSource.loop = true;
-    this.loopSource.loopStart = 0;
-    this.loopSource.loopEnd = this.loopLength;
-    this.loopSource.connect(this.gainNode);
-    
-    if(time < 0 && this.buildup) {
-        this.buildSource = this.context.createBufferSource();
-        this.buildSource.buffer = this.buildup;
-        this.buildSource.playbackRate.value = this.playbackRate;
-        this.buildSource.connect(this.gainNode);
-        this.buildSource.start(0, this.buildLength + time);
-        this.loopSource.start(this.context.currentTime - (time / this.playbackRate));
-    } else {
-        this.loopSource.start(0, time);
-    }
-    
-    this.startTime = this.context.currentTime - (time / this.playbackRate);
-    if(!noPlayingUpdate) {
-        this.playing = true;
-    }
-    this.initVisualiser();
-    this.core.recalcBeatIndex();
-};
-
-// In seconds, relative to the loop start
-SoundManager.prototype.currentTime = function() {
-    if(!this.playing) {
-        return 0;
-    }
-    return (this.context.currentTime - this.startTime) * this.playbackRate;
-};
-
-SoundManager.prototype.clampedTime = function() {
-    let time = this.currentTime();
-    
-    if(time > 0) {
-        time %= this.loopLength;
-    }
-    return time;
-};
-
-SoundManager.prototype.loadSong = function(song) {
-    if(song._loadPromise) {
-        /* Caused when moving back/forwards rapidly.
-           The sound is still loading. We reject this promise, and the already
-           running decode will finish and resolve instead.
-           NOTE: If anything but playSong calls loadSong, this idea is broken. */
-        return Promise.reject("Song changed between load and play - this message can be ignored");
-    }
-    
-    let buffers = {loop: null, buildup: null};
-    
-    let promises = [this.loadBuffer(song, "sound").then(buffer => {
-        buffers.loop = buffer;
-    })];
-    if(song.buildup) {
-        promises.push(this.loadBuffer(song, "buildup").then(buffer => {
-            buffers.buildup = buffer;
-        }));
-    } else {
-        this.buildLength = 0;
-    }
-    song._loadPromise = Promise.all(promises)
-    .then(() => {
-        song._loadPromise = null;
-        return buffers;
-    });
-    return song._loadPromise;
-};
-
-SoundManager.prototype.loadBuffer = function(song, soundName) {
-    let buffer = song[soundName];
-    
-    // Is this an ogg file?
-    let view = new Uint8Array(buffer);
-    // Signature for ogg file: OggS
-    if(this.oggSupport && view[0] == 0x4F && view[1] == 0x67 && view[2] == 0x67 && view[3] == 0x53) {
-        // As we don't control decodeAudioData, we cannot do fast transfers and must copy
-        let backup = buffer.slice(0);
-        return new Promise((resolve, reject) => {
-            this.context.decodeAudioData(buffer, result => {
-                    resolve(result);
-                }, error => {
-                    reject(Error("decodeAudioData failed to load track"));
+        // Is this an ogg file?
+        let view = new Uint8Array(buffer);
+        // Signature for ogg file: OggS
+        if(this.oggSupport && view[0] == 0x4F && view[1] == 0x67 && view[2] == 0x67 && view[3] == 0x53) {
+            // As we don't control decodeAudioData, we cannot do fast transfers and must copy
+            let backup = buffer.slice(0);
+            return new Promise((resolve, reject) => {
+                this.context.decodeAudioData(buffer, result => {
+                        resolve(result);
+                    }, error => {
+                        reject(Error("decodeAudioData failed to load track"));
+                });
+            }).then(result => {
+                // restore copied buffer
+                song[soundName] = backup;
+                return result;
             });
-        }).then(result => {
-            // restore copied buffer
-            song[soundName] = backup;
-            return result;
-        });
-    } else { // Use our JS decoder
-        return new Promise((resolve, reject) => {
-            let audioWorker = this.createWorker();
-            
-            audioWorker.addEventListener('error', () => {
-                reject(Error("Audio Worker failed to convert track"));
-            }, false);
-            
-            audioWorker.addEventListener('message', e => {
-                let decoded = e.data;
-                audioWorker.terminate();
+        } else { // Use our JS decoder
+            return new Promise((resolve, reject) => {
+                let audioWorker = this.createWorker();
                 
-                // restore transferred buffer
-                song[soundName] = decoded.arrayBuffer;
-                if(decoded.error) {
-                    reject(new Error(decoded.error));
-                    return;
-                }
-                // Convert to real audio buffer
-                let audio = this.audioBufFromRaw(decoded.rawAudio);
-                resolve(audio);
-            }, false);
-            
-            // transfer the buffer to save time
-            audioWorker.postMessage({buffer: buffer, ogg: this.oggSupport}, [buffer]);
-        });
-   }
+                audioWorker.addEventListener('error', () => {
+                    reject(Error("Audio Worker failed to convert track"));
+                }, false);
+                
+                audioWorker.addEventListener('message', e => {
+                    let decoded = e.data;
+                    audioWorker.terminate();
+                    
+                    // restore transferred buffer
+                    song[soundName] = decoded.arrayBuffer;
+                    if(decoded.error) {
+                        reject(new Error(decoded.error));
+                        return;
+                    }
+                    // Convert to real audio buffer
+                    let audio = this.audioBufFromRaw(decoded.rawAudio);
+                    resolve(audio);
+                }, false);
+                
+                // transfer the buffer to save time
+                audioWorker.postMessage({buffer: buffer, ogg: this.oggSupport}, [buffer]);
+            });
+       }
 
-};
+    }
 
-// Converts continuous PCM array to Web Audio API friendly format
-SoundManager.prototype.audioBufFromRaw = function(raw) {
-    let buffer = raw.array;
-    let channels = raw.channels;
-    let samples = buffer.length/channels;
-    let audioBuf = this.context.createBuffer(channels, samples, raw.sampleRate);
-    for(let i = 0; i < channels; i++) {
-        // Offset is in bytes, length is in elements
-        let channel = new Float32Array(buffer.buffer , i * samples * 4, samples);
-        // Most browsers
-        if(typeof audioBuf.copyToChannel === "function") {
-            audioBuf.copyToChannel(channel, i, 0);
-        } else { // Safari, Edge sometimes
-            audioBuf.getChannelData(i).set(channel);
+    // Converts continuous PCM array to Web Audio API friendly format
+    audioBufFromRaw(raw) {
+        let buffer = raw.array;
+        let channels = raw.channels;
+        let samples = buffer.length/channels;
+        let audioBuf = this.context.createBuffer(channels, samples, raw.sampleRate);
+        for(let i = 0; i < channels; i++) {
+            // Offset is in bytes, length is in elements
+            let channel = new Float32Array(buffer.buffer , i * samples * 4, samples);
+            // Most browsers
+            if(typeof audioBuf.copyToChannel === "function") {
+                audioBuf.copyToChannel(channel, i, 0);
+            } else { // Safari, Edge sometimes
+                audioBuf.getChannelData(i).set(channel);
+            }
         }
-    }
-    return audioBuf;
-};
-
-SoundManager.prototype.createWorker = function() {
-    return new Worker(this.core.settings.defaults.workersPath + 'audio-worker.js');
-};
-
-SoundManager.prototype.initVisualiser = function(bars) {
-    // When restarting the visualiser
-    if(!bars) {
-        bars = this.vTotalBars;
-    }
-    this.vReady = false;
-    this.vTotalBars = bars;
-    for(let i = 0; i < this.analysers.length; i++) {
-        this.analysers[i].disconnect();
-    }
-    if(this.splitter) {
-        this.splitter.disconnect();
-        this.splitter = null;
-    }
-    this.analysers = [];
-    this.analyserArrays = [];
-    this.logArrays = [];
-    this.binCutoffs = [];
-    
-    this.linBins = 0;
-    this.logBins = 0;
-    this.maxBinLin = 0;
-    
-    this.attachVisualiser();
-};
-
-SoundManager.prototype.attachVisualiser = function() {
-    if(!this.playing || this.vReady) {
-        return;
+        return audioBuf;
     }
 
-    // Get our info from the loop
-    let channels = this.loopSource.channelCount;
-    // In case channel counts change, this is changed each time
-    this.splitter = this.context.createChannelSplitter(channels);
-    // Connect to the gainNode so we get buildup stuff too
-    this.loopSource.connect(this.splitter);
-    if(this.buildSource) {
-        this.buildSource.connect(this.splitter);
+    createWorker() {
+        return new Worker(this.core.settings.defaults.workersPath + 'audio-worker.js');
     }
-    // Split display up into each channel
-    this.vBars = Math.floor(this.vTotalBars/channels);
-    
-    for(let i = 0; i < channels; i++) {
-        let analyser = this.context.createAnalyser();
-        // big fft buffers are new-ish
-        try {
-            analyser.fftSize = 8192;
-        } catch(err) {
-            analyser.fftSize = 2048;
+
+    initVisualiser(bars) {
+        // When restarting the visualiser
+        if(!bars) {
+            bars = this.vTotalBars;
         }
-        // Chosen because they look nice, no maths behind it
-        analyser.smoothingTimeConstant = 0.6;
-        analyser.minDecibels = -70;
-        analyser.maxDecibels = -25;
-        this.analyserArrays.push(new Uint8Array(analyser.frequencyBinCount));
-        analyser.getByteTimeDomainData(this.analyserArrays[i]);
-        this.splitter.connect(analyser, i);   
-        this.analysers.push(analyser);
-        this.logArrays.push(new Uint8Array(this.vBars));
-    }
-    let binCount = this.analysers[0].frequencyBinCount;
-    let binWidth = this.loopSource.buffer.sampleRate / binCount;
-    // first 2kHz are linear
-    this.maxBinLin = Math.floor(2000/binWidth);
-    // Don't stretch the first 2kHz, it looks awful
-    this.linBins = Math.min(this.maxBinLin, Math.floor(this.vBars/2));
-    // Only go up to 22KHz
-    let maxBinLog = Math.floor(22000/binWidth);
-    let logBins = this.vBars - this.linBins;
-
-    let logLow = Math.log2(2000);
-    let logDiff = Math.log2(22000) - logLow;
-    for(let i = 0; i < logBins; i++) {
-        let cutoff = i * (logDiff/logBins) + logLow;
-        let freqCutoff = Math.pow(2, cutoff);
-        let binCutoff = Math.floor(freqCutoff / binWidth);
-        this.binCutoffs.push(binCutoff);
-    }
-    this.vReady = true;
-};
-
-SoundManager.prototype.sumArray = function(array, low, high) {
-    let total = 0;
-    for(let i = low; i <= high; i++) {
-        total += array[i];
-    }
-    return total/(high-low+1);
-};
-
-SoundManager.prototype.getVisualiserData = function() {
-    if(!this.vReady) {
-        return null;
-    }
-    for(let a = 0; a < this.analyserArrays.length; a++) {
-        let data = this.analyserArrays[a];
-        let result = this.logArrays[a];
-        this.analysers[a].getByteFrequencyData(data);
+        this.vReady = false;
+        this.vTotalBars = bars;
+        for(let i = 0; i < this.analysers.length; i++) {
+            this.analysers[i].disconnect();
+        }
+        if(this.splitter) {
+            this.splitter.disconnect();
+            this.splitter = null;
+        }
+        this.analysers = [];
+        this.analyserArrays = [];
+        this.logArrays = [];
+        this.binCutoffs = [];
         
-        for(let i = 0; i < this.linBins; i++) {
-            let scaled = Math.round(i * this.maxBinLin / this.linBins);
-            result[i] = data[scaled];
+        this.linBins = 0;
+        this.logBins = 0;
+        this.maxBinLin = 0;
+        
+        this.attachVisualiser();
+    }
+
+    attachVisualiser() {
+        if(!this.playing || this.vReady) {
+            return;
         }
-        result[this.linBins] = data[this.binCutoffs[0]];
-        for(let i = this.linBins+1; i < this.vBars; i++) {
-            let cutoff = i - this.linBins;
-            result[i] = this.sumArray(data, this.binCutoffs[cutoff-1], 
-                                            this.binCutoffs[cutoff]);
+
+        // Get our info from the loop
+        let channels = this.loopSource.channelCount;
+        // In case channel counts change, this is changed each time
+        this.splitter = this.context.createChannelSplitter(channels);
+        // Connect to the gainNode so we get buildup stuff too
+        this.loopSource.connect(this.splitter);
+        if(this.buildSource) {
+            this.buildSource.connect(this.splitter);
         }
+        // Split display up into each channel
+        this.vBars = Math.floor(this.vTotalBars/channels);
+        
+        for(let i = 0; i < channels; i++) {
+            let analyser = this.context.createAnalyser();
+            // big fft buffers are new-ish
+            try {
+                analyser.fftSize = 8192;
+            } catch(err) {
+                analyser.fftSize = 2048;
+            }
+            // Chosen because they look nice, no maths behind it
+            analyser.smoothingTimeConstant = 0.6;
+            analyser.minDecibels = -70;
+            analyser.maxDecibels = -25;
+            this.analyserArrays.push(new Uint8Array(analyser.frequencyBinCount));
+            analyser.getByteTimeDomainData(this.analyserArrays[i]);
+            this.splitter.connect(analyser, i);   
+            this.analysers.push(analyser);
+            this.logArrays.push(new Uint8Array(this.vBars));
+        }
+        let binCount = this.analysers[0].frequencyBinCount;
+        let binWidth = this.loopSource.buffer.sampleRate / binCount;
+        // first 2kHz are linear
+        this.maxBinLin = Math.floor(2000/binWidth);
+        // Don't stretch the first 2kHz, it looks awful
+        this.linBins = Math.min(this.maxBinLin, Math.floor(this.vBars/2));
+        // Only go up to 22KHz
+        let maxBinLog = Math.floor(22000/binWidth);
+        let logBins = this.vBars - this.linBins;
+
+        let logLow = Math.log2(2000);
+        let logDiff = Math.log2(22000) - logLow;
+        for(let i = 0; i < logBins; i++) {
+            let cutoff = i * (logDiff/logBins) + logLow;
+            let freqCutoff = Math.pow(2, cutoff);
+            let binCutoff = Math.floor(freqCutoff / binWidth);
+            this.binCutoffs.push(binCutoff);
+        }
+        this.vReady = true;
     }
-    return this.logArrays;
-};
 
-SoundManager.prototype.setMute = function(mute) {
-    if(!this.mute && mute) { // muting
-        this.lastVol = this.gainNode.gain.value;
+    sumArray(array, low, high) {
+        let total = 0;
+        for(let i = low; i <= high; i++) {
+            total += array[i];
+        }
+        return total/(high-low+1);
     }
-    if(mute) {
-        this.gainNode.gain.value = 0;
-    } else {
-        this.gainNode.gain.value = this.lastVol;
+
+    getVisualiserData() {
+        if(!this.vReady) {
+            return null;
+        }
+        for(let a = 0; a < this.analyserArrays.length; a++) {
+            let data = this.analyserArrays[a];
+            let result = this.logArrays[a];
+            this.analysers[a].getByteFrequencyData(data);
+            
+            for(let i = 0; i < this.linBins; i++) {
+                let scaled = Math.round(i * this.maxBinLin / this.linBins);
+                result[i] = data[scaled];
+            }
+            result[this.linBins] = data[this.binCutoffs[0]];
+            for(let i = this.linBins+1; i < this.vBars; i++) {
+                let cutoff = i - this.linBins;
+                result[i] = this.sumArray(data, this.binCutoffs[cutoff-1], 
+                                                this.binCutoffs[cutoff]);
+            }
+        }
+        return this.logArrays;
     }
-    this.core.userInterface.updateVolume(this.gainNode.gain.value);
-    this.mute = mute;
-    return mute;
-};
 
-SoundManager.prototype.toggleMute = function() {
-    return this.setMute(!this.mute);
-};
-
-SoundManager.prototype.decreaseVolume = function() {
-    this.setMute(false);
-    let val = Math.max(this.gainNode.gain.value - 0.1, 0);
-    this.setVolume(val);
-};
-
-SoundManager.prototype.increaseVolume = function() {
-    this.setMute(false);
-    let val = Math.min(this.gainNode.gain.value + 0.1, 1);
-    this.setVolume(val);
-};
-
-SoundManager.prototype.setVolume = function(vol) {
-    this.gainNode.gain.value = vol;
-    this.lastVol = vol;
-    this.core.userInterface.updateVolume(vol);
-};
-
-SoundManager.prototype.fadeOut = function(callback) {
-    if(!this.mute) {
-        // Firefox hackery
-        this.gainNode.gain.setValueAtTime(this.lastVol, this.context.currentTime);
-        this.gainNode.gain.exponentialRampToValueAtTime(0.01, this.context.currentTime + 2);
+    setMute(mute) {
+        if(!this.mute && mute) { // muting
+            this.lastVol = this.gainNode.gain.value;
+        }
+        if(mute) {
+            this.gainNode.gain.value = 0;
+        } else {
+            this.gainNode.gain.value = this.lastVol;
+        }
+        this.core.userInterface.updateVolume(this.gainNode.gain.value);
+        this.mute = mute;
+        return mute;
     }
-    setTimeout(callback, 2000);
-};
+
+    toggleMute() {
+        return this.setMute(!this.mute);
+    }
+
+    decreaseVolume() {
+        this.setMute(false);
+        let val = Math.max(this.gainNode.gain.value - 0.1, 0);
+        this.setVolume(val);
+    }
+
+    increaseVolume() {
+        this.setMute(false);
+        let val = Math.min(this.gainNode.gain.value + 0.1, 1);
+        this.setVolume(val);
+    }
+
+    setVolume(vol) {
+        this.gainNode.gain.value = vol;
+        this.lastVol = vol;
+        this.core.userInterface.updateVolume(vol);
+    }
+
+    fadeOut(callback) {
+        if(!this.mute) {
+            // Firefox hackery
+            this.gainNode.gain.setValueAtTime(this.lastVol, this.context.currentTime);
+            this.gainNode.gain.exponentialRampToValueAtTime(0.01, this.context.currentTime + 2);
+        }
+        setTimeout(callback, 2000);
+    }
+}
 
 let miniOggRaw = 
 "T2dnUwACAAAAAAAAAADFYgAAAAAAAMLKRdwBHgF2b3JiaXMAAAAAAUSsAAAA" +

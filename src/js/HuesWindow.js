@@ -22,149 +22,151 @@
 (function(window, document) {
 "use strict"; 
 
-function HuesWindow(root, defaults) {
-    this.eventListeners = {
-        /* callback windowshown(shown)
-         *
-         * When the window is shown, hidden or toggled this fires.
-         * 'shown' is true if the window was made visible, false otherwise
-         */
-        windowshown : [],
-        /* callback tabselected(tabName)
-         *
-         * The name of the tab that was selected
-         */
-        tabselected : []
-    };
-    
-    this.hasUI = defaults.enableWindow;
-    
-    if(!this.hasUI)
-        return;
-    
-    this.window = document.createElement("div");
-    this.window.className = "hues-win-helper";
-    root.appendChild(this.window);
-    
-    let actualWindow = document.createElement("div");
-    actualWindow.className = "hues-win";
-    this.window.appendChild(actualWindow);
-    
-    let closeButton = document.createElement("div");
-    closeButton.className = "hues-win__closebtn";
-    closeButton.onclick = this.hide.bind(this);
-    actualWindow.appendChild(closeButton);
-    
-    this.tabContainer = document.createElement("div");
-    this.tabContainer.className = "hues-win__tabs";
-    actualWindow.appendChild(this.tabContainer);
-    
-    this.contentContainer = document.createElement("div");
-    this.contentContainer.className = "hues-win__content";
-    actualWindow.appendChild(this.contentContainer);
-    
-    this.contents = [];
-    this.tabs = [];
-    this.tabNames = [];
+class HuesWindow {
+    constructor(root, defaults) {
+        this.eventListeners = {
+            /* callback windowshown(shown)
+             *
+             * When the window is shown, hidden or toggled this fires.
+             * 'shown' is true if the window was made visible, false otherwise
+             */
+            windowshown : [],
+            /* callback tabselected(tabName)
+             *
+             * The name of the tab that was selected
+             */
+            tabselected : []
+        };
+        
+        this.hasUI = defaults.enableWindow;
+        
+        if(!this.hasUI)
+            return;
+        
+        this.window = document.createElement("div");
+        this.window.className = "hues-win-helper";
+        root.appendChild(this.window);
+        
+        let actualWindow = document.createElement("div");
+        actualWindow.className = "hues-win";
+        this.window.appendChild(actualWindow);
+        
+        let closeButton = document.createElement("div");
+        closeButton.className = "hues-win__closebtn";
+        closeButton.onclick = this.hide.bind(this);
+        actualWindow.appendChild(closeButton);
+        
+        this.tabContainer = document.createElement("div");
+        this.tabContainer.className = "hues-win__tabs";
+        actualWindow.appendChild(this.tabContainer);
+        
+        this.contentContainer = document.createElement("div");
+        this.contentContainer.className = "hues-win__content";
+        actualWindow.appendChild(this.contentContainer);
+        
+        this.contents = [];
+        this.tabs = [];
+        this.tabNames = [];
 
-    
-    if(defaults.showWindow) {
-        this.show();
-    } else {
-        this.hide();
-    }
-}
-
-HuesWindow.prototype.addTab = function(tabName, tabContent) {
-    if(!this.hasUI)
-        return;
-    
-    let label = document.createElement("div");
-    label.textContent = tabName;
-    label.className = "tab-label";
-    label.onclick = this.selectTab.bind(this, tabName);
-    this.tabContainer.appendChild(label);
-    this.tabs.push(label);
-    this.tabNames.push(tabName);
-    
-    let content = document.createElement("div");
-    content.className = "tab-content";
-    content.appendChild(tabContent);
-    this.contentContainer.appendChild(content);
-    this.contents.push(content);
-};
-
-HuesWindow.prototype.selectTab = function(tabName, dontShowWin) {
-    if(!this.hasUI)
-        return;
-    if(!dontShowWin) {
-        this.show();
-    }
-    for(let i = 0; i < this.tabNames.length; i++) {
-        let name = this.tabNames[i];
-        if(tabName.toLowerCase() == name.toLowerCase()) {
-            this.contents[i].classList.add("tab-content--active");
-            this.tabs[i].classList.add("tab-label--active");
-            this.callEventListeners("tabselected", name);
+        
+        if(defaults.showWindow) {
+            this.show();
         } else {
-            this.contents[i].classList.remove("tab-content--active");
-            this.tabs[i].classList.remove("tab-label--active");
+            this.hide();
         }
     }
-};
 
-HuesWindow.prototype.hide = function() {
-    if(!this.hasUI)
-        return;
-    
-    this.window.classList.add("hidden");
-    this.callEventListeners("windowshown", false);
-};
-
-HuesWindow.prototype.show = function() {
-    if(!this.hasUI)
-        return;
-    
-    this.window.classList.remove("hidden");
-    this.callEventListeners("windowshown", true);
-};
-
-HuesWindow.prototype.toggle = function() {
-    if(!this.hasUI)
-        return;
-    if(this.window.classList.contains("hidden")) {
-        this.show();
-    } else {
-        this.hide();
+    addTab(tabName, tabContent) {
+        if(!this.hasUI)
+            return;
+        
+        let label = document.createElement("div");
+        label.textContent = tabName;
+        label.className = "tab-label";
+        label.onclick = this.selectTab.bind(this, tabName);
+        this.tabContainer.appendChild(label);
+        this.tabs.push(label);
+        this.tabNames.push(tabName);
+        
+        let content = document.createElement("div");
+        content.className = "tab-content";
+        content.appendChild(tabContent);
+        this.contentContainer.appendChild(content);
+        this.contents.push(content);
     }
-};
 
-HuesWindow.prototype.callEventListeners = function(ev) {
-    let args = Array.prototype.slice.call(arguments, 1);
-    this.eventListeners[ev].forEach(function(callback) {
-        callback.apply(null, args);
-    });
-};
-
-HuesWindow.prototype.addEventListener = function(ev, callback) {
-    ev = ev.toLowerCase();
-    if (typeof(this.eventListeners[ev]) !== "undefined") {
-        this.eventListeners[ev].push(callback);
-    } else {
-        throw Error("Unknown event: " + ev);
+    selectTab(tabName, dontShowWin) {
+        if(!this.hasUI)
+            return;
+        if(!dontShowWin) {
+            this.show();
+        }
+        for(let i = 0; i < this.tabNames.length; i++) {
+            let name = this.tabNames[i];
+            if(tabName.toLowerCase() == name.toLowerCase()) {
+                this.contents[i].classList.add("tab-content--active");
+                this.tabs[i].classList.add("tab-label--active");
+                this.callEventListeners("tabselected", name);
+            } else {
+                this.contents[i].classList.remove("tab-content--active");
+                this.tabs[i].classList.remove("tab-label--active");
+            }
+        }
     }
-};
 
-HuesWindow.prototype.removeEventListener = function(ev, callback) {
-    ev = ev.toLowerCase();
-    if (typeof(this.eventListeners[ev]) !== "undefined") {
-        this.eventListeners[ev] = this.eventListeners[ev].filter(function(a) {
-            return (a !== callback);
+    hide() {
+        if(!this.hasUI)
+            return;
+        
+        this.window.classList.add("hidden");
+        this.callEventListeners("windowshown", false);
+    }
+
+    show() {
+        if(!this.hasUI)
+            return;
+        
+        this.window.classList.remove("hidden");
+        this.callEventListeners("windowshown", true);
+    }
+
+    toggle() {
+        if(!this.hasUI)
+            return;
+        if(this.window.classList.contains("hidden")) {
+            this.show();
+        } else {
+            this.hide();
+        }
+    }
+
+    callEventListeners(ev) {
+        let args = Array.prototype.slice.call(arguments, 1);
+        this.eventListeners[ev].forEach(function(callback) {
+            callback.apply(null, args);
         });
-    } else {
-        throw Error("Unknown event: " + ev);
     }
-};
+
+    addEventListener(ev, callback) {
+        ev = ev.toLowerCase();
+        if (typeof(this.eventListeners[ev]) !== "undefined") {
+            this.eventListeners[ev].push(callback);
+        } else {
+            throw Error("Unknown event: " + ev);
+        }
+    }
+
+    removeEventListener(ev, callback) {
+        ev = ev.toLowerCase();
+        if (typeof(this.eventListeners[ev]) !== "undefined") {
+            this.eventListeners[ev] = this.eventListeners[ev].filter(function(a) {
+                return (a !== callback);
+            });
+        } else {
+            throw Error("Unknown event: " + ev);
+        }
+    }
+}
 
 window.HuesWindow = HuesWindow;
 

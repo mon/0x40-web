@@ -26,7 +26,7 @@
 /* If you're modifying settings for your hues, DON'T EDIT THIS
    - Go to the HTML and edit the `defaults` object instead!
  */
-HuesSettings.prototype.defaultSettings = {
+const defaultSettings = {
     // Location relative to root - where do the audio/zip workers live
     // This is required because Web Workers need an absolute path
     workersPath : "lib/workers/",
@@ -80,7 +80,7 @@ HuesSettings.prototype.defaultSettings = {
 };
 
 // Don't get saved to localStorage
-HuesSettings.prototype.ephemeralSettings = [
+const ephemeralSettings = [
     "load",
     "autoplay",
     "overwriteLocal",
@@ -100,7 +100,7 @@ HuesSettings.prototype.ephemeralSettings = [
 ];
 
 // To dynamically build the UI like the cool guy I am
-HuesSettings.prototype.settingsCategories = {
+const settingsCategories = {
     "Functionality" : [
         "autoSong",
         "autoSongShuffle",
@@ -126,7 +126,7 @@ HuesSettings.prototype.settingsCategories = {
     ]
 };
 
-HuesSettings.prototype.settingsOptions = {
+const settingsOptions = {
     smartAlign : {
         name : "Smart Align images",
         options : ["off", "on"]
@@ -218,223 +218,225 @@ HuesSettings.prototype.settingsOptions = {
     }
 };
 
-function HuesSettings(defaults) {
-    this.eventListeners = {
-        /* callback updated()
-         *
-         * Called when settings are updated
-         */
-        updated : []
-    };
-    
-    this.hasUI = false;
-    
-    this.settingCheckboxes = {};
-    
-    this.textCallbacks = [];
-    this.visCallbacks = [];
-
-    for(let attr in this.defaultSettings) {
-      if(this.defaultSettings.hasOwnProperty(attr)) {
-          if(defaults[attr] === undefined) {
-              defaults[attr] = this.defaultSettings[attr];
-          }
-          // don't write to local if it's a temp settings
-          if(this.ephemeralSettings.indexOf(attr) != -1) {
-              continue;
-          }
-          if(defaults.overwriteLocal) {
-              localStorage[attr] = defaults[attr];
-          }
-          // populate defaults, ignoring current
-          if(localStorage[attr] === undefined) {
-              localStorage[attr] = defaults[attr];
-          }
-      }
-    }
-
-    this.defaults = defaults;
-}
-
-HuesSettings.prototype.initUI = function(huesWin) {
-    let root = document.createElement("div");
-    root.className = "hues-options";
+class HuesSettings {
+    constructor(defaults) {
+        this.eventListeners = {
+            /* callback updated()
+             *
+             * Called when settings are updated
+             */
+            updated : []
+        };
         
-    // Don't make in every loop
-    let intValidator = function(self, variable) {
-        this.value = this.value.replace(/\D/g,'');
-        if(this.value === "" || this.value < 1) {
-            this.value = "";
-            return;
-        }
-        localStorage[variable] = this.value;
-        self.updateConditionals();
-        self.callEventListeners("updated");
-    };
+        this.hasUI = false;
+        
+        this.settingCheckboxes = {};
+        
+        this.textCallbacks = [];
+        this.visCallbacks = [];
 
-    // To order things nicely
-    for(let cat in this.settingsCategories) {
-            if(this.settingsCategories.hasOwnProperty(cat)) {
-            let catContainer = document.createElement("div");
-            catContainer.textContent = cat;
-            catContainer.className = "settings-category";
-            let cats = this.settingsCategories[cat];
-            for(let i = 0; i < cats.length; i++) {
-                let setName = cats[i];
-                let setContainer = document.createElement("div");
-                let setting = this.settingsOptions[setName];
-                setContainer.textContent = setting.name;
-                setContainer.className = "settings-individual";
-                let buttonContainer = document.createElement("div");
-                buttonContainer.className = "settings-buttons";
-                
-                for(let j = 0; j < setting.options.length; j++) {
-                    let option = setting.options[j];
-                    if(typeof option === "string") {
-                        let checkbox = document.createElement("input");
-                        // Save checkbox so we can update UI stuff
-                        this.settingCheckboxes[setName + "-" + option] = checkbox;
-                        checkbox.className = "settings-checkbox";
-                        checkbox.type = "radio";
-                        checkbox.value = option;
-                        let unique = 0;
-                        // Lets us have multiple hues on 1 page
-                        let id = setName + "-" + option + "-";
-                        while(document.getElementById(id + unique)) {
-                            unique++;
-                        }
-                        checkbox.name = setName + "-" + unique;
-                        checkbox.id = id + unique;
-                        if(localStorage[setName] == option) {
-                            checkbox.checked = true;
-                        }
-                        checkbox.onclick = function(self) {
-                            self.set(setName, this.value);
-                        }.bind(checkbox, this);
-                        buttonContainer.appendChild(checkbox);
-                        // So we can style this nicely
-                        let label = document.createElement("label");
-                        label.className = "settings-label";
-                        label.htmlFor = checkbox.id;
-                        label.textContent = option.toUpperCase();
-                        buttonContainer.appendChild(label);
-                    } else { // special option
-                        if(option.type == "varText") {
-                            let text = document.createElement("span");
-                            text.textContent = option.text();
-                            buttonContainer.appendChild(text);
-                            this.textCallbacks.push({func:option.text, element:text});
-                        } else if(option.type == "input") {
-                            let input = document.createElement("input");
-                            input.setAttribute("type", "text");
-                            input.className = "settings-input";
-                            input.value = localStorage[option.variable];
-                            // TODO: support more than just positive ints when the need arises
-                            if(option.inputType == "int") {
-                                input.oninput = intValidator.bind(input, this, option.variable);
+        for(let attr in defaultSettings) {
+          if(defaultSettings.hasOwnProperty(attr)) {
+              if(defaults[attr] === undefined) {
+                  defaults[attr] = defaultSettings[attr];
+              }
+              // don't write to local if it's a temp settings
+              if(ephemeralSettings.indexOf(attr) != -1) {
+                  continue;
+              }
+              if(defaults.overwriteLocal) {
+                  localStorage[attr] = defaults[attr];
+              }
+              // populate defaults, ignoring current
+              if(localStorage[attr] === undefined) {
+                  localStorage[attr] = defaults[attr];
+              }
+          }
+        }
+
+        this.defaults = defaults;
+    }
+
+    initUI(huesWin) {
+        let root = document.createElement("div");
+        root.className = "hues-options";
+            
+        // Don't make in every loop
+        let intValidator = function(self, variable) {
+            this.value = this.value.replace(/\D/g,'');
+            if(this.value === "" || this.value < 1) {
+                this.value = "";
+                return;
+            }
+            localStorage[variable] = this.value;
+            self.updateConditionals();
+            self.callEventListeners("updated");
+        };
+
+        // To order things nicely
+        for(let cat in settingsCategories) {
+                if(settingsCategories.hasOwnProperty(cat)) {
+                let catContainer = document.createElement("div");
+                catContainer.textContent = cat;
+                catContainer.className = "settings-category";
+                let cats = settingsCategories[cat];
+                for(let i = 0; i < cats.length; i++) {
+                    let setName = cats[i];
+                    let setContainer = document.createElement("div");
+                    let setting = settingsOptions[setName];
+                    setContainer.textContent = setting.name;
+                    setContainer.className = "settings-individual";
+                    let buttonContainer = document.createElement("div");
+                    buttonContainer.className = "settings-buttons";
+                    
+                    for(let j = 0; j < setting.options.length; j++) {
+                        let option = setting.options[j];
+                        if(typeof option === "string") {
+                            let checkbox = document.createElement("input");
+                            // Save checkbox so we can update UI stuff
+                            this.settingCheckboxes[setName + "-" + option] = checkbox;
+                            checkbox.className = "settings-checkbox";
+                            checkbox.type = "radio";
+                            checkbox.value = option;
+                            let unique = 0;
+                            // Lets us have multiple hues on 1 page
+                            let id = setName + "-" + option + "-";
+                            while(document.getElementById(id + unique)) {
+                                unique++;
                             }
-                            input.autofocus = false;
-                            buttonContainer.appendChild(input);
-                            if(option.visiblity) {
-                                this.visCallbacks.push({func:option.visiblity, element:input});
-                                input.style.visibility = option.visiblity() ? "visible" : "hidden";
+                            checkbox.name = setName + "-" + unique;
+                            checkbox.id = id + unique;
+                            if(localStorage[setName] == option) {
+                                checkbox.checked = true;
+                            }
+                            checkbox.onclick = function(self) {
+                                self.set(setName, this.value);
+                            }.bind(checkbox, this);
+                            buttonContainer.appendChild(checkbox);
+                            // So we can style this nicely
+                            let label = document.createElement("label");
+                            label.className = "settings-label";
+                            label.htmlFor = checkbox.id;
+                            label.textContent = option.toUpperCase();
+                            buttonContainer.appendChild(label);
+                        } else { // special option
+                            if(option.type == "varText") {
+                                let text = document.createElement("span");
+                                text.textContent = option.text();
+                                buttonContainer.appendChild(text);
+                                this.textCallbacks.push({func:option.text, element:text});
+                            } else if(option.type == "input") {
+                                let input = document.createElement("input");
+                                input.setAttribute("type", "text");
+                                input.className = "settings-input";
+                                input.value = localStorage[option.variable];
+                                // TODO: support more than just positive ints when the need arises
+                                if(option.inputType == "int") {
+                                    input.oninput = intValidator.bind(input, this, option.variable);
+                                }
+                                input.autofocus = false;
+                                buttonContainer.appendChild(input);
+                                if(option.visiblity) {
+                                    this.visCallbacks.push({func:option.visiblity, element:input});
+                                    input.style.visibility = option.visiblity() ? "visible" : "hidden";
+                                }
                             }
                         }
+
                     }
-
+                    setContainer.appendChild(buttonContainer);
+                    catContainer.appendChild(setContainer);
                 }
-                setContainer.appendChild(buttonContainer);
-                catContainer.appendChild(setContainer);
+                root.appendChild(catContainer);
             }
-            root.appendChild(catContainer);
         }
+        huesWin.addTab("OPTIONS", root);
+        this.hasUI = true;
     }
-    huesWin.addTab("OPTIONS", root);
-    this.hasUI = true;
-};
 
-HuesSettings.prototype.get = function(setting) {
-    if(this.defaults.hasOwnProperty(setting)) {
-        if(this.ephemeralSettings.indexOf(setting) != -1) {
-            return this.defaults[setting];
+    get(setting) {
+        if(this.defaults.hasOwnProperty(setting)) {
+            if(ephemeralSettings.indexOf(setting) != -1) {
+                return this.defaults[setting];
+            } else {
+                return localStorage[setting];
+            }
         } else {
-            return localStorage[setting];
+            console.log("WARNING: Attempted to fetch invalid setting:", setting);
+            return null;
         }
-    } else {
-        console.log("WARNING: Attempted to fetch invalid setting:", setting);
-        return null;
     }
-};
 
-// Set a named index to its named value, returns false if name doesn't exist
-HuesSettings.prototype.set = function(setting, value) {
-    value = value.toLowerCase();
-    let opt = this.settingsOptions[setting];
-    if(!opt || opt.options.indexOf(value) == -1) {
-        console.log(value, "is not a valid value for", setting);
-        return false;
+    // Set a named index to its named value, returns false if name doesn't exist
+    set(setting, value) {
+        value = value.toLowerCase();
+        let opt = settingsOptions[setting];
+        if(!opt || opt.options.indexOf(value) == -1) {
+            console.log(value, "is not a valid value for", setting);
+            return false;
+        }
+        // for updating the UI selection
+        try {
+            this.settingCheckboxes[setting + "-" + value].checked = true;
+        } catch(e) {}
+        localStorage[setting] = value;
+        this.updateConditionals();
+        this.callEventListeners("updated");
+        return true;
     }
-    // for updating the UI selection
-    try {
-        this.settingCheckboxes[setting + "-" + value].checked = true;
-    } catch(e) {}
-    localStorage[setting] = value;
-    this.updateConditionals();
-    this.callEventListeners("updated");
-    return true;
-};
 
-HuesSettings.prototype.updateConditionals = function() {
-    // update any conditionally formatted settings text
-    for(let i = 0; i < this.textCallbacks.length; i++) {
-        let text = this.textCallbacks[i];
-        text.element.textContent = text.func();
+    updateConditionals() {
+        // update any conditionally formatted settings text
+        for(let i = 0; i < this.textCallbacks.length; i++) {
+            let text = this.textCallbacks[i];
+            text.element.textContent = text.func();
+        }
+        for(let i = 0; i < this.visCallbacks.length; i++) {
+            let callback = this.visCallbacks[i];
+            callback.element.style.visibility = callback.func() ? "visible" : "hidden";
+        }
     }
-    for(let i = 0; i < this.visCallbacks.length; i++) {
-        let callback = this.visCallbacks[i];
-        callback.element.style.visibility = callback.func() ? "visible" : "hidden";
-    }
-};
 
-// Note: This is not defaults as per defaultSettings, but those merged with
-// the defaults given in the initialiser
-HuesSettings.prototype.setDefaults = function() {
-    for(let attr in this.defaults) {
-        if(this.defaults.hasOwnProperty(attr)) {
-            if(this.ephemeralSettings.indexOf(attr) != -1) {
-                continue;
+    // Note: This is not defaults as per defaultSettings, but those merged with
+    // the defaults given in the initialiser
+    setDefaults() {
+        for(let attr in this.defaults) {
+            if(this.defaults.hasOwnProperty(attr)) {
+                if(ephemeralSettings.indexOf(attr) != -1) {
+                    continue;
+                }
+                localStorage[attr] = this.defaults[attr];
             }
-            localStorage[attr] = this.defaults[attr];
         }
     }
-};
 
-HuesSettings.prototype.callEventListeners = function(ev) {
-    let args = Array.prototype.slice.call(arguments, 1);
-    this.eventListeners[ev].forEach(function(callback) {
-        callback.apply(null, args);
-    });
-};
-
-HuesSettings.prototype.addEventListener = function(ev, callback) {
-    ev = ev.toLowerCase();
-    if (typeof(this.eventListeners[ev]) !== "undefined") {
-        this.eventListeners[ev].push(callback);
-    } else {
-        throw Error("Unknown event: " + ev);
-    }
-};
-
-HuesSettings.prototype.removeEventListener = function(ev, callback) {
-    ev = ev.toLowerCase();
-    if (typeof(this.eventListeners[ev]) !== "undefined") {
-        this.eventListeners[ev] = this.eventListeners[ev].filter(function(a) {
-            return (a !== callback);
+    callEventListeners(ev) {
+        let args = Array.prototype.slice.call(arguments, 1);
+        this.eventListeners[ev].forEach(function(callback) {
+            callback.apply(null, args);
         });
-    } else {
-        throw Error("Unknown event: " + ev);
     }
-};
+
+    addEventListener(ev, callback) {
+        ev = ev.toLowerCase();
+        if (typeof(this.eventListeners[ev]) !== "undefined") {
+            this.eventListeners[ev].push(callback);
+        } else {
+            throw Error("Unknown event: " + ev);
+        }
+    }
+
+    removeEventListener(ev, callback) {
+        ev = ev.toLowerCase();
+        if (typeof(this.eventListeners[ev]) !== "undefined") {
+            this.eventListeners[ev] = this.eventListeners[ev].filter(function(a) {
+                return (a !== callback);
+            });
+        } else {
+            throw Error("Unknown event: " + ev);
+        }
+    }
+}
 
 window.HuesSettings = HuesSettings;
 
