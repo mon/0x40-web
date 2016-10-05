@@ -28,7 +28,12 @@
 class HuesCore {
     constructor(defaults) {
         this.eventListeners = {
-            /* callback time(hundredths)
+            /* callback loaded()
+             *
+             * When everything has completely loaded and we're ready to go
+             */
+            loaded : [],
+            /* callback time(seconds)
              *
              * When the song time is updated - negative for buildup
              * Returns a floating point number denoting seconds
@@ -236,6 +241,7 @@ class HuesCore {
             }
         }).then(() => {
             this.preloader.classList.add("hues-preloader--loaded");
+            this.callEventListeners("loaded");
             if(defaults.firstImage) {
                 this.setImageByName(defaults.firstImage);
             } else {
