@@ -379,7 +379,8 @@ class Respack {
 
         let newSongs = [];
         let el = dom.documentElement.firstElementChild;
-        for(; el; el = el.nextElementSibling) {
+        
+        for(let i = 0; el; el = el.nextElementSibling, i++) {
             let song = this.getSong(el.attributes[0].value);
             if(song) {
                 song.title = el.getTag("title");
