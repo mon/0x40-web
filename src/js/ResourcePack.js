@@ -420,8 +420,8 @@ class Respack {
                 newSongs.push(song);
                 debug("  [I] " + song.name, ": '" + song.title + "' added to songs");
             } else {
-                debug("  WARNING!", "songs.xml: <song> element", i + 1,
-                    "- no song '" + el.attributes[0].value + "' found");
+                debug("  WARNING!", "songs.xml: <song> element", 
+                    + el.attributes[0].value + "- no song found");
             }
         }
         for(let i = 0; i < this.songs.length; i++) {
