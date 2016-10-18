@@ -766,19 +766,12 @@ class HuesCore {
                 }
                 /* falls through */
             case '~':
-                // case: fade in build, not in rhythm. Must max out fade timer.
-                let maxSearch = this.currentSong.rhythm.length;
-                if(this.beatIndex < 0) {
-                    maxSearch -= this.beatIndex;
-                }
-                let fadeLen;
-                for (fadeLen = 1; fadeLen <= maxSearch; fadeLen++) {
-                    if (this.getBeat(fadeLen + this.beatIndex) != ".") {
-                        break;
-                    }
-                }
-                this.renderer.doColourFade((fadeLen * this.getBeatLength()) / this.soundManager.playbackRate);
+                this.renderer.doColourFade(this.timeToNextBeat());
                 this.randomColour(true);
+                break;
+            case 'S':
+            case 's':
+                this.renderer.doSlice(this.getBeatLength(), this.charsToNextBeat());
                 break;
             case 'I':
                 if (this.isFullAuto) {
@@ -792,12 +785,32 @@ class HuesCore {
             if ([".", "+", "|", "¤"].indexOf(beat) == -1) {
                 this.renderer.clearBlackout();
             }
-            if([".", "+", "¤", ":", "*", "X", "O", "~", "=", "i", "I"].indexOf(beat) == -1) {
+            if([".", "+", "¤", ":", "*", "X", "O", "~", "=", "i", "I", "s"].indexOf(beat) == -1) {
                 this.randomColour();
                 if (this.isFullAuto) {
                     this.randomImage();
                 }
         }
+    }
+    
+    
+    charsToNextBeat() {
+        // case: fade in build, not in rhythm. Must max out fade timer.
+        let maxSearch = this.currentSong.rhythm.length;
+        if(this.beatIndex < 0) {
+            maxSearch -= this.beatIndex;
+        }
+        let nextBeat;
+        for (nextBeat = 1; nextBeat <= maxSearch; nextBeat++) {
+            if (this.getBeat(nextBeat + this.beatIndex) != ".") {
+                break;
+            }
+        }
+        return nextBeat;
+    }
+    
+    timeToNextBeat() {
+        return (this.charsToNextBeat() * this.getBeatLength()) / this.soundManager.playbackRate;
     }
 
     getBeatString(length) {
