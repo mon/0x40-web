@@ -36,6 +36,14 @@ var defaults = {
 ## Settings object  
 See [HuesSettings.js](./src/js/HuesSettings.js#L29) for the possible options you can put into the `defaults` object.
 
+## Query string
+Any setting that can go in the `defaults` object can also be dynamically specified in the URL.
+For example: http://0x40.mon.im/custom.html?packs=BIOS.zip,kitchen.zip&currentUI=v4.20
+
+There are two special settings here:
+* `firstSong` can just be written as `song`.
+* Anything given as `packs` or `respacks` will be appended to the respacks specified in the `defaults` object, as opposed to overwriting them.
+
 ## Building
 Install [Node.js](https://nodejs.org/en/), v5 preferred.  
 Install the required packages for the build:

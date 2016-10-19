@@ -30,6 +30,9 @@ const defaultSettings = {
     // Location relative to root - where do the audio/zip workers live
     // This is required because Web Workers need an absolute path
     workersPath : "lib/workers/",
+    // ONLY USED FOR QUERY STRINGS this will be prepended to any respacks
+    // passed in as a ?packs=query
+    respackPath : "respacks/",
     // Debugging var, for loading zips or not
     load : true,
     // Debug, play first song automatically?
@@ -85,6 +88,7 @@ const ephemeralSettings = [
     "autoplay",
     "overwriteLocal",
     "respacks",
+    "respackPath",
     "firstSong",
     "firstImage",
     "disableRemoteResources",
@@ -255,6 +259,42 @@ class HuesSettings {
         }
 
         this.defaults = defaults;
+        
+        // Override with our query string
+        let querySettings = this.getQuerySettings();
+        this.defaults.respacks = this.defaults.respacks.concat(querySettings.respacks);
+        for(let attr in querySettings) {
+          if(querySettings.hasOwnProperty(attr) && attr != "respacks") {
+              this.defaults[attr] = querySettings[attr];
+              
+              if(ephemeralSettings.indexOf(attr) == -1) {
+                  // TODO: Everything that checks localStorage for settings should
+                  // change to get() to preserve local changes
+                  localStorage[attr] = querySettings[attr];
+              }
+          }
+        }
+    }
+    
+    getQuerySettings() {
+        let results = {};
+        results.respacks = [];
+        let query = window.location.search.substring(1);
+        let vars = query.split("&");
+        for (let i=0;i<vars.length;i++) {
+            let pair = vars[i].split("=");
+            if(pair[0] == "packs" || pair[0] == "respacks"){
+                let packs = pair[1].split(",");
+                for(let j = 0; j < packs.length; j++) {
+                    results.respacks.push(this.defaults.respackPath + packs[j]);
+                }
+            } else if(pair[0] == "song") { // alias for firstSong
+                results.firstSong = pair[1];
+            } else {
+                results[pair[0]] = pair[1];
+            }
+        }
+        return results;
     }
 
     initUI(huesWin) {
