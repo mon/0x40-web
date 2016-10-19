@@ -453,12 +453,16 @@ class HuesCore {
 
     setSongByName(name) {
         let songs = this.resourceManager.enabledSongs;
+        let bestSong = 0;
+        let bestScore = 0;
         for(let i = 0; i < songs.length; i++) {
-            if(songs[i].title == name) {
-                return this.setSong(i);
+            let score = songs[i].title.score(name);
+            if(score > bestScore) {
+                bestScore = score;
+                bestSong = i;
             }
         }
-        return this.setSong(0); // fallback
+        return this.setSong(bestSong);
     }
 
     /* To set songs via reference instead of index - used in HuesEditor */
