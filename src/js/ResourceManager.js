@@ -246,12 +246,14 @@ class Resources {
         if (index != -1) {
             this.resourcePacks.splice(index, 1);
             this.rebuildArrays();
+            this.rebuildEnabled();
         }
     }
 
     removeAllPacks() {
         this.resourcePacks = [];
         this.rebuildArrays();
+        this.rebuildEnabled();
     }
 
     getSongNames() {
