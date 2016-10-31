@@ -36,7 +36,7 @@ class HuesUI {
         this.root = document.createElement("div");
         this.root.className = name ? name : this.constructor.name;
         parent.appendChild(this.root);
-        this.root.style.display = "none";
+        this.root.style.visibility = "hidden";
 
         this.core = null;
 
@@ -167,7 +167,7 @@ class HuesUI {
 
     connectCore(core) {
         this.core = core;
-        this.root.style.display = "block";
+        this.root.style.visibility = "visible";
         if(core.resourceManager.hasUI) {
             this.listContainer.appendChild(core.resourceManager.listView);
         }
@@ -185,7 +185,7 @@ class HuesUI {
             this.core.removeEventListener(callback.name, callback.func);
         });
         this.core = null;
-        this.root.style.display = "none";
+        this.root.style.visibility = "hidden";
         while (this.listContainer.firstElementChild) {
             this.listContainer.removeChild(this.listContainer.firstElementChild);
         }
@@ -197,12 +197,12 @@ class HuesUI {
 
     // ONLY FOR CHANGING UI, NOT FOR "HIDE" FEATURE
     show() {
-        this.root.style.display = "block";
+        this.root.style.visibility = "visible"
     }
 
     // ONLY FOR CHANGING UI, NOT FOR "HIDE" FEATURE
     hide() {
-        this.root.style.display = "none";
+        this.root.style.visibility = "hidden";
     }
 
     toggleHide() {

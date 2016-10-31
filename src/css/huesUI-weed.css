@@ -32,7 +32,7 @@
 }
 
 .hues-w-controls, .hues-w-subcontrols, .hues-w-beatbar {
-    visibility: visible;
+    visibility: inherit;
     opacity: 1;
     transition: visibility 0.5s linear, opacity 0.5s linear;
 }
