@@ -109,6 +109,10 @@
     opacity: 0;
 }
 
+.hues-preloader__title {
+    font-size: 30pt;
+}
+
 .hues-preloader__text {
     display: block;
     text-align: center;

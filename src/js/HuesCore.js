@@ -149,7 +149,7 @@ class HuesCore {
         // Yes, we do indeed have Javascript
         this.root.innerHTML = "";
         
-        this.makePreloader(this.root);
+        this.makePreloader(this.root, defaults);
 
         window.onerror = (msg, url, line, col, error) => {
             this.error(msg);
@@ -306,10 +306,17 @@ class HuesCore {
         }
     }
 
-    makePreloader(root) {
+    makePreloader(root, defaults) {
         this.preloader = document.createElement("div");
         this.preloader.className = "hues-preloader";
         root.appendChild(this.preloader);
+        
+        if(defaults.preloadTitle) {
+            this.preloadTitle = document.createElement("div");
+            this.preloadTitle.className = "hues-preloader__title";
+            this.preloadTitle.textContent = defaults.preloadTitle;
+            this.preloader.appendChild(this.preloadTitle);
+        }
         
         this.preloadMsg = document.createElement("div");
         this.preloadMsg.className = "hues-preloader__text";

@@ -55,6 +55,7 @@ const defaultSettings = {
     preloadPrefix: "0x",
     preloadBase: 16,
     preloadMax: 0x40,
+    preloadTitle: "",
     // Info customisation
     huesName: "0x40 Hues of JS, v%VERSION%",
     // If unset, uses <body>, otherwise sets which element to turn hues-y
