@@ -24,6 +24,15 @@
 
 class SoundManager {
     constructor(core) {
+        // Perhaps this will do more later
+        this.eventListeners = {
+            /* callback seek()
+            *
+            * Called when the audio has been seeked - reset time determined transforms
+            */
+            seek : []
+        }
+        
         this.core = core;
         this.playing = false;
         this.playbackRate = 1;
@@ -61,6 +70,33 @@ class SoundManager {
         this.linBins = 0;
         this.logBins = 0;
         this.maxBinLin = 0;
+    }
+    
+    callEventListeners(ev) {
+        let args = Array.prototype.slice.call(arguments, 1);
+        this.eventListeners[ev].forEach(function(callback) {
+            callback.apply(null, args);
+        });
+    }
+
+    addEventListener(ev, callback) {
+        ev = ev.toLowerCase();
+        if (typeof(this.eventListeners[ev]) !== "undefined") {
+            this.eventListeners[ev].push(callback);
+        } else {
+            throw Error("Unknown event: " + ev);
+        }
+    }
+
+    removeEventListener(ev, callback) {
+        ev = ev.toLowerCase();
+        if (typeof(this.eventListeners[ev]) !== "undefined") {
+            this.eventListeners[ev] = this.eventListeners[ev].filter(function(a) {
+                return (a !== callback);
+            });
+        } else {
+            throw Error("Unknown event: " + ev);
+        }
     }
 
     init() {
@@ -235,6 +271,9 @@ class SoundManager {
         if(!this.song) {
             return;
         }
+        
+        this.callEventListeners("seek");
+        
         //console.log("Seeking to " + time);
         // Clamp the blighter
         time = Math.min(Math.max(time, -this.buildLength), this.loopLength);

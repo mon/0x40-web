@@ -28,6 +28,7 @@
 class HuesCanvas {
     constructor(root, soundManager, core) {
         this.audio = soundManager;
+        soundManager.addEventListener("seek", this.onSeek.bind(this));
         core.addEventListener("newimage", this.setImage.bind(this));
         core.addEventListener("newcolour", this.setColour.bind(this));
         core.addEventListener("beat", this.beat.bind(this));
@@ -114,6 +115,17 @@ class HuesCanvas {
         this.setBlurDecay(localStorage["blurDecay"]);
         this.setBlurQuality(localStorage["blurQuality"]);
         this.trippyOn = localStorage["trippyMode"] == "on";
+    }
+    
+    onSeek() {
+        this.colourFadeStart = 0;
+        this.colourFade = false;
+        this.trippyStart = [0, 0];
+        this.sliceStart = 0;
+        this.blurStart = 0;
+        this.blurDistance = 0;
+        this.xBlur = false;
+        this.yBlur = false;
     }
 
     resize() {

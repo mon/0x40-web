@@ -33,12 +33,14 @@ class HuesCore {
              * When everything has completely loaded and we're ready to go
              */
             loaded : [],
+            
             /* callback time(seconds)
              *
              * When the song time is updated - negative for buildup
              * Returns a floating point number denoting seconds
              */
             time : [],
+            
             /* callback blurUpdate(xPercent, yPercent)
              *
              * The current blur amounts, in percent of full blur
@@ -51,12 +53,14 @@ class HuesCore {
              * Song object is passed.
              */
             newsong : [],
+            
             /* callback newimage(image)
              *
              * Called on image change, whether user triggered or FULL AUTO mode.
              * Image object is passed.
              */
             newimage : [],
+            
             /* callback newcolour(colour, isFade)
              *
              * Called on colour change.
@@ -64,12 +68,14 @@ class HuesCore {
              * isFade: if the colour is fading from the previous value
              */
             newcolour : [],
+            
             /* callback newmode(mode)
              *
              * Called on mode change.
              * Mode is passed as a boolean.
              */
             newmode : [],
+            
             /* callback beat(beatString, beatIndex)
              *
              * Called on every new beat.
@@ -77,23 +83,27 @@ class HuesCore {
              * beatIndex is the beat index. Negative during buildups
              */
             beat : [],
+            
             /* callback invert(isInverted)
              *
              * Called whenever the invert state changes.
              * Invert state is passed as a boolean.
              */
             invert : [],
+            
             /* callback frame()
              *
              * Called on each new frame, at the end of all other frame processing
              */
             frame : [],
+            
             /* callback songstarted()
              *
              * Called when the song actually begins to play, not just when the
              * new song processing begins
              */
             songstarted : [],
+            
             /* callback settingsupdated()
              *
              * Called when settings are updated and should be re-read from localStorage
