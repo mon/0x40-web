@@ -197,7 +197,7 @@ class HuesUI {
 
     // ONLY FOR CHANGING UI, NOT FOR "HIDE" FEATURE
     show() {
-        this.root.style.visibility = "visible"
+        this.root.style.visibility = "visible";
     }
 
     // ONLY FOR CHANGING UI, NOT FOR "HIDE" FEATURE

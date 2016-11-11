@@ -62,7 +62,7 @@ gulp.task("minify", function () {
 });
 
 gulp.task("lint", function () {
-  return gulp.src("src/js/*.js")
+  return gulp.src(["src/js/*.js", '!src/js/string_score.min.js'])
     .pipe(jshint('.jshintrc'))
     .pipe(jshint.reporter('default'));
 });

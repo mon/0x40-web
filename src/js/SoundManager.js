@@ -31,7 +31,7 @@ class SoundManager {
             * Called when the audio has been seeked - reset time determined transforms
             */
             seek : []
-        }
+        };
         
         this.core = core;
         this.playing = false;
