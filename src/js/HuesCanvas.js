@@ -28,7 +28,8 @@
 class HuesCanvas {
     constructor(root, soundManager, core) {
         this.audio = soundManager;
-        soundManager.addEventListener("seek", this.onSeek.bind(this));
+        soundManager.addEventListener("seek", this.resetEffects.bind(this));
+        core.addEventListener("newsong", this.resetEffects.bind(this));
         core.addEventListener("newimage", this.setImage.bind(this));
         core.addEventListener("newcolour", this.setColour.bind(this));
         core.addEventListener("beat", this.beat.bind(this));
@@ -117,7 +118,7 @@ class HuesCanvas {
         this.trippyOn = localStorage["trippyMode"] == "on";
     }
     
-    onSeek() {
+    resetEffects() {
         this.colourFadeStart = 0;
         this.colourFade = false;
         this.trippyStart = [0, 0];
@@ -380,8 +381,9 @@ class HuesCanvas {
             }
             this.needsRedraw = true;
         }
-        if(this.trippyStart[0] || this.trippyStart[1]) {
-            for(let i = 0; i < 2; i++) {
+        for(let i = 0; i < 2; i++) {
+            if(this.trippyStart[i] || this.trippyRadii[i]) {
+                this.needsRedraw = true;
                 this.trippyRadii[i] = Math.floor((this.audio.currentTime - this.trippyStart[i]) * this.trippyRadius) * 2;
                 if(this.trippyRadii[i] > this.trippyRadius) {
                     this.trippyStart[i] = 0;
@@ -393,7 +395,6 @@ class HuesCanvas {
                     this.trippyRadii[i] = this.trippyRadius - this.trippyRadii[i];
                 }
             }
-            this.needsRedraw = true;
         }
         
         if(this.blurStart && this.blurDistance < 1) {
