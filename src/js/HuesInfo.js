@@ -31,6 +31,7 @@ const beatGlossary = [
     "o Horizontal blur (bass)",
     "- No blur",
     "+ Blackout",
+    "¤ Whiteout",
     "| Short blackout",
     ": Color only",
     "* Image only",
