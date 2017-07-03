@@ -624,6 +624,9 @@ class HuesCore {
 
     doAutoSong() {
         let func = null;
+        if(this.resourceManager.enabledSongs.length < 2) {
+            return; // don't move if there's nothing to move to
+        }
         if(localStorage["autoSongShuffle"] == "on") {
             func = this.randomSong;
         } else {
