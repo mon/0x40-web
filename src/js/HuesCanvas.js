@@ -471,7 +471,7 @@ class HuesCanvas {
     }
 
     doBlackout(whiteout) {
-        if (typeof(whiteout)==='undefined') whiteout = false;
+        if(typeof(whiteout) === 'undefined') whiteout = false;
         if(whiteout) {
             this.blackoutColour = "#FFF";
         } else {
@@ -489,7 +489,6 @@ class HuesCanvas {
         }
     }
 
-    // for song changes
     clearBlackout() {
         this.blackout = false;
         this.blackoutTimeout = 0;
@@ -500,10 +499,15 @@ class HuesCanvas {
     }
 
     doShortBlackout(beatTime) {
-        this.doBlackout();
-        this.blackoutTimeout = this.audio.currentTime + beatTime / 1.7;
         // looks better if we go right to black
-        this.blackoutStart = 0;
+        this.doInstantBlackout();
+        this.blackoutTimeout = this.audio.currentTime + beatTime / 1.7;
+    }
+    
+    doInstantBlackout() {
+        this.doBlackout();
+        // sufficiently negative
+        this.blackoutStart = -Math.pow(2, 32);
     }
 
     doColourFade(length) {

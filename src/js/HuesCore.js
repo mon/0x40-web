@@ -97,10 +97,10 @@ class HuesCore {
              */
             frame : [],
             
-            /* callback songstarted()
+            /* callback songstarted(song)
              *
              * Called when the song actually begins to play, not just when the
-             * new song processing begins
+             * new song processing begins. Song object passed.
              */
             songstarted : [],
             
@@ -524,12 +524,12 @@ class HuesCore {
             }
         }
         this.setInvert(false);
-        this.renderer.doBlackout();
+        this.renderer.doInstantBlackout();
         return this.soundManager.playSong(this.currentSong, this.doBuildup)
         .then(() => {
             this.resetAudio();
             this.fillBuildup();
-            this.callEventListeners("songstarted");
+            this.callEventListeners("songstarted", this.currentSong);
         });
     }
 
