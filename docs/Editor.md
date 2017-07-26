@@ -2,7 +2,7 @@
 
 Creating new songs is the heart of the Hues experience. The inbuilt editor makes it a breeze! To get to it, either hit your `e` key or click the settings cog, then hit `EDITOR`.
 
-Before you begin, you'll actually need a song to edit! You might be able to find good loops online, or you can make your own from a song you enjoy. The best way to make your own is using Audacity, detailed in the [MP3 guide](MP3 Export.md).
+Before you begin, you'll actually need a song to edit! You might be able to find good loops online, or you can make your own from a song you enjoy. The best way to make your own is using Audacity, detailed in the [MP3 guide](MP3%20Export.md).
 
 1. Load your loop using the `LOAD LOOP` button. If everything went well, it should start playing.
 2. In the `Title` box, enter the Artist - Song Name combination, e.g. "Madeon - Finale" (without quotes)

@@ -11,10 +11,10 @@ An info.xml file provides information about who made the respack, a brief descri
 An example structure is as follows:  
 ```xml
 <info>
-	<name>My Awesome Respack</name>
-	<author>Me!</author>
-	<description>I made song songs, and put them in a respack</description>
-	<link>http://www.example.com/</link>
+    <name>My Awesome Respack</name>
+    <author>Me!</author>
+    <description>I made song songs, and put them in a respack</description>
+    <link>http://www.example.com/</link>
 </info>
 ```
 
@@ -67,17 +67,17 @@ Here is an example song structure:
 <songs>
   <song name="puppy_loop">
     <title>Netsky - Puppy</title>
-	<source>http://www.youtube.com/watch?v=FU4cnelEdi4</source>
+    <source>http://www.youtube.com/watch?v=FU4cnelEdi4</source>
     <rhythm>o...x...o...x...o...x...o...</rhythm>
     <buildup>puppy_build</buildup>
     <buildupRhythm>.-...:......:...-...</buildupRhythm>
     <charsPerBeat>4</charsPerBeat>
   </song>
   <song name="motion picture">
-	<title>Blake McGrath- Motion Picture (Pegboard Nerds Remix)</title>
-	<rhythm>o...x...o...</rhythm>
-	<buildup>motion picture_Build</buildup>
-	<buildupRhythm>-...-...-...-...-...</buildupRhythm>
+    <title>Blake McGrath- Motion Picture (Pegboard Nerds Remix)</title>
+    <rhythm>o...x...o...</rhythm>
+    <buildup>motion picture_Build</buildup>
+    <buildupRhythm>-...-...-...-...-...</buildupRhythm>
     <independentBuild>true</independentBuild>
   </song>
 </songs>
