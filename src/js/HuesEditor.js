@@ -259,10 +259,10 @@ class HuesEditor {
         
         if(this.song.independentBuild) {
             this.timeLock._locker.innerHTML = "&#xe904;";
-            this.timeLock.classList.add("unlocked");
+            this.timeLock.classList.add("edit-area__timelock--unlocked");
         } else {
             this.timeLock._locker.innerHTML = "&#xe905;";
-            this.timeLock.classList.remove("unlocked");
+            this.timeLock.classList.remove("edit-area__timelock--unlocked");
         }
         if(this.song.sound) {
             this.seekLoop.classList.remove("hues-button--disabled");
