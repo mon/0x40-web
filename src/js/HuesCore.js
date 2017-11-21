@@ -813,7 +813,7 @@ class HuesCore {
             if ([".", "+", "|", "¤"].indexOf(beat) == -1) {
                 this.renderer.clearBlackout();
             }
-            if([".", "+", "¤", ":", "*", "X", "O", "~", "=", "i", "I", "s"].indexOf(beat) == -1) {
+            if([".", "+", "¤", ":", "*", "X", "O", "~", "=", "i", "I", "s", "v"].indexOf(beat) == -1) {
                 this.randomColour();
                 if (this.isFullAuto) {
                     this.randomImage();
