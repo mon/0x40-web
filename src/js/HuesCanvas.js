@@ -588,7 +588,7 @@ class HuesCanvas {
         this.trippyOn = saveTrippy;
     }
     
-    doSlice(beatLength, beatCount, isVertical) {
+    doSlice(beatLength, beatCount, sliceX, sliceY) {
         let transitionTime = Math.min(0.06, beatLength);
         
         this.sliceStart = this.audio.currentTime;
@@ -596,13 +596,10 @@ class HuesCanvas {
         this.sliceRampDown = this.sliceStart + (beatLength * beatCount) - transitionTime;
         this.sliceTransitionTime = transitionTime;
         
-        if (isVertical) {
-            this.generateSliceSegments(0);
-            this.resetSliceSegments(1);
-        } else {
-            this.generateSliceSegments(1);
-            this.resetSliceSegments(0);
-        }
+        if (sliceX) this.generateSliceSegments(0);
+        else this.resetSliceSegments(0);
+        if (sliceY) this.generateSliceSegments(1);
+        else this.resetSliceSegments(1);
 
         this.needsRedraw = true;
     }

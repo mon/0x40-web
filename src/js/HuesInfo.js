@@ -46,7 +46,9 @@ const beatGlossary = [
     "s Horizontal slice",
     "S Horizontal slice and change image",
     "v Vertical slice",
-    "V Vertical slice and change image"
+    "V Vertical slice and change image",
+    "# Double slice",
+    "@ Double slice and change image"
 ];
 
 const shortcuts = [

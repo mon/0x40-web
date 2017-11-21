@@ -795,11 +795,15 @@ class HuesCore {
                 break;
             case 'S':
             case 's':
-                this.renderer.doSlice(this.getBeatLength(), this.charsToNextBeat(), false);
+                this.renderer.doSlice(this.getBeatLength(), this.charsToNextBeat(), false, true);
                 break;
             case 'V':
             case 'v':
-                this.renderer.doSlice(this.getBeatLength(), this.charsToNextBeat(), true);
+                this.renderer.doSlice(this.getBeatLength(), this.charsToNextBeat(), true, false);
+                break;
+            case '@':
+            case '#':
+                this.renderer.doSlice(this.getBeatLength(), this.charsToNextBeat(), true, true);
                 break;
             case 'I':
                 if (this.isFullAuto) {
@@ -813,7 +817,7 @@ class HuesCore {
             if ([".", "+", "|", "¤"].indexOf(beat) == -1) {
                 this.renderer.clearBlackout();
             }
-            if([".", "+", "¤", ":", "*", "X", "O", "~", "=", "i", "I", "s", "v"].indexOf(beat) == -1) {
+            if([".", "+", "¤", ":", "*", "X", "O", "~", "=", "i", "I", "s", "v", "#"].indexOf(beat) == -1) {
                 this.randomColour();
                 if (this.isFullAuto) {
                     this.randomImage();
