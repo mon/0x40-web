@@ -43,8 +43,10 @@ const beatGlossary = [
     "= Fade and change image",
     "i Invert all colours",
     "I Invert & change image",
-    "s Slice",
-    "S Slice and change image"
+    "s Horizontal slice",
+    "S Horizontal slice and change image",
+    "v Vertical slice",
+    "V Vertical slice and change image"
 ];
 
 const shortcuts = [

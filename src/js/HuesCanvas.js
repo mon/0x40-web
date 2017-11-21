@@ -59,12 +59,12 @@ class HuesCanvas {
         this.xBlur = false;
         this.yBlur = false;
         
-        this.sliceAvgSegments = 15;
-        this.sliceCount = 0;
-        this.sliceSegments = [];
-        this.sliceDistances = [];
-        this.sliceDistance = 0;
-        this.sliceStart = 0;
+        this.sliceDistance    = 0;
+        this.sliceStart       = 0;
+        this.sliceCount       = [0, 0];   // x, y
+        this.sliceAvgSegments = [25, 15]; // x, y
+        this.sliceSegments    = [[], []]; // x, y
+        this.sliceDistances   = [[], []]; // x, y
         
         // trippy mode
         this.trippyStart = [0, 0]; // x, y
@@ -232,20 +232,35 @@ class HuesCanvas {
 
     drawSlice(bitmap, drawWidth, drawHeight, width, height) {
         this.offContext.clearRect(0,0,width,height);
-        
-        let bitmapoffset = 0;
-        let drawOffset = 0;
-        for(let i = 0; i < this.sliceCount; i++) {
-            let segment = this.sliceSegments[i];
-            let segmentBitmapHeight = Math.round(segment * bitmap.height);
-            let segmentDrawHeight = Math.round(segment * drawHeight);
-            this.offContext.drawImage(bitmap,
-                                      0 , bitmapoffset, // subsection x, y
-                                      bitmap.width, segmentBitmapHeight, // sub w/h
-                                      this.sliceDistances[i] * this.sliceDistance, drawOffset, // drawn section x, y
-                                      drawWidth, segmentDrawHeight); // drawn w/h
-            bitmapoffset += segmentBitmapHeight;
-            drawOffset += segmentDrawHeight;
+
+        let bitmapXOffset = 0;
+        let drawXOffset = 0;
+        for (let i = 0; i < this.sliceCount[0]; i++) {
+            let xSegment = this.sliceSegments[0][i];
+            let sliceXDistance = this.sliceDistances[0][i] * this.sliceDistance;
+            let segmentBitmapWidth = Math.round(xSegment * bitmap.width);
+            let segmentDrawWidth = Math.round(xSegment * drawWidth);
+
+            let bitmapYOffset = 0;
+            let drawYOffset = 0;
+            for (let j = 0; j < this.sliceCount[1]; j++) {
+                let ySegment = this.sliceSegments[1][j];
+                let sliceYDistance = this.sliceDistances[1][j] * this.sliceDistance;
+                let segmentBitmapHeight = Math.round(ySegment * bitmap.height);
+                let segmentDrawHeight = Math.round(ySegment * drawHeight);
+
+                this.offContext.drawImage(bitmap,
+                    bitmapXOffset, bitmapYOffset,            // subsection x, y
+                    segmentBitmapWidth, segmentBitmapHeight, // subsection w, h
+                    drawXOffset + sliceYDistance, drawYOffset + sliceXDistance, // drawn x, y
+                    segmentDrawWidth, segmentDrawHeight);    // drawn w, h
+
+                bitmapYOffset += segmentBitmapHeight;
+                drawYOffset += segmentDrawHeight;
+            }
+
+            bitmapXOffset += segmentBitmapWidth;
+            drawXOffset += segmentDrawWidth;
         }
         
         return this.offCanvas;
@@ -573,7 +588,7 @@ class HuesCanvas {
         this.trippyOn = saveTrippy;
     }
     
-    doSlice(beatLength, beatCount) {
+    doSlice(beatLength, beatCount, isVertical) {
         let transitionTime = Math.min(0.06, beatLength);
         
         this.sliceStart = this.audio.currentTime;
@@ -581,30 +596,43 @@ class HuesCanvas {
         this.sliceRampDown = this.sliceStart + (beatLength * beatCount) - transitionTime;
         this.sliceTransitionTime = transitionTime;
         
-        this.generateSliceSegments();
+        if (isVertical) {
+            this.generateSliceSegments(0);
+            this.resetSliceSegments(1);
+        } else {
+            this.generateSliceSegments(1);
+            this.resetSliceSegments(0);
+        }
+
         this.needsRedraw = true;
     }
     
-    generateSliceSegments() {
-        let even = 1.0 / this.sliceAvgSegments;
+    generateSliceSegments(direction) {
+        let even = 1.0 / this.sliceAvgSegments[direction];
         let spread = even / 2;
         let total = 0;
         let i;
         for(i = 0; ; i++) {
-            let deviation = Math.random() * spread*2 - spread;
-            let rando = even + deviation;
-            this.sliceSegments[i] = rando;
-            total += this.sliceSegments[i];
+            let rando = even + Math.random() * spread * 2 - spread;
+            this.sliceSegments[direction][i] = rando;
+            total += rando;
             
-            this.sliceDistances[i] = Math.random() * this.blurAmount - this.blurAmount/2;
+            this.sliceDistances[direction][i] =
+                Math.random() * this.blurAmount - this.blurAmount / 2;
             
             if(total > 1.0) {
-                this.sliceSegments[i] -= total - 1.0;
+                this.sliceSegments[direction][i] -= total - 1.0;
                 break;
             }
         }
-        this.sliceCount = i+1;
-        
+
+        this.sliceCount[direction] = i + 1;
+    }
+
+    resetSliceSegments(direction) {
+        this.sliceCount[direction] = 1;
+        this.sliceSegments[direction][0] = 1;
+        this.sliceDistances[direction][0] = 0;
     }
 
     setBlurDecay(decay) {
