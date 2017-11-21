@@ -58,15 +58,14 @@ class HuesCanvas {
         this.blurDistance = 0;
         this.xBlur = false;
         this.yBlur = false;
-
+        
         this.sliceAvgSegments = 15;
         this.sliceCount = 0;
         this.sliceSegments = [];
         this.sliceDistances = [];
         this.sliceDistance = 0;
         this.sliceStart = 0;
-        this.sliceIsVertical = false; // false = horizontal, true = vertical
-
+        
         // trippy mode
         this.trippyStart = [0, 0]; // x, y
         this.trippyRadii = [0, 0]; // x, y
@@ -77,7 +76,7 @@ class HuesCanvas {
         this.blackout = false;
         this.blackoutColour = "#000"; // for the whiteout case we must store this
         this.blackoutTimeout = null;
-
+        
         this.invert = false;
 
         this.colourFade = false;
@@ -91,17 +90,17 @@ class HuesCanvas {
         this.setBlurAmount("medium");
         this.setBlurQuality("high");
         this.setBlurDecay("fast");
-
+        
         this.canvas = document.createElement('canvas');
         this.context = this.canvas.getContext("2d");
         this.canvas.width = 1280;
         this.canvas.height = 720;
         this.canvas.className = "hues-canvas";
         root.appendChild(this.canvas);
-
+        
         this.offCanvas = document.createElement('canvas');
         this.offContext = this.offCanvas.getContext('2d');
-
+        
         window.addEventListener('resize', this.resize.bind(this));
         this.resize();
     }
@@ -118,7 +117,7 @@ class HuesCanvas {
         this.setBlurQuality(localStorage["blurQuality"]);
         this.trippyOn = localStorage["trippyMode"] == "on";
     }
-
+    
     resetEffects() {
         this.colourFadeStart = 0;
         this.colourFade = false;
@@ -187,13 +186,13 @@ class HuesCanvas {
             } else {
                 offset = width/2 - drawWidth/2;
             }
-
+            
             if(this.sliceStart) {
                 bitmap = this.drawSlice(bitmap, drawWidth, drawHeight, width, height);
                 drawWidth = width;
                 drawHeight = height;
             }
-
+            
             if(this.xBlur || this.yBlur) {
                 this.drawBlur(bitmap, offset, drawWidth, drawHeight);
             }else {
@@ -201,7 +200,7 @@ class HuesCanvas {
                 this.context.drawImage(bitmap, offset, 0, drawWidth, drawHeight);
             }
         }
-
+        
         if(this.trippyStart[0] || this.trippyStart[1]) {
             this.drawTrippy(width, height);
         } else {
@@ -233,41 +232,25 @@ class HuesCanvas {
 
     drawSlice(bitmap, drawWidth, drawHeight, width, height) {
         this.offContext.clearRect(0,0,width,height);
-
+        
         let bitmapoffset = 0;
         let drawOffset = 0;
-        if (this.sliceIsVertical) {
-            for(let i = 0; i < this.sliceCount; i++) {
-                let segment = this.sliceSegments[i];
-                let segmentBitmapWidth = Math.round(segment * bitmap.width);
-                let segmentDrawWidth = Math.round(segment * drawWidth);
-                this.offContext.drawImage(bitmap,
-                                          bitmapoffset , 0, // subsection x, y
-                                          segmentBitmapWidth, bitmap.height, // sub w/h
-                                          drawOffset, this.sliceDistances[i] * this.sliceDistance, // drawn section x, y
-                                          segmentDrawWidth, drawHeight); // drawn w/h
-                bitmapoffset += segmentBitmapWidth;
-                drawOffset += segmentDrawWidth;
-            }
-        } else {
-            for(let i = 0; i < this.sliceCount; i++) {
-                let segment = this.sliceSegments[i];
-                let segmentBitmapHeight = Math.round(segment * bitmap.height);
-                let segmentDrawHeight = Math.round(segment * drawHeight);
-                this.offContext.drawImage(bitmap,
-                                          0 , bitmapoffset, // subsection x, y
-                                          bitmap.width, segmentBitmapHeight, // sub w/h
-                                          this.sliceDistances[i] * this.sliceDistance, drawOffset, // drawn section x, y
-                                          drawWidth, segmentDrawHeight); // drawn w/h
-                bitmapoffset += segmentBitmapHeight;
-                drawOffset += segmentDrawHeight;
-            }
+        for(let i = 0; i < this.sliceCount; i++) {
+            let segment = this.sliceSegments[i];
+            let segmentBitmapHeight = Math.round(segment * bitmap.height);
+            let segmentDrawHeight = Math.round(segment * drawHeight);
+            this.offContext.drawImage(bitmap,
+                                      0 , bitmapoffset, // subsection x, y
+                                      bitmap.width, segmentBitmapHeight, // sub w/h
+                                      this.sliceDistances[i] * this.sliceDistance, drawOffset, // drawn section x, y
+                                      drawWidth, segmentDrawHeight); // drawn w/h
+            bitmapoffset += segmentBitmapHeight;
+            drawOffset += segmentDrawHeight;
         }
-
-
+        
         return this.offCanvas;
     }
-
+    
     drawBlur(bitmap, offset, drawWidth, drawHeight) {
         this.context.globalAlpha = this.blurAlpha;
         if(this.xBlur) {
@@ -303,12 +286,12 @@ class HuesCanvas {
         let normalC = this.intToHex(this.colour);
         this.offContext.fillStyle = baseInvert ? invertC : normalC;
         this.offContext.fillRect(0,0,width,height);
-
+        
         // sort high to low
         this.trippyRadii.sort(function(a,b) {
             return b - a;
         });
-
+        
         let invert = !baseInvert;
         for(let i = 0; i < 2; i++) {
             if(this.trippyRadii[i] === 0) {
@@ -367,7 +350,7 @@ class HuesCanvas {
             // flash offsets blur gen by a frame
             let delta = this.audio.currentTime - this.blurStart + (1/30);
             this.blurDistance = this.blurAmount * Math.exp(-this.blurDecay * delta);
-
+            
             // Update UI
             let dist = this.blurDistance / this.blurAmount;
             if(this.xBlur)
@@ -413,7 +396,7 @@ class HuesCanvas {
                 }
             }
         }
-
+        
         if(this.blurStart && this.blurDistance < 1) {
             this.core.blurUpdated(0, 0);
             this.blurDistance = 0;
@@ -520,7 +503,7 @@ class HuesCanvas {
         this.doInstantBlackout();
         this.blackoutTimeout = this.audio.currentTime + beatTime / 1.7;
     }
-
+    
     doInstantBlackout() {
         this.doBlackout();
         // sufficiently negative
@@ -589,22 +572,21 @@ class HuesCanvas {
         this.doYBlur();
         this.trippyOn = saveTrippy;
     }
-
-    doSlice(beatLength, beatCount, isVertical) {
+    
+    doSlice(beatLength, beatCount) {
         let transitionTime = Math.min(0.06, beatLength);
-
+        
         this.sliceStart = this.audio.currentTime;
         this.sliceRampUp = this.sliceStart + transitionTime;
         this.sliceRampDown = this.sliceStart + (beatLength * beatCount) - transitionTime;
         this.sliceTransitionTime = transitionTime;
-        this.sliceIsVertical = isVertical;
-
+        
         this.generateSliceSegments();
         this.needsRedraw = true;
     }
-
+    
     generateSliceSegments() {
-        let even = 1.0 / (this.sliceAvgSegments * (this.sliceIsVertical ? 2 : 1));
+        let even = 1.0 / this.sliceAvgSegments;
         let spread = even / 2;
         let total = 0;
         let i;
@@ -613,16 +595,16 @@ class HuesCanvas {
             let rando = even + deviation;
             this.sliceSegments[i] = rando;
             total += this.sliceSegments[i];
-
+            
             this.sliceDistances[i] = Math.random() * this.blurAmount - this.blurAmount/2;
-
+            
             if(total > 1.0) {
                 this.sliceSegments[i] -= total - 1.0;
                 break;
             }
         }
         this.sliceCount = i+1;
-
+        
     }
 
     setBlurDecay(decay) {
