@@ -247,16 +247,16 @@ class HuesCanvas {
         for (let i = 0; i < this.slices.x.count; i++) {
             let xSegment = this.slices.x.segments[i];
             let sliceXDistance = this.slices.x.distances[i] * this.sliceDistance;
-            let segmentBitmapWidth = Math.round(xSegment * bitmap.width);
-            let segmentDrawWidth = Math.round(xSegment * drawWidth);
+            let segmentBitmapWidth = Math.ceil(xSegment * bitmap.width);
+            let segmentDrawWidth = Math.ceil(xSegment * drawWidth);
 
             let bitmapYOffset = 0;
             let drawYOffset = 0;
             for (let j = 0; j < this.slices.y.count; j++) {
                 let ySegment = this.slices.y.segments[j];
                 let sliceYDistance = this.slices.y.distances[j] * this.sliceDistance;
-                let segmentBitmapHeight = Math.round(ySegment * bitmap.height);
-                let segmentDrawHeight = Math.round(ySegment * drawHeight);
+                let segmentBitmapHeight = Math.ceil(ySegment * bitmap.height);
+                let segmentDrawHeight = Math.ceil(ySegment * drawHeight);
 
                 this.offContext.drawImage(bitmap,
                     bitmapXOffset, bitmapYOffset,            // subsection x, y
