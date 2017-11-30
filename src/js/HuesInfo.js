@@ -69,8 +69,8 @@ const shortcuts = [
     "[1-5] Change UI"
 ];
 
-function populateHuesInfo(version, huesWin, defaults) {
-    if(!defaults.enableWindow) {
+function populateHuesInfo(version, huesWin, settings) {
+    if(!settings.enableWindow) {
         return;
     }
     let verString = (parseInt(version)/10).toFixed(1);
@@ -78,7 +78,7 @@ function populateHuesInfo(version, huesWin, defaults) {
     let info = document.createElement("div");
     info.className = "hues-ref";
     
-    let huesName = defaults.huesName.replace("%VERSION%", version);
+    let huesName = settings.huesName.replace("%VERSION%", version);
     let about = document.createElement("div");
     about.className = "hues-about";
     about.innerHTML = "<h1>" + huesName + "</h1>" +

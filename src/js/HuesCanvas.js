@@ -120,11 +120,11 @@ class HuesCanvas {
     }
 
     settingsUpdated() {
-        this.setSmartAlign(localStorage["smartAlign"]);
-        this.setBlurAmount(localStorage["blurAmount"]);
-        this.setBlurDecay(localStorage["blurDecay"]);
-        this.setBlurQuality(localStorage["blurQuality"]);
-        this.trippyOn = localStorage["trippyMode"] == "on";
+        this.setSmartAlign(this.core.settings.smartAlign);
+        this.setBlurAmount(this.core.settings.blurAmount);
+        this.setBlurDecay(this.core.settings.blurDecay);
+        this.setBlurQuality(this.core.settings.blurQuality);
+        this.trippyOn = this.core.settings.trippyMode == "on";
     }
     
     resetEffects() {
@@ -508,7 +508,7 @@ class HuesCanvas {
         }
         this.blackout = true;
         this.needsRedraw = true;
-        if(localStorage["blackoutUI"] == "on") {
+        if(this.core.settings.blackoutUI == "on") {
             this.core.userInterface.hide();
         }
     }
@@ -517,7 +517,7 @@ class HuesCanvas {
         this.blackout = false;
         this.blackoutTimeout = 0;
         this.needsRedraw = true;
-        if(localStorage["blackoutUI"] == "on") {
+        if(this.core.settings.blackoutUI == "on") {
             this.core.userInterface.show();
         }
     }

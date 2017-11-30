@@ -23,7 +23,7 @@
 "use strict"; 
 
 class HuesWindow {
-    constructor(root, defaults) {
+    constructor(root, settings) {
         this.eventListeners = {
             /* callback windowshown(shown)
              *
@@ -38,7 +38,7 @@ class HuesWindow {
             tabselected : []
         };
         
-        this.hasUI = defaults.enableWindow;
+        this.hasUI = settings.enableWindow;
         
         if(!this.hasUI)
             return;
@@ -69,7 +69,7 @@ class HuesWindow {
         this.tabNames = [];
 
         
-        if(defaults.showWindow) {
+        if(settings.showWindow) {
             this.show();
         } else {
             this.hide();

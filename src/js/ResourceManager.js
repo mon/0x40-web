@@ -82,7 +82,7 @@ class Resources {
         this.remotes = null;
         this.fileInput = null;
         this.fileParseQueue = [];
-        if(core.settings.defaults.enableWindow) {
+        if(core.settings.enableWindow) {
             this.initUI();
             huesWin.addTab("RESOURCES", this.root);
         }
@@ -323,7 +323,7 @@ class Resources {
         // so we don't use it out of scope in the next if
         let remoteHeader = null;
         let remoteList = null;
-        if(!this.core.settings.defaults.disableRemoteResources) {
+        if(!this.core.settings.disableRemoteResources) {
             remoteHeader = document.createElement("div");
             remoteHeader.textContent = "Remote respacks";
             remoteHeader.className = "respacks__header";
@@ -388,7 +388,7 @@ class Resources {
 
         packsContainer.appendChild(packHeader);
         packsContainer.appendChild(packList);
-        if(!this.core.settings.defaults.disableRemoteResources) {
+        if(!this.core.settings.disableRemoteResources) {
             packsContainer.appendChild(remoteHeader);
             packsContainer.appendChild(remoteList);
         }

@@ -427,7 +427,7 @@ class SoundManager {
     }
 
     createWorker() {
-        return new Worker(this.core.settings.defaults.workersPath + 'audio-worker.js');
+        return new Worker(this.core.settings.workersPath + 'audio-worker.js');
     }
 
     initVisualiser(bars) {

@@ -30,6 +30,8 @@ const defaultSettings = {
     // Location relative to root - where do the audio/zip workers live
     // This is required because Web Workers need an absolute path
     workersPath : "lib/workers/",
+    // List of respacks to load
+    respacks : [],
     // ONLY USED FOR QUERY STRINGS this will be prepended to any respacks
     // passed in as a ?packs=query
     respackPath : "respacks/",
@@ -43,6 +45,8 @@ const defaultSettings = {
     firstSong: null,
     // If set, will attempt to set the named image first
     firstImage: null,
+    // set to false to never change images
+    fullAuto: true,
     // If set, will disable the remote resources menu. For custom pages.
     disableRemoteResources: false,
     // You will rarely want to change this. Enables/disables the Hues Window.
@@ -82,27 +86,6 @@ const defaultSettings = {
     volume: 0.7,
     skipPreloader: "off"
 };
-
-// Don't get saved to localStorage
-const ephemeralSettings = [
-    "load",
-    "autoplay",
-    "overwriteLocal",
-    "respacks",
-    "respackPath",
-    "firstSong",
-    "firstImage",
-    "disableRemoteResources",
-    "preloadPrefix",
-    "preloadBase",
-    "preloadMax",
-    "enableWindow",
-    "firstWindow",
-    "workersPath",
-    "huesName",
-    "root",
-    "disableKeyboard"
-];
 
 // To dynamically build the UI like the cool guy I am
 const settingsCategories = {
@@ -173,16 +156,16 @@ const settingsOptions = {
         options : ["off", "loop", "time", 
             {type:"varText", text:function() {
                 // only display if autosong is on
-                return localStorage["autoSong"] == "off" ? "" : "after";
+                return this.autoSong == "off" ? "" : "after";
             }}, 
             {type:"input", variable:"autoSongDelay", inputType:"int",
                 visiblity:function() {
-                    return localStorage["autoSong"] != "off";
+                    return this.autoSong != "off";
                 }
             },
             {type:"varText", text:function() {
                 let ret = "";
-                switch(localStorage["autoSong"]) {
+                switch(this.autoSong) {
                     case "loop":
                         ret = "loop";
                         break;
@@ -194,7 +177,7 @@ const settingsOptions = {
                     default:
                         return "";
                 }
-                if(localStorage["autoSongDelay"] > 1) {
+                if(this.autoSongDelay > 1) {
                     ret += "s";
                 }
                 return ret;
@@ -233,48 +216,48 @@ class HuesSettings {
             updated : []
         };
         
+        let settingsVersion = "1";
+        if(localStorage.settingsVersion != settingsVersion) {
+            localStorage.clear();
+            localStorage.settingsVersion = settingsVersion;
+        }
+        
         this.hasUI = false;
         
         this.settingCheckboxes = {};
         
         this.textCallbacks = [];
         this.visCallbacks = [];
-
-        for(let attr in defaultSettings) {
-          if(defaultSettings.hasOwnProperty(attr)) {
-              if(defaults[attr] === undefined) {
-                  defaults[attr] = defaultSettings[attr];
-              }
-              // don't write to local if it's a temp settings
-              if(ephemeralSettings.indexOf(attr) != -1) {
-                  continue;
-              }
-              if(defaults.overwriteLocal) {
-                  localStorage[attr] = defaults[attr];
-              }
-              // populate defaults, ignoring current
-              if(localStorage[attr] === undefined) {
-                  localStorage[attr] = defaults[attr];
-              }
-          }
-        }
-
-        this.defaults = defaults;
         
-        // Override with our query string
-        let querySettings = this.getQuerySettings();
-        this.defaults.respacks = this.defaults.respacks.concat(querySettings.respacks);
-        for(let attr in querySettings) {
-          if(querySettings.hasOwnProperty(attr) && attr != "respacks") {
-              this.defaults[attr] = querySettings[attr];
-              
-              if(ephemeralSettings.indexOf(attr) == -1) {
-                  // TODO: Everything that checks localStorage for settings should
-                  // change to get() to preserve local changes
-                  localStorage[attr] = querySettings[attr];
-              }
-          }
+        this.ephemerals = {};
+        
+        for(let attr in defaultSettings) {
+            if(!defaultSettings.hasOwnProperty(attr)) {
+                continue;
+            }
+            Object.defineProperty(this, attr, {
+                set: this.makeSetter(attr), get: this.makeGetter(attr)
+            });
+            
+            if(defaults[attr] !== undefined) {
+                if(defaults.overwriteLocal) {
+                    this[attr] = defaults[attr];
+                } else {
+                    this.ephemerals[attr] = defaults[attr];
+                }
+            }
         }
+        
+        let querySettings = this.getQuerySettings();
+        
+        for(let attr in defaultSettings) {
+            // query string overrides, finally
+            if(querySettings[attr] !== undefined && attr != 'respacks') {
+                this.ephemerals[attr] = querySettings[attr];
+            }
+        }
+
+        this.respacks = this.respacks.concat(querySettings.respacks);
     }
     
     getQuerySettings() {
@@ -287,12 +270,16 @@ class HuesSettings {
             if(pair[0] == "packs" || pair[0] == "respacks"){
                 let packs = pair[1].split(",");
                 for(let j = 0; j < packs.length; j++) {
-                    results.respacks.push(this.defaults.respackPath + packs[j]);
+                    results.respacks.push(this.respackPath + packs[j]);
                 }
             } else if(pair[0] == "song") { // alias for firstSong
                 results.firstSong = pair[1];
             } else {
-                results[pair[0]] = pair[1];
+                let val = pair[1];
+                // since we can set ephemeral variables this way
+                if(val === "true" || val === "false")
+                    val = val == "true";
+                results[pair[0]] = val;
             }
         }
         return results;
@@ -309,14 +296,14 @@ class HuesSettings {
                 this.value = "";
                 return;
             }
-            localStorage[variable] = this.value;
+            self[variable] = this.value;
             self.updateConditionals();
             self.callEventListeners("updated");
         };
 
         // To order things nicely
         for(let cat in settingsCategories) {
-                if(settingsCategories.hasOwnProperty(cat)) {
+            if(settingsCategories.hasOwnProperty(cat)) {
                 let catContainer = document.createElement("div");
                 catContainer.textContent = cat;
                 catContainer.className = "settings-category";
@@ -347,11 +334,11 @@ class HuesSettings {
                             }
                             checkbox.name = setName + "-" + unique;
                             checkbox.id = id + unique;
-                            if(localStorage[setName] == option) {
+                            if(this[setName] == option) {
                                 checkbox.checked = true;
                             }
                             checkbox.onclick = function(self) {
-                                self.set(setName, this.value);
+                                self[setName] = this.value;
                             }.bind(checkbox, this);
                             buttonContainer.appendChild(checkbox);
                             // So we can style this nicely
@@ -363,14 +350,14 @@ class HuesSettings {
                         } else { // special option
                             if(option.type == "varText") {
                                 let text = document.createElement("span");
-                                text.textContent = option.text();
+                                text.textContent = option.text.bind(this)();
                                 buttonContainer.appendChild(text);
-                                this.textCallbacks.push({func:option.text, element:text});
+                                this.textCallbacks.push({func:option.text.bind(this), element:text});
                             } else if(option.type == "input") {
                                 let input = document.createElement("input");
                                 input.setAttribute("type", "text");
                                 input.className = "settings-input";
-                                input.value = localStorage[option.variable];
+                                input.value = this[option.variable];
                                 // TODO: support more than just positive ints when the need arises
                                 if(option.inputType == "int") {
                                     input.oninput = intValidator.bind(input, this, option.variable);
@@ -378,8 +365,8 @@ class HuesSettings {
                                 input.autofocus = false;
                                 buttonContainer.appendChild(input);
                                 if(option.visiblity) {
-                                    this.visCallbacks.push({func:option.visiblity, element:input});
-                                    input.style.visibility = option.visiblity() ? "visible" : "hidden";
+                                    this.visCallbacks.push({func:option.visiblity.bind(this), element:input});
+                                    input.style.visibility = option.visiblity.bind(this)() ? "visible" : "hidden";
                                 }
                             }
                         }
@@ -395,35 +382,48 @@ class HuesSettings {
         this.hasUI = true;
     }
 
-    get(setting) {
-        if(this.defaults.hasOwnProperty(setting)) {
-            if(ephemeralSettings.indexOf(setting) != -1) {
-                return this.defaults[setting];
+    makeGetter(setting) {
+        return () => {
+            if(defaultSettings.hasOwnProperty(setting)) {
+                if(this.ephemerals[setting] !== undefined)
+                    return this.ephemerals[setting];
+                else if(localStorage[setting] !== undefined)
+                    return localStorage[setting];
+                else
+                    return defaultSettings[setting];
             } else {
-                return localStorage[setting];
+                console.log("WARNING: Attempted to fetch invalid setting:", setting);
+                return null;
             }
-        } else {
-            console.log("WARNING: Attempted to fetch invalid setting:", setting);
-            return null;
-        }
+        };
     }
 
     // Set a named index to its named value, returns false if name doesn't exist
-    set(setting, value) {
-        value = value.toLowerCase();
-        let opt = settingsOptions[setting];
-        if(!opt || opt.options.indexOf(value) == -1) {
-            console.log(value, "is not a valid value for", setting);
-            return false;
-        }
-        // for updating the UI selection
-        try {
-            this.settingCheckboxes[setting + "-" + value].checked = true;
-        } catch(e) {}
-        localStorage[setting] = value;
-        this.updateConditionals();
-        this.callEventListeners("updated");
-        return true;
+    makeSetter(setting) {
+        return value => {
+            if(this.isEphemeral(setting)) {
+                this.ephemerals[setting] = value;
+            } else {
+                let opt = settingsOptions[setting];
+                if(!opt || opt.options.indexOf(value) == -1) {
+                    console.log(value, "is not a valid value for", setting);
+                    return false;
+                }
+                // for updating the UI selection
+                try {
+                    this.settingCheckboxes[setting + "-" + value].checked = true;
+                } catch(e) {}
+                localStorage[setting] = value;
+                this.ephemerals[setting] = undefined;
+            }
+            this.updateConditionals();
+            this.callEventListeners("updated");
+            return true;
+        };
+    }
+    
+    isEphemeral(setting) {
+        return settingsOptions[setting] === undefined;
     }
 
     updateConditionals() {
@@ -435,19 +435,6 @@ class HuesSettings {
         for(let i = 0; i < this.visCallbacks.length; i++) {
             let callback = this.visCallbacks[i];
             callback.element.style.visibility = callback.func() ? "visible" : "hidden";
-        }
-    }
-
-    // Note: This is not defaults as per defaultSettings, but those merged with
-    // the defaults given in the initialiser
-    setDefaults() {
-        for(let attr in this.defaults) {
-            if(this.defaults.hasOwnProperty(attr)) {
-                if(ephemeralSettings.indexOf(attr) != -1) {
-                    continue;
-                }
-                localStorage[attr] = this.defaults[attr];
-            }
         }
     }
 

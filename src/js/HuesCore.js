@@ -19,9 +19,6 @@
  * THE SOFTWARE.
  */
 
-/* We don't  want localstorage variables 'optimised' to different identifiers*/
-/*jshint -W069 */
-
 (function(window, document) {
 "use strict";
 
@@ -106,7 +103,7 @@ class HuesCore {
             
             /* callback settingsupdated()
              *
-             * Called when settings are updated and should be re-read from localStorage
+             * Called when settings are updated and should be re-read from the settings object
              */
             settingsupdated : []
         };
@@ -131,25 +128,27 @@ class HuesCore {
         this.colourIndex = 0x3f;
         this.colours = HuesCore.oldColours;
         
-        this.isFullAuto = true;
         this.invert = false;
         this.loopCount = 0;
         this.doBuildup = true;
         this.userInterface = null;
         this.uiArray = [];
         
+        this.settings = new HuesSettings(defaults);
+        zip.workerScriptsPath = this.settings.workersPath;
+        
         // What's our root element?
         this.root = null;
-        if(!defaults.root) {
+        if(!this.settings.root) {
             this.root = document.body;
-        } else if(typeof defaults.root === "string") {
-            if(defaults.root && document.getElementById(defaults.root)) {
-                this.root = document.getElementById(defaults.root);
+        } else if(typeof this.settings.root === "string") {
+            if(this.settings.root && document.getElementById(this.settings.root)) {
+                this.root = document.getElementById(this.settings.root);
             } else {
                 this.root = document.body;
             }
         } else { // been given an element
-            this.root = defaults.root;
+            this.root = this.settings.root;
         }
         this.root.classList.add("hues-root");
         // Special case for full page Hues
@@ -159,7 +158,7 @@ class HuesCore {
         // Yes, we do indeed have Javascript
         this.root.innerHTML = "";
         
-        this.makePreloader(this.root, defaults);
+        this.makePreloader(this.root);
 
         window.onerror = (msg, url, line, col, error) => {
             this.error(msg);
@@ -167,21 +166,16 @@ class HuesCore {
             return false;
         };
         
-        this.settings = new HuesSettings(defaults);
-        // Update with merged defaults
-        defaults = this.settings.defaults;
-        zip.workerScriptsPath = defaults.workersPath;
-        
-        this.window = new HuesWindow(this.root, defaults);
+        this.window = new HuesWindow(this.root, this.settings);
         
         console.log("0x40 Hues v" + this.versionStr + " - start your engines!");
         
         this.resourceManager = new Resources(this, this.window);
         this.editor = new HuesEditor(this, this.window);
         this.settings.initUI(this.window);
-        populateHuesInfo(this.versionStr, this.window, defaults);
+        populateHuesInfo(this.versionStr, this.window, this.settings);
         
-        this.window.selectTab(defaults.firstWindow, true);
+        this.window.selectTab(this.settings.firstWindow, true);
 
         let ui = document.createElement("div");
         ui.className = "hues-ui";
@@ -189,7 +183,7 @@ class HuesCore {
         this.uiArray.push(new RetroUI(ui), new WeedUI(ui), new ModernUI(ui),
                           new XmasUI(ui), new HalloweenUI(ui), new MinimalUI(ui));
         
-        this.autoSong = localStorage["autoSong"];
+        this.autoSong = this.settings.autoSong;
         
         this.visualiser = document.createElement("canvas");
         this.visualiser.className = "hues-visualiser";
@@ -199,10 +193,10 @@ class HuesCore {
         this.soundManager = new SoundManager(this);
         
         this.soundManager.init().then(() => {
-            if(!this.soundManager.locked && localStorage["skipPreloader"] == "on") {
+            if(!this.soundManager.locked && this.settings.skipPreloader == "on") {
                 return null;
             } else {
-                return this.resourceManager.getSizes(defaults.respacks);
+                return this.resourceManager.getSizes(this.settings.respacks);
             }
         }).then( sizes => {
             if(sizes === null) {
@@ -238,12 +232,14 @@ class HuesCore {
             this.setColour(this.colourIndex);
             this.animationLoop();
             
-            if(defaults.load) {
-                return this.resourceManager.addAll(defaults.respacks, progress => {
+            if(this.settings.load) {
+                return this.resourceManager.addAll(this.settings.respacks, progress => {
                     this.preloader.style.backgroundPosition = (100 - progress*100) + "% 0%";
-                    let scale = Math.floor(progress * defaults.preloadMax);
-                    let padding = defaults.preloadMax.toString(defaults.preloadBase).length;
-                    this.preloadMsg.textContent = defaults.preloadPrefix + (Array(padding).join("0")+scale.toString(defaults.preloadBase)).slice(-padding);
+                    let scale = Math.floor(progress * this.settings.preloadMax);
+                    let padding = this.settings.preloadMax.toString(this.settings.preloadBase).length;
+                    this.preloadMsg.textContent = this.settings.preloadPrefix +
+                                                  (Array(padding).join("0") +
+                                                  scale.toString(this.settings.preloadBase)).slice(-padding);
                 });
             } else {
                 this.preloader.style.display = "none";
@@ -252,14 +248,14 @@ class HuesCore {
         }).then(() => {
             this.preloader.classList.add("hues-preloader--loaded");
             this.callEventListeners("loaded");
-            if(defaults.firstImage) {
-                this.setImageByName(defaults.firstImage);
+            if(this.settings.firstImage) {
+                this.setImageByName(this.settings.firstImage);
             } else {
                 this.setImage(0);
             }
-            if(defaults.autoplay) {
-                if(defaults.firstSong) {
-                    this.setSongByName(defaults.firstSong);
+            if(this.settings.autoplay) {
+                if(this.settings.firstSong) {
+                    this.setSongByName(this.settings.firstSong);
                 } else {
                     this.setSong(0);
                 }
@@ -268,7 +264,7 @@ class HuesCore {
             this.error(error);
         });
 
-        if(!defaults.disableKeyboard) {
+        if(!this.settings.disableKeyboard) {
             document.addEventListener("keydown", e => {
                 e = e || window.event;
                 if(e.defaultPrevented) {
@@ -316,15 +312,15 @@ class HuesCore {
         }
     }
 
-    makePreloader(root, defaults) {
+    makePreloader(root) {
         this.preloader = document.createElement("div");
         this.preloader.className = "hues-preloader";
         root.appendChild(this.preloader);
         
-        if(defaults.preloadTitle) {
+        if(this.settings.preloadTitle) {
             this.preloadTitle = document.createElement("div");
             this.preloadTitle.className = "hues-preloader__title";
-            this.preloadTitle.textContent = defaults.preloadTitle;
+            this.preloadTitle.textContent = this.settings.preloadTitle;
             this.preloader.appendChild(this.preloadTitle);
         }
         
@@ -343,7 +339,7 @@ class HuesCore {
     }
 
     updateVisualiser() {
-        if(localStorage["visualiser"] != "on") {
+        if(this.settings.visualiser != "on") {
             return;
         }
         
@@ -509,7 +505,7 @@ class HuesCore {
         this.callEventListeners("newsong", this.currentSong);
         this.loopCount = 0;
         if (this.currentSong.buildup) {
-            switch (localStorage["playBuildups"]) {
+            switch (this.settings.playBuildups) {
             case "off":
                 this.currentSong.buildupPlayed = true;
                 this.doBuildup = false;
@@ -606,16 +602,16 @@ class HuesCore {
 
     onLoop() {
         this.loopCount++;
-        switch (localStorage["autoSong"]) {
+        switch (this.settings.autoSong) {
         case "loop":
             console.log("Checking loops");
-            if (this.loopCount >= localStorage["autoSongDelay"]) {
+            if (this.loopCount >= this.settings.autoSongDelay) {
                 this.doAutoSong();
             }
             break;
         case "time":
             console.log("Checking times");
-            if (this.soundManager.loopLength * this.loopCount >= localStorage["autoSongDelay"] * 60) {
+            if (this.soundManager.loopLength * this.loopCount >= this.settings.autoSongDelay * 60) {
                 this.doAutoSong();
             }
             break;
@@ -627,12 +623,12 @@ class HuesCore {
         if(this.resourceManager.enabledSongs.length < 2) {
             return; // don't move if there's nothing to move to
         }
-        if(localStorage["autoSongShuffle"] == "on") {
+        if(this.settings.autoSongShuffle == "on") {
             func = this.randomSong;
         } else {
             func = this.nextSong;
         }
-        if(localStorage["autoSongFadeout"] == "on") {
+        if(this.settings.autoSongFadeout == "on") {
             this.soundManager.fadeOut(() => {
                 func.call(this);
             });
@@ -651,13 +647,13 @@ class HuesCore {
     resetAudio() {
         this.beatIndex = 0;
         this.songDataUpdated();
-        if(localStorage["visualiser"] == "on") {
+        if(this.settings.visualiser == "on") {
             this.soundManager.initVisualiser(this.visualiser.width/2);
         }
     }
 
     randomImage() {
-        if(localStorage["shuffleImages"] == "on") {
+        if(this.settings.shuffleImages == "on") {
             let len = this.resourceManager.enabledImages.length;
             let index = Math.floor(Math.random() * len);
             if ((index == this.imageIndex || this.lastImageArray.indexOf(index) != -1) && len > 1) {
@@ -780,12 +776,12 @@ class HuesCore {
                 this.randomColour();
                 break;
             case '*':
-                if(this.isFullAuto) {
+                if(this.settings.fullAuto) {
                     this.randomImage();
                 }
                 break;
             case '=':
-                if(this.isFullAuto) {
+                if(this.settings.fullAuto) {
                     this.randomImage();
                 }
                 /* falls through */
@@ -806,7 +802,7 @@ class HuesCore {
                 this.renderer.doSlice(this.getBeatLength(), this.charsToNextBeat(), true, true);
                 break;
             case 'I':
-                if (this.isFullAuto) {
+                if (this.settings.fullAuto) {
                     this.randomImage();
                 }
                 /* falls through */
@@ -819,7 +815,7 @@ class HuesCore {
             }
             if([".", "+", "¤", ":", "*", "X", "O", "~", "=", "i", "I", "s", "v", "#"].indexOf(beat) == -1) {
                 this.randomColour();
-                if (this.isFullAuto) {
+                if (this.settings.fullAuto) {
                     this.randomImage();
                 }
         }
@@ -866,14 +862,14 @@ class HuesCore {
     }
 
     setIsFullAuto(auto) {
-        this.isFullAuto = auto;
+        this.settings.fullAuto = auto;
         if (this.userInterface) {
-            this.callEventListeners("newmode", this.isFullAuto);
+            this.callEventListeners("newmode", this.settings.fullAuto);
         }
     }
 
     toggleFullAuto() {
-        this.setIsFullAuto(!this.isFullAuto);
+        this.setIsFullAuto(!this.settings.fullAuto);
     }
 
     setInvert(invert) {
@@ -897,7 +893,7 @@ class HuesCore {
             }
             this.userInterface = this.uiArray[index];
             this.userInterface.connectCore(this);
-            this.callEventListeners("newmode", this.isFullAuto);
+            this.callEventListeners("newmode", this.settings.fullAuto);
             this.callEventListeners("newsong", this.currentSong);
             this.callEventListeners("newimage", this.currentImage);
             this.callEventListeners("newcolour", this.colours[this.colourIndex], false);
@@ -908,7 +904,7 @@ class HuesCore {
 
     settingsUpdated() {
         this.callEventListeners("settingsupdated");
-        switch (localStorage["currentUI"]) {
+        switch (this.settings.currentUI) {
         case "retro":
             this.changeUI(0);
             break;
@@ -928,7 +924,7 @@ class HuesCore {
             this.changeUI(5);
             break;
         }
-        switch (localStorage["colourSet"]) {
+        switch (this.settings.colourSet) {
         case "normal":
             this.colours = HuesCore.oldColours;
             break;
@@ -939,7 +935,7 @@ class HuesCore {
             this.colours = HuesCore.weedColours;
             break;
         }
-        switch (localStorage["blackoutUI"]) {
+        switch (this.settings.blackoutUI) {
         case "off":
             this.userInterface.show();
             break;
@@ -949,7 +945,7 @@ class HuesCore {
             }
             break;
         }
-        switch (localStorage["visualiser"]) {
+        switch (this.settings.visualiser) {
         case "off":
             this.visualiser.classList.add("hidden");
             break;
@@ -960,11 +956,11 @@ class HuesCore {
             }
             break;
         }
-        if (this.autoSong == "off" && localStorage["autoSong"] != "off") {
+        if (this.autoSong == "off" && this.settings.autoSong != "off") {
             console.log("Resetting loopCount since AutoSong was enabled");
             this.loopCount = 0;
         }
-        this.autoSong = localStorage["autoSong"];
+        this.autoSong = this.settings.autoSong;
     }
 
     enabledChanged() {
@@ -1012,7 +1008,7 @@ class HuesCore {
             this.previousSong();
             break;
         case 70: // F
-            this.setIsFullAuto(!this.isFullAuto);
+            this.toggleFullAuto();
             break;
         case 109: // NUMPAD_SUBTRACT
         case 189: // MINUS

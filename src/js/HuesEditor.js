@@ -55,7 +55,7 @@ class HuesEditor {
         this.linked = false;
         
         this.core = core;
-        if(core.settings.defaults.enableWindow) {
+        if(core.settings.enableWindow) {
             this.initUI();
             core.addEventListener("beat", this.onBeat.bind(this));
             core.addEventListener("newsong", this.onNewSong.bind(this));
