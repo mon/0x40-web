@@ -76,6 +76,10 @@ class HuesCanvas {
         this.blackout = false;
         this.blackoutColour = "#000"; // for the whiteout case we must store this
         this.blackoutTimeout = null;
+        // frame drop mitigation on many fast consecutive short blackouts
+        this.lastBlackout = 0;
+        this.currentBlackout = -1;
+        this.lastFrameBlack = false;
         
         this.invert = false;
 
@@ -164,13 +168,25 @@ class HuesCanvas {
             // original is 3 frames at 30fps, this is close
             bOpacity = (cTime - this.blackoutStart)*10;
             if(bOpacity > 1) { // optimise the draw
-                this.context.fillStyle = this.blackoutColour;
-                this.context.fillRect(0,0,width,height);
-                this.needsRedraw = false;
-                this.drawInvert();
-                return;
+                // If a short blackout is scheduled, but we missed the image frame
+                // from the last one, you can get only black frames over and over
+                // this will forcibly swap to the image to increase perceived speed
+                if(this.lastBlackout != this.currentBlackout && this.lastFrameBlack) {
+                    this.lastFrameBlack = false;
+                    this.context.fillStyle = "#FFF";
+                    this.context.fillRect(0,0,width,height);
+                } else {
+                    this.lastFrameBlack = true;
+                    this.lastBlackout = this.currentBlackout;
+                    this.context.fillStyle = this.blackoutColour;
+                    this.context.fillRect(0,0,width,height);
+                    this.needsRedraw = false;
+                    this.drawInvert();
+                    return;
+                }
             }
         } else {
+            this.lastFrameBlack = false;
             this.context.fillStyle = "#FFF";
             this.context.fillRect(0,0,width,height);
         }
@@ -526,6 +542,7 @@ class HuesCanvas {
         // looks better if we go right to black
         this.doInstantBlackout();
         this.blackoutTimeout = this.audio.currentTime + beatTime / 1.7;
+        this.currentBlackout++;
     }
     
     doInstantBlackout() {
