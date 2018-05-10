@@ -32,7 +32,7 @@ let getAndIncrementUnique = function() {
 };
 
 // NOTE: Any packs referenced need CORS enabled or loads fail
-let packsURL = "https://cdn.0x40hu.es/getRespacks.php";
+let packsURL = "https://cdn.0x40.ga/getRespacks.php";
 
 class Resources {
     constructor(core, huesWin) {
