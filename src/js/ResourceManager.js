@@ -31,9 +31,6 @@ let getAndIncrementUnique = function() {
     return unique++;
 };
 
-// NOTE: Any packs referenced need CORS enabled or loads fail
-let packsURL = "https://cdn.0x40.ga/getRespacks.php";
-
 class Resources {
     constructor(core, huesWin) {
         this.core = core;
@@ -719,7 +716,7 @@ class Resources {
         let item = this.appendSimpleListItem("Loading...", remoteList);
 
         let req = new XMLHttpRequest();
-        req.open('GET', packsURL, true);
+        req.open('GET', this.core.settings.packsURL, true);
         req.responseType = 'json';
         req.onload = () => {
             if(!req.response) {
