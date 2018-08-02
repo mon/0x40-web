@@ -32,6 +32,8 @@ const defaultSettings = {
     workersPath : "lib/workers/",
     // List of respacks to load
     respacks : [],
+    // If true, the query string (?foo=bar&baz=boz) will be parsed for settings
+    parseQueryString : true,
     // ONLY USED FOR QUERY STRINGS this will be prepended to any respacks
     // passed in as a ?packs=query
     respackPath : "respacks/",
@@ -47,6 +49,9 @@ const defaultSettings = {
     firstImage: null,
     // set to false to never change images
     fullAuto: true,
+    // The remote respack listing JSON endpoint
+    // NOTE: Any packs referenced need CORS enabled or loads fail
+    packsURL: "https://cdn.0x40.ga/getRespacks.php",
     // If set, will disable the remote resources menu. For custom pages.
     disableRemoteResources: false,
     // You will rarely want to change this. Enables/disables the Hues Window.
@@ -248,16 +253,18 @@ class HuesSettings {
             }
         }
 
-        let querySettings = this.getQuerySettings();
+        if (this.parseQueryString) {
+            let querySettings = this.getQuerySettings();
 
-        for(let attr in defaultSettings) {
-            // query string overrides, finally
-            if(querySettings[attr] !== undefined && attr != 'respacks') {
-                this.ephemerals[attr] = querySettings[attr];
+            for(let attr in defaultSettings) {
+                // query string overrides, finally
+                if(querySettings[attr] !== undefined && attr != 'respacks') {
+                    this.ephemerals[attr] = querySettings[attr];
+                }
             }
-        }
 
-        this.respacks = this.respacks.concat(querySettings.respacks);
+            this.respacks = this.respacks.concat(querySettings.respacks);
+        }
     }
 
     getQuerySettings() {
