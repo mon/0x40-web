@@ -20,7 +20,7 @@
  */
 
 (function(window, document) {
-"use strict"; 
+"use strict";
 
 class HuesWindow {
     constructor(root, settings) {
@@ -37,38 +37,38 @@ class HuesWindow {
              */
             tabselected : []
         };
-        
+
         this.hasUI = settings.enableWindow;
-        
+
         if(!this.hasUI)
             return;
-        
+
         this.window = document.createElement("div");
         this.window.className = "hues-win-helper";
         root.appendChild(this.window);
-        
+
         let actualWindow = document.createElement("div");
         actualWindow.className = "hues-win";
         this.window.appendChild(actualWindow);
-        
+
         let closeButton = document.createElement("div");
         closeButton.className = "hues-win__closebtn";
         closeButton.onclick = this.hide.bind(this);
         actualWindow.appendChild(closeButton);
-        
+
         this.tabContainer = document.createElement("div");
         this.tabContainer.className = "hues-win__tabs";
         actualWindow.appendChild(this.tabContainer);
-        
+
         this.contentContainer = document.createElement("div");
         this.contentContainer.className = "hues-win__content";
         actualWindow.appendChild(this.contentContainer);
-        
+
         this.contents = [];
         this.tabs = [];
         this.tabNames = [];
 
-        
+
         if(settings.showWindow) {
             this.show();
         } else {
@@ -79,7 +79,7 @@ class HuesWindow {
     addTab(tabName, tabContent) {
         if(!this.hasUI)
             return;
-        
+
         let label = document.createElement("div");
         label.textContent = tabName;
         label.className = "tab-label";
@@ -87,7 +87,7 @@ class HuesWindow {
         this.tabContainer.appendChild(label);
         this.tabs.push(label);
         this.tabNames.push(tabName);
-        
+
         let content = document.createElement("div");
         content.className = "tab-content";
         content.appendChild(tabContent);
@@ -117,7 +117,7 @@ class HuesWindow {
     hide() {
         if(!this.hasUI)
             return;
-        
+
         this.window.classList.add("hidden");
         this.callEventListeners("windowshown", false);
     }
@@ -125,7 +125,7 @@ class HuesWindow {
     show() {
         if(!this.hasUI)
             return;
-        
+
         this.window.classList.remove("hidden");
         this.callEventListeners("windowshown", true);
     }

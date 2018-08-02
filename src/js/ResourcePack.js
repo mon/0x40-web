@@ -287,7 +287,7 @@ class Respack {
             console.log("WARNING: Image", name, "already exists! Conflict with", file.name, "and", existing.name);
             return;
         }
-        
+
         return this.loadImage(file, img);
     }
 
@@ -420,7 +420,7 @@ class Respack {
                 newSongs.push(song);
                 debug("  [I] " + song.name, ": '" + song.title + "' added to songs");
             } else {
-                debug("  WARNING!", "songs.xml: <song> element", 
+                debug("  WARNING!", "songs.xml: <song> element",
                     + el.attributes[0].value + "- no song found");
             }
         }

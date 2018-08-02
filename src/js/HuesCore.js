@@ -30,34 +30,34 @@ class HuesCore {
              * When everything has completely loaded and we're ready to go
              */
             loaded : [],
-            
+
             /* callback time(seconds)
              *
              * When the song time is updated - negative for buildup
              * Returns a floating point number denoting seconds
              */
             time : [],
-            
+
             /* callback blurUpdate(xPercent, yPercent)
              *
              * The current blur amounts, in percent of full blur
              */
             blurupdate : [],
-            
+
             /* callback newsong(song)
              *
              * Called on song change, whether user triggered or autosong.
              * Song object is passed.
              */
             newsong : [],
-            
+
             /* callback newimage(image)
              *
              * Called on image change, whether user triggered or FULL AUTO mode.
              * Image object is passed.
              */
             newimage : [],
-            
+
             /* callback newcolour(colour, isFade)
              *
              * Called on colour change.
@@ -65,14 +65,14 @@ class HuesCore {
              * isFade: if the colour is fading from the previous value
              */
             newcolour : [],
-            
+
             /* callback newmode(mode)
              *
              * Called on mode change.
              * Mode is passed as a boolean.
              */
             newmode : [],
-            
+
             /* callback beat(beatString, beatIndex)
              *
              * Called on every new beat.
@@ -80,27 +80,27 @@ class HuesCore {
              * beatIndex is the beat index. Negative during buildups
              */
             beat : [],
-            
+
             /* callback invert(isInverted)
              *
              * Called whenever the invert state changes.
              * Invert state is passed as a boolean.
              */
             invert : [],
-            
+
             /* callback frame()
              *
              * Called on each new frame, at the end of all other frame processing
              */
             frame : [],
-            
+
             /* callback songstarted(song)
              *
              * Called when the song actually begins to play, not just when the
              * new song processing begins. Song object passed.
              */
             songstarted : [],
-            
+
             /* callback settingsupdated()
              *
              * Called when settings are updated and should be re-read from the settings object
@@ -113,30 +113,30 @@ class HuesCore {
         this.versionStr = (this.version/10).toFixed(1);
         this.versionHex = this.version.toString(16);
         this.beatIndex = 0;
-        
+
         // How long a beat lasts for in each section
         this.buildLength = -1;
         this.loopLength = -1;
-        
+
         this.currentSong = null;
         this.currentImage = null;
         this.songIndex = -1;
         this.imageIndex = -1;
         this.lastSongArray = [];
         this.lastImageArray = [];
-        
+
         this.colourIndex = 0x3f;
         this.colours = HuesCore.oldColours;
-        
+
         this.invert = false;
         this.loopCount = 0;
         this.doBuildup = true;
         this.userInterface = null;
         this.uiArray = [];
-        
+
         this.settings = new HuesSettings(defaults);
         zip.workerScriptsPath = this.settings.workersPath;
-        
+
         // What's our root element?
         this.root = null;
         if(!this.settings.root) {
@@ -157,7 +157,7 @@ class HuesCore {
         }
         // Yes, we do indeed have Javascript
         this.root.innerHTML = "";
-        
+
         this.makePreloader(this.root);
 
         window.onerror = (msg, url, line, col, error) => {
@@ -165,16 +165,16 @@ class HuesCore {
             // Get more info in console
             return false;
         };
-        
+
         this.window = new HuesWindow(this.root, this.settings);
-        
+
         console.log("0x40 Hues v" + this.versionStr + " - start your engines!");
-        
+
         this.resourceManager = new Resources(this, this.window);
         this.editor = new HuesEditor(this, this.window);
         this.settings.initUI(this.window);
         populateHuesInfo(this.versionStr, this.window, this.settings);
-        
+
         this.window.selectTab(this.settings.firstWindow, true);
 
         let ui = document.createElement("div");
@@ -182,16 +182,16 @@ class HuesCore {
         this.root.appendChild(ui);
         this.uiArray.push(new RetroUI(ui), new WeedUI(ui), new ModernUI(ui),
                           new XmasUI(ui), new HalloweenUI(ui), new MinimalUI(ui));
-        
+
         this.autoSong = this.settings.autoSong;
-        
+
         this.visualiser = document.createElement("canvas");
         this.visualiser.className = "hues-visualiser";
         this.visualiser.height = "64";
         this.vCtx = this.visualiser.getContext("2d");
-        
+
         this.soundManager = new SoundManager(this);
-        
+
         this.soundManager.init().then(() => {
             if(!this.soundManager.locked && this.settings.skipPreloader == "on") {
                 return null;
@@ -202,7 +202,7 @@ class HuesCore {
             if(sizes === null) {
                 return;
             }
-            
+
             let size = sizes.reduce( (prev, curr) => {
                 return typeof curr === 'number' ? prev + curr : null;
             }, 0);
@@ -211,11 +211,11 @@ class HuesCore {
             } else {
                 size = '<abbr title="Content-Length header not present for respack URLs">???</abbr>';
             }
-            
+
             let warning = size + "MB of music/images.<br />" +
                 "Flashing lights.<br />" +
                 "<b>Tap or click to start</b>";
-                
+
             if(!this.soundManager.locked) {
                 warning += "<br /><span>Skip this screen from Options</span>";
             }
@@ -231,7 +231,7 @@ class HuesCore {
             this.settingsUpdated();
             this.setColour(this.colourIndex);
             this.animationLoop();
-            
+
             if(this.settings.load) {
                 return this.resourceManager.addAll(this.settings.respacks, progress => {
                     this.preloader.style.backgroundPosition = (100 - progress*100) + "% 0%";
@@ -316,19 +316,19 @@ class HuesCore {
         this.preloader = document.createElement("div");
         this.preloader.className = "hues-preloader";
         root.appendChild(this.preloader);
-        
+
         if(this.settings.preloadTitle) {
             this.preloadTitle = document.createElement("div");
             this.preloadTitle.className = "hues-preloader__title";
             this.preloadTitle.textContent = this.settings.preloadTitle;
             this.preloader.appendChild(this.preloadTitle);
         }
-        
+
         this.preloadMsg = document.createElement("div");
         this.preloadMsg.className = "hues-preloader__text";
         this.preloadMsg.textContent = "Initialising...";
         this.preloader.appendChild(this.preloadMsg);
-        
+
         this.preloadSubMsg = document.createElement("div");
         this.preloadSubMsg.className = "hues-preloader__subtext";
         this.preloader.appendChild(this.preloadSubMsg);
@@ -342,14 +342,14 @@ class HuesCore {
         if(this.settings.visualiser != "on") {
             return;
         }
-        
+
         let logArrays = this.soundManager.getVisualiserData();
         if(!logArrays) {
             return;
         }
 
         this.vCtx.clearRect(0, 0, this.vCtx.canvas.width, this.vCtx.canvas.height);
-        
+
         let gradient=this.vCtx.createLinearGradient(0,64,0,0);
         if(this.invert) {
             gradient.addColorStop(1,"rgba(20,20,20,0.6)");
@@ -359,7 +359,7 @@ class HuesCore {
             gradient.addColorStop(0,"rgba(20,20,20,0.6)");
         }
         this.vCtx.fillStyle = gradient;
-        
+
         let barWidth = 2;
         let barHeight;
         let x = 0;
@@ -373,7 +373,7 @@ class HuesCore {
                     index = i;
                 }
                 barHeight = vals[index]/4;
-                
+
                 this.vCtx.fillRect(x,this.vCtx.canvas.height-barHeight,barWidth,barHeight);
 
                 x += barWidth;
@@ -410,7 +410,7 @@ class HuesCore {
             this.setInvert(false);
             return;
         }
-        
+
         // We should sync up to how many inverts there are
         let build = this.currentSong.buildupRhythm;
         let rhythm = this.currentSong.rhythm;
@@ -820,8 +820,8 @@ class HuesCore {
                 }
         }
     }
-    
-    
+
+
     charsToNextBeat() {
         // case: fade in build, not in rhythm. Must max out fade timer.
         let maxSearch = this.currentSong.rhythm.length;
@@ -836,7 +836,7 @@ class HuesCore {
         }
         return nextBeat;
     }
-    
+
     timeToNextBeat() {
         return (this.charsToNextBeat() * this.getBeatLength()) / this.soundManager.playbackRate;
     }
@@ -1290,7 +1290,7 @@ HuesCore.weedColours =
     {'c': 0xB62084, 'n': "Harold's Crayon"},
     {'c': 0x694489, 'n': 'Purple Rain'},
     {'c': 0xFFD700, 'n': 'Gold'}];
-    
+
 window.HuesCore = HuesCore;
 
 })(window, document);

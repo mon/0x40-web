@@ -32,12 +32,12 @@ class SoundManager {
             */
             seek : []
         };
-        
+
         this.core = core;
         this.playing = false;
         this.playbackRate = 1;
         this.song = null;
-        
+
         this.initPromise = null;
         this.lockedPromise = null;
         this.locked = true;
@@ -57,7 +57,7 @@ class SoundManager {
         this.gainNode = null;
         this.mute = false;
         this.lastVol = 1;
-        
+
         // Visualiser
         this.vReady = false;
         this.vBars = 0;
@@ -71,7 +71,7 @@ class SoundManager {
         this.logBins = 0;
         this.maxBinLin = 0;
     }
-    
+
     callEventListeners(ev) {
         let args = Array.prototype.slice.call(arguments, 1);
         this.eventListeners[ev].forEach(function(callback) {
@@ -109,7 +109,7 @@ class SoundManager {
                     // These don't always exist
                     AudioContext.prototype.suspend = AudioContext.prototype.suspend || (() => {return Promise.resolve();});
                     AudioContext.prototype.resume = AudioContext.prototype.resume || (() => {return Promise.resolve();});
-                    
+
                     this.context = new window.AudioContext();
                     this.gainNode = this.context.createGain();
                     this.gainNode.connect(this.context.destination);
@@ -130,7 +130,7 @@ class SoundManager {
                     });
                 });
             }).then(() => {
-                return new Promise((resolve, reject) => {          
+                return new Promise((resolve, reject) => {
                     // See if our audio decoder is working
                     let audioWorker;
                     try {
@@ -175,7 +175,7 @@ class SoundManager {
 
                 // play the file
                 source.start(0);
-                
+
                 window.removeEventListener('touchend', unlocker);
                 window.removeEventListener('click', unlocker);
                 this.core.clearMessage();
@@ -198,7 +198,7 @@ class SoundManager {
         if(!song || (!song.sound)) { // null song
             return p;
         }
-        
+
         // if there's a fadeout happening from AutoSong, kill it
         this.gainNode.gain.cancelScheduledValues(0);
         // Reset original volume
@@ -214,7 +214,7 @@ class SoundManager {
             if(song != this.song) {
                 return Promise.reject("Song changed between load and play - this message can be ignored");
             }
-            
+
             this.buildup = buffers.buildup;
             this.buildLength = this.buildup ? this.buildup.duration : 0;
             this.loop = buffers.loop;
@@ -228,7 +228,7 @@ class SoundManager {
             } else {
                 this.seek(0, true);
             }
-            
+
             return this.context.resume();
         }).then(() => {
             this.playing = true;
@@ -244,7 +244,7 @@ class SoundManager {
                 this.buildSource = null;
                 if(!dontDeleteBuffers)
                     this.buildup = null;
-            }        
+            }
             // arg required for mobile webkit
             this.loopSource.stop(0);
              // TODO needed?
@@ -261,7 +261,7 @@ class SoundManager {
     setRate(rate) {
         // Double speed is more than enough. Famous last words?
         rate = Math.max(Math.min(rate, 2), 0.25);
-        
+
         let time = this.clampedTime;
         this.playbackRate = rate;
         this.seek(time);
@@ -271,19 +271,19 @@ class SoundManager {
         if(!this.song) {
             return;
         }
-        
+
         this.callEventListeners("seek");
-        
+
         //console.log("Seeking to " + time);
         // Clamp the blighter
         time = Math.min(Math.max(time, -this.buildLength), this.loopLength);
-        
+
         this.stop(true);
-        
+
         if(!this.loop) {
             return;
         }
-            
+
         this.loopSource = this.context.createBufferSource();
         this.loopSource.buffer = this.loop;
         this.loopSource.playbackRate.value = this.playbackRate;
@@ -291,7 +291,7 @@ class SoundManager {
         this.loopSource.loopStart = 0;
         this.loopSource.loopEnd = this.loopLength;
         this.loopSource.connect(this.gainNode);
-        
+
         if(time < 0 && this.buildup) {
             this.buildSource = this.context.createBufferSource();
             this.buildSource.buffer = this.buildup;
@@ -302,7 +302,7 @@ class SoundManager {
         } else {
             this.loopSource.start(0, time);
         }
-        
+
         this.startTime = this.context.currentTime - (time / this.playbackRate);
         if(!noPlayingUpdate) {
             this.playing = true;
@@ -321,7 +321,7 @@ class SoundManager {
 
     get clampedTime() {
         let time = this.currentTime;
-        
+
         if(time > 0) {
             time %= this.loopLength;
         }
@@ -336,9 +336,9 @@ class SoundManager {
                NOTE: If anything but playSong calls loadSong, this idea is broken. */
             return Promise.reject("Song changed between load and play - this message can be ignored");
         }
-        
+
         let buffers = {loop: null, buildup: null};
-        
+
         let promises = [this.loadBuffer(song, "sound").then(buffer => {
             buffers.loop = buffer;
         })];
@@ -359,7 +359,7 @@ class SoundManager {
 
     loadBuffer(song, soundName) {
         let buffer = song[soundName];
-        
+
         // Is this an ogg file?
         let view = new Uint8Array(buffer);
         // Signature for ogg file: OggS
@@ -380,15 +380,15 @@ class SoundManager {
         } else { // Use our JS decoder
             return new Promise((resolve, reject) => {
                 let audioWorker = this.createWorker();
-                
+
                 audioWorker.addEventListener('error', () => {
                     reject(Error("Audio Worker failed to convert track"));
                 }, false);
-                
+
                 audioWorker.addEventListener('message', e => {
                     let decoded = e.data;
                     audioWorker.terminate();
-                    
+
                     // restore transferred buffer
                     song[soundName] = decoded.arrayBuffer;
                     if(decoded.error) {
@@ -399,7 +399,7 @@ class SoundManager {
                     let audio = this.audioBufFromRaw(decoded.rawAudio);
                     resolve(audio);
                 }, false);
-                
+
                 // transfer the buffer to save time
                 audioWorker.postMessage({buffer: buffer, ogg: this.oggSupport}, [buffer]);
             });
@@ -448,11 +448,11 @@ class SoundManager {
         this.analyserArrays = [];
         this.logArrays = [];
         this.binCutoffs = [];
-        
+
         this.linBins = 0;
         this.logBins = 0;
         this.maxBinLin = 0;
-        
+
         this.attachVisualiser();
     }
 
@@ -472,7 +472,7 @@ class SoundManager {
         }
         // Split display up into each channel
         this.vBars = Math.floor(this.vTotalBars/channels);
-        
+
         for(let i = 0; i < channels; i++) {
             let analyser = this.context.createAnalyser();
             // big fft buffers are new-ish
@@ -487,7 +487,7 @@ class SoundManager {
             analyser.maxDecibels = -25;
             this.analyserArrays.push(new Uint8Array(analyser.frequencyBinCount));
             analyser.getByteTimeDomainData(this.analyserArrays[i]);
-            this.splitter.connect(analyser, i);   
+            this.splitter.connect(analyser, i);
             this.analysers.push(analyser);
             this.logArrays.push(new Uint8Array(this.vBars));
         }
@@ -528,7 +528,7 @@ class SoundManager {
             let data = this.analyserArrays[a];
             let result = this.logArrays[a];
             this.analysers[a].getByteFrequencyData(data);
-            
+
             for(let i = 0; i < this.linBins; i++) {
                 let scaled = Math.round(i * this.maxBinLin / this.linBins);
                 result[i] = data[scaled];
@@ -536,7 +536,7 @@ class SoundManager {
             result[this.linBins] = data[this.binCutoffs[0]];
             for(let i = this.linBins+1; i < this.vBars; i++) {
                 let cutoff = i - this.linBins;
-                result[i] = this.sumArray(data, this.binCutoffs[cutoff-1], 
+                result[i] = this.sumArray(data, this.binCutoffs[cutoff-1],
                                                 this.binCutoffs[cutoff]);
             }
         }
@@ -589,7 +589,7 @@ class SoundManager {
     }
 }
 
-let miniOggRaw = 
+let miniOggRaw =
 "T2dnUwACAAAAAAAAAADFYgAAAAAAAMLKRdwBHgF2b3JiaXMAAAAAAUSsAAAA" +
 "AAAAgLsAAAAAAAC4AU9nZ1MAAAAAAAAAAAAAxWIAAAEAAACcKCV2Dzv/////" +
 "////////////MgN2b3JiaXMrAAAAWGlwaC5PcmcgbGliVm9yYmlzIEkgMjAx" +

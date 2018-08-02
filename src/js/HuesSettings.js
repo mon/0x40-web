@@ -153,11 +153,11 @@ const settingsOptions = {
     },
     autoSong : {
         name : "AutoSong",
-        options : ["off", "loop", "time", 
+        options : ["off", "loop", "time",
             {type:"varText", text:function() {
                 // only display if autosong is on
                 return this.autoSong == "off" ? "" : "after";
-            }}, 
+            }},
             {type:"input", variable:"autoSongDelay", inputType:"int",
                 visiblity:function() {
                     return this.autoSong != "off";
@@ -215,22 +215,22 @@ class HuesSettings {
              */
             updated : []
         };
-        
+
         let settingsVersion = "1";
         if(localStorage.settingsVersion != settingsVersion) {
             localStorage.clear();
             localStorage.settingsVersion = settingsVersion;
         }
-        
+
         this.hasUI = false;
-        
+
         this.settingCheckboxes = {};
-        
+
         this.textCallbacks = [];
         this.visCallbacks = [];
-        
+
         this.ephemerals = {};
-        
+
         for(let attr in defaultSettings) {
             if(!defaultSettings.hasOwnProperty(attr)) {
                 continue;
@@ -238,7 +238,7 @@ class HuesSettings {
             Object.defineProperty(this, attr, {
                 set: this.makeSetter(attr), get: this.makeGetter(attr)
             });
-            
+
             if(defaults[attr] !== undefined) {
                 if(defaults.overwriteLocal) {
                     this[attr] = defaults[attr];
@@ -247,9 +247,9 @@ class HuesSettings {
                 }
             }
         }
-        
+
         let querySettings = this.getQuerySettings();
-        
+
         for(let attr in defaultSettings) {
             // query string overrides, finally
             if(querySettings[attr] !== undefined && attr != 'respacks') {
@@ -259,7 +259,7 @@ class HuesSettings {
 
         this.respacks = this.respacks.concat(querySettings.respacks);
     }
-    
+
     getQuerySettings() {
         let results = {};
         results.respacks = [];
@@ -288,7 +288,7 @@ class HuesSettings {
     initUI(huesWin) {
         let root = document.createElement("div");
         root.className = "hues-options";
-            
+
         // Don't make in every loop
         let intValidator = function(self, variable) {
             this.value = this.value.replace(/\D/g,'');
@@ -316,7 +316,7 @@ class HuesSettings {
                     setContainer.className = "settings-individual";
                     let buttonContainer = document.createElement("div");
                     buttonContainer.className = "settings-buttons";
-                    
+
                     for(let j = 0; j < setting.options.length; j++) {
                         let option = setting.options[j];
                         if(typeof option === "string") {
@@ -421,7 +421,7 @@ class HuesSettings {
             return true;
         };
     }
-    
+
     isEphemeral(setting) {
         return settingsOptions[setting] === undefined;
     }
