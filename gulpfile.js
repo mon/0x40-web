@@ -96,7 +96,7 @@ gulp.task('release', ['default', 'lint'], function() {
         'favicon.ico'], {
             base: '.'
     }).pipe(gulp.dest('release'));
-    
+
     gulp.src(['lib/workers/**/*','lib/zip*'], {base: 'lib'})
     .pipe(uglify())
     .pipe(gulp.dest("release/lib"));

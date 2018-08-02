@@ -21,7 +21,7 @@
  */
 
 (function(window, document) {
-"use strict"; 
+"use strict";
 
  /* HuesInfo.js populates the INFO tab in the Hues Window.
   */
@@ -74,10 +74,10 @@ function populateHuesInfo(version, huesWin, settings) {
         return;
     }
     let verString = (parseInt(version)/10).toFixed(1);
-    
+
     let info = document.createElement("div");
     info.className = "hues-ref";
-    
+
     let huesName = settings.huesName.replace("%VERSION%", version);
     let about = document.createElement("div");
     about.className = "hues-about";
@@ -86,10 +86,10 @@ function populateHuesInfo(version, huesWin, settings) {
         '<h2>Web-ified by <a target="_blank" href="https://github.com/mon">mon</a></h2>' +
         '<h3>With help from <a target="_blank" href="https://github.com/kepstin/0x40hues-html5">Kepstin</a></h3>';
     info.appendChild(about);
-    
+
     addReference(info, "Beat glossary", beatGlossary);
     addReference(info, "Keyboard shortcuts", shortcuts);
-    
+
     huesWin.addTab("INFO", info);
 }
 
@@ -97,11 +97,11 @@ let addReference = function(root, titleText, list) {
     let ref = document.createElement("div");
     ref.className = "hues-ref__info";
     root.appendChild(ref);
-    
+
     let title = document.createElement("h3");
     title.textContent = titleText;
     ref.appendChild(title);
-    
+
     let listElem = document.createElement("ul");
     list.forEach(function(elem) {
         let item = document.createElement("li");

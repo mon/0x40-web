@@ -18,7 +18,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
- 
+
 (function(window, document) {
 "use strict";
 
@@ -32,15 +32,15 @@ class HuesEditor {
         this.loopEdit = null;
         this.editArea = null;
         this.wrapAt = 32;
-        
+
         this.hilightWidth = 0;
         this.hilightHeight = 0;
-        
+
         this.undoBuffer = [];
         this.redoBuffer = [];
         // Will be an array if many actions are performed in one undo
         this.batchUndoArray = null;
-        
+
         // For rendering the waveform
         this.buildWave = null;
         this.loopWave = null;
@@ -48,12 +48,12 @@ class HuesEditor {
         this.loopWaveBuff = null;
         this.waveContext = null;
         this.waveCanvas = null;
-        
+
         // for storing respacks created with "new"
         this.respack = null;
         // when we're actually following the playing song
         this.linked = false;
-        
+
         this.core = core;
         if(core.settings.enableWindow) {
             this.initUI();
@@ -82,29 +82,29 @@ class HuesEditor {
         help.addEventListener("click", () => {
             window.open("https://github.com/mon/0x40-web/tree/master/docs/Editor.md", '_blank');
         });
-        
+
         this.statusMsg = document.createElement("span");
         this.statusMsg.className = "editor__status-msg";
         titleButtons.appendChild(this.statusMsg);
-        
+
         this.topBar = document.createElement("div");
         this.topBar.className = "editor__top-bar";
         this.root.appendChild(this.topBar);
-        
+
         this.uiCreateInfo();
         this.uiCreateImport();
         this.root.appendChild(document.createElement("hr"));
         this.uiCreateEditArea();
         this.uiCreateControls();
         this.uiCreateVisualiser();
-        
+
         document.addEventListener("keydown", e => {
             e = e || window.event;
             if(e.defaultPrevented) {
                 return true;
             }
             let key = e.keyCode || e.which;
-            
+
             if (e.ctrlKey) {
                 if(key == 90) { // Z
                     this.undo();
@@ -118,7 +118,7 @@ class HuesEditor {
             }
             return true;
         });
-        
+
         window.addEventListener('resize', this.resize.bind(this));
         // Fix Chrome rendering - redraw on tab load
         // tabselected passes the name of the selected tab, we force noHilightCalc to false
@@ -140,15 +140,15 @@ class HuesEditor {
         let loopHeight = maxHeight - buildHeight + lHeadHeight;
         this.loopEdit.style.height = loopHeight + "px";
         this.loopEdit._box.style.height = (loopHeight - lHeadHeight) + "px";
-        
+
         // For window resizing down situation
         if(this.editArea.offsetHeight != boxHeight) {
             this.resize();
         }
-        
+
         // Resize the time lock
         this.timeLock.style.height = (buildHeight + handleHeight) + "px";
-        
+
         // Save to fix Chrome rendering and to enable right click to seek
         // We only resize on a window resize event, not when dragging the handle
         if(!noHilightCalc) {
@@ -169,7 +169,7 @@ class HuesEditor {
             this.hilightWidth = hilight.clientWidth / 100;
             this.hilightHeight = hilight.clientHeight / 100;
             this.loopEdit.removeChild(hilight);
-            
+
             this.waveCanvas.width = this.waveCanvas.clientWidth;
         }
     }
@@ -249,14 +249,14 @@ class HuesEditor {
         this.copyBtn.classList.add("hues-button--disabled");
         this.buildEdit._removeBtn.classList.add("hues-button--disabled");
         this.loopEdit._removeBtn.classList.add("hues-button--disabled");
-        
+
         if(!this.song) {
             return;
         }
-        
+
         this.saveBtn.classList.remove("hues-button--disabled");
         this.copyBtn.classList.remove("hues-button--disabled");
-        
+
         if(this.song.independentBuild) {
             this.timeLock._locker.innerHTML = "&#xe904;";
             this.timeLock.classList.add("edit-area__timelock--unlocked");
@@ -272,15 +272,15 @@ class HuesEditor {
             this.seekStart.classList.remove("hues-button--disabled");
             this.buildEdit._removeBtn.classList.remove("hues-button--disabled");
         }
-        
+
         if(!this.linked) {
             return;
         }
-        
+
         let loopLen = this.core.soundManager.loopLength;
         let buildLen = this.core.soundManager.buildLength;
         let beatLen = (loopLen / this.song.rhythm.length) * 1000;
-        
+
         this.loopLen.textContent = loopLen.toFixed(2);
         this.buildLen.textContent = buildLen.toFixed(2);
         this.beatLen.textContent = beatLen.toFixed(2);
@@ -292,14 +292,14 @@ class HuesEditor {
         }
         // If first load, this makes fresh, gets the core synced up
         this.newSong(this.song);
-        
+
         // Have we just added a build to a song with a rhythm, or vice versa?
         // If so, link their lengths
         let newlyLinked = !this.song[editor._sound] && !!this.song[this.getOther(editor)._sound];
-        
+
         // Disable load button TODO
         let file = editor._fileInput.files[0];
-        
+
         // load audio
         this.blobToArrayBuffer(file)
         .then(buffer => {
@@ -348,7 +348,7 @@ class HuesEditor {
         if(!this.song) {
             return;
         }
-        
+
         this.song[editor._sound] = null;
         this.song[editor._rhythm] = "";
         this.setIndependentBuild(true);
@@ -407,30 +407,30 @@ class HuesEditor {
         // Clear instructions
         this.buildEdit._hilight.className = "beat-hilight invisible";
         this.loopEdit._hilight.className = "beat-hilight invisible";
-        
+
         // Clear helpful glows
         this.newSongBtn.classList.remove("hues-button--glow");
         this.fromSongBtn.classList.remove("hues-button--glow");
-        
+
         // Enable title edits
         this.title.disabled = false;
         this.source.disabled = false;
-        
+
         this.clearUndoRedo();
-        
+
         this.song = song;
         this.reflow(this.buildEdit, song.buildupRhythm);
         this.reflow(this.loopEdit, song.rhythm);
         this.title.value = song.title;
         this.source.value = song.source;
-        
+
         // Force independent build if only 1 source is present
         this.updateIndependentBuild();
-        
+
         // Unlock beatmap lengths
         this.setLocked(this.buildEdit, 0);
         this.setLocked(this.loopEdit, 0);
-        
+
         this.linked = true;
         this.updateInfo();
         this.updateWaveform();
@@ -438,7 +438,7 @@ class HuesEditor {
 
     updateIndependentBuild() {
         // Force independent build if only 1 source is present
-        
+
         // Effectively buildup XOR loop - does only 1 exist?
         let hasBuild = !!this.song.buildup;
         let hasLoop = !!this.song.sound;
@@ -485,7 +485,7 @@ class HuesEditor {
             return;
         }
         this.redoBuffer = [];
-        
+
         let undoObj = {songVar: name,
                        editor: editor,
                        text: oldText,
@@ -554,7 +554,7 @@ class HuesEditor {
     updateUndoUI() {
         this.undoBtn.className = "hues-button hues-button--disabled";
         this.redoBtn.className = "hues-button hues-button--disabled";
-        
+
         if(this.undoBuffer.length > 0) {
             this.undoBtn.classList.remove("hues-button--disabled");
         }
@@ -632,9 +632,9 @@ class HuesEditor {
         input.value = subtitle;
         container.appendChild(input);
         div.appendChild(container);
-        
+
         parent.appendChild(div);
-        
+
         return input;
     }
 
@@ -667,7 +667,7 @@ class HuesEditor {
         let info = document.createElement("div");
         this.topBar.appendChild(info);
         info.className = "editor__info";
-        
+
         let songUpdate = function(name) {
             if(!this.song ) {
                 return;
@@ -678,7 +678,7 @@ class HuesEditor {
             }
             this.core.callEventListeners("newsong", this.song);
         };
-        
+
         this.title = this.createTextInput("Title:", "Song name", info);
         this.title.oninput = songUpdate.bind(this, "title");
         this.title.disabled = true;
@@ -691,7 +691,7 @@ class HuesEditor {
         let imports = document.createElement("div");
         this.topBar.appendChild(imports);
         imports.className = "editor__imports";
-        
+
         let songEdits = document.createElement("div");
         imports.appendChild(songEdits);
         let newSongBtn = this.createButton("New song", songEdits, false, "hues-button--glow");
@@ -706,11 +706,11 @@ class HuesEditor {
             }
         });
         this.fromSongBtn = fromSong;
-        
+
         let songInfos = document.createElement("div");
         songInfos.className = "settings-individual editor__song-stats";
         imports.appendChild(songInfos);
-        
+
         this.loopLen = this.uiCreateSongStat("Loop length (s):", "0.00", songInfos);
         this.buildLen = this.uiCreateSongStat("Build length (s):", "0.00", songInfos);
         this.beatLen = this.uiCreateSongStat("Beat length (ms):", "0.00", songInfos);
@@ -734,7 +734,7 @@ class HuesEditor {
         this.editArea = editArea;
         editArea.className = "edit-area";
         this.root.appendChild(editArea);
-        
+
         // Lock build/loop lengths
         this.timeLock = document.createElement("div");
         editArea.appendChild(this.timeLock);
@@ -749,7 +749,7 @@ class HuesEditor {
             this.setIndependentBuild(!this.song.independentBuild);
         });
         this.timeLock._locker = locker;
-        
+
         this.buildEdit = this.uiCreateSingleEditor("Buildup", "buildup", "buildupRhythm", editArea);
         this.seekStart = this.buildEdit._seek;
         // FIRST |<<
@@ -757,7 +757,7 @@ class HuesEditor {
         this.seekStart.addEventListener("click", () => {
             this.core.soundManager.seek(-this.core.soundManager.buildLength);
         });
-        
+
         // drag handle
         let handleContainer = document.createElement("div");
         handleContainer.className = "resize-handle";
@@ -767,22 +767,22 @@ class HuesEditor {
         handle.innerHTML = "&#xe908;"; // DRAG HANDLE
         handleContainer.appendChild(handle);
         this.resizeHandle = handleContainer;
-        
+
         handleContainer.addEventListener("mousedown", (e) => {
             e.preventDefault();
             let editTop = this.editArea.getBoundingClientRect().top;
             let handleSize = this.resizeHandle.clientHeight;
-            
+
             let resizer = (e) => {
                 this.buildEditSize = Math.floor(e.clientY - editTop + handleSize/2);
                 this.resize(true);
             };
-            
+
             let mouseup = function(e) {
                 document.removeEventListener("mousemove", resizer);
                 document.removeEventListener("mouseup", mouseup);
             };
-            
+
             document.addEventListener("mousemove", resizer);
             document.addEventListener("mouseup", mouseup);
         });
@@ -794,11 +794,11 @@ class HuesEditor {
         this.seekLoop.addEventListener("click", () => {
             this.core.soundManager.seek(0);
         });
-        
+
         this.buildEdit._hilight.textContent = "[none]";
-        this.loopEdit._hilight.innerHTML = 
-            '<br />' + 
-             'Click [LOAD RHYTHM] to load a loop! LAME encoded MP3s work best.<br />' + 
+        this.loopEdit._hilight.innerHTML =
+            '<br />' +
+             'Click [LOAD RHYTHM] to load a loop! LAME encoded MP3s work best.<br />' +
              '(LAME is important for seamless MP3 loops)<br />' +
              '<br />' +
              '[DOUBLE] doubles the selected map length by padding it with "."s.<br />' +
@@ -817,19 +817,19 @@ class HuesEditor {
     uiCreateSingleEditor(title, soundName, rhythmName, parent) {
         let container = document.createElement("div");
         parent.appendChild(container);
-        
+
         let header = document.createElement("div");
         header.className = "edit-area__header";
         container.appendChild(header);
-        
+
         let nameLabel = document.createElement("span");
         header.appendChild(nameLabel);
         nameLabel.innerHTML = title;
-        
+
         let seek = this.createButton("", header, true, "hues-icon");
         header.appendChild(seek);
         container._seek = seek;
-        
+
         let beatCount = document.createElement("span");
         header.appendChild(beatCount);
         beatCount.className = "edit-area__beat-count";
@@ -843,16 +843,16 @@ class HuesEditor {
                 this.setLocked(container, textLen);
             }
         });
-        
+
         let rightHeader = document.createElement("span");
         rightHeader.className = "edit-area__header__right";
         header.appendChild(rightHeader);
-        
+
         container._halveBtn = this.createButton("Halve", rightHeader, true);
         container._halveBtn.addEventListener("click", this.halveBeats.bind(this, container));
         container._doubleBtn = this.createButton("Double", rightHeader, true);
         container._doubleBtn.addEventListener("click", this.doubleBeats.bind(this, container));
-        
+
         let fileInput = document.createElement("input");
         fileInput.type ="file";
         fileInput.accept=".mp3, .wav, .ogg";
@@ -860,10 +860,10 @@ class HuesEditor {
         fileInput.onchange = this.loadAudio.bind(this, container);
         let load = this.createButton("Load " + title.replace(/&nbsp;/g,""), rightHeader);
         load.addEventListener("click", () => {fileInput.click();});
-        
+
         container._removeBtn = this.createButton("Remove", rightHeader, true);
         container._removeBtn.addEventListener("click", this.removeAudio.bind(this, container));
-        
+
         let editBox = document.createElement("div");
         editBox.className = "edit-area__box";
         let beatmap = document.createElement("div");
@@ -872,27 +872,27 @@ class HuesEditor {
         beatmap.spellcheck = false;
         beatmap.oninput = this.textUpdated.bind(this, container);
         beatmap.oncontextmenu = this.rightClick.bind(this, container);
-        
+
         let beatHilight = document.createElement("div");
         beatHilight.className = "beat-hilight";
-        
+
         editBox.appendChild(beatHilight);
         editBox.appendChild(beatmap);
         container.appendChild(editBox);
-        
+
         container._header = header;
         container._beatCount = beatCount;
         container._box = editBox;
         container._beatmap = beatmap;
         container._hilight = beatHilight;
         container._fileInput = fileInput;
-        
+
         container._sound = soundName;
         container._rhythm = rhythmName;
-            
+
         // Are we in insert mode? Default = no
         container._locked = 0;
-        
+
         return container;
     }
 
@@ -900,7 +900,7 @@ class HuesEditor {
         let controls = document.createElement("div");
         controls.className = "edit__controls";
         this.root.appendChild(controls);
-        
+
         let changeRate = function(change) {
             let rate = this.core.soundManager.playbackRate;
             rate += change;
@@ -909,30 +909,30 @@ class HuesEditor {
             let newRate = this.core.soundManager.playbackRate;
             playRateLab.textContent = newRate.toFixed(2) + "x";
         };
-        
+
         let speedControl = document.createElement("div");
         controls.appendChild(speedControl);
-        
+
         // BACKWARD
         let speedDown = this.createButton("&#xe909;", speedControl, false, "hues-icon");
         speedDown.addEventListener("click", changeRate.bind(this, -0.25));
         // FORWARD
         let speedUp = this.createButton("&#xe90a;", speedControl, false, "hues-icon");
         speedUp.addEventListener("click", changeRate.bind(this, 0.25));
-            
+
         let playRateLab = document.createElement("span");
         playRateLab.className = "settings-individual";
         playRateLab.textContent = "1.00x";
         speedControl.appendChild(playRateLab);
-        
+
         let wrapControl = document.createElement("div");
         controls.appendChild(wrapControl);
-        
+
         let wrapLab = document.createElement("span");
         wrapLab.className = "settings-individual";
         wrapLab.textContent = "New line at beat ";
         wrapControl.appendChild(wrapLab);
-        
+
         let wrapAt = document.createElement("input");
         wrapAt.className = "settings-input";
         wrapAt.value = this.wrapAt;
@@ -946,7 +946,7 @@ class HuesEditor {
             this.wrapAt = parseInt(wrapAt.value);
             this.reflow(this.buildEdit, this.song.buildupRhythm);
             this.reflow(this.loopEdit, this.song.rhythm);
-            
+
         };
         wrapControl.appendChild(wrapAt);
     }
@@ -958,7 +958,7 @@ class HuesEditor {
         this.root.appendChild(wave);
         this.waveCanvas = wave;
         this.waveContext = wave.getContext("2d");
-        
+
         this.core.addEventListener("frame", this.drawWave.bind(this));
     }
 
@@ -968,7 +968,7 @@ class HuesEditor {
         }
         // If the right click is also a focus event, caret doesn't move, so we have to use coords
         let coords = this.getTextCoords(event);
-        
+
         if(coords.x > this.wrapAt)
             return true;
 
@@ -976,7 +976,7 @@ class HuesEditor {
         let totalLen = this.getText(editor).length;
         if(caret > totalLen)
             return true;
-        
+
         // in case of focus event
         this.setCaret(editor._beatmap, caret);
         let percent = caret / totalLen;
@@ -988,7 +988,7 @@ class HuesEditor {
             seekTime = -bLen + bLen * percent;
         }
         this.core.soundManager.seek(seekTime);
-        
+
         event.preventDefault();
         return false;
     }
@@ -1007,7 +1007,7 @@ class HuesEditor {
 
         x = Math.floor((event.clientX - x) / this.hilightWidth);
         y = Math.floor((event.clientY - y) / this.hilightHeight);
-        
+
         return {x: x, y: y};
     }
 
@@ -1094,7 +1094,7 @@ class HuesEditor {
         this.reflow(editor, this.song[editor._rhythm]);
         this.setCaret(editor._beatmap, caret);
         this.updateHalveDoubleButtons(editor);
-        
+
         this.core.updateBeatLength();
         // We may have to go backwards in time
         this.core.recalcBeatIndex();
@@ -1174,10 +1174,10 @@ class HuesEditor {
         // The individual wave section
         let wave = document.createElement("canvas");
         let waveContext = wave.getContext("2d");
-        
+
         wave.height = WAVE_HEIGHT_PIXELS;
         wave.width = Math.floor(WAVE_PIXELS_PER_SECOND * length);
-        
+
         let samplesPerPixel = Math.floor(buffer.sampleRate / WAVE_PIXELS_PER_SECOND);
         let waveData = [];
         for(let i = 0; i < buffer.numberOfChannels; i++) {
@@ -1211,7 +1211,7 @@ class HuesEditor {
             waveContext.moveTo(pixel, maxPix);
             waveContext.lineTo(pixel, minPix);
             waveContext.stroke();
-            
+
             // Draw the average too, gives a better feel for the wave
             avgHi /= j * channels;
             avgLo /= j * channels;
@@ -1223,26 +1223,26 @@ class HuesEditor {
             waveContext.moveTo(pixel, maxAvg);
             waveContext.lineTo(pixel, minAvg);
             waveContext.stroke();
-            
+
             pixel+=1;
         }
-        
+
         return wave;
     }
 
     drawWave() {
         if((!this.buildWave && !this.loopWave) || !this.linked)
             return;
-        
+
         let width = this.waveCanvas.width;
         let now = this.core.soundManager.currentTime;
         let timespan = width / WAVE_PIXELS_PER_SECOND / 2;
         let minTime = now - timespan;
         let maxTime = now + timespan;
-        
+
         let bLen = this.core.soundManager.buildLength;
         let loopLen = this.core.soundManager.loopLength;
-        
+
         let drawTime, drawOffset;
         if(bLen) {
             drawTime = Math.max(minTime, -bLen);
@@ -1251,9 +1251,9 @@ class HuesEditor {
         }
         // drawOffset is "pixels from the left"
         drawOffset = Math.floor((drawTime - minTime) * WAVE_PIXELS_PER_SECOND);
-        
+
         this.waveContext.clearRect(0, 0, width, WAVE_HEIGHT_PIXELS);
-        
+
         if(this.buildWave && bLen && minTime < 0) {
             // Bit of legwork to convert negative to positive
             let waveOffset = Math.floor((1 - drawTime / -bLen) * (this.buildWave.width-1));
@@ -1265,21 +1265,21 @@ class HuesEditor {
             // If there's more to draw after the build, it'll be from the start of the wave
             drawTime = 0;
         }
-        
+
         let loopPoints = [];
         if(this.loopWave && loopLen && maxTime > 0) {
             while(drawOffset < width) {
                 if(drawTime === 0) {
                     loopPoints.push(drawOffset);
                 }
-                
+
                 let waveOffset = Math.floor((drawTime / loopLen) * (this.loopWave.width-1));
                 drawOffset = this.drawOneWave(this.loopWave, waveOffset, drawOffset, width);
                 // If we're drawing more than 1 loop it's starting at 0
                 drawTime = 0;
             }
         }
-        
+
         // trackbar
         this.drawWaveBar("red", width/2);
         // Signify loop point with a green bar, drawing over the wave
@@ -1350,7 +1350,7 @@ class HuesEditor {
         let result = "<songs>\n";
         result += xml;
         result += "</songs>\n";
-        
+
         // http://stackoverflow.com/a/18197341
         let element = document.createElement('a');
         element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(result));
@@ -1362,19 +1362,19 @@ class HuesEditor {
         element.click();
 
         document.body.removeChild(element);
-        
+
         window.onbeforeunload = null;
     }
 
     // http://stackoverflow.com/a/30810322
     copyXML() {
         let text = this.generateXML();
-        
+
         // Clicking when disabled
         if(!text) {
             return;
         }
-        
+
         let textArea = document.createElement("textarea");
         textArea.className = "copybox";
 
@@ -1383,7 +1383,7 @@ class HuesEditor {
         document.body.appendChild(textArea);
 
         textArea.select();
-        
+
         let success;
 
         try {
@@ -1391,7 +1391,7 @@ class HuesEditor {
         } catch (err) {
             success = false;
         }
-        
+
         document.body.removeChild(textArea);
         if(success) {
             this.alert("Beatmap XML copied to clipboard!");
@@ -1400,7 +1400,7 @@ class HuesEditor {
         }
     }
 }
-    
+
 window.HuesEditor = HuesEditor;
 
 })(window, document);
