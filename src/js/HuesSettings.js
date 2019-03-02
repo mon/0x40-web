@@ -274,15 +274,15 @@ class HuesSettings {
         let vars = query.split("&");
         for (let i=0;i<vars.length;i++) {
             let pair = vars[i].split("=");
+            let val = decodeURIComponent(pair[1]);
             if(pair[0] == "packs" || pair[0] == "respacks"){
-                let packs = pair[1].split(",");
+                let packs = val.split(",");
                 for(let j = 0; j < packs.length; j++) {
                     results.respacks.push(this.respackPath + packs[j]);
                 }
             } else if(pair[0] == "song") { // alias for firstSong
-                results.firstSong = pair[1];
+                results.firstSong = val;
             } else {
-                let val = pair[1];
                 // since we can set ephemeral variables this way
                 if(val === "true" || val === "false")
                     val = val == "true";
