@@ -7,6 +7,7 @@ Should work on most modern browsers.
 [Default Hues](http://0x40.mon.im/)  
 [420 Hues](http://420.mon.im/)  
 [Halloween Hues](http://spook.mon.im/)
+[Christmas Hues](http://xmas.moe)
 
 You can also have animations that sync perfectly with the beats of the songs. Inspired by Kepstin's Integral experiments.  
 [420 Hues, Snoop Edition](http://420.mon.im/snoop.html)  
