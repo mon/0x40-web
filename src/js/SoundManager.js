@@ -548,9 +548,9 @@ class SoundManager {
             this.lastVol = this.gainNode.gain.value;
         }
         if(mute) {
-            this.gainNode.gain.value = 0;
+            this.gainNode.gain.setValueAtTime(0, this.context.currentTime);
         } else {
-            this.gainNode.gain.value = this.lastVol;
+            this.gainNode.gain.setValueAtTime(this.lastVol, this.context.currentTime);
         }
         this.core.userInterface.updateVolume(this.gainNode.gain.value);
         this.mute = mute;
@@ -574,7 +574,7 @@ class SoundManager {
     }
 
     setVolume(vol) {
-        this.gainNode.gain.value = vol;
+        this.gainNode.gain.setValueAtTime(vol, this.context.currentTime);
         this.lastVol = vol;
         this.core.userInterface.updateVolume(vol);
     }
