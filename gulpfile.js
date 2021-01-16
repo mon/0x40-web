@@ -3,15 +3,14 @@ var sourcemaps = require("gulp-sourcemaps");
 var babel = require("gulp-babel");
 var uglify = require('gulp-uglify');
 var concat = require("gulp-concat");
-var minifyCSS = require('gulp-cssnano');
-var autoprefixer = require('gulp-autoprefixer');
+var postcss = require('gulp-postcss');
+var autoprefixer = require('autoprefixer');
+var minifyCSS = require('cssnano');
 var order = require("gulp-order");
 var del = require('del');
 var newer = require('gulp-newer');
 var jshint = require('gulp-jshint');
 var plumber = require('gulp-plumber');
-
-gulp.task('default', ['css', 'audio', 'minify']);
 
 gulp.task('css', function(){
   return gulp.src('src/css/**/*.css')
@@ -25,9 +24,9 @@ gulp.task('css', function(){
     .pipe(plumber())
     .pipe(newer('css/hues-min.css'))
     .pipe(sourcemaps.init())
-    .pipe(autoprefixer('last 2 version', 'ios 6', 'android 4'))
+		.pipe(postcss([autoprefixer('defaults')]))
     .pipe(concat('hues-min.css'))
-    .pipe(minifyCSS())
+		.pipe(postcss([minifyCSS()]))
     .pipe(sourcemaps.write("."))
     .pipe(gulp.dest('css'));
 });
@@ -47,7 +46,7 @@ gulp.task("oggvorbis", function () {
     .pipe(gulp.dest("lib"));
 });
 
-gulp.task("audio", ["mp3", "oggvorbis"]);
+gulp.task("audio", gulp.parallel("mp3", "oggvorbis"));
 
 gulp.task("minify", function () {
   return gulp.src("src/js/*.js")
@@ -67,15 +66,19 @@ gulp.task("lint", function () {
     .pipe(jshint.reporter('default'));
 });
 
-gulp.task('watch', ['default'], function() {
-  gulp.watch('src/css/*.css', ['css']);
-  gulp.watch('src/js/*.js', ['minify']);
-});
+gulp.task('default', gulp.parallel('css', 'audio', 'minify'));
+
+gulp.task('watch', gulp.series('default',
+  gulp.parallel(
+    function() { return gulp.watch('src/css/*.css', gulp.series('css'));},
+    function() { return gulp.watch('src/js/*.js', gulp.series('minify'));}
+)));
 
 gulp.task('clean', function() {
     return del([
         'lib/hues-min.js',
         'lib/hues-min.map',
+        'lib/hues-min.js.map',
         'lib/audio-min.js',
         'lib/ogg.js',
         'lib/vorbis.js',
@@ -83,8 +86,8 @@ gulp.task('clean', function() {
         'release']);
 });
 
-gulp.task('release', ['default', 'lint'], function() {
-    gulp.src([
+gulp.task('release', gulp.series('default', 'lint', function() {
+    return gulp.src([
         'css/hues-min.css',
         'lib/hues-min.js',
         'lib/audio-min.js',
@@ -96,14 +99,14 @@ gulp.task('release', ['default', 'lint'], function() {
         'favicon.ico'], {
             base: '.'
     }).pipe(gulp.dest('release'));
-
-    gulp.src(['lib/workers/**/*','lib/zip*'], {base: 'lib'})
+  }, function() {
+    return gulp.src(['lib/workers/**/*','lib/zip*'], {base: 'lib'})
     .pipe(uglify())
     .pipe(gulp.dest("release/lib"));
-});
+}));
 
 function onError(err) {
   gutil.beep();
   console.log(err);
   this.emit('end');
-};
+}
