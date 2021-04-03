@@ -109,7 +109,7 @@ class HuesCore {
         };
 
         // Bunch-o-initialisers
-        this.version = 35;
+        this.version = 36;
         this.versionStr = (this.version/10).toFixed(1);
         this.versionHex = this.version.toString(16);
         this.beatIndex = 0;
@@ -190,7 +190,7 @@ class HuesCore {
         this.visualiser.height = "64";
         this.vCtx = this.visualiser.getContext("2d");
 
-        this.soundManager = new SoundManager(this);
+        this.soundManager = new SoundManager(this, this.settings.volume);
 
         this.soundManager.init().then(() => {
             if(!this.soundManager.locked && this.settings.skipPreloader == "on") {

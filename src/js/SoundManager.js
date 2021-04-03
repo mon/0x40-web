@@ -23,7 +23,7 @@
 "use strict";
 
 class SoundManager {
-    constructor(core) {
+    constructor(core, initialVolume = 1) {
         // Perhaps this will do more later
         this.eventListeners = {
             /* callback seek()
@@ -56,7 +56,7 @@ class SoundManager {
         // Volume
         this.gainNode = null;
         this.mute = false;
-        this.lastVol = 1;
+        this.lastVol = initialVolume;
 
         // Visualiser
         this.vReady = false;
