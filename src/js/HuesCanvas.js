@@ -171,11 +171,7 @@ class HuesCanvas {
                 // If a short blackout is scheduled, but we missed the image frame
                 // from the last one, you can get only black frames over and over
                 // this will forcibly swap to the image to increase perceived speed
-                if(this.lastBlackout != this.currentBlackout && this.lastFrameBlack) {
-                    this.lastFrameBlack = false;
-                    this.context.fillStyle = "#FFF";
-                    this.context.fillRect(0,0,width,height);
-                } else {
+                if(!(this.lastBlackout != this.currentBlackout && this.lastFrameBlack)) {
                     this.lastFrameBlack = true;
                     this.lastBlackout = this.currentBlackout;
                     this.context.fillStyle = this.blackoutColour;
@@ -185,11 +181,11 @@ class HuesCanvas {
                     return;
                 }
             }
-        } else {
-            this.lastFrameBlack = false;
-            this.context.fillStyle = "#FFF";
-            this.context.fillRect(0,0,width,height);
         }
+
+        this.lastFrameBlack = false;
+        this.context.fillStyle = "#FFF";
+        this.context.fillRect(0,0,width,height);
 
         if(this.image && (this.image.bitmap || this.image.bitmaps)) {
             let bitmap = this.image.animated ?
