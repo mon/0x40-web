@@ -51,7 +51,7 @@ const defaultSettings = {
     fullAuto: true,
     // The remote respack listing JSON endpoint
     // NOTE: Any packs referenced need CORS enabled or loads fail
-    packsURL: "https://cdn.0x40.ga/getRespacks.php",
+    packsURL: "https://cdn.0x40hu.es/getRespacks.php",
     // If set, will disable the remote resources menu. For custom pages.
     disableRemoteResources: false,
     // You will rarely want to change this. Enables/disables the Hues Window.
