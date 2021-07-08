@@ -46,8 +46,8 @@ There are two special settings here:
 * Anything given as `packs` or `respacks` will be appended to the respacks specified in the `defaults` object, as opposed to overwriting them.
 
 ## Building
-Install [Node.js](https://nodejs.org/en/). I used v10.
-Newer node versions (v14) seem to have some issues with gulp, open a PR if you can get it building.  
+Install [Node.js](https://nodejs.org/en/). I used v10 but it appears to work with v14.
+Newer node versions (v15+) seem to have some issues with gulp, open a PR if you can get it building.  
 Install the required packages for the build:
 ```bash
 npm install gulp -g
