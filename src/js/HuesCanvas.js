@@ -36,6 +36,7 @@ class HuesCanvas {
         core.addEventListener("invert", this.setInvert.bind(this));
         core.addEventListener("settingsupdated", this.settingsUpdated.bind(this));
         core.addEventListener("frame", this.animationLoop.bind(this));
+        core.addEventListener("songstarted", this.resetAnimation.bind(this));
         this.core = core;
 
         this.needsRedraw = false;
@@ -140,6 +141,10 @@ class HuesCanvas {
         this.blurDistance = 0;
         this.xBlur = false;
         this.yBlur = false;
+    }
+
+    resetAnimation() {
+        this.animTimeout = this.audio.currentTime;
     }
 
     resize() {
@@ -375,11 +380,14 @@ class HuesCanvas {
                     this.animTimeout = this.audio.currentTime;
                 }
             } else if(this.animTimeout < this.audio.currentTime) {
-                this.animFrame++;
-                this.animFrame %= this.image.frameDurations.length;
-                // Don't rebase to current time otherwise we may lag
-                this.animTimeout += this.image.frameDurations[this.animFrame]/1000;
-                this.needsRedraw = true;
+                // backgrounded tabs don't hit the animation loop so we get
+                // wildly behind time - bring us back to sync no matter what
+                while(this.animTimeout < this.audio.currentTime) {
+                    this.animFrame++;
+                    this.animFrame %= this.image.frameDurations.length;
+                    this.animTimeout += this.image.frameDurations[this.animFrame]/1000;
+                    this.needsRedraw = true;
+                }
             }
         }
         if(this.blurStart) {
