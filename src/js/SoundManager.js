@@ -547,12 +547,14 @@ class SoundManager {
         if(!this.mute && mute) { // muting
             this.lastVol = this.gainNode.gain.value;
         }
+        let newVol;
         if(mute) {
-            this.gainNode.gain.setValueAtTime(0, this.context.currentTime);
+            newVol = 0;
         } else {
-            this.gainNode.gain.setValueAtTime(this.lastVol, this.context.currentTime);
+            newVol = this.lastVol;
         }
-        this.core.userInterface.updateVolume(this.gainNode.gain.value);
+        this.gainNode.gain.setValueAtTime(newVol, this.context.currentTime);
+        this.core.userInterface.updateVolume(newVol);
         this.mute = mute;
         return mute;
     }
