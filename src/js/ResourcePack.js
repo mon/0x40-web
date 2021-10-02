@@ -125,23 +125,17 @@ class Respack {
         if(progress) {
             this.progressCallback = progress;
         }
-        // We don't get progress events for loading the zip, set 0 progress
         this.updateProgress(this.loadedFromURL ? 0.5 : 0);
-        return new Promise((resolve, reject) => {
-            this.size = blob.size;
-            let file = new zip.fs.FS();
-            file.importBlob(blob,
-                () => {
-                    resolve(file);
-                },
-                error => {   // failure
-                    reject(Error("Respack error:", error.toString()));
-                }
-            );
-        }).then(zip => {
-            return this.parseZip(zip);
+        this.size = blob.size;
+        let file = new zip.fs.FS();
+        return file.importBlob(blob)
+        .then(() => {
+            console.log(file);
+            return this.parseZip(file);
         }).then(() => {
             return this;
+        }).catch(error => {
+            throw Error("Respack error:" + error.toString());
         });
     }
 
@@ -156,6 +150,7 @@ class Respack {
         // Get everything started
         for(let i = 0; i < entries.length; i++) {
             if(!entries[i].directory && entries[i].name) {
+                entries[i].extension = entries[i].name.split('.').pop().toLowerCase();
                 this.totalFiles++;
                 this.parseFile(entries[i]);
             }
@@ -203,9 +198,8 @@ class Respack {
                            "enabled":true,
                            "filename":file.name,
                            "charsPerBeat": null};
-            let extension = file.name.split('.').pop().toLowerCase();
             let mime = "";
-            switch(extension) {
+            switch(file.extension) {
                 case "mp3":
                     mime = "audio/mpeg3";
                     break;
@@ -219,11 +213,8 @@ class Respack {
                     mime = "application/octet-stream";
             }
             this.songs.push(newSong);
-            return new Promise((resolve, reject) => {
-                file.getBlob(mime, sound => {
-                    resolve(sound);
-                });
-            }).then(blob => {
+            return file.getBlob()
+            .then(blob => {
                 return new Promise((resolve, reject) => {
                     // Because blobs are crap
                     let fr = new FileReader();
@@ -292,9 +283,8 @@ class Respack {
     }
 
     loadImage(imgFile, imageObj) {
-        let extension = imgFile.name.split('.').pop().toLowerCase();
         let mime = "";
-        switch(extension) {
+        switch(imgFile.extension) {
             case "png":
                 mime = "image/png";
                 break;
@@ -308,9 +298,8 @@ class Respack {
             default:
                 mime = "application/octet-stream";
         }
-        return new Promise((resolve, reject) => {
-            imgFile.getData64URI(mime, resolve);
-        }).then(bitmap => {
+        return imgFile.getData64URI(mime)
+        .then(bitmap => {
             this.filesLoaded++;
             this.updateProgress();
             return {bitmap: bitmap, img: imageObj};
@@ -338,15 +327,14 @@ class Respack {
     }
 
     loadXML(file) {
-        return new Promise((resolve, reject) => {
-            file.getText(text => {
-                //XML parser will complain about a bare '&', but some respacks use &amp
-                text = text.replace(/&amp;/g, '&');
-                text = text.replace(/&/g, '&amp;');
-                let parser = new DOMParser();
-                let dom = parser.parseFromString(text, "text/xml");
-                resolve(dom);
-            });
+        return file.getText()
+        .then(text => {
+            //XML parser will complain about a bare '&', but some respacks use &amp
+            text = text.replace(/&amp;/g, '&');
+            text = text.replace(/&/g, '&amp;');
+            let parser = new DOMParser();
+            let dom = parser.parseFromString(text, "text/xml");
+            return dom;
         });
     }
 
