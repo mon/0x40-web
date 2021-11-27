@@ -1084,6 +1084,9 @@ class HuesCore {
         case 78: // N
             this.randomSong();
             break;
+        case 76: // L
+            this.resourceManager.fileInput.click();
+            break;
         default:
             return true;
         }

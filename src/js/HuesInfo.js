@@ -64,9 +64,10 @@ const shortcuts = [
     "[S] Song list",
     "[W] Toggle window",
     "[R] Resource packs",
+    "[L] Load local zip",
     "[O] Options",
     "[I] Information",
-    "[1-5] Change UI"
+    "[1-6] Change UI"
 ];
 
 function populateHuesInfo(version, huesWin, settings) {
