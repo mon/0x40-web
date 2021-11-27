@@ -1055,22 +1055,22 @@ class HuesCore {
             this.window.selectTab("INFO");
             break;
         case 49: // NUMBER_1
-            this.settings.set("currentUI", "retro");
+            this.settings.currentUI = "retro";
             break;
         case 50: // NUMBER_2
-            this.settings.set("currentUI", "v4.20");
+            this.settings.currentUI = "v4.20";
             break;
         case 51: // NUMBER_3
-            this.settings.set("currentUI", "modern");
+            this.settings.currentUI = "modern";
             break;
         case 52: // NUMBER_4
-            this.settings.set("currentUI", "xmas");
+            this.settings.currentUI = "xmas";
             break;
         case 53: // NUMBER_5
-            this.settings.set("currentUI", "hlwn");
+            this.settings.currentUI = "hlwn";
             break;
         case 54: // NUMBER_6
-            this.settings.set("currentUI", "mini");
+            this.settings.currentUI = "mini";
             break;
         case 67: // C
             this.toggleImageList();
