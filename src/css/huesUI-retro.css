@@ -83,7 +83,7 @@
     display: none;
     font-size: 25px;
     cursor: pointer;
-    opacity: 0.5;
+    opacity: 0.3;
 }
 
 .hues-r-hiderestore.hues-ui--hidden {
@@ -91,7 +91,7 @@
 }
 
 .hues-r-hiderestore:hover {
-    opacity: 1;
+    opacity: 0.8;
 }
 
 .hues-r-container, .hues-r-controls, .hues-r-subcontrols {
