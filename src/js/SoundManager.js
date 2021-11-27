@@ -56,6 +56,7 @@ class SoundManager {
 
         // Volume
         this.gainNode = null;
+        this.replayGainNode = null;
         this.mute = false;
         this.lastVol = initialVolume;
 
@@ -113,7 +114,9 @@ class SoundManager {
 
                     this.context = new window.AudioContext();
                     this.gainNode = this.context.createGain();
+                    this.replayGainNode = this.context.createGain();
                     this.gainNode.connect(this.context.destination);
+                    this.replayGainNode.connect(this.gainNode);
                 } catch(e) {
                     reject(Error("Web Audio API not supported in this browser."));
                     return;
@@ -315,18 +318,24 @@ class SoundManager {
         this.loopSource.loop = true;
         this.loopSource.loopStart = 0;
         this.loopSource.loopEnd = this.loopLength;
-        this.loopSource.connect(this.gainNode);
+        this.loopSource.connect(this.replayGainNode);
 
         if(time < 0 && this.buildup) {
             this.buildSource = this.context.createBufferSource();
             this.buildSource.buffer = this.buildup;
             this.buildSource.playbackRate.value = this.playbackRate;
-            this.buildSource.connect(this.gainNode);
+            this.buildSource.connect(this.replayGainNode);
             this.buildSource.start(0, this.buildLength + time);
             this.loopSource.start(this.context.currentTime - (time / this.playbackRate));
         } else {
             this.loopSource.start(0, time);
         }
+
+        let gain = this.loop.replayGain;
+        if(this.buildup) {
+            gain = Math.min(gain, this.buildup.replayGain);
+        }
+        this.replayGainNode.gain.setValueAtTime(gain, this.context.currentTime);
 
         this.startTime = this.context.currentTime - (time / this.playbackRate);
         if(!noPlayingUpdate) {
@@ -405,6 +414,7 @@ class SoundManager {
             }).then(result => {
                 // restore copied buffer
                 song[soundName] = backup;
+                this.applyGain(result);
                 return result;
             });
         } else { // Use our JS decoder
@@ -427,6 +437,7 @@ class SoundManager {
                     }
                     // Convert to real audio buffer
                     let audio = this.audioBufFromRaw(decoded.rawAudio);
+                    this.applyGain(audio);
                     resolve(audio);
                 }, false);
 
@@ -454,6 +465,39 @@ class SoundManager {
             }
         }
         return audioBuf;
+    }
+
+    // find rough ReplayGain volume to normalise song audio
+    // from https://github.com/est31/js-audio-normalizer
+    applyGain(data) {
+        let buffer = data.getChannelData(0);
+        console.log(data);
+        var sliceLen = Math.floor(data.sampleRate * 0.05);
+        var averages = [];
+        var sum = 0.0;
+        for (var i = 0; i < buffer.length; i++) {
+            sum += Math.pow(buffer[i], 2);
+            if (i % sliceLen === 0) {
+                sum = Math.sqrt(sum / sliceLen);
+                averages.push(sum);
+                sum = 0;
+            }
+        }
+        // Ascending sort of the averages array
+        averages.sort(function(a, b) { return a - b; });
+        // Take the average at the 95th percentile
+        var a = averages[Math.floor(averages.length * 0.95)];
+
+        var gain = 1.0 / a;
+        // Perform some clamping
+        gain = Math.max(gain, 0.02);
+        gain = Math.min(gain, 100.0);
+
+        // ReplayGain uses pink noise for this one one but we just take
+        // some arbitrary value... we're no standard
+        // Important is only that we don't output on levels
+        // too different from other websites
+        data.replayGain = gain / 8.0;
     }
 
     createWorker() {
