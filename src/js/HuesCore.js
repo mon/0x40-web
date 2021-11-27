@@ -123,7 +123,7 @@ class HuesCore {
         };
 
         // Bunch-o-initialisers
-        this.version = 40;
+        this.version = 41;
         this.versionStr = (this.version/10).toFixed(1);
         this.versionHex = this.version.toString(16);
         this.beatIndex = 0;
