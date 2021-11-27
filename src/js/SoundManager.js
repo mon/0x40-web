@@ -45,6 +45,7 @@ class SoundManager {
         /* Lower level audio and timing info */
         this.context = null; // Audio context, Web Audio API
         this.oggSupport = false;
+        this.mp3IsSane = false;
         this.buildSource = null;
         this.loopSource = null;
         this.buildup = null;
@@ -130,6 +131,30 @@ class SoundManager {
                     });
                 });
             }).then(() => {
+                // check if MP3 decoding is sane - if not, we'll have to load the mp3 decoder
+                // Specifically: older versions of Firefox and Safari(?) don't
+                // use the LAME header to correctly strip the leadin, causing
+                // gaps in playback. Our test file is exactly 1 sample long. If
+                // the decoder is not sane, the test file will be ~3000 samples.
+                // Because decoding resamples the audio to your computer's rate,
+                // and some people use high sample rates, just check if samples
+                // < 10 - this allows up to 400KHz sample rates which should
+                // futureproof any insane audiophiles.
+                return new Promise((resolve, reject) => {
+                    this.context.decodeAudioData(miniMp3, buffer => {
+                            this.mp3IsSane = buffer.length < 10;
+                            resolve();
+                        }, error => {
+                            this.mp3IsSane = false;
+                            resolve();
+                    });
+                });
+            }).then(() => {
+                // both formats supported, don't even try the audio worker
+                if(this.oggSupport && this.mp3IsSane) {
+                    return true;
+                }
+
                 return new Promise((resolve, reject) => {
                     // See if our audio decoder is working
                     let audioWorker;
@@ -148,7 +173,7 @@ class SoundManager {
                     audioWorker.addEventListener('error', () => {
                         reject(Error("Audio Worker cannot be started - correct path set in defaults?"));
                     }, false);
-                    audioWorker.postMessage({ping:true, ogg:this.oggSupport});
+                    audioWorker.postMessage({ping:true, ogg:this.oggSupport, mp3:this.mp3IsSane});
                 });
             }).then(() => {
                 this.locked = this.context.state != "running";
@@ -360,10 +385,15 @@ class SoundManager {
     loadBuffer(song, soundName) {
         let buffer = song[soundName];
 
-        // Is this an ogg file?
+        // Is this a file supported by the browser's importer?
         let view = new Uint8Array(buffer);
         // Signature for ogg file: OggS
-        if(this.oggSupport && view[0] == 0x4F && view[1] == 0x67 && view[2] == 0x67 && view[3] == 0x53) {
+        if((this.oggSupport && view[0] == 0x4F && view[1] == 0x67 && view[2] == 0x67 && view[3] == 0x53) ||
+                (this.mp3IsSane &&
+                    // untagged MP3
+                    (view[0] == 0xFF && (view[1] == 0xFB || view[1] == 0xFA || view[1] == 0xF2 || view[1] == 0xF3)) ||
+                    // ID3v2 tagged MP3 "ID3"
+                    (view[0] == 0x49 && view[1] == 0x44 && view[2] == 0x33))) {
             // As we don't control decodeAudioData, we cannot do fast transfers and must copy
             let backup = buffer.slice(0);
             return new Promise((resolve, reject) => {
@@ -401,7 +431,7 @@ class SoundManager {
                 }, false);
 
                 // transfer the buffer to save time
-                audioWorker.postMessage({buffer: buffer, ogg: this.oggSupport}, [buffer]);
+                audioWorker.postMessage({buffer: buffer, ogg: this.oggSupport, mp3:this.mp3IsSane}, [buffer]);
             });
        }
 
@@ -672,12 +702,35 @@ let miniOggRaw =
 "sLjAyNDY4OjwCAAAAAAAFgD4AAA4PoCIiOYqLC4wMjQ2ODo8AgAAAAAAAAAA" +
 "gICAAAAAAABAAAAAgIBPZ2dTAAQBAAAAAAAAAMViAAACAAAA22A/JwIBAQAK";
 
+let miniMp3Raw =
+"//tQxAAAAAAAAAAAAAAAAAAAAAAASW5mbwAAAA8AAAACAAACcQCAgICAgICA" +
+"gICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICA////" +
+"////////////////////////////////////////////////////////////" +
+"//8AAAA5TEFNRTMuMTAwAaUAAAAAAAAAABRAJAa/QgAAQAAAAnFDELIBAAAA" +
+"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAP/7UMQAA8AAAaQAAAAgAAA0" +
+"gAAABExBTUUzLjEwMFVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV" +
+"VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV" +
+"VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV" +
+"VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV" +
+"VVVVVVVVVVVVVVX/+1LEXYPAAAGkAAAAIAAANIAAAARVVVVVVVVVVVVVVVVV" +
+"VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV" +
+"VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV" +
+"VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV" +
+"VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVQ==";
+
 // write the bytes of the string to an ArrayBuffer
 let miniOggBin = atob(miniOggRaw);
 let miniOgg = new ArrayBuffer(miniOggBin.length);
 let view = new Uint8Array(miniOgg);
-for (var i = 0; i < miniOggBin.length; i++) {
+for (let i = 0; i < miniOggBin.length; i++) {
     view[i] = miniOggBin.charCodeAt(i);
+}
+
+let miniMp3Bin = atob(miniMp3Raw);
+let miniMp3 = new ArrayBuffer(miniMp3Bin.length);
+let viewMp3 = new Uint8Array(miniMp3);
+for (let i = 0; i < miniMp3Bin.length; i++) {
+    viewMp3[i] = miniMp3Bin.charCodeAt(i);
 }
 
 window.SoundManager = SoundManager;

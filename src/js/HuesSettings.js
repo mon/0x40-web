@@ -20,6 +20,8 @@
  * THE SOFTWARE.
  */
 
+import '../css/hues-settings.css';
+
  (function(window, document) {
 "use strict";
 

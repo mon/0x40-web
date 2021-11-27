@@ -20,23 +20,15 @@
   },
   "homepage": "https://github.com/mon/0x40-web#readme",
   "devDependencies": {
-    "@babel/core": "^7.0.0",
-    "@babel/plugin-transform-classes": "^7.12.1",
-    "@babel/preset-env": "^7.12.11",
-    "autoprefixer": "^10.2.1",
-    "cssnano": "^4.1.10",
-    "del": "^6.0.0",
-    "gulp": "^4.0.2",
-    "gulp-babel": "^8.0.0",
-    "gulp-concat": "^2.6.1",
-    "gulp-jshint": "^2.1.0",
-    "gulp-newer": "^1.4.0",
-    "gulp-order": "^1.2.0",
-    "gulp-plumber": "^1.2.1",
-    "gulp-postcss": "^9.0.0",
-    "gulp-sourcemaps": "^3.0.0",
-    "gulp-uglify": "^3.0.2",
-    "jshint": "^2.12.0",
-    "postcss": "^8.2.10"
+    "css-loader": "^6.5.1",
+    "css-minimizer-webpack-plugin": "^3.2.0",
+    "mini-css-extract-plugin": "^2.4.5",
+    "style-loader": "^3.3.1",
+    "webpack": "^5.64.4",
+    "webpack-cli": "^4.9.1",
+    "webpack-dev-server": "^4.6.0"
+  },
+  "dependencies": {
+    "@zip.js/zip.js": "^2.3.19"
   }
 }

@@ -19,6 +19,20 @@
  * THE SOFTWARE.
  */
 
+import './HuesCanvas';
+import './HuesInfo';
+import './HuesEditor';
+import './HuesSettings';
+import './HuesWindow';
+import './HuesUI';
+import './ResourceManager';
+import './SoundManager';
+import './string_score.min';
+
+// these aren't strictly required but it makes webpack put them in `dist`
+import '../../index.html';
+import '../../favicon.ico';
+
 (function(window, document) {
 "use strict";
 
@@ -135,7 +149,6 @@ class HuesCore {
         this.uiArray = [];
 
         this.settings = new HuesSettings(defaults);
-        zip.workerScriptsPath = this.settings.workersPath;
 
         // What's our root element?
         this.root = null;

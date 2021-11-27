@@ -19,6 +19,9 @@
  * THE SOFTWARE.
  */
 
+import '../css/hues-respacks.css';
+import './ResourcePack';
+
  (function(window, document) {
 "use strict";
 

@@ -19,6 +19,8 @@
  * THE SOFTWARE.
  */
 
+import * as zip from "@zip.js/zip.js";
+
  (function(window, document) {
 "use strict";
 

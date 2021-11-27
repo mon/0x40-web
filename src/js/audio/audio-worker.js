@@ -19,24 +19,27 @@ self.addEventListener('message', function(e) {
     if(!e.data.ogg) {
         importScripts('../ogg.js', '../vorbis.js');
     }
-    
+    if(!e.data.mp3) {
+        importScripts('../mpg123.js');
+    }
+
     // To see if things are working, we can ping the worker
     if(e.data.ping) {
         self.postMessage({ping: true});
         return;
     }
-    
+
     var arrayBuffer = e.data.buffer;
-    
+
     var asset = AV.Asset.fromBuffer(arrayBuffer);
-    
+
     // On error we still want to restore the audio file
     asset.on("error", function(error) {
         self.postMessage({arrayBuffer : arrayBuffer,
             error: String(error)},
             [arrayBuffer]);
     });
-    
+
     asset.decodeToBuffer(function(buffer) {
         var fixedBuffer = deinterleave(buffer, asset);
         var raw = {array: fixedBuffer,

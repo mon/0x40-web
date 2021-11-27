@@ -46,11 +46,9 @@ There are two special settings here:
 * Anything given as `packs` or `respacks` will be appended to the respacks specified in the `defaults` object, as opposed to overwriting them.
 
 ## Building
-Install [Node.js](https://nodejs.org/en/). I used v10 but it appears to work with v14.
-Newer node versions (v15+) seem to have some issues with gulp, open a PR if you can get it building.  
+Install [Node.js](https://nodejs.org/en/). I used v16, but it should work with newer releases.
 Install the required packages for the build:
 ```bash
-npm install gulp -g
 npm install
 ```
-Build with `gulp`. Make a release folder with `gulp release`. For seamless development, auto-minify changed files with `gulp watch`.
+Build with `npx webpack`. It will create a `dist` folder. For seamless development with auto-reload, `npx webpack serve`.

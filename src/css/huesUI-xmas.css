@@ -30,7 +30,7 @@
     width: 68px;
     height: 113px;
     transform-origin: 32px 69px;
-    background-image: url("../img/lightbase.png");
+    background-image: url("../../img/lightbase.png");
     background-position: 0 0;
     background-repeat: no-repeat;
 }
@@ -53,18 +53,18 @@
 
 .hues-x-lighton {
     opacity: 1;
-    background-image: url("../img/lighton.png");
+    background-image: url("../../img/lighton.png");
 }
 .inverted .hues-x-lighton {
-    background-image: url("../img/lighton_inverted.png");
+    background-image: url("../../img/lighton_inverted.png");
 }
 
 .hues-x-lightoff {
     opacity: 0;
-    background-image: url("../img/lightoff.png");
+    background-image: url("../../img/lightoff.png");
 }
 .inverted .hues-x-lightoff {
-    background-image: url("../img/lightoff_inverted.png");
+    background-image: url("../../img/lightoff_inverted.png");
 }
 
 .hues-x-lighton.off{
@@ -92,7 +92,7 @@
 .hues-x-wiresleft::before {
     width: 60px;
     height: 1435px;
-    background-image: url("../img/wiresleft.png");
+    background-image: url("../../img/wiresleft.png");
 }
 .inverted .hues-x-wiresleft::before {
     background-position: -60px 0;
@@ -105,7 +105,7 @@
     right: 0;
     width: 58px;
     height: 1261px;
-    background-image: url("../img/wiresright.png");
+    background-image: url("../../img/wiresright.png");
 }
 .inverted .hues-x-wiresright::before {
     background-position: -58px 0;
@@ -130,7 +130,7 @@
     bottom: 0;
     width: 2621px;
     height: 49px;
-    background-image: url("../img/wiresbottom.png");
+    background-image: url("../../img/wiresbottom.png");
     background-position: 127px -49px;
 }
 .inverted .hues-x-wiresbottom::before {

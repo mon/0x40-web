@@ -28,7 +28,7 @@
 
 .hues-m-beatcenter.hues-h-text {
     background: none;
-    background-image: url('../img/skull.png');
+    background-image: url('../../img/skull.png');
     top: 0;
     width: 42px;
     height: 43px;
@@ -49,12 +49,12 @@
 
 .hues-h-eyes {
     background: none;
-    background-image: url('../img/skull-eyes.png');
+    background-image: url('../../img/skull-eyes.png');
     top: 0;
     width: 42px;
     height: 64px;
     box-shadow: none;
-    
+
     animation-duration: 150ms;
     animation-name: hues-m-beatcenter;
     animation-fill-mode: forwards;
@@ -62,18 +62,18 @@
 .inverted .hues-h-eyes {
     /* Set again to override the other .inverted selector from modern */
     background: none;
-    background-image: url('../img/skull-eyes.png');
+    background-image: url('../../img/skull-eyes.png');
     box-shadow: none;
     background-position: -42px 0;
 }
 
 .hues-h-left-hand {
-    background: url('../img/left-hand.png');
+    background: url('../../img/left-hand.png');
     left: -15px;
 }
 
 .hues-h-right-hand {
-    background: url('../img/right-hand.png');
+    background: url('../../img/right-hand.png');
     right: -15px;
 }
 
@@ -105,7 +105,7 @@
     background: none;
     border-style: solid;
     border-width: 0 19px 0 18px;
-    border-image: url(../img/bones.png) 29 19 0 18 fill repeat stretch;
+    border-image: url(../../img/bones.png) 29 19 0 18 fill repeat stretch;
 }
 .inverted .hues-m-songtitle.hues-h-text, .inverted .hues-m-imagename.hues-h-text {
     border-image-slice: 0 19 29 18 fill;
@@ -162,13 +162,13 @@
     left: 0;
     right: 0;
     z-index: -10;
-    
+
     border-style: solid;
     border-width: 22px 40px 0 42px;
-    border-image: url(../img/tombstone.png) 22 42 0 fill stretch;
+    border-image: url(../../img/tombstone.png) 22 42 0 fill stretch;
 }
 .inverted .hues-h-tombstone {
-    border-image: url(../img/tombstone_invert.png) 22 42 0 fill stretch;
+    border-image: url(../../img/tombstone_invert.png) 22 42 0 fill stretch;
 }
 
 .hues-h-text + input[type=range]::-webkit-slider-runnable-track {
@@ -227,7 +227,7 @@
 }
 
 .hues-h-topleft {
-    background-image: url("../img/web-topleft.png");
+    background-image: url("../../img/web-topleft.png");
     width: 269px;
     height: 237px;
 }
@@ -236,7 +236,7 @@
 }
 
 .hues-h-topright {
-    background-image: url("../img/web-topright.png");
+    background-image: url("../../img/web-topright.png");
     width: 215px;
     height: 220px;
 }
@@ -245,7 +245,7 @@
 }
 
 .hues-h-bottomright {
-    background-image: url("../img/web-bottomright.png");
+    background-image: url("../../img/web-bottomright.png");
     bottom: 0;
     width:358px;
     height: 284px;
@@ -255,7 +255,7 @@
 }
 
 .hues-h-vignette {
-    background-image: url("../img/vignette.png");
+    background-image: url("../../img/vignette.png");
     background-size: 100% 100%;
     width: 100%;
     height: 100%;
