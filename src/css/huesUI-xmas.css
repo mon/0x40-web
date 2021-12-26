@@ -1,22 +1,11 @@
 /* XmasUI */
 
 .hues-m-controls.hues-x-controls {
-    height: 50px;
     z-index: 1;
-    background: none;
-    border-style: none;
 }
 
 .hues-x-snow {
     z-index: -9;
-}
-
-.hues-x-controls > .hues-m-songtitle {
-    bottom: 5px;
-}
-
-.hues-x-controls > .hues-m-imagename {
-    bottom: 29px;
 }
 
 .hues-m-beatbar.hues-x-beatbar {

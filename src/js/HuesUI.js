@@ -837,18 +837,6 @@ class XmasUI extends ModernUI {
          // This will cache our inverted lights images
         this.invert(true);
 
-        this.controls.removeChild(this.leftBox);
-        this.controls.removeChild(this.rightBox);
-        this.controls.removeChild(this.rightInfo);
-        this.controls.removeChild(this.leftInfo);
-
-        this.leftBox = null;
-        this.rightBox = null;
-        this.hueName = null;
-        this.xBlur = null;
-        this.yBlur = null;
-        this.timer = null;
-
         this.controls.className += " hues-x-controls";
         this.beatBar.className += " hues-x-beatbar";
 
@@ -1086,10 +1074,6 @@ class XmasUI extends ModernUI {
         this.snowCanvas.width = Math.ceil(720 * ratio);
         this.snowContext.fillStyle = savedFill;
     }
-
-    newColour(colour) {}
-    blurUpdated(x, y) {}
-    updateTime(time) {}
 }
 
 class HalloweenUI extends ModernUI {
