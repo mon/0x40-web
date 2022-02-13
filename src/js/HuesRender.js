@@ -26,6 +26,114 @@ import './HuesCanvas';
 (function(window, document) {
 "use strict";
 
+// convenience container to calculate animation times and get the current frame
+class RenderImage {
+    constructor(soundManager, core) {
+        this.core = core;
+        this.audio = soundManager;
+
+        core.addEventListener("beat", this.beat.bind(this));
+        core.addEventListener("songstarted", this.resetAnimation.bind(this));
+
+        this.image = null;
+        this.animFrame = null;
+        this.animTimeout = null;
+        this.lastBeat = 0;
+    }
+
+    resetAnimation() {
+        this.animTimeout = this.audio.currentTime;
+    }
+
+    beat() {
+        this.lastBeat = this.audio.currentTime;
+    }
+
+    sameAs(otherImage) {
+        return this.image == otherImage;
+    }
+
+    setImage(image) {
+        this.image = image;
+        // Null images don't need anything interesting done to them
+        if(!image || (!image.bitmap && !image.bitmaps)) {
+            return;
+        }
+        if(image.animated) {
+            let currentTime = this.audio.currentTime;
+            this.animFrame = 0;
+            this.animTimeout = currentTime + image.frameDurations[0]/1000;
+            if(image.beatsPerAnim && this.core.currentSong && this.core.currentSong.charsPerBeat) {
+                this.syncAnim(currentTime);
+            }
+        }
+    }
+
+    getBitmap() {
+        if(this.image && (this.image.bitmap || this.image.bitmaps)) {
+            return this.image.animated ?
+                this.image.bitmaps[this.animFrame] : this.image.bitmap;
+        } else {
+            return null;
+        }
+    }
+
+    getBitmapAlign() {
+        return this.image ? this.image.align : null;
+    }
+
+    onRedraw() {
+        let currentTime = this.audio.currentTime;
+        let needsRedraw = false;
+
+        if(this.image && this.image.animated){
+            if(this.image.beatsPerAnim && this.core.currentSong && this.core.currentSong.charsPerBeat) {
+                let a = this.animFrame;
+                this.syncAnim(currentTime);
+                if(this.animFrame != a) {
+                    needsRedraw = true;
+                    // If you change to a non-synced song, this needs to be reset
+                    this.animTimeout = currentTime;
+                }
+            } else {
+                // backgrounded tabs don't hit the animation loop so we get
+                // wildly behind time - bring us back to sync no matter what
+                while(this.animTimeout < currentTime) {
+                    this.animFrame++;
+                    this.animFrame %= this.image.frameDurations.length;
+                    this.animTimeout += this.image.frameDurations[this.animFrame]/1000;
+                    needsRedraw = true;
+                }
+            }
+        }
+
+        return needsRedraw;
+    }
+
+    syncAnim(currentTime) {
+        let song = this.core.currentSong;
+        if(!song) { // fallback to default
+           return;
+        }
+        let index = this.core.beatIndex;
+        // When animation has more frames than song has beats, or part thereof
+        if(this.lastBeat && this.core.getBeatLength()) {
+            let interp = (currentTime - this.lastBeat) / this.core.getBeatLength();
+            index += Math.min(interp, 1);
+        }
+        // This loops A-OK because the core's beatIndex never rolls over for a new loop
+        let beatLoc = (index / song.charsPerBeat) % this.image.beatsPerAnim;
+
+        let aLen = this.image.bitmaps.length;
+        this.animFrame = Math.floor(aLen * (beatLoc / this.image.beatsPerAnim));
+        if(this.image.syncOffset) {
+            this.animFrame += this.image.syncOffset;
+        }
+        // Because negative mods are different in JS
+        this.animFrame = ((this.animFrame % aLen) + aLen) % aLen;
+    }
+}
+
 /*  Takes root element to attach to, and an audio context element for
     getting the current time with reasonable accuracy */
 class HuesRender {
@@ -36,21 +144,15 @@ class HuesRender {
         core.addEventListener("newsong", this.resetEffects.bind(this));
         core.addEventListener("newimage", this.setImage.bind(this));
         core.addEventListener("newcolour", this.setColour.bind(this));
-        core.addEventListener("beat", this.beat.bind(this));
         core.addEventListener("invert", this.setInvert.bind(this));
         core.addEventListener("settingsupdated", this.settingsUpdated.bind(this));
         core.addEventListener("frame", this.animationLoop.bind(this));
-        core.addEventListener("songstarted", this.resetAnimation.bind(this));
         this.core = core;
 
         this.needsRedraw = false;
         this.colour = 0xFFFFFF;
-        this.image = null;
+        this.image = new RenderImage(soundManager, core);
         this.smartAlign = true; // avoid string comparisons every frame
-
-        this.animTimeout = null;
-        this.animFrame = null;
-        this.lastBeat = 0;
 
         // set later
         this.blurDecay = null;
@@ -133,23 +235,11 @@ class HuesRender {
         this.yBlur = false;
     }
 
-    resetAnimation() {
-        this.animTimeout = this.audio.currentTime;
-    }
-
     resize() {
         this.needsRedraw = true;
     }
 
     redraw() {
-        let bitmap = null;
-        let bitmapAlign = null;
-        if(this.image && (this.image.bitmap || this.image.bitmaps)) {
-            bitmap = this.image.animated ?
-                this.image.bitmaps[this.animFrame] : this.image.bitmap;
-            bitmapAlign = this.smartAlign ? this.image.align : null;
-        }
-
         let params = {
             colour: this.colour,
             blendMode: this.blendMode,
@@ -159,8 +249,8 @@ class HuesRender {
 
             invert: this.invert,
 
-            bitmap: bitmap,
-            bitmapAlign: bitmapAlign,
+            bitmap: this.image.getBitmap(),
+            bitmapAlign: this.smartAlign ? this.image.getBitmapAlign() : null,
 
             xBlur: this.xBlur ? this.blurDistance : 0,
             yBlur: this.yBlur ? this.blurDistance : 0,
@@ -205,25 +295,8 @@ class HuesRender {
         } else {
             this.bOpacity = 0;
         }
-        if(this.image && this.image.animated){
-            if(this.image.beatsPerAnim && this.core.currentSong && this.core.currentSong.charsPerBeat) {
-                let a = this.animFrame;
-                this.syncAnim();
-                if(this.animFrame != a) {
-                    this.needsRedraw = true;
-                    // If you change to a non-synced song, this needs to be reset
-                    this.animTimeout = this.audio.currentTime;
-                }
-            } else if(this.animTimeout < this.audio.currentTime) {
-                // backgrounded tabs don't hit the animation loop so we get
-                // wildly behind time - bring us back to sync no matter what
-                while(this.animTimeout < this.audio.currentTime) {
-                    this.animFrame++;
-                    this.animFrame %= this.image.frameDurations.length;
-                    this.animTimeout += this.image.frameDurations[this.animFrame]/1000;
-                    this.needsRedraw = true;
-                }
-            }
+        if(this.image.onRedraw()) {
+            this.needsRedraw = true;
         }
         if(this.blurStart) {
             // flash offsets blur gen by a frame
@@ -292,50 +365,12 @@ class HuesRender {
     }
 
     setImage(image) {
-        if(this.image == image) {
+        if(this.image.sameAs(image)) {
             return;
         }
+
         this.needsRedraw = true;
-        this.image = image;
-        // Null images don't need anything interesting done to them
-        if(!image || (!image.bitmap && !image.bitmaps)) {
-            return;
-        }
-        if(image.animated) {
-            this.animBeat = null;
-            this.animFrame = 0;
-            this.animTimeout = this.audio.currentTime + image.frameDurations[0]/1000;
-            if(image.beatsPerAnim && this.core.currentSong && this.core.currentSong.charsPerBeat) {
-                this.syncAnim();
-            }
-        }
-    }
-
-    beat() {
-        this.lastBeat = this.audio.currentTime;
-    }
-
-    syncAnim() {
-        let song = this.core.currentSong;
-        if(!song) { // fallback to default
-           return;
-        }
-        let index = this.core.beatIndex;
-        // When animation has more frames than song has beats, or part thereof
-        if(this.lastBeat && this.core.getBeatLength()) {
-            let interp = (this.audio.currentTime - this.lastBeat) / this.core.getBeatLength();
-            index += Math.min(interp, 1);
-        }
-        // This loops A-OK because the core's beatIndex never rolls over for a new loop
-        let beatLoc = (index / song.charsPerBeat) % this.image.beatsPerAnim;
-
-        let aLen = this.image.bitmaps.length;
-        this.animFrame = Math.floor(aLen * (beatLoc / this.image.beatsPerAnim));
-        if(this.image.syncOffset) {
-            this.animFrame += this.image.syncOffset;
-        }
-        // Because negative mods are different in JS
-        this.animFrame = ((this.animFrame % aLen) + aLen) % aLen;
+        this.image.setImage(image);
     }
 
     setColour(colour, isFade) {
