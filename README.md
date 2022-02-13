@@ -11,7 +11,7 @@ Should work on most modern browsers.
 [Halloween Hues  
 ![](docs/img/hues_hlwn.png)](http://spook.mon.im/)  
 [Christmas Hues  
-![](docs/img/hues_xmas.png)](http://xmas.moe)  
+![](docs/img/hues_xmas.png)](http://xmas.mon.im/)  
 
 You can also have animations that sync perfectly with the beats of the songs. Inspired by Kepstin's Integral experiments.  
 [420 Hues, Snoop Edition  
