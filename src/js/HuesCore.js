@@ -19,7 +19,7 @@
  * THE SOFTWARE.
  */
 
-import './HuesCanvas';
+import './HuesRender';
 import './HuesInfo';
 import './HuesEditor';
 import './HuesSettings';
@@ -238,7 +238,7 @@ class HuesCore {
         }).then(() => {
             this.clearMessage();
             setInterval(this.loopCheck.bind(this), 1000);
-            this.renderer = new HuesCanvas(this.root, this.soundManager, this);
+            this.renderer = new HuesRender(this.root, this.soundManager, this);
             // Now all our objects are instantiated, we fire the updated settings
             this.settings.addEventListener("updated", this.settingsUpdated.bind(this));
             this.settingsUpdated();
