@@ -62,6 +62,7 @@
         example object:
         {
             colour: 0xFF00FF, // base colour, int
+            lastColour: 0xFF00FF, // previous colour, int
             blendMode: 'hard-light',
 
             overlayColour: '#000', // blackout/whiteout, hex string
@@ -71,6 +72,13 @@
 
             bitmap: 'a bitmap or null',
             bitmapAlign: 'left', // one of 'left','right',null
+
+            // same as bitmap, just the previous image
+            lastBitmap: 'a bitmap or null',
+            lastBitmapAlign: 'left', // one of 'left','right',null
+
+            shutter: 0.5,
+            shutterDir: '→',
 
             xBlur: 0.5,
             yBlur: 0.0,
@@ -93,7 +101,6 @@
         }
         */
         draw(params) {
-            let offset; // for centering/right/left align
             let width = this.canvas.width;
             let height = this.canvas.height;
 
@@ -111,13 +118,127 @@
                 return;
             }
 
+            // might be doing a clipping region for shutter
+            this.context.save();
+
             this.context.fillStyle = "#FFF";
             this.context.fillRect(0,0,width,height);
 
-            if(params.bitmap) {
-                let drawHeight = params.bitmap.height * (height / params.bitmap.height);
-                let drawWidth = (params.bitmap.width / params.bitmap.height) * drawHeight;
-                switch(params.bitmapAlign) {
+            if(params.shutter) {
+                const shutterWidth = 20;
+                let vertical;
+                let reverse;
+
+                switch(params.shutterDir) {
+                    case '→':
+                        reverse = false;
+                        vertical = false;
+                        break;
+                    case '←':
+                        reverse = true;
+                        vertical = false;
+                        break;
+                    case '↑':
+                        reverse = true;
+                        vertical = true;
+                        break;
+                    case '↓':
+                        reverse = false;
+                        vertical = true;
+                        break;
+                }
+
+                let full;
+                if(vertical) {
+                    full = height+shutterWidth;
+                } else {
+                    full = width+shutterWidth;
+                }
+
+                let edge = Math.floor(full * params.shutter);
+                if(reverse) {
+                    edge = full - edge;
+                }
+
+                let region1 = new Path2D();
+                let region2 = new Path2D();
+                if(vertical) {
+                    region1.rect(0, edge, width, full-edge);
+                    region2.rect(0, 0, width, edge-shutterWidth);
+                } else {
+                    region1.rect(edge, 0, full-edge, height);
+                    region2.rect(0, 0, edge-shutterWidth, height);
+                }
+
+                if(reverse) {
+                    let tmp = region1;
+                    region1 = region2;
+                    region2 = tmp;
+                }
+
+                // make the shutter itself black
+                this.context.fillStyle = "#000";
+                if(vertical) {
+                    this.context.fillRect(0, edge-shutterWidth, width, shutterWidth);
+                } else {
+                    this.context.fillRect(edge-shutterWidth, 0, shutterWidth, height);
+                }
+
+                // clip the underlay image and draw it
+                this.context.save();
+                this.context.clip(region1);
+
+                this.drawBitmap(
+                    params.lastBitmap,
+                    params.lastBitmapAlign,
+                    width, height,
+                    params.slices,
+                    params.xBlur, params.yBlur);
+
+                this.drawColour(
+                    params.lastColour, params.blendMode,
+                    params.outTrippy, params.inTrippy,
+                    width, height);
+
+                this.context.restore();
+
+                // clip the overlay and continue
+                this.context.clip(region2);
+            }
+
+            this.drawBitmap(
+                params.bitmap,
+                params.bitmapAlign,
+                width, height,
+                params.slices,
+                params.xBlur, params.yBlur);
+
+            this.drawColour(
+                params.colour, params.blendMode,
+                params.outTrippy, params.inTrippy,
+                width, height);
+
+            // all operations after this affect the entire image
+            this.context.restore();
+
+            if(params.overlayPercent > 0) {
+                this.context.globalAlpha = params.overlayPercent;
+                this.context.fillStyle = this.intToHex(params.overlayColour);
+                this.context.fillRect(0,0,width,height);
+            }
+
+            if(params.invert) {
+                this.drawInvert();
+            }
+        }
+
+        drawBitmap(bitmap, bitmapAlign, width, height, slices, xBlur, yBlur) {
+            let offset; // for centering/right/left align
+
+            if(bitmap) {
+                let drawHeight = bitmap.height * (height / bitmap.height);
+                let drawWidth = (bitmap.width / bitmap.height) * drawHeight;
+                switch(bitmapAlign) {
                     case "left":
                         offset = 0;
                         break;
@@ -129,39 +250,31 @@
                         break;
                 }
 
-                if(params.slices) {
-                    params.bitmap = this.drawSlice(params.slices, params.bitmap, drawWidth, drawHeight, width, height);
+                if(slices) {
+                    bitmap = this.drawSlice(slices, bitmap, drawWidth, drawHeight, width, height);
                     drawWidth = width;
                     drawHeight = height;
                 }
 
-                if(params.xBlur || params.yBlur) {
-                    this.drawBlur(params.bitmap, offset, drawWidth, drawHeight, params.xBlur, params.yBlur);
+                if(xBlur || yBlur) {
+                    this.drawBlur(bitmap, offset, drawWidth, drawHeight, xBlur, yBlur);
                 } else {
                     this.context.globalAlpha = 1;
-                    this.context.drawImage(params.bitmap, offset, 0, drawWidth, drawHeight);
+                    this.context.drawImage(bitmap, offset, 0, drawWidth, drawHeight);
                 }
             }
+        }
 
-            if(params.outTrippy || params.inTrippy) {
-                this.drawTrippy(params.outTrippy, params.inTrippy, params.colour, width, height);
+        drawColour(colour, blendMode, outTrippy, inTrippy, width, height) {
+            if(outTrippy || inTrippy) {
+                this.drawTrippy(outTrippy, inTrippy, colour, width, height);
             } else {
-                this.offContext.fillStyle = this.intToHex(params.colour);
+                this.offContext.fillStyle = this.intToHex(colour);
                 this.offContext.fillRect(0,0,width,height);
             }
             this.context.globalAlpha = 0.7;
-            this.context.globalCompositeOperation = params.blendMode;
+            this.context.globalCompositeOperation = blendMode;
             this.context.drawImage(this.offCanvas, 0, 0);
-
-            if(params.overlayPercent > 0) {
-                this.context.globalAlpha = params.overlayPercent;
-                this.context.fillStyle = this.intToHex(params.overlayColour);
-                this.context.fillRect(0,0,width,height);
-            }
-
-            if(params.invert) {
-                this.drawInvert();
-            }
         }
 
         drawInvert() {

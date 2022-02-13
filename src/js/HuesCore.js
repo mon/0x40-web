@@ -818,6 +818,12 @@ class HuesCore {
             case '#':
                 this.renderer.doSlice(this.getBeatLength(), this.charsToNextBeat(), true, true);
                 break;
+            case '→':
+            case '←':
+            case '↑':
+            case '↓':
+                this.renderer.doShutter(beat, this.getBeatLength(), this.charsToNextBeat());
+                break;
             case 'I':
                 if (this.settings.fullAuto) {
                     this.randomImage();

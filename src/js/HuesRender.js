@@ -151,7 +151,9 @@ class HuesRender {
 
         this.needsRedraw = false;
         this.colour = 0xFFFFFF;
+        this.lastColour = 0xFFFFFF;
         this.image = new RenderImage(soundManager, core);
+        this.lastImage = new RenderImage(soundManager, core);
         this.smartAlign = true; // avoid string comparisons every frame
 
         // set later
@@ -169,6 +171,11 @@ class HuesRender {
             x : this.makeSliceObj(25),
             y : this.makeSliceObj(15)
         };
+
+        this.shutterEnd = 0;
+        this.shutterDuration = 0;
+        this.shutterDir = null;
+        this.shutterProgress = 0;
 
         // trippy mode
         this.trippyStart = [0, 0]; // x, y
@@ -240,8 +247,12 @@ class HuesRender {
     }
 
     redraw() {
+        // when images aren't changing, shutter needs something to feed off
+        let lastImage = this.core.settings.fullAuto ? this.lastImage : this.image;
+
         let params = {
             colour: this.colour,
+            lastColour: this.lastColour,
             blendMode: this.blendMode,
 
             overlayColour: this.blackoutColour,
@@ -251,6 +262,12 @@ class HuesRender {
 
             bitmap: this.image.getBitmap(),
             bitmapAlign: this.smartAlign ? this.image.getBitmapAlign() : null,
+
+            lastBitmap: lastImage.getBitmap(),
+            lastBitmapAlign: lastImage.getBitmapAlign(),
+
+            shutter: this.shutterProgress,
+            shutterDir: this.shutterDir,
 
             xBlur: this.xBlur ? this.blurDistance : 0,
             yBlur: this.yBlur ? this.blurDistance : 0,
@@ -335,6 +352,15 @@ class HuesRender {
             this.slices.y.percent = this.sliceDistance;
             this.needsRedraw = true;
         }
+        if(this.shutterEnd) {
+            if(this.audio.currentTime < this.shutterEnd) {
+                let delta = this.shutterEnd - this.audio.currentTime;
+                this.shutterProgress = (this.shutterDuration-delta) / this.shutterDuration;
+            } else {
+                this.shutterEnd = 0;
+                this.shutterProgress = 0;
+            }
+        }
         for(let i = 0; i < 2; i++) {
             if(this.trippyStart[i] || this.trippyRadii[i]) {
                 this.needsRedraw = true;
@@ -365,11 +391,12 @@ class HuesRender {
     }
 
     setImage(image) {
-        if(this.image.sameAs(image)) {
-            return;
-        }
-
         this.needsRedraw = true;
+
+        let swap = this.lastImage;
+        this.lastImage = this.image;
+        this.image = swap;
+
         this.image.setImage(image);
     }
 
@@ -377,6 +404,7 @@ class HuesRender {
         if(colour.c == this.colour) {
             return;
         }
+        this.lastColour = this.colour;
         if(isFade) {
             this.newColour = colour.c;
         } else {
@@ -487,6 +515,18 @@ class HuesRender {
         this.trippyOn = true;
         this.doYBlur();
         this.trippyOn = saveTrippy;
+    }
+
+    doShutter(beat, beatLength, beatCount) {
+        let freeTime = beatLength * beatCount * 0.8;
+        // if the beats are super close together, we have to crush the speed down
+        // if they're super far apart, keep the effect fast and crisp
+        this.shutterDuration = Math.min(0.2, freeTime);
+
+        this.shutterEnd = this.audio.currentTime + this.shutterDuration;
+        this.shutterDir = beat;
+
+        this.needsRedraw = true;
     }
 
     doSlice(beatLength, beatCount, sliceX, sliceY) {
