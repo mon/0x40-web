@@ -4,16 +4,44 @@ A fairly complete HTML5/CSS3 Canvas + Web Audio clone of the 0x40 Hues Flash.
 Should work on most modern browsers.
 
 ## Example pages:  
-[Default Hues](http://0x40.mon.im/)  
-[420 Hues](http://420.mon.im/)  
-[Halloween Hues](http://spook.mon.im/)
-[Christmas Hues](http://xmas.moe)
+[Default Hues  
+![](docs/img/hues_default.png)](http://0x40.mon.im/)  
+[420 Hues  
+![](docs/img/hues_420.png)](http://420.mon.im/)  
+[Halloween Hues  
+![](docs/img/hues_hlwn.png)](http://spook.mon.im/)  
+[Christmas Hues  
+![](docs/img/hues_xmas.png)](http://xmas.moe)  
 
 You can also have animations that sync perfectly with the beats of the songs. Inspired by Kepstin's Integral experiments.  
-[420 Hues, Snoop Edition](http://420.mon.im/snoop.html)  
-["Montegral"](http://0x40.mon.im/montegral.html) 
+[420 Hues, Snoop Edition  
+![](docs/img/hues_snoop.png)](http://420.mon.im/snoop.html)  
+["Montegral"  
+![](docs/img/hues_montegral.png)](http://0x40.mon.im/montegral.html)  
+[More Cowbell  
+![](docs/img/hues_cowbell.png)](https://0x40.mon.im/cowbell.html)  
 
-## Install (Make your own Hues)
+For some examples of **fast, complicated and fancy** maps, here are some of my personal creations:  
+[Black Banshee - BIOS](https://0x40.mon.im/custom.html?packs=BIOS.zip)  
+[Drop It](https://0x40.mon.im/custom.html?packs=drop_it.zip)  
+[Atols - Eden (buildup only)](https://0x40.mon.im/custom.html?packs=eden.zip)  
+[AAAA - Hop Step Adventure](https://0x40.mon.im/custom.html?packs=hopstep.zip)  
+[ミュン・ファン・ローン - MACROSS 82-99](https://0x40.mon.im/custom.html?packs=macross.zip)  
+[MDK - Press Start (VIP Mix)](https://0x40.mon.im/custom.html?packs=press_start.zip)  
+[Alex Centra - Roguebot [Inspected]](https://0x40.mon.im/custom.html?packs=roguebot.zip)  
+[Elenne - Vertical Smoke](https://0x40.mon.im/custom.html?packs=smoke.zip)  
+[Nicky Flower - Wii Shop Channel (Remix)](https://0x40.mon.im/custom.html?packs=wii_remix.zip)  
+[Nhato - Logos](https://0x40.mon.im/custom.html?packs=logos.zip)  
+
+Finally there's these, which hook into the Hues javascript events to do something fresh:  
+[Doors](https://0x40.mon.im/doors.html)  
+[Does Lewis Have A Girlfriend Yet (xox love ya)](https://0x40.mon.im/lewis.html)  
+
+## Creating your own songs
+0x40 Hues comes with an integrated editor to create new songs and inspect existing ones.
+[Read how to use it here](https://github.com/mon/0x40-web/blob/master/docs/Editor.md) - it's easier than you think!
+
+## Install (Make your own Hues website)
 1. Start by downloading the latest [release](https://github.com/mon/0x40-web/releases). These are minified and load faster.
 2. Put your respack zips somewhere they can be found by your web server. My hues have a `respacks/` folder under the main directory.
 3. Edit `index.html`:
