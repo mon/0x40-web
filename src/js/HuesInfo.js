@@ -33,6 +33,7 @@ const beatGlossary = [
     "+ Blackout",
     "¤ Whiteout",
     "| Short blackout",
+    "! Short whiteout",
     ": Color only",
     "* Image only",
     "X Vertical blur only",

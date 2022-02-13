@@ -351,8 +351,7 @@ class HuesRender {
         this.needsRedraw = true;
     }
 
-    doBlackout(whiteout) {
-        if(typeof(whiteout) === 'undefined') whiteout = false;
+    doBlackout(whiteout = false) {
         if(whiteout) {
             this.blackoutColour = 0xFFFFFF;
         } else {
@@ -379,15 +378,15 @@ class HuesRender {
         }
     }
 
-    doShortBlackout(beatTime) {
+    doShortBlackout(beatTime, whiteout = false) {
         // looks better if we go right to black
-        this.doInstantBlackout();
+        this.doInstantBlackout(whiteout);
         this.blackoutTimeout = this.audio.currentTime + beatTime / 1.7;
         this.currentBlackout++;
     }
 
-    doInstantBlackout() {
-        this.doBlackout();
+    doInstantBlackout(whiteout = false) {
+        this.doBlackout(whiteout);
         // sufficiently negative
         this.blackoutStart = -Math.pow(2, 32);
     }

@@ -785,6 +785,10 @@ class HuesCore {
                 this.renderer.doShortBlackout(this.getBeatLength());
                 this.randomColour();
                 break;
+            case '!':
+                this.renderer.doShortBlackout(this.getBeatLength(), true);
+                this.randomColour();
+                break;
             case ':':
                 this.randomColour();
                 break;
@@ -823,7 +827,7 @@ class HuesCore {
                 this.toggleInvert();
                 break;
             }
-            if ([".", "+", "|", "¤"].indexOf(beat) == -1) {
+            if ([".", "+", "|", "!", "¤"].indexOf(beat) == -1) {
                 this.renderer.clearBlackout();
             }
             if([".", "+", "¤", ":", "*", "X", "O", "~", "=", "i", "I", "s", "v", "#"].indexOf(beat) == -1) {
