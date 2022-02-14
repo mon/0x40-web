@@ -20,6 +20,9 @@
 
             this.trippyRadius = 0;
 
+            // so it can be modified at runtime by aspiring people
+            this.shutterWidth = 20;
+
             // Chosen because it looks decent
             this.setBlurQuality("high");
 
@@ -125,7 +128,6 @@
             this.context.fillRect(0,0,width,height);
 
             if(params.shutter) {
-                const shutterWidth = 20;
                 let vertical;
                 let reverse;
 
@@ -150,9 +152,9 @@
 
                 let full;
                 if(vertical) {
-                    full = height+shutterWidth;
+                    full = height+this.shutterWidth;
                 } else {
-                    full = width+shutterWidth;
+                    full = width+this.shutterWidth;
                 }
 
                 let edge = Math.floor(full * params.shutter);
@@ -164,10 +166,10 @@
                 let region2 = new Path2D();
                 if(vertical) {
                     region1.rect(0, edge, width, full-edge);
-                    region2.rect(0, 0, width, edge-shutterWidth);
+                    region2.rect(0, 0, width, edge-this.shutterWidth);
                 } else {
                     region1.rect(edge, 0, full-edge, height);
-                    region2.rect(0, 0, edge-shutterWidth, height);
+                    region2.rect(0, 0, edge-this.shutterWidth, height);
                 }
 
                 if(reverse) {
@@ -179,9 +181,9 @@
                 // make the shutter itself black
                 this.context.fillStyle = "#000";
                 if(vertical) {
-                    this.context.fillRect(0, edge-shutterWidth, width, shutterWidth);
+                    this.context.fillRect(0, edge-this.shutterWidth, width, this.shutterWidth);
                 } else {
-                    this.context.fillRect(edge-shutterWidth, 0, shutterWidth, height);
+                    this.context.fillRect(edge-this.shutterWidth, 0, this.shutterWidth, height);
                 }
 
                 // clip the underlay image and draw it
