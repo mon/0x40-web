@@ -497,7 +497,7 @@ class SoundManager {
         // some arbitrary value... we're no standard
         // Important is only that we don't output on levels
         // too different from other websites
-        data.replayGain = gain / 8.0;
+        data.replayGain = gain / 6.0;
     }
 
     createWorker() {
