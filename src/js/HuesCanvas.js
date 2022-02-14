@@ -21,7 +21,7 @@
             this.trippyRadius = 0;
 
             // so it can be modified at runtime by aspiring people
-            this.shutterWidth = 20;
+            this.shutterWidth = 1;
 
             // Chosen because it looks decent
             this.setBlurQuality("high");
