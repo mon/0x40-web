@@ -160,10 +160,8 @@ class HuesRender {
         this.blurDecay = null;
         this.blurAmount = null;
         // dynamic
-        this.blurStart = 0;
-        this.blurDistance = 0;
-        this.xBlur = false;
-        this.yBlur = false;
+        this.blurStart = [0, 0];    // x, y
+        this.blurDistance = [0, 0]; // x, y
 
         this.sliceDistance = 0;
         this.sliceStart = 0;
@@ -236,10 +234,8 @@ class HuesRender {
         this.colourFade = false;
         this.trippyStart = [0, 0];
         this.sliceStart = 0;
-        this.blurStart = 0;
-        this.blurDistance = 0;
-        this.xBlur = false;
-        this.yBlur = false;
+        this.blurStart = [0, 0];
+        this.blurDistance = [0, 0];
     }
 
     resize() {
@@ -269,8 +265,8 @@ class HuesRender {
             shutter: this.shutterProgress,
             shutterDir: this.shutterDir,
 
-            xBlur: this.xBlur ? this.blurDistance : 0,
-            yBlur: this.yBlur ? this.blurDistance : 0,
+            xBlur: this.blurDistance[0],
+            yBlur: this.blurDistance[0],
 
             outTrippy: this.trippyRadii[1],
             inTrippy: this.trippyRadii[0],
@@ -315,17 +311,15 @@ class HuesRender {
         if(this.image.onRedraw()) {
             this.needsRedraw = true;
         }
-        if(this.blurStart) {
-            // flash offsets blur gen by a frame
-            let delta = this.audio.currentTime - this.blurStart + (1/30);
-            this.blurDistance = this.blurAmount * Math.exp(-this.blurDecay * delta);
+        for(let axis = 0; axis < 2; axis++) {
+            if(this.blurStart[axis]) {
+                // flash offsets blur gen by a frame
+                let delta = this.audio.currentTime - this.blurStart[axis] + (1/30);
+                this.blurDistance[axis] = this.blurAmount * Math.exp(-this.blurDecay * delta);
 
-            // Update UI
-            let dist = this.blurDistance / this.blurAmount;
-            if(this.xBlur)
-                this.core.blurUpdated(dist, 0);
-            else
-                this.core.blurUpdated(0, dist);
+                // Update UI
+                this.updateCoreBlur();
+            }
         }
         if(this.sliceStart) {
             let transitionPercent = 0.8;
@@ -377,15 +371,18 @@ class HuesRender {
             }
         }
 
-        if(this.blurStart && this.blurDistance < 0.0001) {
-            this.core.blurUpdated(0, 0);
-            this.blurDistance = 0;
-            this.blurStart = 0;
-            this.xBlur = this.yBlur = false;
-            this.redraw();
-        } else if(this.blurStart) {
-            this.redraw();
-        } else if(this.needsRedraw){
+        for(let axis = 0; axis < 2; axis++) {
+            if(this.blurStart[axis] && this.blurDistance[axis] < 0.0001) {
+                this.blurDistance[axis] = 0;
+                this.blurStart[axis] = 0;
+                this.updateCoreBlur();
+                this.needsRedraw = true;
+            } else if(this.blurStart[axis]) {
+                this.needsRedraw = true;
+            }
+        }
+
+        if(this.needsRedraw) {
             this.redraw();
         }
     }
@@ -481,40 +478,42 @@ class HuesRender {
         this.colour = mixR << 16 | mixG << 8 | mixB;
     }
 
-    doXBlur() {
-        this.blurStart = this.audio.currentTime;
+    updateCoreBlur() {
+        let x = this.blurDistance[0] / this.blurAmount;
+        let y = this.blurDistance[1] / this.blurAmount;
+        this.core.blurUpdated(x, y);
+    }
+
+    doBlur(axis) {
+        this.blurStart[axis] = this.audio.currentTime;
         if(this.trippyOn)
-            this.trippyStart[0] = this.blurStart;
-        this.blurDistance = this.blurAmount;
-        this.xBlur = true;
-        this.yBlur = false;
+            this.trippyStart[axis] = this.blurStart[axis];
+        this.blurDistance[axis] = this.blurAmount;
         this.needsRedraw = true;
+    }
+
+    doXBlur() {
+        this.doBlur(0);
     }
 
     doYBlur() {
-        this.blurStart = this.audio.currentTime;
-        if(this.trippyOn)
-            this.trippyStart[1] = this.blurStart;
-        this.blurDistance = this.blurAmount;
-        this.xBlur = false;
-        this.yBlur = true;
-        this.needsRedraw = true;
+        this.doBlur(1);
+    }
+
+    doTrippy(axis) {
+        let saveTrippy = this.trippyOn;
+        // force trippy
+        this.trippyOn = true;
+        this.doBlur(axis);
+        this.trippyOn = saveTrippy;
     }
 
     doTrippyX() {
-        let saveTrippy = this.trippyOn;
-        // force trippy
-        this.trippyOn = true;
-        this.doXBlur();
-        this.trippyOn = saveTrippy;
+        this.doTrippy(0);
     }
 
     doTrippyY() {
-        let saveTrippy = this.trippyOn;
-        // force trippy
-        this.trippyOn = true;
-        this.doYBlur();
-        this.trippyOn = saveTrippy;
+        this.doTrippy(1);
     }
 
     doShutter(beat, beatLength, beatCount) {

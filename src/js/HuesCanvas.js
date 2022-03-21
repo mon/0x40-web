@@ -253,9 +253,11 @@
                 }
 
                 if(slices) {
-                    bitmap = this.drawSlice(slices, bitmap, drawWidth, drawHeight, width, height);
+                    bitmap = this.drawSlice(slices, bitmap, offset, drawWidth, drawHeight, width, height);
+                    // since the bitmap is replaced with a correctly offset and scaled version
                     drawWidth = width;
                     drawHeight = height;
+                    offset = 0;
                 }
 
                 if(xBlur || yBlur) {
@@ -286,11 +288,11 @@
             this.context.fillRect(0,0,this.canvas.width,this.canvas.height);
         }
 
-        drawSlice(slices, bitmap, drawWidth, drawHeight, width, height) {
+        drawSlice(slices, bitmap, offset, drawWidth, drawHeight, width, height) {
             this.offContext.clearRect(0,0,width,height);
 
             let bitmapXOffset = 0;
-            let drawXOffset = 0;
+            let drawXOffset = offset;
             for (let i = 0; i < slices.x.count; i++) {
                 let xSegment = slices.x.segments[i];
                 let sliceXDistance = slices.x.distances[i] * slices.x.percent * this.canvas.width;
@@ -337,7 +339,8 @@
                         this.context.drawImage(bitmap, Math.floor(dist * i) + offset, 0, drawWidth, drawHeight);
                     }
                 }
-            } else if(yBlur) {
+            }
+            if(yBlur) {
                 dist = yBlur * 720;
                 if(this.blurIterations < 0) {
                     this.context.globalAlpha = 1;
