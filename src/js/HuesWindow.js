@@ -90,9 +90,14 @@ class HuesWindow {
 
         let content = document.createElement("div");
         content.className = "tab-content";
-        content.appendChild(tabContent);
+        if(tabContent) {
+            content.appendChild(tabContent);
+        }
         this.contentContainer.appendChild(content);
         this.contents.push(content);
+
+        // for the slow Svelte migration - use this as the `target` in `new Component()`
+        return content;
     }
 
     selectTab(tabName, dontShowWin) {

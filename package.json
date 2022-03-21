@@ -29,6 +29,8 @@
     "webpack-dev-server": "^4.6.0"
   },
   "dependencies": {
-    "@zip.js/zip.js": "^2.3.19"
+    "@zip.js/zip.js": "^2.3.19",
+    "svelte": "^3.46.4",
+    "svelte-loader": "^3.1.2"
   }
 }

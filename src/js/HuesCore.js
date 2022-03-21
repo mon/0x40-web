@@ -20,7 +20,6 @@
  */
 
 import './HuesRender';
-import './HuesInfo';
 import './HuesEditor';
 import './HuesSettings';
 import './HuesWindow';
@@ -28,6 +27,8 @@ import './HuesUI';
 import './ResourceManager';
 import './SoundManager';
 import './string_score.min';
+
+import HuesInfo from './HuesInfo.svelte';
 
 // these aren't strictly required but it makes webpack put them in `dist`
 import '../../index.html';
@@ -186,7 +187,15 @@ class HuesCore {
         this.resourceManager = new Resources(this, this.window);
         this.editor = new HuesEditor(this, this.window);
         this.settings.initUI(this.window);
-        populateHuesInfo(this.versionStr, this.window, this.settings);
+
+        let infoContents = this.window.addTab("INFO");
+        new HuesInfo({
+            target: infoContents,
+            props: {
+              version: this.versionStr,
+              huesName: this.settings.huesName,
+            }
+        });
 
         this.window.selectTab(this.settings.firstWindow, true);
 

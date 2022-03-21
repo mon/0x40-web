@@ -15,7 +15,7 @@
     min-height: 470px;
     max-height: calc(100% - 50px);
     margin: 10px;
-    
+
     background: rgba(200,200,200, 0.7);
     border-color: black;
     border-width: 2px;
@@ -65,51 +65,11 @@ l.tab-label:hover {
     display: block;
 }
 
-.hues-about {
-    border-bottom: 2px solid black;
-}
-
 .hues-options {
     display:flex;
     flex-wrap: wrap;
     width: 640px;
     padding: 5px;
-}
-
-.hues-ref {
-    display:flex;
-    flex-wrap: wrap;
-    width: 640px;
-    align-items:center;
-    justify-content: center;
-    padding: 5px;
-}
-
-.hues-ref__info {
-    float: left;
-    font-size: 8pt;
-    text-align: left;
-    background: rgba(100,100,100,0.3);
-    border-radius: 15px;
-    margin: 10px;
-    padding: 0 5px;
-}
-
-.hues-ref__info h3 {
-    font-size: 10pt;
-    margin: 10px 0 0 10px;
-    text-align: left;
-}
-
-.hues-ref__info ul {
-    list-style-type: none;
-    padding: 0;
-    margin: 10px;
-}
-
-.hues-ref__info li {
-    /* Chrome rendering fix */
-    line-height: 9pt;
 }
 
 .hues-win__closebtn:hover {
