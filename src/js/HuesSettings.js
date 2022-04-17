@@ -22,6 +22,8 @@
 
 import '../css/hues-settings.css';
 
+import SettingsUI from './HuesSettings.svelte';
+
  (function(window, document) {
 "use strict";
 
@@ -94,33 +96,7 @@ const defaultSettings = {
     skipPreloader: "off"
 };
 
-// To dynamically build the UI like the cool guy I am
-const settingsCategories = {
-    "Functionality" : [
-        "autoSong",
-        "autoSongShuffle",
-        "autoSongFadeout",
-        "playBuildups"
-    ],
-    "Graphics" : [
-        "blurAmount",
-        "blurDecay",
-        "blurQuality",
-        "trippyMode"
-    ],
-    "Visuals" : [
-        "smartAlign",
-        "shuffleImages",
-        "colourSet",
-        "visualiser"
-    ],
-    "Interface" : [
-        "currentUI",
-        "blackoutUI",
-        "skipPreloader"
-    ]
-};
-
+// for the UI accessible config only
 const settingsOptions = {
     smartAlign : {
         name : "Smart Align images",
@@ -160,36 +136,7 @@ const settingsOptions = {
     },
     autoSong : {
         name : "AutoSong",
-        options : ["off", "loop", "time",
-            {type:"varText", text:function() {
-                // only display if autosong is on
-                return this.autoSong == "off" ? "" : "after";
-            }},
-            {type:"input", variable:"autoSongDelay", inputType:"int",
-                visiblity:function() {
-                    return this.autoSong != "off";
-                }
-            },
-            {type:"varText", text:function() {
-                let ret = "";
-                switch(this.autoSong) {
-                    case "loop":
-                        ret = "loop";
-                        break;
-                    case "time":
-                        ret = "min";
-                        break;
-                    case "off":
-                        /* falls through */
-                    default:
-                        return "";
-                }
-                if(this.autoSongDelay > 1) {
-                    ret += "s";
-                }
-                return ret;
-            }}
-        ]
+        options : ["off", "loop", "time"]
     },
     autoSongShuffle : {
         name : "AutoSong shuffle",
@@ -228,13 +175,6 @@ class HuesSettings {
             localStorage.clear();
             localStorage.settingsVersion = settingsVersion;
         }
-
-        this.hasUI = false;
-
-        this.settingCheckboxes = {};
-
-        this.textCallbacks = [];
-        this.visCallbacks = [];
 
         this.ephemerals = {};
 
@@ -295,100 +235,18 @@ class HuesSettings {
     }
 
     initUI(huesWin) {
-        let root = document.createElement("div");
-        root.className = "hues-options";
+        let uiTab = huesWin.addTab("OPTIONS");
+        this.ui = new SettingsUI({
+            target: uiTab,
+            props: {
+                settings: this,
+                schema: settingsOptions,
+            },
+        });
 
-        // Don't make in every loop
-        let intValidator = function(self, variable) {
-            this.value = this.value.replace(/\D/g,'');
-            if(this.value === "" || this.value < 1) {
-                this.value = "";
-                return;
-            }
-            self[variable] = this.value;
-            self.updateConditionals();
-            self.callEventListeners("updated");
-        };
-
-        // To order things nicely
-        for(let cat in settingsCategories) {
-            if(settingsCategories.hasOwnProperty(cat)) {
-                let catContainer = document.createElement("div");
-                catContainer.textContent = cat;
-                catContainer.className = "settings-category";
-                let cats = settingsCategories[cat];
-                for(let i = 0; i < cats.length; i++) {
-                    let setName = cats[i];
-                    let setContainer = document.createElement("div");
-                    let setting = settingsOptions[setName];
-                    setContainer.textContent = setting.name;
-                    setContainer.className = "settings-individual";
-                    let buttonContainer = document.createElement("div");
-                    buttonContainer.className = "settings-buttons";
-
-                    for(let j = 0; j < setting.options.length; j++) {
-                        let option = setting.options[j];
-                        if(typeof option === "string") {
-                            let checkbox = document.createElement("input");
-                            // Save checkbox so we can update UI stuff
-                            this.settingCheckboxes[setName + "-" + option] = checkbox;
-                            checkbox.className = "settings-checkbox";
-                            checkbox.type = "radio";
-                            checkbox.value = option;
-                            let unique = 0;
-                            // Lets us have multiple hues on 1 page
-                            let id = setName + "-" + option + "-";
-                            while(document.getElementById(id + unique)) {
-                                unique++;
-                            }
-                            checkbox.name = setName + "-" + unique;
-                            checkbox.id = id + unique;
-                            if(this[setName] == option) {
-                                checkbox.checked = true;
-                            }
-                            checkbox.onclick = function(self) {
-                                self[setName] = this.value;
-                            }.bind(checkbox, this);
-                            buttonContainer.appendChild(checkbox);
-                            // So we can style this nicely
-                            let label = document.createElement("label");
-                            label.className = "settings-label";
-                            label.htmlFor = checkbox.id;
-                            label.textContent = option.toUpperCase();
-                            buttonContainer.appendChild(label);
-                        } else { // special option
-                            if(option.type == "varText") {
-                                let text = document.createElement("span");
-                                text.textContent = option.text.bind(this)();
-                                buttonContainer.appendChild(text);
-                                this.textCallbacks.push({func:option.text.bind(this), element:text});
-                            } else if(option.type == "input") {
-                                let input = document.createElement("input");
-                                input.setAttribute("type", "text");
-                                input.className = "settings-input";
-                                input.value = this[option.variable];
-                                // TODO: support more than just positive ints when the need arises
-                                if(option.inputType == "int") {
-                                    input.oninput = intValidator.bind(input, this, option.variable);
-                                }
-                                input.autofocus = false;
-                                buttonContainer.appendChild(input);
-                                if(option.visiblity) {
-                                    this.visCallbacks.push({func:option.visiblity.bind(this), element:input});
-                                    input.style.visibility = option.visiblity.bind(this)() ? "visible" : "hidden";
-                                }
-                            }
-                        }
-
-                    }
-                    setContainer.appendChild(buttonContainer);
-                    catContainer.appendChild(setContainer);
-                }
-                root.appendChild(catContainer);
-            }
-        }
-        huesWin.addTab("OPTIONS", root);
-        this.hasUI = true;
+        this.ui.$on('update', event => {
+            this.callEventListeners("updated");
+        });
     }
 
     makeGetter(setting) {
@@ -418,33 +276,19 @@ class HuesSettings {
                     console.log(value, "is not a valid value for", setting);
                     return false;
                 }
-                // for updating the UI selection
-                try {
-                    this.settingCheckboxes[setting + "-" + value].checked = true;
-                } catch(e) {}
                 localStorage[setting] = value;
                 this.ephemerals[setting] = undefined;
             }
-            this.updateConditionals();
-            this.callEventListeners("updated");
+
+            if(this.ui) {
+                this.ui.$set({settings: this});
+            }
             return true;
         };
     }
 
     isEphemeral(setting) {
         return settingsOptions[setting] === undefined;
-    }
-
-    updateConditionals() {
-        // update any conditionally formatted settings text
-        for(let i = 0; i < this.textCallbacks.length; i++) {
-            let text = this.textCallbacks[i];
-            text.element.textContent = text.func();
-        }
-        for(let i = 0; i < this.visCallbacks.length; i++) {
-            let callback = this.visCallbacks[i];
-            callback.element.style.visibility = callback.func() ? "visible" : "hidden";
-        }
     }
 
     callEventListeners(ev) {

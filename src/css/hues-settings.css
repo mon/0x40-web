@@ -40,7 +40,6 @@
     display: flex;
 }
 
-
 .tab-label{
     flex-grow: 1;
     cursor: pointer;
@@ -65,78 +64,10 @@ l.tab-label:hover {
     display: block;
 }
 
-.hues-options {
-    display:flex;
-    flex-wrap: wrap;
-    width: 640px;
-    padding: 5px;
-}
-
 .hues-win__closebtn:hover {
     background-color: rgb(200,200,200);
 }
 
 .hues-win__closebtn:after {
     content : "x";
-}
-
-.settings-category {
-    font-size: 16px;
-    width: 50%;
-    float: left;
-    margin-bottom: 10px;
-}
-
-.settings-individual{
-    font-size: 8pt;
-    /* Chrome rendering fix */
-    line-height: 9pt;
-    padding-left: 10px;
-}
-
-.settings-buttons{
-    display: flex;
-    flex-wrap: wrap;
-}
-
-.settings-checkbox{
-    display: none;
-}
-
-.settings-label {
-    font-size: 7pt;
-    margin: 4px 2px;
-    padding: 3px;
-    background: rgba(127,127,127, 0.5);
-    border-color: rgb(0,0,0);
-    border-width: 1px;
-    border-style: solid;
-    cursor: pointer;
-    /* Don't want double click to select */
-    -webkit-touch-callout: none;
-    -webkit-user-select: none;
-    -khtml-user-select: none;
-    -moz-user-select: none;
-    -ms-user-select: none;
-    user-select: none;
-}
-
-.settings-label:hover {
-    background: rgba(200,200,200,0.5);
-}
-
-input[type="radio"]:checked + .settings-label {
-    background: rgba(255,255,255, 0.5);
-}
-
-.settings-input {
-    font-family: 'PetMe64Web';
-    font-size: 7pt;
-    padding: 3px;
-    margin: -6px 0;
-    background: rgba(127,127,127, 0.5);
-    border-color: rgb(0,0,0);
-    border-width: 1px;
-    border-style: solid;
-    width: 2em;
 }
