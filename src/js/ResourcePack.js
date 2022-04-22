@@ -132,7 +132,6 @@ class Respack {
         let file = new zip.fs.FS();
         return file.importBlob(blob)
         .then(() => {
-            console.log(file);
             return this.parseZip(file);
         }).then(() => {
             return this;
@@ -189,17 +188,23 @@ class Respack {
         debug("parsing song: " + name);
         if (this.containsSong(name)) {
             let oldSong = this.getSong(name);
-            debug("WARNING: Song", name, "already exists! Conflict with", name, "and", oldSong.name);
+            debug("WARNING: Song", name, "already exists! Conflict with", name, "and", oldSong.loop.fname);
         } else {
-            let newSong = {"name":name,
-                           "title":null,
-                           "rhythm":null,
-                           "source":null,
-                           //"crc":this.quickCRC(file), TODO
-                           "sound":null,
-                           "enabled":true,
-                           "filename":file.name,
-                           "charsPerBeat": null};
+            let newSong = {
+                title:null,
+                loop: {
+                    chart:null,
+                    sound:null,
+                    fname:name,
+                },
+                build: {
+                    chart:null,
+                    sound:null,
+                    fname:null,
+                },
+                source:null,
+                enabled:true,
+                charsPerBeat: null};
             let mime = "";
             switch(file.extension) {
                 case "mp3":
@@ -226,7 +231,7 @@ class Respack {
                     fr.readAsArrayBuffer(blob);
                 });
             }).then(sound => {
-                newSong.sound = sound;
+                newSong.loop.sound = sound;
                 this.filesLoaded++;
                 this.updateProgress();
             });
@@ -375,30 +380,31 @@ class Respack {
                 song.title = el.getTag("title");
                 if(!song.title) {
                     song.title = "<no name>";
-                    debug("  WARNING!", song.name, "has no title!");
+                    debug("  WARNING!", song.loop.fname, "has no title!");
                 }
 
-                song.rhythm = el.getTag("rhythm");
-                if(!song.rhythm) {
-                    song.rhythm = "..no..rhythm..";
-                    debug("  WARNING!!", song.name, "has no rhythm!!");
+                song.loop.chart = el.getTag("rhythm");
+                if(!song.loop.chart) {
+                    song.loop.chart = "..no..rhythm..";
+                    debug("  WARNING!!", song.loop.fname, "has no rhythm!!");
                 }
 
-                song.buildupName = el.getTag("buildup");
-                if(song.buildupName) {
-                    debug("  Finding a buildup '" + song.buildupName + "' for ", song.name);
-                    let build = this.getSong(song.buildupName);
+                song.build.fname = el.getTag("buildup");
+                if(song.build.fname) {
+                    debug("  Finding a buildup '" + song.build.fname + "' for ", song.loop.fname);
+                    let build = this.getSong(song.build.fname);
                     if(build) {
-                        song.buildup = build.sound;
+                        // migrate this from loop to build
+                        song.build.sound = build.loop.sound;
                         song.buildupPlayed = false;
                         // get rid of the junk
                         this.songs.splice(this.songs.indexOf(build), 1);
                     } else {
-                        debug("  WARNING!", "Didn't find a buildup '" + song.buildupName + "'!");
+                        debug("  WARNING!", "Didn't find a buildup '" + song.build.fname + "'!");
                     }
                 }
 
-                song.buildupRhythm = el.getTag("buildupRhythm");
+                song.build.chart = el.getTag("buildupRhythm");
                 song.independentBuild = el.getTag("independentBuild");
                 song.source = el.getTag("source");
                 song.charsPerBeat = parseFloat(el.getTag("charsPerBeat"));
@@ -408,7 +414,7 @@ class Respack {
                     song.forceTrim  = true;
                 }
                 newSongs.push(song);
-                debug("  [I] " + song.name, ": '" + song.title + "' added to songs");
+                debug("  [I] " + song.loop.fname, ": '" + song.title + "' added to songs");
             } else {
                 debug("  WARNING!", "songs.xml: <song> element",
                     + el.attributes[0].value + "- no song found");
@@ -496,18 +502,18 @@ class Respack {
     }
 
     getSong(name) {
-        for(let i = 0; i < this.songs.length; i++) {
-            if (name == this.songs[i].name) {
-                return this.songs[i];
+        for(let song of this.songs) {
+            if (name == song.loop.fname) {
+                return song;
             }
         }
         return null;
     }
 
     getImage(name) {
-        for(let i = 0; i < this.images.length; i++) {
-            if (name == this.images[i].name) {
-                return this.images[i];
+        for(let image of this.images) {
+            if (name == image.name) {
+                return image;
             }
         }
         return null;

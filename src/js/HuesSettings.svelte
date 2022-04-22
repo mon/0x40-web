@@ -53,6 +53,7 @@
                     {#if setName == "autoSong" && settings["autoSong"] != "off"}
                         <span>after</span>
                         <input
+                            class="settings-input"
                             type="number"
                             min=1
                             bind:value={settings["autoSongDelay"]}
@@ -89,7 +90,7 @@ span {
     align-self: center;
 }
 
-input[type="number"] {
+:global(.settings-input) {
     font-family: 'PetMe64Web';
     font-size: 7pt;
     margin: 4px 2px;
@@ -100,12 +101,12 @@ input[type="number"] {
     border-style: solid;
     width: 2em;
 
-    -moz-appearance:textfield; /* Firefox */
+    -moz-appearance:textfield; /* Firefox no spinbox */
 }
 
 /* hide the spin box on number input */
-input[type="number"]::-webkit-outer-spin-button,
-input[type="number"]::-webkit-inner-spin-button {
+:global(.settings-input)::-webkit-outer-spin-button,
+:global(.settings-input)::-webkit-inner-spin-button {
     -webkit-appearance: none;
     margin: 0; /* <-- Apparently some margin are still there even though it's hidden */
 }

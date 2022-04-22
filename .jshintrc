@@ -1,5 +1,5 @@
 {
-    "esversion": 6,
+    "esversion": 11,
     // Allow array["access"]. We use this with localStorage to avoid any
     // aggressive minification doing variable name optimisation
     "sub": true,

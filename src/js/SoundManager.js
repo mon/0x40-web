@@ -30,7 +30,14 @@ class SoundManager {
             *
             * Called when the audio has been seeked - reset time determined transforms
             */
-            seek : []
+            seek : [],
+            /* callback songloading(promise, song)
+            *
+            * Called when someone requests a new song to be played - used when
+            * you want to do something with the finished AudioBuffers, like
+            * display length, or display a waveform.
+            */
+            songloading : [],
         };
 
         this.core = core;
@@ -46,13 +53,17 @@ class SoundManager {
         this.context = null; // Audio context, Web Audio API
         this.oggSupport = false;
         this.mp3IsSane = false;
-        this.buildSource = null;
-        this.loopSource = null;
-        this.buildup = null;
-        this.loop = null;
+        this.build = {
+            source: null,
+            buffer: null,
+            length: null,
+        };
+        this.loop = {
+            source: null,
+            buffer: null,
+            length: null, // For calculating beat lengths
+        };
         this.startTime = 0;  // File start time - 0 is loop start, not build start
-        this.buildLength = 0;
-        this.loopLength = 0; // For calculating beat lengths
 
         // Volume
         this.gainNode = null;
@@ -223,7 +234,7 @@ class SoundManager {
         }
         this.stop();
         this.song = song;
-        if(!song || (!song.sound)) { // null song
+        if(!song || (!song.loop.sound)) { // null song
             return p;
         }
 
@@ -243,16 +254,16 @@ class SoundManager {
                 return Promise.reject("Song changed between load and play - this message can be ignored");
             }
 
-            this.buildup = buffers.buildup;
-            this.buildLength = this.buildup ? this.buildup.duration : 0;
-            this.loop = buffers.loop;
-            this.loopLength = this.loop.duration;
+            this.build.buffer = buffers.buildup;
+            this.build.length = this.build.buffer ? this.build.buffer.duration : 0;
+            this.loop.buffer = buffers.loop;
+            this.loop.length = this.loop.buffer.duration;
 
             // This fixes sync issues on Firefox and slow machines.
             return this.context.suspend();
         }).then(() => {
             if(playBuild) {
-                this.seek(-this.buildLength, true);
+                this.seek(-this.build.length, true);
             } else {
                 this.seek(0, true);
             }
@@ -261,25 +272,26 @@ class SoundManager {
         }).then(() => {
             this.playing = true;
         });
+        this.callEventListeners("songloading", p, song);
         return p;
     }
 
     stop(dontDeleteBuffers) {
         if (this.playing) {
-            if(this.buildSource) {
-                this.buildSource.stop(0);
-                this.buildSource.disconnect();
-                this.buildSource = null;
+            if(this.build.source) {
+                this.build.source.stop(0);
+                this.build.source.disconnect();
+                this.build.source = null;
                 if(!dontDeleteBuffers)
-                    this.buildup = null;
+                    this.build.buffer = null;
             }
             // arg required for mobile webkit
-            this.loopSource.stop(0);
+            this.loop.source.stop(0);
              // TODO needed?
-            this.loopSource.disconnect();
-            this.loopSource = null;
+            this.loop.source.disconnect();
+            this.loop.source = null;
             if(!dontDeleteBuffers)
-                this.loop = null;
+                this.loop.buffer = null;
             this.vReady = false;
             this.playing = false;
             this.startTime = 0;
@@ -304,36 +316,36 @@ class SoundManager {
 
         //console.log("Seeking to " + time);
         // Clamp the blighter
-        time = Math.min(Math.max(time, -this.buildLength), this.loopLength);
+        time = Math.min(Math.max(time, -this.build.length), this.loop.length);
 
         this.stop(true);
 
-        if(!this.loop) {
+        if(!this.loop.buffer) {
             return;
         }
 
-        this.loopSource = this.context.createBufferSource();
-        this.loopSource.buffer = this.loop;
-        this.loopSource.playbackRate.value = this.playbackRate;
-        this.loopSource.loop = true;
-        this.loopSource.loopStart = 0;
-        this.loopSource.loopEnd = this.loopLength;
-        this.loopSource.connect(this.replayGainNode);
+        this.loop.source = this.context.createBufferSource();
+        this.loop.source.buffer = this.loop.buffer;
+        this.loop.source.playbackRate.value = this.playbackRate;
+        this.loop.source.loop = true;
+        this.loop.source.loopStart = 0;
+        this.loop.source.loopEnd = this.loop.length;
+        this.loop.source.connect(this.replayGainNode);
 
-        if(time < 0 && this.buildup) {
-            this.buildSource = this.context.createBufferSource();
-            this.buildSource.buffer = this.buildup;
-            this.buildSource.playbackRate.value = this.playbackRate;
-            this.buildSource.connect(this.replayGainNode);
-            this.buildSource.start(0, this.buildLength + time);
-            this.loopSource.start(this.context.currentTime - (time / this.playbackRate));
+        if(time < 0 && this.build.buffer) {
+            this.build.source = this.context.createBufferSource();
+            this.build.source.buffer = this.build.buffer;
+            this.build.source.playbackRate.value = this.playbackRate;
+            this.build.source.connect(this.replayGainNode);
+            this.build.source.start(0, this.build.length + time);
+            this.loop.source.start(this.context.currentTime - (time / this.playbackRate));
         } else {
-            this.loopSource.start(0, time);
+            this.loop.source.start(0, time);
         }
 
-        let gain = this.loop.replayGain;
-        if(this.buildup) {
-            gain = Math.min(gain, this.buildup.replayGain);
+        let gain = this.loop.buffer.replayGain;
+        if(this.build.buffer) {
+            gain = Math.min(gain, this.build.buffer.replayGain);
         }
         this.replayGainNode.gain.setValueAtTime(gain, this.context.currentTime);
 
@@ -357,7 +369,7 @@ class SoundManager {
         let time = this.currentTime;
 
         if(time > 0) {
-            time %= this.loopLength;
+            time %= this.loop.length;
         }
         return time;
     }
@@ -373,15 +385,15 @@ class SoundManager {
 
         let buffers = {loop: null, buildup: null};
 
-        let promises = [this.loadBuffer(song, "sound").then(buffer => {
+        let promises = [this.loadBuffer(song.loop).then(buffer => {
             buffers.loop = buffer;
         })];
-        if(song.buildup) {
-            promises.push(this.loadBuffer(song, "buildup").then(buffer => {
+        if(song.build.sound) {
+            promises.push(this.loadBuffer(song.build).then(buffer => {
                 buffers.buildup = buffer;
             }));
         } else {
-            this.buildLength = 0;
+            this.build.length = 0;
         }
         song._loadPromise = Promise.all(promises)
         .then(() => {
@@ -391,8 +403,8 @@ class SoundManager {
         return song._loadPromise;
     }
 
-    loadBuffer(song, soundName) {
-        let buffer = song[soundName];
+    loadBuffer(section) {
+        let buffer = section.sound;
 
         // Is this a file supported by the browser's importer?
         let view = new Uint8Array(buffer);
@@ -413,7 +425,7 @@ class SoundManager {
                 });
             }).then(result => {
                 // restore copied buffer
-                song[soundName] = backup;
+                section.sound = backup;
                 this.applyGain(result);
                 return result;
             });
@@ -430,7 +442,7 @@ class SoundManager {
                     audioWorker.terminate();
 
                     // restore transferred buffer
-                    song[soundName] = decoded.arrayBuffer;
+                    section.sound = decoded.arrayBuffer;
                     if(decoded.error) {
                         reject(new Error(decoded.error));
                         return;
@@ -471,7 +483,6 @@ class SoundManager {
     // from https://github.com/est31/js-audio-normalizer
     applyGain(data) {
         let buffer = data.getChannelData(0);
-        console.log(data);
         var sliceLen = Math.floor(data.sampleRate * 0.05);
         var averages = [];
         var sum = 0.0;
@@ -497,7 +508,7 @@ class SoundManager {
         // some arbitrary value... we're no standard
         // Important is only that we don't output on levels
         // too different from other websites
-        data.replayGain = gain / 6.0;
+        data.replayGain = gain / 4.0;
     }
 
     createWorker() {
@@ -536,13 +547,13 @@ class SoundManager {
         }
 
         // Get our info from the loop
-        let channels = this.loopSource.channelCount;
+        let channels = this.loop.source.channelCount;
         // In case channel counts change, this is changed each time
         this.splitter = this.context.createChannelSplitter(channels);
         // Connect to the gainNode so we get buildup stuff too
-        this.loopSource.connect(this.splitter);
-        if(this.buildSource) {
-            this.buildSource.connect(this.splitter);
+        this.loop.source.connect(this.splitter);
+        if(this.build.source) {
+            this.build.source.connect(this.splitter);
         }
         // Split display up into each channel
         this.vBars = Math.floor(this.vTotalBars/channels);
@@ -566,7 +577,7 @@ class SoundManager {
             this.logArrays.push(new Uint8Array(this.vBars));
         }
         let binCount = this.analysers[0].frequencyBinCount;
-        let binWidth = this.loopSource.buffer.sampleRate / binCount;
+        let binWidth = this.loop.source.buffer.sampleRate / binCount;
         // first 2kHz are linear
         this.maxBinLin = Math.floor(2000/binWidth);
         // Don't stretch the first 2kHz, it looks awful

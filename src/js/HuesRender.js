@@ -266,7 +266,7 @@ class HuesRender {
             shutterDir: this.shutterDir,
 
             xBlur: this.blurDistance[0],
-            yBlur: this.blurDistance[0],
+            yBlur: this.blurDistance[1],
 
             outTrippy: this.trippyRadii[1],
             inTrippy: this.trippyRadii[0],
@@ -488,7 +488,6 @@ class HuesRender {
         this.blurStart[axis] = this.audio.currentTime;
         if(this.trippyOn)
             this.trippyStart[axis] = this.blurStart[axis];
-        this.blurDistance[axis] = this.blurAmount;
         this.needsRedraw = true;
     }
 

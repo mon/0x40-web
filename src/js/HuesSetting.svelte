@@ -7,7 +7,7 @@
     const setId = uniqueFormId();
 </script>
 
-<div class="setting">
+<div class="settings-individual">
     {info.name}
     <div class="buttons">
         {#each info.options as opt}
@@ -26,19 +26,19 @@
 </div>
 
 <style>
-.setting{
+:global(.settings-individual) {
     font-size: 8pt;
     /* Chrome rendering fix */
     line-height: 9pt;
     padding-left: 10px;
 }
 
-.buttons{
+.buttons {
     display: flex;
     flex-wrap: wrap;
 }
 
-input[type="radio"]{
+input[type="radio"] {
     display: none;
 }
 

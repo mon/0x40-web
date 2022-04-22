@@ -12,9 +12,10 @@
     position: relative;
     z-index: 9;
     min-width: 640px;
-    min-height: 470px;
-    max-height: calc(100% - 50px);
+    max-height: calc(100% - 120px);
     margin: 10px;
+    overflow-y: auto;
+    overflow-x: hidden;
 
     background: rgba(200,200,200, 0.7);
     border-color: black;

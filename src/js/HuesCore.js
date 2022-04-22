@@ -184,6 +184,7 @@ class HuesCore {
 
         console.log("0x40 Hues v" + this.versionStr + " - start your engines!");
 
+        this.soundManager = new SoundManager(this, this.settings.volume);
         this.resourceManager = new Resources(this, this.window);
         this.editor = new HuesEditor(this, this.window);
         this.settings.initUI(this.window);
@@ -211,8 +212,6 @@ class HuesCore {
         this.visualiser.className = "hues-visualiser";
         this.visualiser.height = "64";
         this.vCtx = this.visualiser.getContext("2d");
-
-        this.soundManager = new SoundManager(this, this.settings.volume);
 
         this.soundManager.init().then(() => {
             if(!this.soundManager.locked && this.settings.skipPreloader == "on") {
@@ -297,7 +296,7 @@ class HuesCore {
                     return true;
                 }
                 // If we've focused a text input, let the input go through!
-                if((e.target.tagName.toLowerCase() == "input" && e.target.type == "text") ||
+                if((e.target.tagName.toLowerCase() == "input") ||
                     e.target.contentEditable === "true") {
                     return true;
                 }
@@ -434,8 +433,8 @@ class HuesCore {
         }
 
         // We should sync up to how many inverts there are
-        let build = this.currentSong.buildupRhythm;
-        let rhythm = this.currentSong.rhythm;
+        let build = this.currentSong.build.chart;
+        let rhythm = this.currentSong.loop.chart || '';
         let mapSoFar;
         if(this.beatIndex < 0) {
             // Clamp to 0 in case we've juuust started
@@ -459,7 +458,7 @@ class HuesCore {
         } else if(this.beatIndex < 0) {
             return this.beatIndex;
         } else {
-            return this.beatIndex % this.currentSong.rhythm.length;
+            return this.beatIndex % this.currentSong.loop.chart.length;
         }
     }
 
@@ -521,12 +520,26 @@ class HuesCore {
         this.songIndex = index;
         this.currentSong = this.resourceManager.enabledSongs[this.songIndex];
         if (this.currentSong === undefined) {
-            this.currentSong = {"name":"None", "title":"None", "rhythm":".", "source":null, "crc":"none", "sound":null, "enabled":true, "filename":"none"};
+            this.currentSong = {
+                title:"None",
+                loop: {
+                    chart:null,
+                    sound:null,
+                    fname:null,
+                },
+                build: {
+                    chart:null,
+                    sound:null,
+                    fname:null,
+                },
+                source:null,
+                enabled:true,
+                charsPerBeat: null};
         }
         console.log("Next song:", this.songIndex, this.currentSong);
         this.callEventListeners("newsong", this.currentSong);
         this.loopCount = 0;
-        if (this.currentSong.buildup) {
+        if (this.currentSong.build.sound) {
             switch (this.settings.playBuildups) {
             case "off":
                 this.currentSong.buildupPlayed = true;
@@ -552,12 +565,17 @@ class HuesCore {
     }
 
     updateBeatLength() {
-        this.loopLength = this.soundManager.loopLength / this.currentSong.rhythm.length;
-        if(this.currentSong.buildup) {
-            if (!this.currentSong.buildupRhythm) {
-                this.currentSong.buildupRhythm = ".";
+        if(this.currentSong.loop.sound) {
+            this.loopLength = this.soundManager.loop.length / this.currentSong.loop.chart.length;
+        } else {
+            this.loopLength = -1;
+        }
+
+        if(this.currentSong.build.sound) {
+            if (!this.currentSong.build.chart) {
+                this.currentSong.build.chart = ".";
             }
-            this.buildLength = this.soundManager.buildLength / this.currentSong.buildupRhythm.length;
+            this.buildLength = this.soundManager.build.length / this.currentSong.build.chart.length;
         } else {
             this.buildLength = -1;
         }
@@ -574,18 +592,18 @@ class HuesCore {
     fillBuildup() {
         // update loop length for flash style filling
         this.updateBeatLength();
-        if(this.currentSong.buildup) {
+        if(this.currentSong.build.sound) {
             if(this.currentSong.independentBuild) {
                 console.log("New behaviour - separate build/loop lengths");
                 // Do nothing
             } else {
                 console.log("Flash behaviour - filling buildup");
-                let buildBeats = Math.floor(this.soundManager.buildLength / this.loopLength);
+                let buildBeats = Math.floor(this.soundManager.build.length / this.loopLength);
                 if(buildBeats < 1) {
                     buildBeats = 1;
                 }
-                while (this.currentSong.buildupRhythm.length < buildBeats) {
-                    this.currentSong.buildupRhythm = this.currentSong.buildupRhythm + ".";
+                while (this.currentSong.build.chart.length < buildBeats) {
+                    this.currentSong.build.chart += ".";
                 }
                 console.log("Buildup length:", buildBeats);
             }
@@ -594,7 +612,7 @@ class HuesCore {
         this.updateBeatLength();
         // If we're in the build or loop this will adjust
         // If we've lagged a bit, we'll miss the first beat. Rewind!
-        this.recalcBeatIndex(this.doBuildup ? -this.soundManager.buildLength : 0);
+        this.recalcBeatIndex(this.doBuildup ? -this.soundManager.build.length : 0);
     }
 
     randomSong() {
@@ -617,7 +635,7 @@ class HuesCore {
        music, it's important to keep checking the loop so songs don't go for too
        long. */
     loopCheck() {
-        if(Math.floor(this.soundManager.currentTime / this.soundManager.loopLength) > this.loopCount) {
+        if(Math.floor(this.soundManager.currentTime / this.soundManager.loop.length) > this.loopCount) {
             this.onLoop();
         }
     }
@@ -633,7 +651,7 @@ class HuesCore {
             break;
         case "time":
             console.log("Checking times");
-            if (this.soundManager.loopLength * this.loopCount >= this.settings.autoSongDelay * 60) {
+            if (this.soundManager.loop.length * this.loopCount >= this.settings.autoSongDelay * 60) {
                 this.doAutoSong();
             }
             break;
@@ -759,9 +777,9 @@ class HuesCore {
 
     getBeat(index) {
         if(index < 0) {
-            return this.currentSong.buildupRhythm[this.currentSong.buildupRhythm.length+index];
+            return this.currentSong.build.chart[this.currentSong.build.chart.length+index];
         } else {
-            return this.currentSong.rhythm[index % this.currentSong.rhythm.length];
+            return this.currentSong.loop.chart[index % this.currentSong.loop.chart.length];
         }
     }
 
@@ -856,7 +874,7 @@ class HuesCore {
 
     charsToNextBeat() {
         // case: fade in build, not in rhythm. Must max out fade timer.
-        let maxSearch = this.currentSong.rhythm.length;
+        let maxSearch = this.currentSong.loop.chart.length;
         if(this.beatIndex < 0) {
             maxSearch -= this.beatIndex;
         }
@@ -880,13 +898,13 @@ class HuesCore {
         let song = this.currentSong;
         if (song) {
             if(this.beatIndex < 0) {
-                beatString = song.buildupRhythm.slice(
-                        song.buildupRhythm.length + this.beatIndex);
+                beatString = song.build.chart.slice(
+                        song.build.chart.length + this.beatIndex);
             } else {
-                beatString = song.rhythm.slice(this.beatIndex % song.rhythm.length);
+                beatString = song.loop.chart.slice(this.beatIndex % song.loop.chart.length);
             }
             while (beatString.length < length) {
-                beatString += song.rhythm;
+                beatString += song.loop.chart;
             }
         }
 
@@ -1053,7 +1071,7 @@ class HuesCore {
             this.soundManager.increaseVolume();
             break;
         case 66: // B
-            this.soundManager.seek(-this.soundManager.buildLength);
+            this.soundManager.seek(-this.soundManager.build.length);
             break;
         case 77: // M
             this.soundManager.toggleMute();
