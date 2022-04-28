@@ -390,6 +390,7 @@
     position: absolute;
     right: 8px;
     bottom: 110px;
+    z-index: 1; /* put it in front of xmas UI lights */
 }
 
 /* Fun slider stuff! */
