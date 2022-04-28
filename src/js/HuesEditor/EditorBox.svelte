@@ -209,6 +209,20 @@
 
         dispatch('songremove');
     }
+
+    let copyPretty = () => {
+        // http://stackoverflow.com/a/27012001
+        let regex = new RegExp("(.{" + newLineAtBeat + "})", "g");
+        let text = section.chart.replace(regex, "$1\n");
+
+        let textArea = document.createElement("textarea");
+        textArea.className = "copybox";
+        textArea.value = text;
+        document.body.appendChild(textArea);
+        textArea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textArea);
+    }
 </script>
 
 <!-- So sibling editors that are linked can be modified together nicely -->
@@ -228,7 +242,11 @@
         title="{locked ? "Unlock" : "Lock"} beat count"
         on:click={toggleLock}
         disabled={!valid}
-    >{@html locked ? "&#xe906;" : "&#xe907;"}</HuesButton>
+    >
+        {@html locked ? "&#xe906;" : "&#xe907;"}
+    </HuesButton>
+    <!-- Copy icon -->
+    <HuesButton icon disabled={!valid} title="Copy formatted beatmap" on:click={() => copyPretty()}>&#xe90c;</HuesButton>
 
     <!-- spacer -->
     <div/>
@@ -304,7 +322,7 @@ information.
     grid-column: editors;
 
     display: grid;
-    grid-template-columns: repeat(4, max-content) 1fr repeat(4, max-content);
+    grid-template-columns: repeat(5, max-content) 1fr repeat(4, max-content);
     align-items: center;
 
     padding-bottom: 5px;
