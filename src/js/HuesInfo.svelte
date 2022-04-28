@@ -49,7 +49,8 @@
         "[L] Load local zip",
         "[O] Options",
         "[I] Information",
-        "[1-6] Change UI"
+        "[1-6] Change UI",
+        "[Alt+Enter] Fullscreen"
     ];
 </script>
 

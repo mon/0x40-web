@@ -291,16 +291,22 @@ class HuesCore {
                 if(e.defaultPrevented) {
                     return true;
                 }
-                // Ignore modifiers so we don't steal other events
-                if (e.altKey || e.ctrlKey || e.metaKey || e.shiftKey) {
-                    return true;
-                }
+
                 // If we've focused a text input, let the input go through!
                 if((e.target.tagName.toLowerCase() == "input") ||
                     e.target.contentEditable === "true") {
                     return true;
                 }
                 let key = e.keyCode || e.which;
+                // Special case for Alt+Enter fullscreen
+                if(e.altKey && key == 13) {
+                    document.body.requestFullscreen();
+                }
+                // Ignore modifiers so we don't steal other events
+                if(e.altKey || e.ctrlKey || e.metaKey || e.shiftKey) {
+                    return true;
+                }
+
                 return this.keyHandler(key);
             });
         }
