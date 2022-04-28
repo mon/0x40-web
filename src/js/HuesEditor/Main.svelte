@@ -374,7 +374,7 @@
         </div>
 
         <EditorBox
-            title="Rhythm&nbsp;"
+            title="Rhythm"
             showHelp=true
             bind:this={loopEditorComponent}
             bind:section={loop}

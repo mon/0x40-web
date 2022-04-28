@@ -215,7 +215,8 @@
 <!-- Must be 2 elements, else modify the grid definition in Main.svelte -->
 
 <div class="header" bind:this={header}>
-    <span>{@html title}</span>
+    <!-- Filthy width hacks to align labels -->
+    <span style="min-width: 7ch;">{@html title}</span>
     <!-- |<< (seek back) -->
     <HuesButton icon disabled={!valid} on:click={() => dispatch("rewind")}>&#xe90b;</HuesButton>
     <span class="beat-count">{valid ? section.chart.length : 0} beats</span>
@@ -244,7 +245,10 @@
         multiple=false
         on:change={loadSong}
     />
-    <HuesButton on:click={() => fileInput.click()}>Load {@html title}</HuesButton>
+    <HuesButton on:click={() => fileInput.click()}>
+        <!-- Filthy width hacks to align labels -->
+        <div style="min-width: 12ch;">Load {title}</div>
+    </HuesButton>
     <HuesButton on:click={removeSong} disabled={!valid}>Remove</HuesButton>
 </div>
 
