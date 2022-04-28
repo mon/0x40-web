@@ -52,7 +52,9 @@ class HuesEditor {
                 huesRoot : this.core.root,
                 soundManager: this.core.soundManager,
                 // if the first window is the editor, the user doesn't want the extra click
-                totallyDisabled: this.core.settings.firstWindow != 'EDITOR',
+                // but eh, maybe the performance impact really isn't that bad
+                totallyDisabled: false,
+                //totallyDisabled: this.core.settings.firstWindow != 'EDITOR',
             },
         });
 
