@@ -36,6 +36,9 @@
             this.offCanvas = document.createElement('canvas');
             this.offContext = this.offCanvas.getContext('2d');
 
+            this.offCanvas2 = document.createElement('canvas');
+            this.offContext2 = this.offCanvas2.getContext('2d');
+
             window.addEventListener('resize', this.resize.bind(this));
             this.resize();
         }
@@ -58,6 +61,8 @@
             this.canvas.width = Math.ceil(this.canvas.height * ratio);
             this.offCanvas.height = this.canvas.height;
             this.offCanvas.width = this.canvas.width;
+            this.offCanvas2.height = this.canvas.height;
+            this.offCanvas2.width = this.canvas.width;
             this.trippyRadius = Math.max(this.canvas.width, this.canvas.height) / 2;
         }
 
@@ -325,28 +330,46 @@
         }
 
         drawBlur(bitmap, offset, drawWidth, drawHeight, xBlur, yBlur) {
-            this.context.globalAlpha = this.blurAlpha;
-            let dist;
-            if(xBlur) {
-                // since blur is based on 720p
-                dist = xBlur * 720;
-                if(this.blurIterations < 0) {
-                    this.context.globalAlpha = 1;
-                    this.context.drawImage(bitmap, Math.floor(offset - dist/2), 0,
-                        drawWidth + dist, drawHeight);
-                } else {
+            if(this.blurIterations < 0) {
+                // "LOW" blur quality is special - just warps the images
+                let xDist = xBlur * 720;
+                let yDist = yBlur * 720;
+
+                this.context.globalAlpha = 1;
+                this.context.drawImage(bitmap,
+                    Math.floor(offset - xDist/2), Math.floor(-yDist/2),
+                    drawWidth + xDist, drawHeight + yDist);
+            } else {
+                this.context.globalAlpha = this.blurAlpha;
+                let dist;
+                if(xBlur) {
+                    // have to use offCanvas/context2 here, because we might
+                    // have been passed the first offCanvas from the slice
+                    // effect
+                    let xContext = this.context;
+                    // do we even need the offCanvas?
+                    if(yBlur) {
+                        this.offContext2.globalAlpha = this.blurAlpha;
+                        this.offContext2.clearRect(0,0,this.canvas.width,this.canvas.height);
+                        xContext = this.offContext2;
+                    }
+
+
+                    // since blur is based on 720p
+                    dist = xBlur * 720;
                     for(let i=-1; i<=1; i+= this.blurDelta) {
-                        this.context.drawImage(bitmap, Math.floor(dist * i) + offset, 0, drawWidth, drawHeight);
+                        xContext.drawImage(bitmap, Math.floor(dist * i) + offset, 0, drawWidth, drawHeight);
+                    }
+
+                    if(yBlur) {
+                        offset = 0;
+                        bitmap = this.offCanvas2;
+                        drawWidth = this.canvas.width;
+                        drawHeight = this.canvas.height;
                     }
                 }
-            }
-            if(yBlur) {
-                dist = yBlur * 720;
-                if(this.blurIterations < 0) {
-                    this.context.globalAlpha = 1;
-                    this.context.drawImage(bitmap, offset, Math.floor(-dist/2),
-                        drawWidth, drawHeight + this.blurDistance);
-                } else {
+                if(yBlur) {
+                    dist = yBlur * 720;
                     for(let i=-1; i<=1; i+= this.blurDelta) {
                         this.context.drawImage(bitmap, offset, Math.floor(dist * i), drawWidth, drawHeight);
                     }
