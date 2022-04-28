@@ -55,6 +55,8 @@
     let buildEditorComponent;
     let loopEditorComponent;
 
+    let helpGlow = true;
+
     let statusMsg = "";
     let statusAnim = false;
 
@@ -297,7 +299,9 @@
         <HuesButton on:click={() => dispatch('copyxml')} {disabled}>Copy XML</HuesButton>
         <HuesButton on:click={() => undo()} disabled={!undoQueue || !undoQueue.length}>Undo</HuesButton>
         <HuesButton on:click={() => redo()} disabled={!redoQueue || !redoQueue.length}>Redo</HuesButton>
-        <HuesButton glow="true"><a href="https://github.com/mon/0x40-web/tree/master/docs/Editor.md" target="_blank">Help?</a></HuesButton>
+        <HuesButton glow="{helpGlow}" on:click={() => helpGlow = false}>
+            <a href="https://github.com/mon/0x40-web/tree/master/docs/Editor.md" target="_blank">Help?</a>
+        </HuesButton>
 
         {#key statusAnim}
         <span class="status-msg">{statusMsg}</span>
