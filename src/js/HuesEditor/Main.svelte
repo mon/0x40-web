@@ -295,6 +295,7 @@
     <!-- Header buttons -->
     <div class="title-buttons">
         <HuesButton on:click={() => dispatch('songnew')}>New Song</HuesButton>
+        <HuesButton on:click={() => dispatch('savezip')} {disabled}>Save ZIP</HuesButton>
         <HuesButton on:click={() => dispatch('savexml')} {disabled}>Save XML</HuesButton>
         <HuesButton on:click={() => dispatch('copyxml')} {disabled}>Copy XML</HuesButton>
         <HuesButton on:click={() => undo()} disabled={!undoQueue || !undoQueue.length}>Undo</HuesButton>

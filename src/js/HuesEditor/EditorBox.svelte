@@ -189,6 +189,7 @@
 
         // Save filename for XML export
         section.fname = file.name.replace(/\.[^/.]+$/, "");
+        section.nameWithExt = file.name;
         // the original buffer is lost to the worker, so we take it from the song
         section.sound = testSong.sound;
 
@@ -203,6 +204,7 @@
     let removeSong = () => {
         section.chart = "";
         section.fname = null;
+        section.nameWithExt = null;
         section.sound = null;
 
         dispatch('songremove');

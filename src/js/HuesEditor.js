@@ -24,6 +24,7 @@ import './ResourcePack';
 import EditorMain from './HuesEditor/Main.svelte';
 
 import xmlbuilder from 'xmlbuilder';
+import * as zip from "@zip.js/zip.js";
 
 (function(window, document) {
 "use strict";
@@ -95,6 +96,7 @@ class HuesEditor {
         this.editor.$on('loadrhythm', event => this.loadAudio('loop'));
         this.editor.$on('songremove', event => this.removeAudio());
         this.editor.$on('songnew', event => this.newSong());
+        this.editor.$on('savezip', event => this.saveZIP());
         this.editor.$on('savexml', event => this.saveXML());
         this.editor.$on('copyxml', event => this.copyXML());
     }
@@ -142,11 +144,13 @@ class HuesEditor {
                     chart:null,
                     sound:null,
                     fname:null,
+                    nameWithExt:null,
                 },
                 build: {
                     chart:null,
                     sound:null,
                     fname:null,
+                    nameWithExt:null,
                 },
                 source:"",
                 enabled:true,
@@ -216,16 +220,11 @@ class HuesEditor {
         return root.end({ pretty: true});
     }
 
-    saveXML() {
-        let result = this.generateXML(xmlbuilder.create('songs'));
-        if(!result) {
-            return;
-        }
-
+    downloadURI(uri, filename) {
         // http://stackoverflow.com/a/18197341
         let element = document.createElement('a');
-        element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(result));
-        element.setAttribute('download', "0x40Hues - " + this.song.loop.fname + ".xml");
+        element.setAttribute('href', uri);
+        element.setAttribute('download', filename);
 
         element.style.display = 'none';
         document.body.appendChild(element);
@@ -233,6 +232,47 @@ class HuesEditor {
         element.click();
 
         document.body.removeChild(element);
+    }
+
+    async addSectionToZip(zipWriter, section) {
+        if(!section.sound) {
+            return;
+        }
+        const u8 = new Uint8Array(section.sound);
+        await zipWriter.add(section.nameWithExt, new zip.Uint8ArrayReader(u8));
+    }
+
+    async saveZIP() {
+        let result = this.generateXML(xmlbuilder.create('songs'));
+        if(!result) {
+            return;
+        }
+
+        const zipWriter = new zip.ZipWriter(new zip.Data64URIWriter("application/zip"));
+        await zipWriter.add("songs.xml", new zip.TextReader(result));
+        await this.addSectionToZip(zipWriter, this.song.loop);
+        await this.addSectionToZip(zipWriter, this.song.build);
+
+        const dataURI = await zipWriter.close();
+
+        this.downloadURI(
+            dataURI,
+            "0x40Hues - " + this.song.loop.fname + ".zip"
+        );
+
+        window.onbeforeunload = null;
+    }
+
+    saveXML() {
+        let result = this.generateXML(xmlbuilder.create('songs'));
+        if(!result) {
+            return;
+        }
+
+        this.downloadURI(
+            'data:text/plain;charset=utf-8,' + encodeURIComponent(result),
+            "0x40Hues - " + this.song.loop.fname + ".xml"
+        );
 
         window.onbeforeunload = null;
     }

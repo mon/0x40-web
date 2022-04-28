@@ -196,11 +196,13 @@ class Respack {
                     chart:null,
                     sound:null,
                     fname:name,
+                    nameWithExt:file.name,
                 },
                 build: {
                     chart:null,
                     sound:null,
                     fname:null,
+                    nameWithExt:null,
                 },
                 source:null,
                 enabled:true,
@@ -396,6 +398,7 @@ class Respack {
                     if(build) {
                         // migrate this from loop to build
                         song.build.sound = build.loop.sound;
+                        song.build.nameWithExt = build.loop.nameWithExt;
                         song.buildupPlayed = false;
                         // get rid of the junk
                         this.songs.splice(this.songs.indexOf(build), 1);

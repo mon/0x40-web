@@ -526,11 +526,13 @@ class HuesCore {
                     chart:null,
                     sound:null,
                     fname:null,
+                    nameWithExt:null,
                 },
                 build: {
                     chart:null,
                     sound:null,
                     fname:null,
+                    nameWithExt:null,
                 },
                 source:null,
                 enabled:true,
