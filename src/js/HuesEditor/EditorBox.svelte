@@ -202,7 +202,7 @@
     }
 
     let removeSong = () => {
-        section.chart = "";
+        section.chart = null;
         section.fname = null;
         section.nameWithExt = null;
         section.sound = null;
