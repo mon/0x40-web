@@ -152,9 +152,16 @@
     }
 
     let banEnter = event => {
+        // block "return" - keyCode is more reliable here I can't remember the deets
         if(event.keyCode == 13) {
             event.preventDefault();
             event.stopPropagation();
+        }
+    };
+
+    let handleArrows = event => {
+        if(['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(event.key)) {
+            updateCaret();
         }
     };
 
@@ -316,6 +323,7 @@ information.
             spellcheck="false"
             style="width:{newLineAtBeat}ch;"
             on:keydown={banEnter}
+            on:keyup={handleArrows}
             on:paste={handlePaste}
             on:input={saveLen}
             bind:textContent={section.chart}
