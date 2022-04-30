@@ -61,6 +61,15 @@
         }
     }
 
+    // we could fake the keyboard input with js... or just do this since we know
+    // how we handle inputs
+    export const fakeInput = async str => {
+        saveLen(); // beforeinput
+        section.chart = section.chart.slice(0, caret) + str + section.chart.slice(caret) // modify chart
+        setCaret(caret + str.length); // handleInput expects the editor to have focus
+        await handleInput();
+    };
+
     let saveLen = () => {
         oldLen = section?.chart.length;
         dispatch('beforeinput');
@@ -313,6 +322,7 @@ information.
             on:input={handleInput}
             on:contextmenu={seek}
             on:click={updateCaret}
+            on:focus={() => dispatch('focus')}
         />
     {/if}
 </div>

@@ -6,6 +6,7 @@
     // some situations require an opaque button
     export let opaque = false;
     export let title = "";
+    export let nouppercase = false;
 </script>
 
 <button
@@ -14,6 +15,7 @@
     class:loaded
     class:glow
     class:opaque
+    class:nouppercase
     class="{icon ? 'hues-icon' : ''}"
     {title}
 >
@@ -34,6 +36,10 @@ button {
     text-transform: uppercase;
     /* Don't want double click to select */
     user-select: none;
+}
+
+button.nouppercase {
+    text-transform: none;
 }
 
 button:hover {

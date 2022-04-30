@@ -44,6 +44,38 @@
 
     const MAX_UNDO = 200;
 
+    // very slightly different to HuesInfo - does not combine shutter etc into a
+    // single line
+    const beatGlossary = [
+        ["x", "Vertical blur"],
+        ["o", "Horizontal blur"],
+        ["-", "Change image"],
+        ["+", "Blackout"],
+        ["¤", "Whiteout"],
+        ["|", "Short blackout"],
+        ["!", "Short whiteout"],
+        [":", "Color only"],
+        ["*", "Image only"],
+        ["X", "Vertical blur only"],
+        ["O", "Horizontal blur only"],
+        [")", "Trippy cirle in"],
+        ["(", "Trippy circle out"],
+        ["~", "Fade color"],
+        ["=", "Fade and change image"],
+        ["i", "Invert all colours"],
+        ["I", "Invert & change image"],
+        ["s", "Horizontal slice"],
+        ["S", "Horizontal slice and change image"],
+        ["v", "Vertical slice"],
+        ["V", "Vertical slice and change image"],
+        ["#", "Double slice"],
+        ["@", "Double slice and change image"],
+        ["←", "Shutter left"],
+        ["↓", "Shutter down"],
+        ["↑", "Shutter up"],
+        ["→", "Shutter right"],
+    ];
+
     let editor;
     let editArea;
     let buildupEditBox;
@@ -54,6 +86,7 @@
 
     let buildEditorComponent;
     let loopEditorComponent;
+    let editorFocus = null;
 
     let helpGlow = true;
 
@@ -64,6 +97,7 @@
     $: loopIndex = beatIndex >= 0 ? beatIndex : null;
     $: loopLen = loop?.chart ? loop.chart.length : NaN;
     $: hasBoth = !!build?.chart && !!loop?.chart;
+    $: editorFocussed = editorFocus !== null;
 
     let newLineAtBeat = 32;
     let playbackRate = 1.0;
@@ -219,6 +253,16 @@
         resyncEditorLengths(loopEditorComponent);
     }
 
+    // originally onfocusout was also handled to disable the input buttons when
+    // focus was lost, but
+    // a) this also happens on browser defocus, you might have another window
+    //    open and genuinely be wanting input + focus at the same time
+    // b) the defocus event fires before the buttons get disabled, and it's
+    //    kinda difficult to fix that timing
+    function editorOnfocus(event) {
+        editorFocus = this;
+    }
+
     const changeRate = change => {
         let rate = soundManager.playbackRate;
         rate += change;
@@ -362,6 +406,7 @@
             on:halve={halveClicked}
             on:beforeinput={editorBeforeInput}
             on:afterinput={editorAfterInput}
+            on:focus={editorOnfocus}
             on:songremove
             on:songnew
             beatIndex={buildIndex}
@@ -390,12 +435,27 @@
             on:halve={halveClicked}
             on:beforeinput={editorBeforeInput}
             on:afterinput={editorAfterInput}
+            on:focus={editorOnfocus}
             on:songremove
             on:songnew
             beatIndex={loopIndex}
             {newLineAtBeat}
             {soundManager}
         />
+
+        <!-- Beat inserter buttons -->
+        <div class="beats">
+            {#each beatGlossary as beat}
+                <HuesButton
+                    title="{beat[1]}"
+                    on:click={() => {if(editorFocus) editorFocus.fakeInput(beat[0])}}
+                    nouppercase
+                    disabled={!editorFocussed}
+                >
+                    {beat[0]}
+                </HuesButton>
+            {/each}
+        </div>
 
         <!-- Footer buttons -->
         <div class="controls">
@@ -536,12 +596,18 @@ hr {
     color: #000;
 }
 
+.beats {
+    grid-column: editors;
+    display: flex;
+    margin: 3px 10px 0;
+}
+
 .controls {
     grid-column: editors;
     display: grid;
     grid-template-columns: repeat(3, max-content) auto repeat(2, max-content);
     align-items: center;
-    margin: 10px;
+    margin: 3px 10px;
 }
 
 /* hide the spin box on number input */
