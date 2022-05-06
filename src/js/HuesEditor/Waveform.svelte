@@ -170,7 +170,22 @@
             drawWave();
             rid = requestAnimationFrame(update);
         });
-        return () => cancelAnimationFrame(rid);
+
+        // resize doesn't work when the window is hidden, so capture when
+        // visibility changes as well
+        let observer = new IntersectionObserver((entries, observer) => {
+            for(let entry of entries) {
+                if(entry.intersectionRatio > 0) {
+                    resize();
+                }
+            };
+        });
+        observer.observe(canvas);
+
+        return () => {
+            cancelAnimationFrame(rid);
+            observer.disconnect();
+        }
     });
 </script>
 
