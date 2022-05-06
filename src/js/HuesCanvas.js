@@ -49,6 +49,15 @@
 
         setBlurQuality(quality) {
             this.blurIterations = {"low" : -1, "medium" : 11, "high" : 19, "extreme" : 35}[quality];
+            // you might be thinking "hey aren't you approximating a gaussian
+            // blur, shouldn't this be not constant?" and you would be right,
+            // but HTML canvas does not support additive alpha operations, only
+            // multiplicative. As a result, once the image merges fully
+            // together, you get an opacity that isn't quite fully there. It'd
+            // be better to invest effort into a GPU renderer that *can* support
+            // additive alpha, than work out a clean algorithm to properly fix
+            // this (because it won't work properly on greyscale anyway, I
+            // think...)
             this.blurDelta = 1 / (this.blurIterations/2);
             this.blurAlpha = 1 / (this.blurIterations/2);
         }
