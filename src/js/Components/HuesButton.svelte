@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
     export let icon = false;
     export let disabled = false;
     export let loaded = false;

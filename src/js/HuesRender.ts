@@ -1,43 +1,75 @@
-/* Copyright (c) 2015 William Toohey <will@mon.im>
- * Portions Copyright (c) 2015 Calvin Walton <calvin.walton@kepstin.ca>
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
- * THE SOFTWARE.
- */
-
-import './HuesCanvas';
+import HuesCanvas from "./HuesCanvas";
+import type { HuesColour } from "./HuesCore";
+import type { HuesCore } from "./HuesCore";
+import type { SettingsData } from "./HuesSettings";
+import type { HuesImage } from "./ResourcePack";
+import type SoundManager from "./SoundManager";
 // import './HuesPixi'; // new WebGL renderer, maybe later
 
-(function(window, document) {
-"use strict";
+type SliceParams = {
+    count: number; // 1 for no slice, >1 for slices
+    percent: number; // ignored if count == 1,
+    // randomised "percent of image to create subsequent slice from"
+    segments: number[];
+    // how many segments (with some variance due to randomness) to make
+    avgSegments: number;
+    // randomised positive/negative offsets, as percent of width, multiplied by percent
+    distances: number[];
+}
+
+export type RenderParams = {
+    colour: number; // base colour
+    lastColour: number; // previous colour
+    blendMode:  GlobalCompositeOperation;
+
+    overlayColour: number; // blackout/whiteout, hex string
+    overlayPercent: number;
+
+    invert: boolean;
+
+    bitmap?: HTMLImageElement;
+    bitmapAlign?: HuesImage["align"];
+
+    // same as bitmap, just the previous image
+    lastBitmap?: HTMLImageElement;
+    lastBitmapAlign?: HuesImage["align"];
+
+    shutter: number;
+    shutterDir?: "←" | "↓" | "↑" | "→";
+
+    xBlur: number;
+    yBlur: number;
+
+    // percent, out starts in center and moves out, in is the reverse
+    outTrippy: number;
+    inTrippy: number;
+
+    slices?: { // undefined for no slices at all, or...
+        x: SliceParams;
+        y: SliceParams;
+    }
+}
 
 // convenience container to calculate animation times and get the current frame
 class RenderImage {
-    constructor(soundManager, core) {
+    core: HuesCore;
+    audio: SoundManager;
+
+    image?: HuesImage;
+
+    animFrame: number;
+    animTimeout: number;
+    lastBeat: number;
+
+    constructor(soundManager: SoundManager, core: HuesCore) {
         this.core = core;
         this.audio = soundManager;
 
         core.addEventListener("beat", this.beat.bind(this));
         core.addEventListener("songstarted", this.resetAnimation.bind(this));
 
-        this.image = null;
-        this.animFrame = null;
-        this.animTimeout = null;
+        this.animFrame = 0;
+        this.animTimeout = 0;
         this.lastBeat = 0;
     }
 
@@ -49,19 +81,19 @@ class RenderImage {
         this.lastBeat = this.audio.currentTime;
     }
 
-    sameAs(otherImage) {
+    sameAs(otherImage: HuesImage) {
         return this.image == otherImage;
     }
 
-    setImage(image) {
+    setImage(image: HuesImage) {
         this.image = image;
         // Null images don't need anything interesting done to them
-        if(!image || (!image.bitmap && !image.bitmaps)) {
+        if(!image ||!image.bitmaps.length) {
             return;
         }
+        this.animFrame = 0;
         if(image.animated) {
             let currentTime = this.audio.currentTime;
-            this.animFrame = 0;
             this.animTimeout = currentTime + image.frameDurations[0]/1000;
             if(image.beatsPerAnim && this.core.currentSong && this.core.currentSong.charsPerBeat) {
                 this.syncAnim(currentTime);
@@ -70,16 +102,15 @@ class RenderImage {
     }
 
     getBitmap() {
-        if(this.image && (this.image.bitmap || this.image.bitmaps)) {
-            return this.image.animated ?
-                this.image.bitmaps[this.animFrame] : this.image.bitmap;
+        if(this.image && this.image.bitmaps.length) {
+            return this.image.bitmaps[this.animFrame];
         } else {
-            return null;
+            return undefined;
         }
     }
 
     getBitmapAlign() {
-        return this.image ? this.image.align : null;
+        return this.image ? this.image.align : undefined;
     }
 
     onRedraw() {
@@ -110,9 +141,9 @@ class RenderImage {
         return needsRedraw;
     }
 
-    syncAnim(currentTime) {
-        let song = this.core.currentSong;
-        if(!song) { // fallback to default
+    syncAnim(currentTime: number) {
+        const song = this.core.currentSong;
+        if(!song || !this.image) { // fallback to default
            return;
         }
         let index = this.core.beatIndex;
@@ -122,7 +153,7 @@ class RenderImage {
             index += Math.min(interp, 1);
         }
         // This loops A-OK because the core's beatIndex never rolls over for a new loop
-        let beatLoc = (index / song.charsPerBeat) % this.image.beatsPerAnim;
+        let beatLoc = (index / song.charsPerBeat!) % this.image.beatsPerAnim;
 
         let aLen = this.image.bitmaps.length;
         this.animFrame = Math.floor(aLen * (beatLoc / this.image.beatsPerAnim));
@@ -136,8 +167,64 @@ class RenderImage {
 
 /*  Takes root element to attach to, and an audio context element for
     getting the current time with reasonable accuracy */
-class HuesRender {
-    constructor(root, soundManager, core) {
+export default class HuesRender {
+    render: HuesCanvas;
+    audio: SoundManager;
+    core: HuesCore;
+
+    needsRedraw: boolean;
+    colour: number;
+    lastColour: number;
+    image: RenderImage;
+    lastImage: RenderImage;
+    smartAlign: boolean;
+
+    blurDecay!: number;
+    blurAmount!: number;
+    blurStart: [number, number]; // x, y
+    blurDistance: [number, number]; // x, y
+
+    sliceDistance: number;
+    sliceStart: number;
+    // marked as never-null since they get set with sliceStart
+    sliceRampUp!: number;
+    sliceRampDown!: number;
+    sliceTransitionTime!: number;
+    slices: {
+        x: SliceParams;
+        y: SliceParams;
+    };
+
+    shutterEnd: number;
+    shutterDuration: number;
+    shutterDir: RenderParams['shutterDir'];
+    shutterProgress: number;
+
+    trippyStart: [number, number]; // x, y
+    trippyRadii: [number, number]; // x, y
+    trippyOn: boolean;
+
+    blackout: boolean;
+    blackoutColour: number; // for the whiteout case we must store this
+    blackoutStart: number;
+    blackoutTimeout?: number;
+    bOpacity: number;
+    // frame drop mitigation on many fast consecutive short blackouts
+    lastBlackout: number;
+    currentBlackout: number;
+    lastFrameBlack: boolean;
+
+    invert: boolean;
+
+    colourFade: boolean;
+    colourFadeStart: number;
+    colourFadeLength: number;
+    oldColour: number;
+    newColour: number;
+
+    blendMode: GlobalCompositeOperation;
+
+    constructor(root: HTMLElement, soundManager: SoundManager, core: HuesCore) {
         this.render = new HuesCanvas(root, core);
         this.audio = soundManager;
         soundManager.addEventListener("seek", this.resetEffects.bind(this));
@@ -156,12 +243,9 @@ class HuesRender {
         this.lastImage = new RenderImage(soundManager, core);
         this.smartAlign = true; // avoid string comparisons every frame
 
-        // set later
-        this.blurDecay = null;
-        this.blurAmount = null;
         // dynamic
-        this.blurStart = [0, 0];    // x, y
-        this.blurDistance = [0, 0]; // x, y
+        this.blurStart = [0, 0];
+        this.blurDistance = [0, 0];
 
         this.sliceDistance = 0;
         this.sliceStart = 0;
@@ -172,7 +256,6 @@ class HuesRender {
 
         this.shutterEnd = 0;
         this.shutterDuration = 0;
-        this.shutterDir = null;
         this.shutterProgress = 0;
 
         // trippy mode
@@ -182,9 +265,9 @@ class HuesRender {
         this.trippyOn = false;
 
         this.blackout = false;
-        this.blackoutColour = 0x000000; // for the whiteout case we must store this
-        this.blackoutTimeout = null;
+        this.blackoutColour = 0x000000;
         this.bOpacity = 0;
+        this.blackoutStart = 0;
         // frame drop mitigation on many fast consecutive short blackouts
         this.lastBlackout = 0;
         this.currentBlackout = -1;
@@ -207,7 +290,7 @@ class HuesRender {
         this.resize();
     }
 
-    makeSliceObj(avgSegments) {
+    makeSliceObj(avgSegments: number): SliceParams {
         return {
             count       : 0,
             percent     : 0,
@@ -217,7 +300,7 @@ class HuesRender {
         };
     }
 
-    setInvert(invert) {
+    setInvert(invert: boolean) {
         this.invert = invert;
         this.needsRedraw = true;
     }
@@ -257,7 +340,7 @@ class HuesRender {
             invert: this.invert,
 
             bitmap: this.image.getBitmap(),
-            bitmapAlign: this.smartAlign ? this.image.getBitmapAlign() : null,
+            bitmapAlign: this.smartAlign ? this.image.getBitmapAlign() : undefined,
 
             lastBitmap: lastImage.getBitmap(),
             lastBitmapAlign: lastImage.getBitmapAlign(),
@@ -271,7 +354,7 @@ class HuesRender {
             outTrippy: this.trippyRadii[1],
             inTrippy: this.trippyRadii[0],
 
-            slices: this.sliceStart ? this.slices : null,
+            slices: this.sliceStart ? this.slices : undefined,
         };
 
         this.render.draw(params);
@@ -387,7 +470,7 @@ class HuesRender {
         }
     }
 
-    setImage(image) {
+    setImage(image: HuesImage) {
         this.needsRedraw = true;
 
         let swap = this.lastImage;
@@ -397,7 +480,7 @@ class HuesRender {
         this.image.setImage(image);
     }
 
-    setColour(colour, isFade) {
+    setColour(colour: HuesColour, isFade: boolean) {
         if(colour.c == this.colour) {
             return;
         }
@@ -425,7 +508,7 @@ class HuesRender {
         this.blackout = true;
         this.needsRedraw = true;
         if(this.core.settings.blackoutUI == "on") {
-            this.core.userInterface.hide();
+            this.core.userInterface?.hide();
         }
     }
 
@@ -434,11 +517,11 @@ class HuesRender {
         this.blackoutTimeout = 0;
         this.needsRedraw = true;
         if(this.core.settings.blackoutUI == "on") {
-            this.core.userInterface.show();
+            this.core.userInterface?.show();
         }
     }
 
-    doShortBlackout(beatTime, whiteout = false) {
+    doShortBlackout(beatTime: number, whiteout = false) {
         // looks better if we go right to black
         this.doInstantBlackout(whiteout);
         this.blackoutTimeout = this.audio.currentTime + beatTime / 1.7;
@@ -451,7 +534,7 @@ class HuesRender {
         this.blackoutStart = -Math.pow(2, 32);
     }
 
-    doColourFade(length) {
+    doColourFade(length: number) {
         this.colourFade = true;
         this.colourFadeLength = length;
         this.colourFadeStart = this.audio.currentTime;
@@ -464,7 +547,7 @@ class HuesRender {
         this.colourFadeLength = 0;
     }
 
-    mixColours(percent) {
+    mixColours(percent: number) {
         percent = Math.min(1, percent);
         let oldR = this.oldColour >> 16 & 0xFF;
         let oldG = this.oldColour >> 8  & 0xFF;
@@ -484,7 +567,7 @@ class HuesRender {
         this.core.blurUpdated(x, y);
     }
 
-    doBlur(axis) {
+    doBlur(axis: 0 | 1) {
         this.blurStart[axis] = this.audio.currentTime;
         if(this.trippyOn)
             this.trippyStart[axis] = this.blurStart[axis];
@@ -499,7 +582,7 @@ class HuesRender {
         this.doBlur(1);
     }
 
-    doTrippy(axis) {
+    doTrippy(axis: 0 | 1) {
         let saveTrippy = this.trippyOn;
         // force trippy
         this.trippyOn = true;
@@ -515,7 +598,7 @@ class HuesRender {
         this.doTrippy(1);
     }
 
-    doShutter(beat, beatLength, beatCount) {
+    doShutter(beat: RenderParams['shutterDir'], beatLength: number, beatCount: number) {
         let freeTime = beatLength * beatCount * 0.8;
         // if the beats are super close together, we have to crush the speed down
         // if they're super far apart, keep the effect fast and crisp
@@ -527,7 +610,7 @@ class HuesRender {
         this.needsRedraw = true;
     }
 
-    doSlice(beatLength, beatCount, sliceX, sliceY) {
+    doSlice(beatLength: number, beatCount: number, sliceX: boolean, sliceY: boolean) {
         let transitionTime = Math.min(0.06, beatLength);
 
         this.sliceStart = this.audio.currentTime;
@@ -547,7 +630,7 @@ class HuesRender {
         this.needsRedraw = true;
     }
 
-    generateSliceSegments(direction) {
+    generateSliceSegments(direction: "x" | "y") {
         let even = 1.0 / this.slices[direction].avgSegments;
         let spread = even / 2;
         let total = 0;
@@ -569,27 +652,23 @@ class HuesRender {
         this.slices[direction].count = i + 1;
     }
 
-    resetSliceSegments(direction) {
+    resetSliceSegments(direction: "x" | "y") {
         this.slices[direction].count = 1;
         this.slices[direction].segments[0] = 1;
         this.slices[direction].distances[0] = 0;
     }
 
-    setBlurDecay(decay) {
+    setBlurDecay(decay: SettingsData['blurDecay']) {
         this.blurDecay = {"slow" : 7.8, "medium" : 14.1, "fast" : 20.8, "faster!" : 28.7}[decay];
     }
 
-    setBlurAmount(amount) {
+    setBlurAmount(amount: SettingsData['blurAmount']) {
         // flash is pixel counts based off 1280x720 res
         // x is more striking so ignore aspect ratio disparity on y
         this.blurAmount = {"low" : 48/1280, "medium" : 96/1280, "high" : 384/1280}[amount];
     }
 
-    setSmartAlign(align) {
+    setSmartAlign(align: SettingsData['smartAlign']) {
         this.smartAlign = align == "on";
     }
 }
-
-window.HuesRender = HuesRender;
-
-})(window, document);

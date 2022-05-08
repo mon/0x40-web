@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
     import HuesButton from '../Components/HuesButton.svelte';
 
     import { createEventDispatcher } from 'svelte';

@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
     import uniqueFormId from '../UniqueID';
 
     export let label = "";

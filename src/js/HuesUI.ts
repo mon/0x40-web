@@ -1,24 +1,3 @@
-/* Copyright (c) 2015 William Toohey <will@mon.im>
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
- * THE SOFTWARE.
- */
-
 // main, modern and hlwn must be kept in that order
 import '../css/hues-main.css';
 import '../css/huesUI-modern.css';
@@ -27,18 +6,58 @@ import '../css/huesUI-hlwn.css';
 import '../css/huesUI-retro.css';
 import '../css/huesUI-weed.css';
 import '../css/huesUI-xmas.css';
-
- (function(window, document) {
-"use strict";
+import type { HuesColour, HuesCore } from './HuesCore';
+import type { HuesImage, HuesSong } from './ResourcePack';
 
 /*
     Base UI Class for Hues display. Parent is an element
     to put all your own elements under, but make a div
     underneath so it can be entirely hidden.
 */
-class HuesUI {
+export class HuesUI {
+    root!: HTMLDivElement;
+    core?: HuesCore;
 
-    constructor(parent, name) {
+    imageName!: HTMLDivElement;
+    imageLink!: HTMLAnchorElement;
+
+    songName!: HTMLDivElement;
+    songLink!: HTMLAnchorElement;
+
+    hueName!: HTMLDivElement;
+
+    imagePrev!: HTMLDivElement;
+    imageNext!: HTMLDivElement;
+    songPrev!: HTMLDivElement;
+    songNext!: HTMLDivElement;
+
+    beatCount!: HTMLDivElement;
+    timer!: HTMLDivElement;
+    xBlur!: HTMLDivElement;
+    yBlur!: HTMLDivElement;
+
+    settingsToggle!: HTMLDivElement;
+    hideToggle!: HTMLDivElement;
+
+    // Put this near the links to song/image lists/ Bottom right alignment
+    listContainer!: HTMLDivElement;
+    // Must be dynamic width, 64 pixels high. Will be filled with visualiser
+    visualiserContainer!: HTMLDivElement;
+
+    songList!: HTMLDivElement;
+    imageList!: HTMLDivElement;
+
+    resizeHandler!: () => void;
+
+    // some UIs have a 3 stage hide, so not bool
+    hidden!: number | boolean;
+
+    // To deregister on UI hide we need to keep track of these
+    // Add using this.addCoreCallback
+    // Actually only use core's callback types but cbf adding the checks
+    callbacks!: {name: string; func: (...args: any) => void}[];
+
+    constructor(parent: HTMLElement, name?: string) {
         if(!parent) {
             return;
         }
@@ -47,45 +66,14 @@ class HuesUI {
         parent.appendChild(this.root);
         this.root.style.visibility = "hidden";
 
-        this.core = null;
-
-        this.imageName = null;
-        this.imageLink = null;
-
-        this.songName = null;
-        this.songLink = null;
-
-        this.hueName = null;
-
-        this.imagePrev = null;
-        this.imageNext = null;
-        this.songPrev = null;
-        this.songNext = null;
-
-        this.beatCount = null;
-        this.timer = null;
-        this.xBlur = null;
-        this.yBlur = null;
-
-        this.settingsToggle = null;
-        this.hideToggle = null;
-
-        // To deregister on UI hide we need to keep track of these
-        // Each callback is { name : "callbackname", func : function }
-        // Add using this.addCoreCallback
         this.callbacks = [];
-
-        // Put this near the links to song/image lists/ Bottom right alignment
-        this.listContainer = null;
-        // Must be dynamic width, 64 pixels high. Will be filled with visualiser
-        this.visualiserContainer = null;
 
         this.hidden = false;
 
         this.initUI();
     }
 
-    addCoreCallback(name, func) {
+    addCoreCallback(name: string, func: (...args: any) => void) {
         this.callbacks.push({name : name, func : func});
     }
 
@@ -111,28 +99,28 @@ class HuesUI {
         // Prev/next controls
         let imagePrev = document.createElement("div");
         imagePrev.textContent = "<";
-        imagePrev.onclick = () => {this.core.previousImage();};
+        imagePrev.onclick = () => {this.core?.previousImage();};
         this.imagePrev = imagePrev;
         let imageNext = document.createElement("div");
         imageNext.textContent = ">";
-        imageNext.onclick = () =>{this.core.nextImage();};
+        imageNext.onclick = () =>{this.core?.nextImage();};
         this.imageNext = imageNext;
         let songPrev = document.createElement("div");
         songPrev.textContent = "<";
         this.songPrev = songPrev;
-        songPrev.onclick = () =>{this.core.previousSong();};
+        songPrev.onclick = () =>{this.core?.previousSong();};
         let songNext = document.createElement("div");
         songNext.textContent = ">";
-        songNext.onclick = () =>{this.core.nextSong();};
+        songNext.onclick = () =>{this.core?.nextSong();};
         this.songNext = songNext;
 
         let songList = document.createElement("div");
         songList.textContent = "SONGS";
-        songList.onclick = () =>{this.core.toggleSongList();};
+        songList.onclick = () =>{this.core?.toggleSongList();};
         this.songList = songList;
         let imageList = document.createElement("div");
         imageList.textContent = "IMAGES";
-        imageList.onclick = () =>{this.core.toggleImageList();};
+        imageList.onclick = () =>{this.core?.toggleImageList();};
         this.imageList = imageList;
 
         // Beat timer, x and y blur, millis timer
@@ -153,7 +141,7 @@ class HuesUI {
         this.settingsToggle.innerHTML = '&#xe900;'; // COG
         this.settingsToggle.className = 'hues-icon';
         this.settingsToggle.onclick = () => {
-            this.core.window.toggle();
+            this.core?.window.toggle();
         };
 
         this.hideToggle = document.createElement("div");
@@ -174,7 +162,7 @@ class HuesUI {
         this.resizeHandler = this.resize.bind(this);
     }
 
-    connectCore(core) {
+    connectCore(core: HuesCore) {
         this.core = core;
         this.root.style.visibility = "visible";
         if(core.resourceManager.hasUI) {
@@ -183,7 +171,7 @@ class HuesUI {
         this.visualiserContainer.appendChild(this.core.visualiser);
 
         this.callbacks.forEach(function(callback) {
-            core.addEventListener(callback.name, callback.func);
+            core.addEventListener(<any>callback.name, callback.func);
         });
         window.addEventListener('resize', this.resizeHandler);
         this.resizeHandler();
@@ -191,9 +179,9 @@ class HuesUI {
 
     disconnect() {
         this.callbacks.forEach(callback => {
-            this.core.removeEventListener(callback.name, callback.func);
+            this.core!.removeEventListener(<any>callback.name, callback.func);
         });
-        this.core = null;
+        this.core = undefined;
         this.root.style.visibility = "hidden";
         while (this.listContainer.firstElementChild) {
             this.listContainer.removeChild(this.listContainer.firstElementChild);
@@ -224,9 +212,9 @@ class HuesUI {
     }
 
     resize() {}
-    updateVolume(vol) {}
+    updateVolume(vol: number) {}
 
-    newSong(song) {
+    newSong(song: HuesSong) {
         if(!song) {
             return;
         }
@@ -235,7 +223,7 @@ class HuesUI {
         this.songLink.href = song.source;
     }
 
-    newImage(image) {
+    newImage(image: HuesImage) {
         if(!image) {
             return;
         }
@@ -246,23 +234,23 @@ class HuesUI {
         this.imageLink.href = image.source ? image.source : "";
     }
 
-    newColour(colour) {
+    newColour(colour: HuesColour) {
         this.hueName.textContent = colour.n.toUpperCase();
     }
 
-    blurUpdated(x, y) {
+    blurUpdated(x: number, y: number) {
         x = Math.floor(x * 0xFF);
         y = Math.floor(y * 0xFF);
         this.xBlur.textContent = "X=" + this.intToHex(x, 2);
         this.yBlur.textContent = "Y=" + this.intToHex(y, 2);
     }
 
-    updateTime(time) {
+    updateTime(time: number) {
         time = Math.floor(time * 1000);
         this.timer.textContent = "T=" + this.intToHex(time, 5);
     }
 
-    intToHex(num, pad) {
+    intToHex(num: number, pad: number) {
         let str = Math.abs(num).toString(16);
         while (str.length < pad)
             str = "0" + str;
@@ -270,7 +258,7 @@ class HuesUI {
         return prefix + "0x" + str;
     }
 
-    invert(invert) {
+    invert(invert: boolean) {
         if (invert) {
             this.root.classList.add("inverted");
         } else {
@@ -283,8 +271,20 @@ class HuesUI {
  Individual UIs ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
 
-class RetroUI extends HuesUI {
-    constructor(parent, name) {
+export class RetroUI extends HuesUI {
+    container!: HTMLDivElement;
+    mode!: HTMLDivElement;
+    colourIndex!: HTMLDivElement;
+    version!: HTMLDivElement;
+    beatBar!: HTMLDivElement;
+    controls!: HTMLDivElement;
+    imageModeManual!: HTMLDivElement;
+    imageModeAuto!: HTMLDivElement;
+    subControls!: HTMLDivElement;
+    hideRestore!: HTMLDivElement;
+
+
+    constructor(parent: HTMLElement, name?: string) {
         super(parent, name ? name : "RetroUI");
     }
 
@@ -324,13 +324,13 @@ class RetroUI extends HuesUI {
         this.imageModeManual = document.createElement("div");
         this.imageModeManual.textContent = "NORMAL";
         this.imageModeManual.onclick = () => {
-            this.core.setIsFullAuto(false);
+            this.core?.setIsFullAuto(false);
         };
         this.imageModeManual.className = "hues-r-manualmode hues-r-button";
         this.imageModeAuto = document.createElement("div");
         this.imageModeAuto.textContent = "FULL AUTO";
         this.imageModeAuto.onclick = () => {
-            this.core.setIsFullAuto(true);
+            this.core?.setIsFullAuto(true);
         };
         this.imageModeAuto.className = "hues-r-automode hues-r-button";
         imageMode.appendChild(this.imageModeManual);
@@ -394,17 +394,17 @@ class RetroUI extends HuesUI {
         }
     }
 
-    connectCore(core) {
+    connectCore(core: HuesCore) {
         super.connectCore(core);
 
         this.version.textContent = "V=$" + core.versionHex;
     }
 
-    newMode(isAuto) {
+    newMode(isAuto: boolean) {
         this.mode.textContent = "M=" + (isAuto ? "FULL AUTO" : "NORMAL");
     }
 
-    newImage(image) {
+    newImage(image: HuesImage) {
         if(!image) {
             return;
         }
@@ -413,26 +413,26 @@ class RetroUI extends HuesUI {
         this.imageLink.href = image.source;
     }
 
-    newColour(colour) {
+    newColour(colour: HuesColour) {
         super.newColour(colour);
 
-        this.colourIndex.textContent = "C=" + this.intToHex(this.core.colourIndex, 2);
+        this.colourIndex.textContent = "C=" + this.intToHex(this.core!.colourIndex, 2);
     }
 
-    beat(beats, index) {
+    beat(beats: string, index: number) {
         let rest = beats.slice(1);
         this.beatBar.textContent = ">>" + rest;
         this.beatCount.textContent = "B=" + this.intToHex(index, 4);
     }
 
     resize() {
-        this.core.visualiser.width = this.visualiserContainer.offsetWidth;
-        this.core.resizeVisualiser();
+        this.core!.visualiser.width = this.visualiserContainer.offsetWidth;
+        this.core!.resizeVisualiser();
     }
 }
 
-class MinimalUI extends RetroUI {
-    constructor(parent, name) {
+export class MinimalUI extends RetroUI {
+    constructor(parent: HTMLElement, name?: string) {
         super(parent, name ? name : "MinimalUI");
     }
 
@@ -447,8 +447,13 @@ class MinimalUI extends RetroUI {
     }
 }
 
-class WeedUI extends RetroUI {
-    constructor(parent, name) {
+export class WeedUI extends RetroUI {
+    xVariance: number;
+    yVariance: number;
+    beatLeft!: HTMLDivElement;
+    beatRight!: HTMLDivElement;
+
+    constructor(parent: HTMLElement, name?: string) {
         super(parent, name ? name : "WeedUI");
 
         this.xVariance = 10;
@@ -485,7 +490,7 @@ class WeedUI extends RetroUI {
     }
 
     toggleHide() {
-        super.toggleHide(this);
+        super.toggleHide();
         if(this.hidden) {
             this.beatBar.classList.add("hues-ui--hidden");
         } else {
@@ -493,7 +498,7 @@ class WeedUI extends RetroUI {
         }
     }
 
-    beat(beats, index) {
+    beat(beats: string, index: number) {
         let rest = beats.slice(1);
 
         this.beatLeft.textContent = rest;
@@ -508,26 +513,50 @@ class WeedUI extends RetroUI {
             let x = this.round10(- this.xVariance / 2 + Math.random() * this.xVariance);
             let y = this.round10(30 - this.yVariance / 2 + Math.random() * this.yVariance);
             let transform = "rotate(" + rot + "deg) translate(" + x + "px, " + y + "px)";
-            beatCenter.style.MozTransform    = transform;
-            beatCenter.style.webkitTransform = transform;
-            beatCenter.style.transform       = transform;
+            beatCenter.style.transform = transform;
             beatCenter.textContent = beats[0].toUpperCase();
             this.root.appendChild(beatCenter);
             window.setTimeout(this.removeBeat.bind(this, beatCenter), 1500);
         }
     }
 
-    round10(num) {
+    round10(num: number) {
         return Math.round(num * 10) / 10;
     }
 
-    removeBeat(element) {
+    removeBeat(element: HTMLElement) {
         this.root.removeChild(element);
     }
 }
 
-class ModernUI extends HuesUI {
-    constructor(parent, name) {
+export class ModernUI extends HuesUI {
+    textSize_normal: number;
+    textSize_small: number;
+    songLink_size: number;
+    imageLink_size: number;
+
+    currentBeat: string;
+
+    controls!: HTMLDivElement;
+    leftBox!: HTMLDivElement;
+    rightBox!: HTMLDivElement;
+    songBlock!: HTMLDivElement;
+    imageBlock!: HTMLDivElement;
+    songShuffle!: HTMLDivElement;
+    imageMode!: HTMLDivElement;
+    leftInfo!: HTMLDivElement;
+    rightInfo!: HTMLDivElement;
+    beatBar!: HTMLDivElement;
+    beatLeft!: HTMLDivElement;
+    beatRight!: HTMLDivElement;
+    beatCenter!: HTMLDivElement;
+    hideRestore!: HTMLDivElement;
+    volBar!: HTMLDivElement;
+    volLabel!: HTMLDivElement;
+    infoToggle!: HTMLDivElement;
+    volInput!: HTMLInputElement;
+
+    constructor(parent: HTMLElement, name?: string) {
         super(parent, name ? name : "ModernUI");
 
         this.textSize_normal = 0;
@@ -537,7 +566,7 @@ class ModernUI extends HuesUI {
 
         this.currentBeat = ".";
 
-        this.hidden = 0; // we have a 3 stage hide
+        this.hidden = 0;
     }
 
     initUI() {
@@ -581,7 +610,7 @@ class ModernUI extends HuesUI {
         label.textContent = "VOL";
         label.className = "hues-m-vol-label";
         label.onclick = () => {
-            this.core.soundManager.toggleMute();
+            this.core?.soundManager.toggleMute();
         };
         volBar.appendChild(label);
         this.volLabel = label;
@@ -590,19 +619,19 @@ class ModernUI extends HuesUI {
         this.infoToggle.innerHTML = '?';
         this.infoToggle.className = "hues-m-question";
         this.infoToggle.onclick = () => {
-            this.core.window.selectTab("INFO");
+            this.core?.window.selectTab("INFO");
         };
         volCluster.appendChild(this.infoToggle);
 
         let input = document.createElement("input");
         input.type = "range";
-        input.min = 0;
-        input.max = 1;
-        input.step = 0.1;
+        input.min = "0";
+        input.max = "1";
+        input.step = "0.1";
         volBar.appendChild(input);
         this.volInput = input;
         input.oninput = () => {
-            this.core.soundManager.setVolume(parseFloat(input.value));
+            this.core?.soundManager.setVolume(parseFloat(input.value));
         };
 
         let rightBox = document.createElement("div");
@@ -623,7 +652,7 @@ class ModernUI extends HuesUI {
         this.songShuffle = document.createElement("div");
         this.songShuffle.innerHTML = '&#xe903;'; // SHUFFLE
         this.songShuffle.className = "hues-m-actbutton hues-icon";
-        this.songShuffle.onclick = () => {this.core.randomSong();};
+        this.songShuffle.onclick = () => {this.core?.randomSong();};
         songs.appendChild(this.songList);
         songControls.appendChild(this.songPrev);
         songControls.appendChild(this.songShuffle);
@@ -642,7 +671,7 @@ class ModernUI extends HuesUI {
         this.imageMode = document.createElement("div");
         this.imageMode.innerHTML = "&#xe901;"; // PLAY
         this.imageMode.className = "hues-m-actbutton hues-icon";
-        this.imageMode.onclick = () => {this.core.toggleFullAuto();};
+        this.imageMode.onclick = () => {this.core?.toggleFullAuto();};
         this.imagePrev.className = "hues-m-prevbutton";
         this.imageNext.className = "hues-m-nextbutton";
         images.appendChild(this.imageList);
@@ -717,11 +746,11 @@ class ModernUI extends HuesUI {
                 this.controls.classList.add("hues-ui--hidden");
                 this.hideRestore.classList.add("hues-ui--hidden");
         }
-        this.hidden = (this.hidden+1) % 3;
+        this.hidden = ((this.hidden as number)+1) % 3;
     }
 
-    updateVolume(vol) {
-        this.volInput.value = vol;
+    updateVolume(vol: number) {
+        this.volInput.value = vol.toString();
         if(vol === 0) {
             this.volLabel.textContent = "(VOL)";
         } else {
@@ -729,7 +758,7 @@ class ModernUI extends HuesUI {
         }
     }
 
-    newMode (isAuto) {
+    newMode (isAuto: boolean) {
         if(isAuto) {
             this.imageMode.innerHTML = '&#xe902;'; // PAUSE;
         } else {
@@ -737,7 +766,7 @@ class ModernUI extends HuesUI {
         }
     }
 
-    beat(beats, index) {
+    beat(beats: string, index: number) {
         this.currentBeat = beats[0];
         let rest = beats.slice(1);
 
@@ -757,7 +786,7 @@ class ModernUI extends HuesUI {
     }
 
     // get the width of a single character in the link box for a given classname
-    textWidth(className) {
+    textWidth(className: string) {
         // Could be song or image link, don't care
         let el = this.songLink;
         let oldContent = el.innerHTML;
@@ -785,12 +814,12 @@ class ModernUI extends HuesUI {
 
         this.resizeSong();
         this.resizeImage();
-        this.core.visualiser.width = this.controls.offsetWidth;
-        this.core.resizeVisualiser();
+        this.core!.visualiser.width = this.controls.offsetWidth;
+        this.core!.resizeVisualiser();
     }
 
-    resizeElement(el, parentSize) {
-        let chars = el.textContent.length;
+    resizeElement(el: HTMLElement, parentSize: number) {
+        let chars = el.textContent!.length;
         if (chars * this.textSize_normal < parentSize) {
             el.className = "";
         } else if(chars * this.textSize_small < parentSize) {
@@ -808,7 +837,7 @@ class ModernUI extends HuesUI {
         this.resizeElement(this.imageLink, this.imageLink_size);
     }
 
-    newSong(song) {
+    newSong(song: HuesSong) {
         super.newSong(song);
 
         if(!song) {
@@ -818,7 +847,7 @@ class ModernUI extends HuesUI {
         this.resizeSong();
     }
 
-    newImage(image) {
+    newImage(image: HuesImage) {
         super.newImage(image);
 
         if(!image) {
@@ -829,8 +858,24 @@ class ModernUI extends HuesUI {
     }
 }
 
-class XmasUI extends ModernUI {
-    constructor(parent, name) {
+interface XmasLight extends HTMLDivElement {
+    on: HTMLDivElement;
+    off: HTMLDivElement;
+    bulb: HTMLDivElement;
+}
+
+export class XmasUI extends ModernUI {
+    lights: XmasLight[];
+
+    snowCanvas!: HTMLCanvasElement;
+    snowContext!: CanvasRenderingContext2D;
+    snowing!: boolean;
+    maxSnow!: number;
+    snowAngle!: number;
+    lastSnow!: number;
+    snowflakes!: {x:number; y:number; r:number; d:number}[];
+
+    constructor(parent: HTMLElement, name?: string) {
         super(parent, name ? name : "XmasUI");
         this.initSnow();
 
@@ -847,35 +892,35 @@ class XmasUI extends ModernUI {
 
         let left = document.createElement("div");
         left.className = "hues-x-wiresleft";
-        xleft.forEach(function(l, i, a) {
-            let light = this.newLight(l, left);
+        for(const l of xleft) {
+            let light = this.newLight(left);
             light.style.transform = "rotate(" + l.angle + "deg)";
             light.style.left = l.x + "px";
             light.style.top = l.y + "px";
             this.lights.push(light);
-        }, this);
+        }
 
         let right = document.createElement("div");
         right.className = "hues-x-wiresright";
-        xright.forEach(function(l, i, a) {
-            let light = this.newLight(l, right);
+        for(const l of xright) {
+            let light = this.newLight(right);
             light.style.transform = "rotate(" + (-l.angle) + "deg)";
             light.style.right = l.x + "px";
             light.style.top = l.y + "px";
             this.lights.push(light);
-        }, this);
+        }
 
         let bottomHelper = document.createElement("div");
         bottomHelper.className = "hues-x-wiresbottomhelper";
         let bottom = document.createElement("div");
         bottom.className = "hues-x-wiresbottom";
-        xbottom.forEach(function(l, i, a) {
-            let light = this.newLight(l, bottom);
+        for(const l of xbottom) {
+            let light = this.newLight(bottom);
             light.style.transform = "rotate(" + l.angle + "deg)";
             light.style.left = l.x + "px";
             light.style.bottom = l.y + "px";
             this.lights.push(light);
-        }, this);
+        }
 
         wires.appendChild(left);
         wires.appendChild(right);
@@ -888,7 +933,7 @@ class XmasUI extends ModernUI {
         this.beatBar.appendChild(this.visualiserContainer);
     }
 
-    invert(invert) {
+    invert(invert: boolean) {
         super.invert(invert);
 
         if(invert) {
@@ -898,7 +943,7 @@ class XmasUI extends ModernUI {
         }
     }
 
-    connectCore(core) {
+    connectCore(core: HuesCore) {
         super.connectCore(core);
         this.startSnow();
     }
@@ -908,28 +953,28 @@ class XmasUI extends ModernUI {
         super.disconnect();
     }
 
-    lightOn(light) {
+    lightOn(light: XmasLight) {
         light.on.className = "hues-x-lighton";
         light.off.className = "hues-x-lightoff";
     }
 
-    lightOff(light) {
+    lightOff(light: XmasLight) {
         light.on.className = "hues-x-lighton off";
         light.off.className = "hues-x-lightoff off";
     }
 
-    lightFadeOut(light) {
+    lightFadeOut(light: XmasLight) {
         light.on.className = "hues-x-lighton hues-x-fade off";
         light.off.className = "hues-x-lightoff hues-x-fade off";
     }
 
-    lightRecolour(light) {
+    lightRecolour(light: XmasLight) {
         let hue = Math.floor(Math.random() * 7) * -56;
         light.on.style.backgroundPosition = hue + "px 0";
         light.off.style.backgroundPosition = hue + "px 0";
     }
 
-    randomLight(light) {
+    randomLight(light: XmasLight) {
         if(Math.random() >= 0.5) {
             this.lightOn(light);
         } else {
@@ -937,8 +982,8 @@ class XmasUI extends ModernUI {
         }
     }
 
-    newLight(l, parent) {
-        let light = document.createElement("div");
+    newLight(parent: HTMLElement): XmasLight {
+        let light = document.createElement("div") as XmasLight;
         light.className = "hues-x-light";
         let bulb = document.createElement("div");
         let on = document.createElement("div");
@@ -955,10 +1000,10 @@ class XmasUI extends ModernUI {
         return light;
     }
 
-    beat(beats, index) {
+    beat(beats: string, index: number) {
         super.beat(beats, index);
         if(this.currentBeat != ".") {
-            this.lights.forEach(function(light, i, a) {
+            for(const light of this.lights) {
                 switch(this.currentBeat) {
                     case ":":
                         this.lightOn(light);
@@ -970,13 +1015,13 @@ class XmasUI extends ModernUI {
                     default:
                         this.randomLight(light);
                 }
-            }, this);
+            }
         }
     }
 
     initSnow() {
         this.snowCanvas = document.createElement("canvas");
-        this.snowContext = this.snowCanvas.getContext("2d");
+        this.snowContext = this.snowCanvas.getContext("2d")!;
         this.snowCanvas.width = 1280;
         this.snowCanvas.height = 720;
         this.snowCanvas.style.display = "none";
@@ -1076,8 +1121,10 @@ class XmasUI extends ModernUI {
     }
 }
 
-class HalloweenUI extends ModernUI {
-    constructor(parent, name) {
+export class HalloweenUI extends ModernUI {
+    vignette!: HTMLDivElement;
+
+    constructor(parent: HTMLElement, name?: string) {
         super(parent, name ? name : "HalloweenUI");
         // This will cache our inverted tombstone image
         this.invert(true);
@@ -1152,7 +1199,7 @@ class HalloweenUI extends ModernUI {
         this.root.appendChild(this.vignette);
     }
 
-    beat(beats, index) {
+    beat(beats: string, index: number) {
         super.beat(beats, index);
 
         if (this.currentBeat != ".") {
@@ -1162,21 +1209,27 @@ class HalloweenUI extends ModernUI {
         }
     }
 
-    connectCore(core) {
+    connectCore(core: HuesCore) {
         super.connectCore(core);
 
-        this.core.preloader.classList.add("hues-h-text");
+        this.core!.preloader.classList.add("hues-h-text");
     }
 
     disconnect() {
-        this.core.preloader.classList.remove("hues-h-text");
+        this.core!.preloader.classList.remove("hues-h-text");
 
         super.disconnect();
     }
 }
 
+type LightDef = {
+    angle: number;
+    x: number;
+    y: number;
+}
+
 // Positions and angles for the Xmas lights
-let xleft = [
+const xleft: LightDef[] = [
     {"angle": 122.529582194, "x": 19.4, "y": -19.35},
     {"angle": 92.5309436511, "x": 25.4, "y": 38.7},
     {"angle": 107.530202659, "x": 39.4, "y": 107.75},
@@ -1195,7 +1248,7 @@ let xleft = [
     {"angle": 74.9981580491, "x": 45.75, "y": 1158.5},
     {"angle": 88.3307935055, "x": 35.85, "y": 1238.55}
 ];
-let xright = [
+const xright: LightDef[] = [
     {"angle": 120.001009518, "x": 33.3, "y": -29.75},
     {"angle": 90.0026227926, "x": 35.35, "y": 53.65},
     {"angle": 102.469029922, "x": 41.5, "y": 136.5},
@@ -1215,7 +1268,7 @@ let xright = [
     {"angle": 87.4690563489, "x": 40.45, "y": 1119.9},
     {"angle": 102.46813454, "x": 20.9, "y": 1193.85}
 ];
-let xbottom = [
+const xbottom: LightDef[] = [
     {"angle": 32.5804579323, "x": 110.35, "y": -12.1},
     {"angle": 3.28979777069, "x": 168.05, "y": -5.55},
     {"angle": 17.6989154099, "x": 238.35, "y": 7.7},
@@ -1251,12 +1304,3 @@ let xbottom = [
     {"angle": -18.378894807, "x": 2627.55, "y": 24.9},
     {"angle": -4.561224264, "x": 2710.4, "y": 14.4}
 ];
-
-window.RetroUI = RetroUI;
-window.WeedUI = WeedUI;
-window.ModernUI = ModernUI;
-window.XmasUI = XmasUI;
-window.HalloweenUI = HalloweenUI;
-window.MinimalUI = MinimalUI;
-
-})(window, document);

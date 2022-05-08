@@ -1,0 +1,10 @@
+{
+    "extends": "@tsconfig/svelte/tsconfig.json",
+    "compilerOptions": {
+        "allowJs": true,
+        "target": "es2017",
+        "sourceMap": true,
+        "strict": true,
+    },
+    "include": ["./src/**/*"]
+}

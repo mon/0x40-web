@@ -1,46 +1,31 @@
-/* Copyright (c) William Toohey <will@mon.im>
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
- * THE SOFTWARE.
- */
-
-import './ResourcePack';
-
-import EditorMain from './HuesEditor/Main.svelte';
-
 import xmlbuilder from 'xmlbuilder';
 import * as zip from "@zip.js/zip.js";
 
-(function(window, document) {
-"use strict";
+import { Respack, type HuesSong, type HuesSongSection } from './ResourcePack';
+import EditorMain from './HuesEditor/Main.svelte';
+import type { HuesCore } from './HuesCore';
+import type HuesWindow from './HuesWindow';
+import type EditorBoxSvelte from './HuesEditor/EditorBox.svelte';
 
-class HuesEditor {
-    constructor(core, huesWin) {
-        this.undoBuffer = [];
-        this.redoBuffer = [];
-        // Will be an array if many actions are performed in one undo
-        this.batchUndoArray = null;
+export interface EditorUndoRedo {
+    build?: string;
+    loop?: string;
+    independentBuild: boolean;
+    caret?: number;
+    editor?: EditorBoxSvelte;
+}
 
-        // for storing respacks created with "new"
-        this.respack = null;
+type SectionName = 'build' | 'loop';
 
-        this.song = null;
+export class HuesEditor {
+    core: HuesCore;
+    song?: HuesSong;
+    editor!: EditorMain;
 
+    // for storing respacks created with "new"
+    respack?: Respack;
+
+    constructor(core: HuesCore, huesWin: HuesWindow) {
         this.core = core;
         if(!core.settings.enableWindow) {
             return;
@@ -101,22 +86,22 @@ class HuesEditor {
         this.editor.$on('copyxml', event => this.copyXML());
     }
 
-    other(section) {
-        return {'build':'loop', 'loop':'build'}[section];
+    other(section: SectionName): SectionName {
+        return {'build':'loop', 'loop':'build'}[section] as SectionName;
     }
 
-    async loadAudio(section) {
+    async loadAudio(section: SectionName) {
         // If first load, this makes fresh, gets the core synced up
         this.newSong(this.song);
 
         // Have we just added a build to a song with a rhythm, or vice versa?
         // If so, link their lengths
-        let newlyLinked = !this.song[section].sound && !!this.song[this.other(section)].sound;
+        let newlyLinked = !this.song![section].sound && !!this.song![this.other(section)].sound;
 
         // Do we have a loop to play?
-        if(this.song.loop.sound) {
+        if(this.song!.loop.sound) {
             // Force refresh
-            await this.core.soundManager.playSong(this.song, true, true);
+            await this.core.soundManager.playSong(this.song!, true, true);
             if(newlyLinked) {
                 this.setIndependentBuild(false);
             }
@@ -129,34 +114,26 @@ class HuesEditor {
 
     removeAudio() {
         // Is the loop playable?
-        if(this.song.loop.sound) {
+        if(this.song?.loop.sound) {
             this.core.soundManager.playSong(this.song, true, true);
         } else {
             this.core.soundManager.stop();
         }
     }
 
-    newSong(song) {
+    newSong(song?: HuesSong) {
         if(!song) {
             song = {
                 title:"Title",
-                loop: {
-                    chart:null,
-                    sound:null,
-                    fname:null,
-                    nameWithExt:null,
-                },
-                build: {
-                    chart:null,
-                    sound:null,
-                    fname:null,
-                    nameWithExt:null,
-                },
+                loop: {},
+                build: {},
                 source:"",
                 enabled:true,
                 charsPerBeat: null,
                 // Because new songs are empty
-                independentBuild: true};
+                independentBuild: true,
+                buildupPlayed: false,
+            };
            if(!this.respack) {
                this.respack = new Respack();
                this.respack.name = "Editor Respack";
@@ -184,18 +161,18 @@ class HuesEditor {
         // Force independent build if only 1 source is present
 
         // Effectively `buildup ^ loop` - does only 1 exist?
-        let hasBuild = !!this.song.build.sound;
-        let hasLoop = !!this.song.loop.sound;
+        let hasBuild = !!this.song?.build.sound;
+        let hasLoop = !!this.song?.loop.sound;
         if(hasBuild != hasLoop) {
             this.setIndependentBuild(true);
         }
     }
 
-    setIndependentBuild(indep) {
+    setIndependentBuild(indep: boolean) {
         this.editor.$set({independentBuild: indep});
     }
 
-    generateXML(root) {
+    generateXML(root?: xmlbuilder.XMLElement | xmlbuilder.XMLDocument) {
         if(!this.song) {
             return null;
         }
@@ -220,7 +197,7 @@ class HuesEditor {
         return root.end({ pretty: true});
     }
 
-    downloadURI(uri, filename) {
+    downloadURI(uri: string, filename: string) {
         // http://stackoverflow.com/a/18197341
         let element = document.createElement('a');
         element.setAttribute('href', uri);
@@ -234,12 +211,12 @@ class HuesEditor {
         document.body.removeChild(element);
     }
 
-    async addSectionToZip(zipWriter, section) {
+    async addSectionToZip(zipWriter: zip.ZipWriter, section: HuesSongSection) {
         if(!section.sound) {
             return;
         }
         const u8 = new Uint8Array(section.sound);
-        await zipWriter.add(section.nameWithExt, new zip.Uint8ArrayReader(u8));
+        await zipWriter.add(section.nameWithExt!, new zip.Uint8ArrayReader(u8));
     }
 
     async saveZIP() {
@@ -250,14 +227,14 @@ class HuesEditor {
 
         const zipWriter = new zip.ZipWriter(new zip.Data64URIWriter("application/zip"));
         await zipWriter.add("songs.xml", new zip.TextReader(result));
-        await this.addSectionToZip(zipWriter, this.song.loop);
-        await this.addSectionToZip(zipWriter, this.song.build);
+        await this.addSectionToZip(zipWriter, this.song!.loop);
+        await this.addSectionToZip(zipWriter, this.song!.build);
 
         const dataURI = await zipWriter.close();
 
         this.downloadURI(
             dataURI,
-            "0x40Hues - " + this.song.loop.fname + ".zip"
+            "0x40Hues - " + this.song!.loop.fname + ".zip"
         );
 
         window.onbeforeunload = null;
@@ -271,7 +248,7 @@ class HuesEditor {
 
         this.downloadURI(
             'data:text/plain;charset=utf-8,' + encodeURIComponent(result),
-            "0x40Hues - " + this.song.loop.fname + ".xml"
+            "0x40Hues - " + this.song!.loop.fname + ".xml"
         );
 
         window.onbeforeunload = null;
@@ -311,7 +288,3 @@ class HuesEditor {
         }
     }
 }
-
-window.HuesEditor = HuesEditor;
-
-})(window, document);

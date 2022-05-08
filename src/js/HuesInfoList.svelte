@@ -1,6 +1,6 @@
-<script>
-    export let name;
-    export let items;
+<script lang="ts">
+    export let name: string;
+    export let items: string[];
 </script>
 
 <div>

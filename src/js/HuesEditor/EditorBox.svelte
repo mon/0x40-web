@@ -1,33 +1,36 @@
-<script>
+<script lang="ts">
     import HuesButton from '../Components/HuesButton.svelte';
 
     import { createEventDispatcher, tick } from 'svelte';
 
+    import type { HuesSongSection } from '../ResourcePack';
+    import type SoundManager from '../SoundManager';
+
     const dispatch = createEventDispatcher();
 
-    export let title;
-    export let section;
+    export let title: string;
+    export let section: HuesSongSection;
     export let showHelp = false;
-    export let newLineAtBeat;
-    export let beatIndex;
-    export let soundManager;
+    export let newLineAtBeat: number;
+    export let beatIndex: number | null;
+    export let soundManager: SoundManager;
 
-    export let editBox;
-    export let header;
+    export let editBox: HTMLDivElement;
+    export let header: HTMLDivElement;
 
-    let fileInput;
-    let editDiv;
+    let fileInput: HTMLInputElement;
+    let editDiv: HTMLDivElement;
 
     export let locked = false;
-    export let caret;
+    export let caret: number = 0;;
 
     let toggleLock = () => {
         locked = !locked;
     };
 
-    $: valid = section && section.chart !== null;
+    $: valid = section && section.chart !== undefined;
 
-    let oldLen;
+    let oldLen: number;
 
     const getCaret = () => {
         // contenteditable is really quite cursed, and at this stage we might be
@@ -36,13 +39,13 @@
         // through all the children to get to our actual selection
         let caret = 0;
         const sel = window.getSelection();
-        if (sel.rangeCount) {
+        if(sel?.rangeCount) {
           const range = sel.getRangeAt(0);
           for(let child of editDiv.childNodes) {
-              if (range.commonAncestorContainer == child) {
+              if(range.commonAncestorContainer == child) {
                   caret += range.endOffset;
                 return caret;
-              } else {
+              } else if(child.textContent !== null) {
                   caret += child.textContent.length;
               }
           }
@@ -50,20 +53,28 @@
         return null;
     };
 
-    export const setCaret = newCaret => {
+    export const setCaret = (newCaret: number) => {
+        if(!section.chart) {
+            return;
+        }
+
         caret = Math.min(newCaret, section.chart.length);
         let sel = window.getSelection();
         // need to get the text out of the div
         const text = [...editDiv.childNodes].find(child => child.nodeType === Node.TEXT_NODE);
         // I mean this shouldn't ever fail, right?
-        if(text !== null) {
+        if(text !== undefined && sel) {
             sel.collapse(text, caret);
         }
     }
 
     // we could fake the keyboard input with js... or just do this since we know
     // how we handle inputs
-    export const fakeInput = async str => {
+    export const fakeInput = async (str: string) => {
+        if(!section.chart) {
+            return;
+        }
+
         saveLen(); // beforeinput
         section.chart = section.chart.slice(0, caret) + str + section.chart.slice(caret) // modify chart
         setCaret(caret + str.length); // handleInput expects the editor to have focus
@@ -71,20 +82,20 @@
     };
 
     let saveLen = () => {
-        oldLen = section?.chart.length;
+        oldLen = section.chart!.length;
         dispatch('beforeinput');
     }
 
     const confirmLeave = () => "Unsaved beatmap - leave anyway?";
 
     let handleInput = async () => {
-        if(section.chart.length == 0) {
+        if(section.chart!.length == 0) {
             section.chart = '.';
         }
 
-        caret = getCaret();
+        caret = getCaret()!;
 
-        const newLen = section.chart.length;
+        const newLen = section.chart!.length;
         if(locked && oldLen != newLen) {
             // by adding or removing as many extra characters as required,
             // starting from the caret, this even works for pastes
@@ -92,11 +103,11 @@
                 // delete extra
                 caret = Math.min(oldLen, caret);
                 const extra = newLen - oldLen;
-                section.chart = section.chart.slice(0, caret) + section.chart.slice(caret + extra);
+                section.chart = section.chart!.slice(0, caret) + section.chart!.slice(caret + extra);
             } else {
                 // add extra
                 const extra = '.'.repeat(oldLen - newLen);
-                section.chart = section.chart.slice(0,caret) + extra + section.chart.slice(caret);
+                section.chart = section.chart!.slice(0,caret) + extra + section.chart!.slice(caret);
             }
 
             await tick();
@@ -107,28 +118,28 @@
         dispatch('afterinput');
     };
 
-    const getCaretFromMouseEvent = event => {
+    const getCaretFromMouseEvent = (event: MouseEvent) => {
         // We cannot just get the caret on the right click event, because in
         // Firefox, the first right click just focuses the textbox without
         // actually moving the caret. Only subsequent clicks will move it. So
         // instead, we get this hacky nonsense.
 
         // http://stackoverflow.com/a/10816667
-        let el = event.target;
+        let el: HTMLElement | null = event.target as HTMLElement;
         let x = 0;
         let y = 0;
 
         while (el && !isNaN(el.offsetLeft) && !isNaN(el.offsetTop)) {
             x += el.offsetLeft - el.scrollLeft;
             y += el.offsetTop - el.scrollTop;
-            el = el.offsetParent;
+            el = el.offsetParent as HTMLElement;
         }
 
         x = event.clientX - x;
         y = event.clientY - y;
 
         const fontWidth = editDiv.clientWidth / newLineAtBeat;
-        const lines = Math.ceil(editDiv.textContent.length / newLineAtBeat);
+        const lines = Math.ceil(editDiv.textContent!.length / newLineAtBeat);
         const fontHeight = editDiv.clientHeight / lines;
 
         x = Math.floor(x / fontWidth);
@@ -137,21 +148,21 @@
         return x + (y * newLineAtBeat);
     }
 
-    let seek = event => {
+    let seek = (event: MouseEvent) => {
         const off = getCaretFromMouseEvent(event);
         setCaret(off);
-        dispatch('seek', off / section.chart.length);
+        dispatch('seek', off / section.chart!.length);
         event.preventDefault();
     };
 
-    let updateCaret = event => {
+    let updateCaret = () => {
         const off = getCaret();
         if(off !== null) {
             caret = off;
         }
     }
 
-    let banEnter = event => {
+    let banEnter = (event: KeyboardEvent) => {
         // block "return" - keyCode is more reliable here I can't remember the deets
         if(event.keyCode == 13) {
             event.preventDefault();
@@ -159,7 +170,7 @@
         }
     };
 
-    let handleArrows = event => {
+    let handleArrows = (event: KeyboardEvent) => {
         if(['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(event.key)) {
             updateCaret();
         }
@@ -167,12 +178,16 @@
 
     // by default, the user can totally just copy formatted HTML straight into
     // the document... Block it and force plaintext
-    let handlePaste = event => {
+    let handlePaste = (event: ClipboardEvent) => {
         // cancel paste
         event.preventDefault();
 
+        if(!event.clipboardData) {
+            return;
+        }
+
         // get text representation of clipboard
-        let text = (event.originalEvent || event).clipboardData.getData('text/plain');
+        let text = event.clipboardData.getData('text/plain');
 
         // insert text manually
         // this is deprecated but keeps working and no alternative, so whatever
@@ -180,7 +195,7 @@
     }
 
     let loadSong = async () => {
-        if(fileInput.files.length < 1) {
+        if(!fileInput.files?.length) {
             return;
         }
 
@@ -218,10 +233,10 @@
     }
 
     let removeSong = () => {
-        section.chart = null;
-        section.fname = null;
-        section.nameWithExt = null;
-        section.sound = null;
+        section.chart = undefined;
+        section.fname = undefined;
+        section.nameWithExt = undefined;
+        section.sound = undefined;
 
         dispatch('songremove');
     }
@@ -229,7 +244,7 @@
     let copyPretty = () => {
         // http://stackoverflow.com/a/27012001
         let regex = new RegExp("(.{" + newLineAtBeat + "})", "g");
-        let text = section.chart.replace(regex, "$1\n");
+        let text = section.chart!.replace(regex, "$1\n");
 
         let textArea = document.createElement("textarea");
         textArea.className = "copybox";
@@ -278,7 +293,6 @@
         style="display:none"
         bind:this={fileInput}
         accept=".mp3, .wav, .ogg"
-        multiple=false
         on:change={loadSong}
     />
     <HuesButton on:click={() => fileInput.click()}>

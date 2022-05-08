@@ -1,6 +1,6 @@
-<script>
-    export let label;
-    export let unit;
+<script lang="ts">
+    export let label = '';
+    export let unit = '';
     export let value = "N/A";
 </script>
 

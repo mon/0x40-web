@@ -1,9 +1,11 @@
-<script>
+<script lang="ts">
     import HuesSetting from "./HuesSetting.svelte";
     import { afterUpdate, createEventDispatcher } from 'svelte';
 
+    import type { SettingsData } from "./HuesSettings";
+
     // To dynamically build the UI like the cool guy I am
-    const settingsCategories = {
+    const settingsCategories: { [key: string]: (keyof SettingsData)[] } = {
         "Functionality" : [
             "autoSong",
             "autoSongShuffle",
@@ -29,10 +31,10 @@
         ]
     };
 
-    export let settings = {};
-    export let schema = {};
+    export let settings: Partial<SettingsData> = {};
+    export let schema: { [key: string] : {name: string; options: string[]}};
 
-    $: autoPlural = settings["autoSongDelay"] > 1 ? 's' : '';
+    $: autoPlural = (settings.autoSongDelay || 0) > 1 ? 's' : '';
 
     // until we convert the rest of the app to svelte, this lets consumers
     // update their own state more simply

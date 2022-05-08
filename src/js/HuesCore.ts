@@ -1,127 +1,131 @@
-/* Copyright (c) 2015 William Toohey <will@mon.im>
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
- * THE SOFTWARE.
- */
+import 'svelte'; // this is a bit of a mystery honestly, without it, none of
+                 // the .svelte imports can be found by the typescript compiler
 
-import './HuesRender';
-import './HuesEditor';
-import './HuesSettings';
-import './HuesWindow';
-import './HuesUI';
-import './ResourceManager';
-import './SoundManager';
-import './string_score.min';
-
+import HuesRender from './HuesRender';
+import { HuesEditor } from './HuesEditor';
+import { HuesSettings, type SettingsData } from './HuesSettings';
+import HuesWindow from './HuesWindow';
+import {HuesUI, RetroUI, WeedUI, ModernUI, XmasUI, HalloweenUI, MinimalUI} from './HuesUI';
+import Resources from './ResourceManager';
+import SoundManager from './SoundManager';
+import type { HuesImage, HuesSong } from './ResourcePack';
+import EventListener from './EventListener';
 import HuesInfo from './HuesInfo.svelte';
+
+import 'string_score';
 
 // these aren't strictly required but it makes webpack put them in `dist`
 import '../../index.html';
 import '../../favicon.ico';
 
-(function(window, document) {
-"use strict";
+export type HuesColour = {
+    c: number; // colour in hex
+    n: string; // name
+}
 
-class HuesCore {
-    constructor(defaults) {
-        this.eventListeners = {
-            /* callback loaded()
-             *
-             * When everything has completely loaded and we're ready to go
-             */
+type CoreEvents = {
+    // When everything has completely loaded and we're ready to go
+    loaded : (() => void)[],
+
+    // When the song time is updated - negative for buildup
+    time : ((seconds: number) => void)[],
+
+    // The current blur amounts, in percent of full blur
+    blurupdate : ((xPercent: number, yPercent: number) => void)[],
+
+    // Called on song change, whether user triggered or autosong.
+    newsong : ((song: HuesSong) => void)[],
+
+    // Called on image change, whether user triggered or FULL AUTO mode.
+    newimage : ((image: HuesImage) => void)[],
+
+    // Called on colour change.
+    // colour: colour object.
+    // isFade: if the colour is fading from the previous value
+    newcolour : ((colour: HuesColour, isFade: boolean) => void)[],
+
+    // Called on mode change. (full auto or locked to one image)
+    newmode : ((mode: boolean) => void)[],
+
+    // Called on every new beat.
+    // beatString is a 256 char long string of current and upcoming beat chars
+    // beatIndex is the beat index. Negative during buildups
+    beat : ((beatString: string, beatIndex: number) => void)[],
+
+    // Called whenever the invert state changes.
+    invert : ((isInverted: boolean) => void)[],
+
+    // Called on each new frame, at the end of all other frame processing
+    frame : (() => void)[],
+
+    // Called when the song actually begins to play, not just when the new song
+    // processing begins.
+    songstarted : ((song: HuesSong) => void)[],
+
+    // Called when settings are updated and should be re-read from the settings object
+    settingsupdated : (() => void)[],
+}
+
+export class HuesCore extends EventListener<CoreEvents> {
+    version: number;
+    versionStr: string;
+    versionHex: string;
+    beatIndex: number;
+
+    buildLength: number;
+    loopLength: number;
+
+    currentSong: HuesSong | null;
+    currentImage: HuesImage | null;
+    songIndex: number;
+    imageIndex: number;
+    lastSongArray: number[];
+    lastImageArray: number[];
+
+    colourIndex: number;
+    colours: HuesColour[];
+    oldColours: HuesColour[];
+    weedColours: HuesColour[];
+    pastelColours: HuesColour[];
+
+    invert: boolean;
+    autoSong: SettingsData['autoSong'];
+    loopCount: number;
+    doBuildup: boolean;
+    uiArray: HuesUI[];
+    userInterface?: HuesUI; // the current UI
+
+    settings: HuesSettings;
+    root: HTMLElement;
+
+    window: HuesWindow;
+    soundManager: SoundManager;
+    resourceManager: Resources;
+    editor: HuesEditor;
+    renderer!: HuesRender;
+
+    preloader!: HTMLDivElement;
+    preloadMsg!: HTMLDivElement;
+    preloadSubMsg!: HTMLDivElement;
+    visualiser: HTMLCanvasElement;
+    // if this fails to init, everything will break anyway
+    vCtx!: CanvasRenderingContext2D;
+
+    constructor(defaults: Partial<SettingsData>) {
+        super({
             loaded : [],
-
-            /* callback time(seconds)
-             *
-             * When the song time is updated - negative for buildup
-             * Returns a floating point number denoting seconds
-             */
             time : [],
-
-            /* callback blurUpdate(xPercent, yPercent)
-             *
-             * The current blur amounts, in percent of full blur
-             */
             blurupdate : [],
-
-            /* callback newsong(song)
-             *
-             * Called on song change, whether user triggered or autosong.
-             * Song object is passed.
-             */
             newsong : [],
-
-            /* callback newimage(image)
-             *
-             * Called on image change, whether user triggered or FULL AUTO mode.
-             * Image object is passed.
-             */
             newimage : [],
-
-            /* callback newcolour(colour, isFade)
-             *
-             * Called on colour change.
-             * colour: colour object.
-             * isFade: if the colour is fading from the previous value
-             */
             newcolour : [],
-
-            /* callback newmode(mode)
-             *
-             * Called on mode change.
-             * Mode is passed as a boolean.
-             */
             newmode : [],
-
-            /* callback beat(beatString, beatIndex)
-             *
-             * Called on every new beat.
-             * beatString is a 256 char long array of current and upcoming beat chars
-             * beatIndex is the beat index. Negative during buildups
-             */
             beat : [],
-
-            /* callback invert(isInverted)
-             *
-             * Called whenever the invert state changes.
-             * Invert state is passed as a boolean.
-             */
             invert : [],
-
-            /* callback frame()
-             *
-             * Called on each new frame, at the end of all other frame processing
-             */
             frame : [],
-
-            /* callback songstarted(song)
-             *
-             * Called when the song actually begins to play, not just when the
-             * new song processing begins. Song object passed.
-             */
             songstarted : [],
-
-            /* callback settingsupdated()
-             *
-             * Called when settings are updated and should be re-read from the settings object
-             */
             settingsupdated : []
-        };
+        });
 
         // Bunch-o-initialisers
         this.version = 43;
@@ -140,24 +144,28 @@ class HuesCore {
         this.lastSongArray = [];
         this.lastImageArray = [];
 
+        // cleaner then putting the arrays here
+        this.oldColours = oldColours;
+        this.weedColours = weedColours;
+        this.pastelColours = pastelColours;
+
         this.colourIndex = 0x3f;
-        this.colours = HuesCore.oldColours;
+        this.colours = this.oldColours;
 
         this.invert = false;
         this.loopCount = 0;
         this.doBuildup = true;
-        this.userInterface = null;
         this.uiArray = [];
 
         this.settings = new HuesSettings(defaults);
 
         // What's our root element?
-        this.root = null;
         if(!this.settings.root) {
             this.root = document.body;
         } else if(typeof this.settings.root === "string") {
-            if(this.settings.root && document.getElementById(this.settings.root)) {
-                this.root = document.getElementById(this.settings.root);
+            let tryRoot = document.getElementById(this.settings.root);
+            if(tryRoot) {
+                this.root = tryRoot;
             } else {
                 this.root = document.body;
             }
@@ -175,7 +183,7 @@ class HuesCore {
         this.makePreloader(this.root);
 
         window.onerror = (msg, url, line, col, error) => {
-            this.error(msg);
+            this.error(msg as string);
             // Get more info in console
             return false;
         };
@@ -210,80 +218,10 @@ class HuesCore {
 
         this.visualiser = document.createElement("canvas");
         this.visualiser.className = "hues-visualiser";
-        this.visualiser.height = "64";
-        this.vCtx = this.visualiser.getContext("2d");
+        this.visualiser.height = 64;
+        this.vCtx = this.visualiser.getContext("2d")!;
 
-        this.soundManager.init().then(() => {
-            if(!this.soundManager.locked && this.settings.skipPreloader == "on") {
-                return null;
-            } else {
-                return this.resourceManager.getSizes(this.settings.respacks);
-            }
-        }).then( sizes => {
-            if(sizes === null) {
-                return;
-            }
-
-            let size = sizes.reduce( (prev, curr) => {
-                return typeof curr === 'number' ? prev + curr : null;
-            }, 0);
-            if(typeof size === 'number') {
-                size = size.toFixed(1);
-            } else {
-                size = '<abbr title="Content-Length header not present for respack URLs">???</abbr>';
-            }
-
-            let warning = size + "MB of music/images.<br />" +
-                "Flashing lights.<br />" +
-                "<b>Tap or click to start</b>";
-
-            if(!this.soundManager.locked) {
-                warning += "<br /><span>Skip this screen from Options</span>";
-            }
-            this.warning(warning);
-            // Even if not locked, this steals clicks which is useful here
-            return this.soundManager.unlock();
-        }).then(() => {
-            this.clearMessage();
-            setInterval(this.loopCheck.bind(this), 1000);
-            this.renderer = new HuesRender(this.root, this.soundManager, this);
-            // Now all our objects are instantiated, we fire the updated settings
-            this.settings.addEventListener("updated", this.settingsUpdated.bind(this));
-            this.settingsUpdated();
-            this.setColour(this.colourIndex);
-            this.animationLoop();
-
-            if(this.settings.load) {
-                return this.resourceManager.addAll(this.settings.respacks, progress => {
-                    this.preloader.style.backgroundPosition = (100 - progress*100) + "% 0%";
-                    let scale = Math.floor(progress * this.settings.preloadMax);
-                    let padding = this.settings.preloadMax.toString(this.settings.preloadBase).length;
-                    this.preloadMsg.textContent = this.settings.preloadPrefix +
-                                                  (Array(padding).join("0") +
-                                                  scale.toString(this.settings.preloadBase)).slice(-padding);
-                });
-            } else {
-                this.preloader.style.display = "none";
-                return;
-            }
-        }).then(() => {
-            this.preloader.classList.add("hues-preloader--loaded");
-            this.callEventListeners("loaded");
-            if(this.settings.firstImage) {
-                this.setImageByName(this.settings.firstImage);
-            } else {
-                this.setImage(0);
-            }
-            if(this.settings.autoplay) {
-                if(this.settings.firstSong) {
-                    this.setSongByName(this.settings.firstSong);
-                } else {
-                    this.setSong(0);
-                }
-            }
-        }).catch(error => { // Comment this out to get proper stack traces
-            this.error(error);
-        });
+        this.asyncInit();
 
         if(!this.settings.disableKeyboard) {
             document.addEventListener("keydown", e => {
@@ -292,9 +230,10 @@ class HuesCore {
                     return true;
                 }
 
+                let target = e.target as HTMLElement;
                 // If we've focused a text input, let the input go through!
-                if((e.target.tagName.toLowerCase() == "input") ||
-                    e.target.contentEditable === "true") {
+                if((target.tagName.toLowerCase() == "input") ||
+                    target.contentEditable === "true") {
                     return true;
                 }
                 let key = e.keyCode || e.which;
@@ -312,43 +251,85 @@ class HuesCore {
         }
     }
 
-    callEventListeners(ev) {
-        let args = Array.prototype.slice.call(arguments, 1);
-        this.eventListeners[ev].forEach(function(callback) {
-            callback.apply(null, args);
-        });
-    }
+    private async asyncInit() {
+        try {
+            await this.soundManager.init();
+            if(this.soundManager.locked || this.settings.skipPreloader == "off") {
+                let sizes = await this.resourceManager.getSizes(this.settings.respacks);
 
-    addEventListener(ev, callback) {
-        ev = ev.toLowerCase();
-        if (typeof(this.eventListeners[ev]) !== "undefined") {
-            this.eventListeners[ev].push(callback);
-        } else {
-            throw Error("Unknown event: " + ev);
+                let size: number | string | null = sizes.reduce( (prev, curr) => {
+                    return typeof prev === 'number' && typeof curr === 'number' ? prev + curr : null;
+                }, 0);
+                if(typeof size === 'number') {
+                    size = size.toFixed(1);
+                } else {
+                    size = '<abbr title="Content-Length header not present for respack URLs">???</abbr>';
+                }
+
+                let warning = size + "MB of music/images.<br />" +
+                    "Flashing lights.<br />" +
+                    "<b>Tap or click to start</b>";
+
+                if(!this.soundManager.locked) {
+                    warning += "<br /><span>Skip this screen from Options</span>";
+                }
+                this.warning(warning);
+                // Even if not locked, this steals clicks which is useful here
+                await this.soundManager.unlock();
+            }
+
+            this.clearMessage();
+            setInterval(this.loopCheck.bind(this), 1000);
+            this.renderer = new HuesRender(this.root, this.soundManager, this);
+            // Now all our objects are instantiated, we fire the updated settings
+            this.settings.addEventListener("updated", this.settingsUpdated.bind(this));
+            this.settingsUpdated();
+            this.setColour(this.colourIndex);
+            this.animationLoop();
+
+            if(this.settings.load) {
+                await this.resourceManager.addAll(this.settings.respacks, progress => {
+                    this.preloader.style.backgroundPosition = (100 - progress*100) + "% 0%";
+                    let scale = Math.floor(progress * this.settings.preloadMax);
+                    let padding = this.settings.preloadMax.toString(this.settings.preloadBase).length;
+                    this.preloadMsg.textContent = this.settings.preloadPrefix +
+                                                    (Array(padding).join("0") +
+                                                    scale.toString(this.settings.preloadBase)).slice(-padding);
+                });
+            } else {
+                this.preloader.style.display = "none";
+            }
+
+            this.preloader.classList.add("hues-preloader--loaded");
+            this.callEventListeners("loaded");
+            if(this.settings.firstImage) {
+                this.setImageByName(this.settings.firstImage);
+            } else {
+                this.setImage(0);
+            }
+            if(this.settings.autoplay) {
+                if(this.settings.firstSong) {
+                    this.setSongByName(this.settings.firstSong);
+                } else {
+                    this.setSong(0);
+                }
+            }
+
+        } catch(e) {
+            this.error(e as string);
         }
     }
 
-    removeEventListener(ev, callback) {
-        ev = ev.toLowerCase();
-        if (typeof(this.eventListeners[ev]) !== "undefined") {
-            this.eventListeners[ev] = this.eventListeners[ev].filter(function(a) {
-                return (a !== callback);
-            });
-        } else {
-            throw Error("Unknown event: " + ev);
-        }
-    }
-
-    makePreloader(root) {
+    makePreloader(root: HTMLElement) {
         this.preloader = document.createElement("div");
         this.preloader.className = "hues-preloader";
         root.appendChild(this.preloader);
 
         if(this.settings.preloadTitle) {
-            this.preloadTitle = document.createElement("div");
-            this.preloadTitle.className = "hues-preloader__title";
-            this.preloadTitle.textContent = this.settings.preloadTitle;
-            this.preloader.appendChild(this.preloadTitle);
+            let preloadTitle = document.createElement("div");
+            preloadTitle.className = "hues-preloader__title";
+            preloadTitle.textContent = this.settings.preloadTitle;
+            this.preloader.appendChild(preloadTitle);
         }
 
         this.preloadMsg = document.createElement("div");
@@ -410,7 +391,7 @@ class HuesCore {
 
     animationLoop() {
         requestAnimationFrame(this.animationLoop.bind(this));
-        if(!this.soundManager.playing) {
+        if(!this.soundManager.playing || !this.currentSong) {
             this.callEventListeners("frame");
             return;
         }
@@ -428,12 +409,12 @@ class HuesCore {
         this.callEventListeners("frame");
     }
 
-    recalcBeatIndex(forcedNow) {
+    recalcBeatIndex(forcedNow?: number) {
         let now = typeof forcedNow === "number" ? forcedNow : this.soundManager.currentTime;
         // getBeatLength isn't updated with the right beatIndex yet
         this.beatIndex = Math.floor(now / (now < 0 ? this.buildLength : this.loopLength));
         // beatIndex is NaN, abort
-        if(this.beatIndex != this.beatIndex) {
+        if(this.beatIndex != this.beatIndex || !this.currentSong) {
             this.setInvert(false);
             return;
         }
@@ -444,7 +425,7 @@ class HuesCore {
         let mapSoFar;
         if(this.beatIndex < 0) {
             // Clamp to 0 in case we've juuust started
-            mapSoFar = build.slice(0, Math.max(this.beatIndex + build.length, 0));
+            mapSoFar = build!.slice(0, Math.max(this.beatIndex + build!.length, 0));
         } else {
             // If the rhythm has an odd number of inverts, don't reset because it
             // alternates on each loop anyway
@@ -459,12 +440,12 @@ class HuesCore {
     }
 
     getBeatIndex() {
-        if(!this.soundManager.playing) {
+        if(!this.soundManager.playing || !this.currentSong) {
             return 0;
         } else if(this.beatIndex < 0) {
             return this.beatIndex;
         } else {
-            return this.beatIndex % this.currentSong.loop.chart.length;
+            return this.beatIndex % this.currentSong.loop.chart!.length;
         }
     }
 
@@ -477,7 +458,7 @@ class HuesCore {
         }
     }
 
-    blurUpdated(x, y) {
+    blurUpdated(x: number, y: number) {
         this.callEventListeners("blurupdate", x, y);
     }
 
@@ -491,12 +472,11 @@ class HuesCore {
         this.setSong(index);
     }
 
-    setSongByName(name) {
-        let songs = this.resourceManager.enabledSongs;
+    setSongByName(name: string) {
         let bestSong = 0;
         let bestScore = 0;
-        for(let i = 0; i < songs.length; i++) {
-            let score = songs[i].title.score(name);
+        for(const [i, song] of this.resourceManager.enabledSongs.entries()) {
+            let score = song.title.score(name);
             if(score > bestScore) {
                 bestScore = score;
                 bestSong = i;
@@ -506,7 +486,7 @@ class HuesCore {
     }
 
     /* To set songs via reference instead of index - used in HuesEditor */
-    setSongOject(song) {
+    setSongOject(song: HuesSong) {
         for(let i = 0; i < this.resourceManager.enabledSongs.length; i++) {
             if(this.resourceManager.enabledSongs[i] === song) {
                 return this.setSong(i);
@@ -514,7 +494,7 @@ class HuesCore {
         }
     }
 
-    setSong(index, leaveArray) {
+    setSong(index: number, leaveArray: boolean = false) {
         if(this.currentSong == this.resourceManager.enabledSongs[index]) {
             return;
         }
@@ -528,21 +508,14 @@ class HuesCore {
         if (this.currentSong === undefined) {
             this.currentSong = {
                 title:"None",
-                loop: {
-                    chart:null,
-                    sound:null,
-                    fname:null,
-                    nameWithExt:null,
-                },
-                build: {
-                    chart:null,
-                    sound:null,
-                    fname:null,
-                    nameWithExt:null,
-                },
-                source:null,
+                loop: {},
+                build: {},
+                source:"",
                 enabled:true,
-                charsPerBeat: null};
+                charsPerBeat: null,
+                buildupPlayed: false,
+                independentBuild: false,
+            };
         }
         console.log("Next song:", this.songIndex, this.currentSong);
         this.callEventListeners("newsong", this.currentSong);
@@ -573,13 +546,13 @@ class HuesCore {
     }
 
     updateBeatLength() {
-        if(this.currentSong.loop.sound) {
-            this.loopLength = this.soundManager.loop.length / this.currentSong.loop.chart.length;
+        if(this.currentSong?.loop.sound) {
+            this.loopLength = this.soundManager.loop.length / this.currentSong.loop.chart!.length;
         } else {
             this.loopLength = -1;
         }
 
-        if(this.currentSong.build.sound) {
+        if(this.currentSong?.build.sound) {
             if (!this.currentSong.build.chart) {
                 this.currentSong.build.chart = ".";
             }
@@ -600,7 +573,7 @@ class HuesCore {
     fillBuildup() {
         // update loop length for flash style filling
         this.updateBeatLength();
-        if(this.currentSong.build.sound) {
+        if(this.currentSong?.build.sound) {
             if(this.currentSong.independentBuild) {
                 console.log("New behaviour - separate build/loop lengths");
                 // Do nothing
@@ -610,7 +583,7 @@ class HuesCore {
                 if(buildBeats < 1) {
                     buildBeats = 1;
                 }
-                while (this.currentSong.build.chart.length < buildBeats) {
+                while (this.currentSong.build.chart!.length < buildBeats) {
                     this.currentSong.build.chart += ".";
                 }
                 console.log("Buildup length:", buildBeats);
@@ -667,21 +640,19 @@ class HuesCore {
     }
 
     doAutoSong() {
-        let func = null;
         if(this.resourceManager.enabledSongs.length < 2) {
             return; // don't move if there's nothing to move to
         }
-        if(this.settings.autoSongShuffle == "on") {
-            func = this.randomSong;
+        let func;
+        if(this.settings.autoSongShuffle === "on") {
+            func = () => this.randomSong();
         } else {
-            func = this.nextSong;
+            func = () => this.nextSong();
         }
-        if(this.settings.autoSongFadeout == "on") {
-            this.soundManager.fadeOut(() => {
-                func.call(this);
-            });
+        if(this.settings.autoSongFadeout === "on") {
+            this.soundManager.fadeOut(func);
         } else {
-            func.call(this);
+            func();
         }
     }
 
@@ -720,11 +691,11 @@ class HuesCore {
         }
     }
 
-    setImage(index, leaveArray) {
+    setImage(index: number, leaveArray: boolean = false) {
         // If there are no images, this corrects NaN to 0
         this.imageIndex = index ? index : 0;
         let img=this.resourceManager.enabledImages[this.imageIndex];
-        if (img == this.currentImage && img !== null) {
+        if (img == this.currentImage && img) {
             return;
         }
         // When not randoming, clear this
@@ -734,14 +705,16 @@ class HuesCore {
         if (img) {
             this.currentImage = img;
         } else {
-            this.currentImage = {"name":"None", "fullname":"None", "align":"center", "bitmap":null, "source":null, "enabled":true};
+            this.currentImage = {
+                enabled:true, name:"None", fullname:"None", align:"center", bitmaps:[],
+                source:"", frameDurations:[], animated:false, beatsPerAnim:0};
             this.imageIndex = -1;
             this.lastImageArray = [];
         }
         this.callEventListeners("newimage", this.currentImage);
     }
 
-    setImageByName(name) {
+    setImageByName(name: string) {
         let images = this.resourceManager.enabledImages;
         for(let i = 0; i < images.length; i++) {
             if(images[i].name == name || images[i].fullname == name) {
@@ -764,7 +737,7 @@ class HuesCore {
         this.setImage(img);
     }
 
-    randomColourIndex() {
+    randomColourIndex(): number {
         let index=Math.floor((Math.random() * this.colours.length));
         if (index == this.colourIndex) {
             return this.randomColourIndex();
@@ -772,26 +745,27 @@ class HuesCore {
         return index;
     }
 
-    randomColour(isFade) {
+    randomColour(isFade: boolean = false) {
         let index=this.randomColourIndex();
         this.setColour(index, isFade);
     }
 
-    setColour(index, isFade) {
+    setColour(index: number, isFade: boolean = false) {
         this.colourIndex = index;
         let colour = this.colours[this.colourIndex];
         this.callEventListeners("newcolour", colour, isFade);
     }
 
-    getBeat(index) {
+    getBeat(index: number) {
+        let song = this.currentSong!;
         if(index < 0) {
-            return this.currentSong.build.chart[this.currentSong.build.chart.length+index];
+            return song.build.chart![song.build.chart!.length+index];
         } else {
-            return this.currentSong.loop.chart[index % this.currentSong.loop.chart.length];
+            return song.loop.chart![index % song.loop.chart!.length];
         }
     }
 
-    beater(beat) {
+    beater(beat: string) {
         this.callEventListeners("beat", this.getBeatString(), this.getBeatIndex());
         switch(beat) {
             case 'X':
@@ -882,7 +856,7 @@ class HuesCore {
 
     charsToNextBeat() {
         // case: fade in build, not in rhythm. Must max out fade timer.
-        let maxSearch = this.currentSong.loop.chart.length;
+        let maxSearch = this.currentSong!.loop.chart!.length;
         if(this.beatIndex < 0) {
             maxSearch -= this.beatIndex;
         }
@@ -899,17 +873,15 @@ class HuesCore {
         return (this.charsToNextBeat() * this.getBeatLength()) / this.soundManager.playbackRate;
     }
 
-    getBeatString(length) {
-        length = length ? length : 256;
-
+    getBeatString(length = 256) {
         let beatString = "";
         let song = this.currentSong;
         if (song) {
             if(this.beatIndex < 0) {
-                beatString = song.build.chart.slice(
-                        song.build.chart.length + this.beatIndex);
+                beatString = song.build.chart!.slice(
+                        song.build.chart!.length + this.beatIndex);
             } else {
-                beatString = song.loop.chart.slice(this.beatIndex % song.loop.chart.length);
+                beatString = song.loop.chart!.slice(this.beatIndex % song.loop.chart!.length);
             }
             while (beatString.length < length) {
                 beatString += song.loop.chart;
@@ -919,7 +891,7 @@ class HuesCore {
         return beatString;
     }
 
-    setIsFullAuto(auto) {
+    setIsFullAuto(auto: boolean) {
         this.settings.fullAuto = auto;
         if (this.userInterface) {
             this.callEventListeners("newmode", this.settings.fullAuto);
@@ -930,7 +902,7 @@ class HuesCore {
         this.setIsFullAuto(!this.settings.fullAuto);
     }
 
-    setInvert(invert) {
+    setInvert(invert: any) {
         this.invert = !!invert;
         this.callEventListeners("invert", invert);
     }
@@ -939,11 +911,7 @@ class HuesCore {
         this.setInvert(!this.invert);
     }
 
-    respackLoaded() {
-        this.init();
-    }
-
-    changeUI(index) {
+    changeUI(index: number) {
         if (index >= 0 && this.uiArray.length > index && this.userInterface != this.uiArray[index]) {
             this.hideLists();
             if(this.userInterface) {
@@ -984,22 +952,22 @@ class HuesCore {
         }
         switch (this.settings.colourSet) {
         case "normal":
-            this.colours = HuesCore.oldColours;
+            this.colours = oldColours;
             break;
         case "pastel":
-            this.colours = HuesCore.pastelColours;
+            this.colours = pastelColours;
             break;
         case "v4.20":
-            this.colours = HuesCore.weedColours;
+            this.colours = weedColours;
             break;
         }
         switch (this.settings.blackoutUI) {
         case "off":
-            this.userInterface.show();
+            this.userInterface?.show();
             break;
         case "on":
             if(this.renderer.blackout) {
-                this.userInterface.hide();
+                this.userInterface?.hide();
             }
             break;
         }
@@ -1051,7 +1019,7 @@ class HuesCore {
         }
     }
 
-    keyHandler(key) {
+    keyHandler(key: number) {
         switch (key) {
         case 37: // LEFT
             this.previousImage();
@@ -1085,7 +1053,7 @@ class HuesCore {
             this.soundManager.toggleMute();
             break;
         case 72: // H
-            this.userInterface.toggleHide();
+            this.userInterface?.toggleHide();
             break;
         case 82: // R
             this.window.selectTab("RESOURCES");
@@ -1138,13 +1106,13 @@ class HuesCore {
         return false;
     }
 
-    error(message) {
+    error(message: string) {
         console.log(message);
         this.preloadSubMsg.textContent = message;
         this.preloadMsg.style.color = "#F00";
     }
 
-    warning(message) {
+    warning(message: string) {
         console.log(message);
         this.preloadSubMsg.innerHTML = message;
         this.preloadMsg.style.color = "#F93";
@@ -1156,7 +1124,7 @@ class HuesCore {
     }
 }
 
-HuesCore.oldColours =
+const oldColours =
    [{'c': 0x000000, 'n': 'black'},
     {'c': 0x550000, 'n': 'brick'},
     {'c': 0xAA0000, 'n': 'crimson'},
@@ -1221,7 +1189,7 @@ HuesCore.oldColours =
     {'c': 0x55FFFF, 'n': 'turquoise'},
     {'c': 0xAAFFFF, 'n': 'powder'},
     {'c': 0xFFFFFF, 'n': 'white'}];
-HuesCore.pastelColours =
+const pastelColours =
    [{'c': 0xCD4A4A, 'n': 'Mahogany'},
     {'c': 0xFAE7B5, 'n': 'Banana Mania'},
     {'c': 0x9F8170, 'n': 'Beaver'},
@@ -1286,7 +1254,7 @@ HuesCore.pastelColours =
     {'c': 0xFCE883, 'n': 'Yellow'},
     {'c': 0xC5E384, 'n': 'Yellow Green'},
     {'c': 0xFFB653, 'n': 'Yellow Orange'}];
-HuesCore.weedColours =
+const weedColours =
    [{'c': 0x00FF00, 'n': 'Green'},
     {'c': 0x5A6351, 'n': 'Lizard'},
     {'c': 0x636F57, 'n': 'Cactus'},
@@ -1352,6 +1320,5 @@ HuesCore.weedColours =
     {'c': 0x694489, 'n': 'Purple Rain'},
     {'c': 0xFFD700, 'n': 'Gold'}];
 
-window.HuesCore = HuesCore;
 
-})(window, document);
+(<any>window).HuesCore = HuesCore;

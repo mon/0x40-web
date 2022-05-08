@@ -1,29 +1,7 @@
-/* Copyright (c) 2015 William Toohey <will@mon.im>
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
- * THE SOFTWARE.
- */
-
 import '../css/hues-respacks.css';
-import './ResourcePack';
-
- (function(window, document) {
-"use strict";
+import { Respack, type HuesImage, type HuesSong, type ProgressCallback } from './ResourcePack';
+import type { HuesCore } from './HuesCore';
+import type HuesWindow from './HuesWindow';
 
 let TAB_SONGS = 0;
 let TAB_IMAGES = 1;
@@ -34,8 +12,64 @@ let getAndIncrementUnique = function() {
     return unique++;
 };
 
-class Resources {
-    constructor(core, huesWin) {
+interface RemotePack extends Respack {
+    loaded?: boolean;
+    url: string;
+}
+
+export default class Resources {
+    core: HuesCore;
+    hasUI: boolean;
+
+    resourcePacks: Respack[];
+
+    allSongs: HuesSong[];
+    allImages: HuesImage[];
+    enabledSongs: HuesSong[];
+    enabledImages: HuesImage[];
+
+    progressState: number[];
+    progressCallback?: ProgressCallback;
+
+    // oh god oh man there's so much UI I need to svelte-ify this
+    root!: HTMLDivElement;
+    enabledSongList!: HTMLDivElement;
+    enabledImageList!: HTMLDivElement;
+    listView!: HTMLDivElement;
+
+    packView!: {
+        pack: Respack;
+        name: HTMLDivElement;
+        creator: HTMLAnchorElement;
+        size: HTMLDivElement;
+        desc: HTMLDivElement;
+        songCount: HTMLDivElement;
+        imageCount: HTMLDivElement;
+        songList: HTMLDivElement;
+        imageList: HTMLDivElement;
+        packButtons: HTMLDivElement;
+        totalSongs: HTMLSpanElement;
+        totalImages: HTMLSpanElement;
+    };
+
+    packsView!: {
+        respackList: HTMLDivElement;
+        remoteList: HTMLDivElement;
+        loadRemote: HTMLDivElement;
+        progressBar: HTMLSpanElement;
+        progressStatus: HTMLDivElement;
+        progressCurrent: HTMLDivElement;
+        progressTop: HTMLDivElement;
+        progressPercent: HTMLDivElement;
+    }
+
+    fileInput!: HTMLInputElement;
+
+    currentTab: number;
+    unique: number;
+    remotes: any;
+
+    constructor(core: HuesCore, huesWin: HuesWindow) {
         this.core = core;
         this.hasUI = false;
 
@@ -47,41 +81,10 @@ class Resources {
         this.enabledImages = [];
 
         this.progressState = [];
-        this.progressCallback = null;
 
-        // For songs/images
-        this.listView = null;
-        this.enabledSongList = null;
-        this.enabledImageList = null;
-        this.packView = {
-            pack: null,
-            name: null,
-            creator: null,
-            size: null,
-            desc: null,
-            songCount: null,
-            imageCount: null,
-            songList: null,
-            imageList: null,
-            packButtons: null,
-            totalSongs: null,
-            totalImages: null
-        };
-        this.packsView = {
-            respackList: null,
-            remoteList: null,
-            loadRemote: null,
-            progressBar: null,
-            progressStatus: null,
-            progressCurrent: null,
-            progressTop: null,
-            progressPercent: null
-        };
         this.currentTab = TAB_SONGS;
         this.unique = getAndIncrementUnique();
         this.remotes = null;
-        this.fileInput = null;
-        this.fileParseQueue = [];
         if(core.settings.enableWindow) {
             this.initUI();
             huesWin.addTab("RESOURCES", this.root);
@@ -90,21 +93,26 @@ class Resources {
 
     /* Uses HTTP HEAD requests to get the size of all the linked URLs
        Returns an Promise.all which will resolve to an array of sizes */
-    getSizes(urls) {
-        let promises = [];
+    getSizes(urls: string[]) {
+        let promises: Promise<number | null>[] = [];
 
         urls.forEach(url => {
-            let p = new Promise((resolve, reject) => {
+            let p = new Promise<number | null>((resolve, reject) => {
                 let xhr = new XMLHttpRequest();
                 xhr.open("HEAD", url, true);
                 xhr.onreadystatechange = function() {
                     if (this.readyState == this.DONE) {
-                        let bytes = parseInt(xhr.getResponseHeader("Content-Length"));
+                        let len = xhr.getResponseHeader("Content-Length");
+                        if(len === null) {
+                            resolve(null);
+                            return;
+                        }
+                        let bytes = parseInt(len);
                         resolve(bytes / 1024 / 1024);
                     }
                 };
                 xhr.onerror = function() {
-                    reject(Error(req.status + ": Could not fetch respack at " + url));
+                    reject(Error(xhr.status + ": Could not fetch respack at " + url));
                 };
                 xhr.send();
             }).catch(error => {
@@ -123,7 +131,7 @@ class Resources {
 
     // Array of URLs to load, and a callback for when we're done
     // Preserves order of URLs being loaded
-    addAll(urls, progressCallback) {
+    addAll(urls: string[], progressCallback: ProgressCallback) {
         if(progressCallback) {
             this.progressCallback = progressCallback;
             this.progressState = Array.apply(null, Array(urls.length)).map(Number.prototype.valueOf,0);
@@ -131,14 +139,14 @@ class Resources {
 
         let respackPromises = [];
 
-        let progressFunc = function(index, progress, pack) {
-                this.progressState[index] = progress;
-                this.updateProgress(pack);
-        };
-
         for(let i = 0; i < urls.length; i++) {
+            let progressFunc = (progress: number, pack: Respack) => {
+                this.progressState[i] = progress;
+                this.updateProgress(pack);
+            };
+
             let r = new Respack();
-            respackPromises.push(r.loadFromURL(urls[i], progressFunc.bind(this, i)));
+            respackPromises.push(r.loadFromURL(urls[i], progressFunc));
         }
         // Start all the promises at once, but add in sequence
         return respackPromises.reduce((sequence, packPromise) => {
@@ -150,16 +158,19 @@ class Resources {
         }, Promise.resolve());
     }
 
-    updateProgress(pack) {
+    updateProgress(pack: Respack) {
         let total = 0;
-        for(let i = 0; i < this.progressState.length; i++) {
-            total += this.progressState[i];
+        for(const state of this.progressState) {
+            total += state;
         }
         total /= this.progressState.length;
-        this.progressCallback(total, pack);
+
+        if(this.progressCallback) {
+            this.progressCallback(total, pack);
+        }
     }
 
-    addPack(pack) {
+    addPack(pack: Respack) {
         console.log("Added", pack.name, "to respacks");
         let id = this.resourcePacks.length;
         this.resourcePacks.push(pack);
@@ -167,18 +178,15 @@ class Resources {
         this.rebuildEnabled();
         this.updateTotals();
 
-        let self = this;
         this.appendListItem("respacks", pack.name, "res" + id, this.packsView.respackList,
-            function() {
-                pack.enabled = this.checked;
-                self.rebuildEnabled();
-            }, function(id) {
-                this.selectPack(id);
-            }.bind(this, id)
-        );
+            checked => {
+                pack.enabled = checked;
+                this.rebuildEnabled();
+            },
+            () => this.selectPack(id));
     }
 
-    addResourcesToArrays(pack) {
+    addResourcesToArrays(pack: Respack) {
         this.allImages = this.allImages.concat(pack.images);
         this.allSongs = this.allSongs.concat(pack.songs);
     }
@@ -186,10 +194,9 @@ class Resources {
     rebuildArrays() {
         this.allSongs = [];
         this.allImages = [];
-        this.allAnimations = [];
 
-        for(let i = 0; i < this.resourcePacks.length; i++) {
-            this.addResourcesToArrays(this.resourcePacks[i]);
+        for(const pack of this.resourcePacks) {
+            this.addResourcesToArrays(pack);
         }
     }
 
@@ -197,8 +204,7 @@ class Resources {
         this.enabledSongs = [];
         this.enabledImages = [];
 
-        for(let i = 0; i < this.resourcePacks.length; i++) {
-            let pack = this.resourcePacks[i];
+        for(const pack of this.resourcePacks) {
             if (pack.enabled !== true) {
                 continue;
             }
@@ -224,24 +230,22 @@ class Resources {
             while(imageList.firstElementChild) {
                 imageList.removeChild(imageList.firstElementChild);
             }
-            for(let i = 0; i < this.enabledSongs.length; i++) {
-                let song = this.enabledSongs[i];
-                this.appendSimpleListItem(song.title, songList, function(index) {
-                    this.core.setSong(index);
-                }.bind(this, i));
+            for(const [i, song] of this.enabledSongs.entries()) {
+                this.appendSimpleListItem(song.title!, songList, () => {
+                    this.core.setSong(i);
+                });
             }
-            for(let i = 0; i < this.enabledImages.length; i++) {
-                let image = this.enabledImages[i];
-                this.appendSimpleListItem(image.name, imageList, function(index) {
-                    this.core.setImage(index);
+            for(const [i, image] of this.enabledImages.entries()) {
+                this.appendSimpleListItem(image.name, imageList, () => {
+                    this.core.setImage(i);
                     this.core.setIsFullAuto(false);
-                }.bind(this, i));
+                });
             }
         }
         this.updateTotals();
     }
 
-    removePack(pack) {
+    removePack(pack: Respack) {
         let index = this.resourcePacks.indexOf(pack);
         if (index != -1) {
             this.resourcePacks.splice(index, 1);
@@ -258,8 +262,8 @@ class Resources {
 
     getSongNames() {
         let names = [];
-        for(let i = 0; i < this.allSongs.length; i++) {
-            names.push(this.allSongs[i]);
+        for(const song of this.allSongs) {
+            names.push(song);
         }
         return names;
     }
@@ -268,12 +272,16 @@ class Resources {
         console.log("Loading local zip(s)");
 
         let files = this.fileInput.files;
+        if(!files) {
+            console.log("...empty or null");
+            return Promise.resolve();
+        }
+
         let p = Promise.resolve();
-        for(let i = 0; i < files.length; i++) {
+        for(const file of files) {
             let r = new Respack();
-            /*jshint -W083 */
             p = p.then(() => {
-                return r.loadFromBlob(files[i], (progress, respack) => {
+                return r.loadFromBlob(file, (progress, respack) => {
                     this.localProgress(progress, respack);
                 });
             }).then(pack => {
@@ -286,17 +294,17 @@ class Resources {
         });
     }
 
-    localProgress(progress, respack) {
+    localProgress(progress: number, respack: Respack) {
         if(!this.hasUI) {return;}
         this.packsView.progressStatus.textContent = "Processing...";
 
         this.packsView.progressBar.style.width = (progress * 100) + "%";
-        this.packsView.progressCurrent.textContent = respack.filesLoaded;
-        this.packsView.progressTop.textContent = respack.filesToLoad;
+        this.packsView.progressCurrent.textContent = respack.filesLoaded.toString();
+        this.packsView.progressTop.textContent = respack.filesToLoad.toString();
         this.packsView.progressPercent.textContent = Math.round(progress * 100) + "%";
     }
 
-    localComplete(progress) {
+    localComplete() {
         let progStat = this.packsView.progressStatus;
         progStat.textContent = "Complete";
         window.setTimeout(function() {progStat.textContent = "Idle";}, 2000);
@@ -308,6 +316,9 @@ class Resources {
     }
 
     initUI() {
+        (<any>this.packView) = {};
+        (<any>this.packsView) = {};
+
         this.root = document.createElement("div");
         this.root.className = "respacks";
 
@@ -389,8 +400,8 @@ class Resources {
         packsContainer.appendChild(packHeader);
         packsContainer.appendChild(packList);
         if(!this.core.settings.disableRemoteResources) {
-            packsContainer.appendChild(remoteHeader);
-            packsContainer.appendChild(remoteList);
+            packsContainer.appendChild(remoteHeader!);
+            packsContainer.appendChild(remoteList!);
         }
         packsContainer.appendChild(buttons);
         packsContainer.appendChild(progressContainer);
@@ -540,7 +551,7 @@ class Resources {
         this.enabledImageList.classList.add("hidden");
     }
 
-    toggleVisible(me, other) {
+    toggleVisible(me: HTMLElement, other: HTMLElement) {
         if(!this.hasUI) {return;}
         if(me.classList.contains("hidden")) {
             me.classList.remove("hidden");
@@ -566,11 +577,11 @@ class Resources {
                 this.enabledImages.length + "/" + this.allImages.length;
     }
 
-    truncateNum(num) {
+    truncateNum(num: number) {
         return Math.round(num * 100) / 100;
     }
 
-    selectPack(id) {
+    selectPack(id: number) {
         let pack = this.resourcePacks[id];
         this.packView.pack = pack;
 
@@ -599,32 +610,28 @@ class Resources {
             imageList.removeChild(imageList.firstElementChild);
         }
 
-        for(let i = 0; i < pack.songs.length; i++) {
+        for(const [i, song] of pack.songs.entries()) {
             let song = pack.songs[i];
-            this.appendListItem("songs", song.title, "song" + i, songList,
-                this.selectResourceCallback(song),
-                this.clickResourceCallback.bind(this, song, true),
+            this.appendListItem("songs", song.title || "", "song" + i, songList,
+                checked => this.selectResourceCallback(song, checked),
+                () => this.clickResourceCallback(song, true),
                 song.enabled);
         }
 
-        for(let i = 0; i < pack.images.length; i++) {
-            let image = pack.images[i];
+        for(const [i, image] of pack.images.entries()) {
             this.appendListItem("images", image.name, "image" + i, imageList,
-                this.selectResourceCallback(image),
-                this.clickResourceCallback.bind(this, image, false),
+                checked => this.selectResourceCallback(image, checked),
+                () => this.clickResourceCallback(image, false),
                 image.enabled);
         }
     }
 
-    selectResourceCallback(res) {
-        let self = this;
-        return function() {
-            res.enabled = this.checked;
-            self.rebuildEnabled();
-        };
+    selectResourceCallback(res: HuesSong | HuesImage, checked: boolean) {
+        res.enabled = checked;
+        this.rebuildEnabled();
     }
 
-    clickResourceCallback(res, isSong) {
+    clickResourceCallback(res: HuesSong | HuesImage, isSong: boolean) {
         if(!res.enabled) {
             res.enabled = true;
             this.rebuildEnabled();
@@ -632,9 +639,9 @@ class Resources {
             this.selectPack(this.resourcePacks.indexOf(this.packView.pack));
         }
         if(isSong) {
-            this.core.setSong(this.enabledSongs.indexOf(res));
+            this.core.setSong(this.enabledSongs.indexOf(res as HuesSong));
         } else {
-            this.core.setImage(this.enabledImages.indexOf(res));
+            this.core.setImage(this.enabledImages.indexOf(res as HuesImage));
             this.core.setIsFullAuto(false);
         }
     }
@@ -653,44 +660,36 @@ class Resources {
         }
     }
 
-    enableAll() {
+    setAll(valCallback: (previousVal: boolean) => boolean) {
         let tab = this.getEnabledTabContents();
         if(!tab)
             return;
-        for(let i = 0; i < tab.arr.length; i++) {
-            tab.arr[i].enabled = true;
-            document.getElementById(tab.elName + i + "-" + this.unique).checked = true;
+        for(const [i, entry] of tab.arr.entries()) {
+            const newVal = valCallback(entry.enabled);
+            entry.enabled = newVal;
+            let checkbox = document.getElementById(tab.elName + i + "-" + this.unique);
+            (<HTMLInputElement>checkbox).checked = newVal;
         }
         this.rebuildEnabled();
+    }
+
+    enableAll() {
+        this.setAll(() => true);
     }
 
     disableAll() {
-        let tab = this.getEnabledTabContents();
-        if(!tab)
-            return;
-        for(let i = 0; i < tab.arr.length; i++) {
-            tab.arr[i].enabled = false;
-            document.getElementById(tab.elName + i + "-" + this.unique).checked = false;
-        }
-        this.rebuildEnabled();
+        this.setAll(() => false);
     }
 
     invert() {
-        let tab = this.getEnabledTabContents();
-        if(!tab)
-            return;
-        for(let i = 0; i < tab.arr.length; i++) {
-            tab.arr[i].enabled = !tab.arr[i].enabled;
-            document.getElementById(tab.elName + i + "-" + this.unique).checked = tab.arr[i].enabled;
-        }
-        this.rebuildEnabled();
+        this.setAll((prev) => !prev);
     }
 
-    appendListItem(name, value, id, root, oncheck, onclick, checked) {
+    appendListItem(name: string, value: string, id: string, root: HTMLElement,
+            oncheck: (checked: boolean) => any, onclick: GlobalEventHandlers['onclick'],
+            checked: boolean = true) {
         if(!this.hasUI) {return;}
-        if(checked === undefined) {
-            checked = true;
-        }
+
         let div = document.createElement("div");
         div.className = "respacks-listitem";
         let checkbox = document.createElement("input");
@@ -699,7 +698,7 @@ class Resources {
         checkbox.value = value;
         checkbox.id = id + "-" + this.unique;
         checkbox.checked = checked;
-        checkbox.onclick = oncheck;
+        checkbox.onclick = () => oncheck(checkbox.checked);
         let checkStyler = document.createElement("label");
         checkStyler.htmlFor = checkbox.id;
         let label = document.createElement("span");
@@ -718,20 +717,22 @@ class Resources {
         }
         let item = this.appendSimpleListItem("Loading...", remoteList);
 
+        let onerror = () => {
+            item.textContent = "Could not load list! Click to try again";
+            item.onclick = this.loadRemotes.bind(this);
+        };
+
         let req = new XMLHttpRequest();
         req.open('GET', this.core.settings.packsURL, true);
         req.responseType = 'json';
         req.onload = () => {
             if(!req.response) {
-                req.onerror();
+                onerror();
             }
             this.remotes = req.response;
             this.populateRemotes();
         };
-        req.onerror = () => {
-            item.textContent = "Could not load list! Click to try again";
-            item.onclick = this.loadRemotes.bind(this);
-        };
+        req.onerror = onerror;
         req.send();
     }
 
@@ -740,16 +741,14 @@ class Resources {
         while(remoteList.firstElementChild) {
             remoteList.removeChild(remoteList.firstElementChild);
         }
-        for(let i = 0; i < this.remotes.length; i++) {
-            this.remotes[i].loaded = false;
-            this.appendSimpleListItem(this.remotes[i].name, remoteList,
-                function(index) {
-                    this.selectRemotePack(index);
-                }.bind(this, i));
+        for(const [i, remote] of this.remotes.entries()) {
+            remote.loaded = false;
+            this.appendSimpleListItem(remote.name, remoteList,
+                () => {this.selectRemotePack(i)});
         }
     }
 
-    selectRemotePack(id) {
+    selectRemotePack(id: number) {
         let pack = this.remotes[id];
         this.packView.pack = pack;
 
@@ -815,7 +814,7 @@ class Resources {
     }
 
     loadCurrentRemote() {
-        let pack = this.packView.pack;
+        let pack = this.packView.pack as RemotePack;
 
         // Not actually a remote, ignore. How did you press this :<
         if(pack.loaded === undefined || pack.loaded) {
@@ -832,7 +831,7 @@ class Resources {
         ).then(this.remoteComplete.bind(this));
     }
 
-    remoteProgress(progress, respack) {
+    remoteProgress(progress: number, respack: Respack) {
         if(progress < 0.5) {
             this.packsView.progressStatus.textContent = "Downloading...";
             this.packsView.progressCurrent.textContent = Math.round(respack.downloaded / 1024) + "b";
@@ -841,8 +840,8 @@ class Resources {
             this.packsView.progressPercent.textContent = Math.round(progress * 2 * 100) + "%";
         } else {
             this.packsView.progressStatus.textContent = "Processing...";
-            this.packsView.progressCurrent.textContent = respack.filesLoaded;
-            this.packsView.progressTop.textContent = respack.filesToLoad;
+            this.packsView.progressCurrent.textContent = respack.filesLoaded.toString();
+            this.packsView.progressTop.textContent = respack.filesToLoad.toString();
             this.packsView.progressBar.style.width = ((progress - 0.5) * 2 * 100) + "%";
             this.packsView.progressPercent.textContent = Math.round((progress - 0.5) * 2 * 100) + "%";
         }
@@ -860,19 +859,17 @@ class Resources {
         this.packsView.progressPercent.textContent = "0%";
     }
 
-    appendSimpleListItem(value, root, onclick) {
+    appendSimpleListItem(value: string, root: HTMLElement, onclick?: GlobalEventHandlers['onclick']) {
         let div = document.createElement("div");
         div.className = "respacks-listitem";
         let label = document.createElement("span");
         // Because we're using textContent, we replace with literal &
         label.textContent = value.replace(/&amp;/g, '&');
-        label.onclick = onclick;
+        if(onclick) {
+            label.onclick = onclick;
+        }
         div.appendChild(label);
         root.appendChild(div);
         return label;
     }
 }
-
-window.Resources = Resources;
-
-})(window, document);

@@ -1,25 +1,26 @@
-<script>
+<script lang="ts">
     import { onMount } from "svelte";
+    import type SoundManager from "../SoundManager";
 
     export let disabled = false;
-    export let soundManager = null;
+    export let soundManager: SoundManager | null = null;
 
     const WAVE_PIXELS_PER_SECOND = 100;
     const WAVE_HEIGHT_PIXELS = 30;
 
-    let canvas;
-    let waveContext;
+    let canvas: HTMLCanvasElement;
+    let waveContext: CanvasRenderingContext2D | null;
 
-    let buildWave;
-    let loopWave;
+    let buildWave: HTMLCanvasElement | null;
+    let loopWave: HTMLCanvasElement | null;
 
-    let renderWave = (buffer, length) => {
+    let renderWave = (buffer: AudioBuffer | undefined, length: number) => {
         if(!buffer) {
             return null;
         }
         // The individual wave section
         let wave = document.createElement("canvas");
-        let waveContext = wave.getContext("2d");
+        let waveContext = wave.getContext("2d")!;
 
         wave.height = WAVE_HEIGHT_PIXELS;
         wave.width = Math.floor(WAVE_PIXELS_PER_SECOND * length);
@@ -52,7 +53,7 @@
             // Min is negative, addition is correct
             let minPix = Math.floor(halfHeight + min * halfHeight);
             waveContext.strokeStyle = "black";
-            waveContext.globalAlpha = "1";
+            waveContext.globalAlpha = 1;
             waveContext.beginPath();
             waveContext.moveTo(pixel, maxPix);
             waveContext.lineTo(pixel, minPix);
@@ -64,7 +65,7 @@
             let maxAvg = Math.floor(halfHeight + avgHi * halfHeight);
             let minAvg = Math.floor(halfHeight + avgLo * halfHeight);
             waveContext.strokeStyle = "white";
-            waveContext.globalAlpha = "0.5";
+            waveContext.globalAlpha = 0.5;
             waveContext.beginPath();
             waveContext.moveTo(pixel, maxAvg);
             waveContext.lineTo(pixel, minAvg);
@@ -76,9 +77,10 @@
         return wave;
     };
 
-    let drawOneWave = (wave, waveOffset, drawOffset, width) => {
+    let drawOneWave = (wave: HTMLCanvasElement, waveOffset: number,
+            drawOffset: number, width: number) => {
         let drawWidth = Math.min(width - drawOffset, wave.width - waveOffset);
-        waveContext.drawImage(wave,
+        waveContext!.drawImage(wave,
                                    waveOffset, 0,                  // source x/y
                                    drawWidth, WAVE_HEIGHT_PIXELS,  // source width/height
                                    drawOffset, 0,                  // dest x/y
@@ -86,17 +88,17 @@
         return drawOffset + drawWidth;
     }
 
-    let drawWaveBar = (colour, offset) => {
-        waveContext.strokeStyle = colour;
-        waveContext.lineWidth = 2;
-        waveContext.beginPath();
-        waveContext.moveTo(offset, 0);
-        waveContext.lineTo(offset, WAVE_HEIGHT_PIXELS);
-        waveContext.stroke();
+    let drawWaveBar = (colour: string, offset: number) => {
+        waveContext!.strokeStyle = colour;
+        waveContext!.lineWidth = 2;
+        waveContext!.beginPath();
+        waveContext!.moveTo(offset, 0);
+        waveContext!.lineTo(offset, WAVE_HEIGHT_PIXELS);
+        waveContext!.stroke();
     }
 
     let drawWave = () => {
-        if((!buildWave && !loopWave) || disabled)
+        if((!buildWave && !loopWave) || disabled || !soundManager)
             return;
 
         let width = canvas.width;
@@ -117,7 +119,7 @@
         // drawOffset is "pixels from the left"
         drawOffset = Math.floor((drawTime - minTime) * WAVE_PIXELS_PER_SECOND);
 
-        waveContext.clearRect(0, 0, width, WAVE_HEIGHT_PIXELS);
+        waveContext!.clearRect(0, 0, width, WAVE_HEIGHT_PIXELS);
 
         if(buildWave && bLen && minTime < 0) {
             // Bit of legwork to convert negative to positive

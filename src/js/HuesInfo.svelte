@@ -1,6 +1,6 @@
-<script>
-    export let version;
-    export let huesName;
+<script lang="ts">
+    export let version: string;
+    export let huesName: string;
 
     $: name = huesName.replace("%VERSION%", version);
 

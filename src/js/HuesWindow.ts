@@ -1,47 +1,31 @@
-/* Copyright (c) 2015 William Toohey <will@mon.im>
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
- * THE SOFTWARE.
- */
+import EventListener from './EventListener';
+import type { HuesSettings } from './HuesSettings';
 
-(function(window, document) {
-"use strict";
+type WindowEvents = {
+    // When the window is shown, hidden or toggled this fires.
+    // 'shown' is true if the window was made visible, false otherwise
+    windowshown: ((shown: boolean) => void)[];
+    //The name of the tab that was selected
+    tabselected: ((tabName: string) => void)[];
+}
 
-class HuesWindow {
-    constructor(root, settings) {
-        this.eventListeners = {
-            /* callback windowshown(shown)
-             *
-             * When the window is shown, hidden or toggled this fires.
-             * 'shown' is true if the window was made visible, false otherwise
-             */
+export default class HuesWindow extends EventListener<WindowEvents> {
+    hasUI: boolean;
+
+    window: Element;
+    tabContainer: Element;
+    contentContainer: Element;
+    contents: Element[];
+    tabs: Element[];
+    tabNames: string[];
+
+    constructor(root: Element, settings: HuesSettings) {
+        super({
             windowshown : [],
-            /* callback tabselected(tabName)
-             *
-             * The name of the tab that was selected
-             */
             tabselected : []
-        };
+        });
 
         this.hasUI = settings.enableWindow;
-
-        if(!this.hasUI)
-            return;
 
         this.window = document.createElement("div");
         this.window.className = "hues-win-helper";
@@ -76,14 +60,11 @@ class HuesWindow {
         }
     }
 
-    addTab(tabName, tabContent) {
-        if(!this.hasUI)
-            return;
-
+    addTab(tabName: string, tabContent?: Element) {
         let label = document.createElement("div");
         label.textContent = tabName;
         label.className = "tab-label";
-        label.onclick = this.selectTab.bind(this, tabName);
+        label.onclick = () => this.selectTab(tabName);
         this.tabContainer.appendChild(label);
         this.tabs.push(label);
         this.tabNames.push(tabName);
@@ -100,7 +81,7 @@ class HuesWindow {
         return content;
     }
 
-    selectTab(tabName, dontShowWin) {
+    selectTab(tabName: string, dontShowWin?: boolean) {
         if(!this.hasUI)
             return;
         if(!dontShowWin) {
@@ -144,35 +125,4 @@ class HuesWindow {
             this.hide();
         }
     }
-
-    callEventListeners(ev) {
-        let args = Array.prototype.slice.call(arguments, 1);
-        this.eventListeners[ev].forEach(function(callback) {
-            callback.apply(null, args);
-        });
-    }
-
-    addEventListener(ev, callback) {
-        ev = ev.toLowerCase();
-        if (typeof(this.eventListeners[ev]) !== "undefined") {
-            this.eventListeners[ev].push(callback);
-        } else {
-            throw Error("Unknown event: " + ev);
-        }
-    }
-
-    removeEventListener(ev, callback) {
-        ev = ev.toLowerCase();
-        if (typeof(this.eventListeners[ev]) !== "undefined") {
-            this.eventListeners[ev] = this.eventListeners[ev].filter(function(a) {
-                return (a !== callback);
-            });
-        } else {
-            throw Error("Unknown event: " + ev);
-        }
-    }
 }
-
-window.HuesWindow = HuesWindow;
-
-})(window, document);

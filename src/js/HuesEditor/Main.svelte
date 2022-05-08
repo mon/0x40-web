@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
     import HuesButton from '../Components/HuesButton.svelte';
     import EditorBox from './EditorBox.svelte';
     import InputBox from './InputBox.svelte';
@@ -8,10 +8,14 @@
 
     import { tick, onMount, createEventDispatcher } from 'svelte';
 
-    export let soundManager;
-    export let huesRoot; // required for size calculations
+    import type SoundManager from '../SoundManager';
+    import type { HuesSongSection } from '../ResourcePack';
+    import type { EditorUndoRedo } from '../HuesEditor';
 
-    export let beatIndex;
+    export let soundManager: SoundManager;
+    export let huesRoot: HTMLElement; // required for size calculations
+
+    export let beatIndex = 0;
 
     // because the editor takes a little CPU time, block it off til the user
     // clicks a "hey let's try this" button
@@ -20,14 +24,15 @@
     export let disabled = true;
 
     // mirrored props from the song object, to make binding/events work nicely
-    export let independentBuild;
-    export let title;
-    export let source;
-    export let loop;
-    export let build;
-    export let undoQueue;
-    export let redoQueue;
+    export let independentBuild: boolean;
+    export let title: string;
+    export let source: string;
+    export let loop: HuesSongSection;
+    export let build: HuesSongSection;
+    export let undoQueue: EditorUndoRedo[];
+    export let redoQueue: EditorUndoRedo[];
     export let songLoadPromise = Promise.reject();
+    export let locked: boolean; // link these together
 
     // and until we convert the rest of the app to svelte, this lets consumers
     // update their own state more simply
@@ -76,17 +81,16 @@
         ["→", "Shutter right"],
     ];
 
-    let editor;
-    let editArea;
-    let buildupEditBox;
-    let loopEditBox;
-    let loopHeader;
-    let resizeHandle;
-    let locked; // link these together
+    let editor: HTMLDivElement;
+    let editArea: HTMLDivElement;
+    let buildupEditBox: HTMLDivElement;
+    let loopEditBox: HTMLDivElement;
+    let loopHeader: HTMLDivElement;
+    let resizeHandle: HTMLDivElement;
 
-    let buildEditorComponent;
-    let loopEditorComponent;
-    let editorFocus = null;
+    let buildEditorComponent: EditorBox;
+    let loopEditorComponent: EditorBox;
+    let editorFocus: EditorBox | null = null;
 
     let helpGlow = true;
 
@@ -102,7 +106,7 @@
     let newLineAtBeat = 32;
     let playbackRate = 1.0;
 
-    export const alert = msg => {
+    export const alert = (msg: string) => {
         statusMsg = msg;
         // recreate the div, even if the message didn't change content
         statusAnim = !statusAnim;
@@ -110,14 +114,19 @@
 
     // all the undo/redo stuff only initialises if it needs to, hence checking
     // if the queue is even defined yet
-    const applyUndoRedo = async props => {
+    const applyUndoRedo = async (props: EditorUndoRedo | undefined) => {
+        // shouldn't happen but anyway...
+        if(props === undefined) {
+            return;
+        }
+
         // if you start saving more props, add them here
         build.chart = props.build;
         loop.chart = props.loop;
         independentBuild = props.independentBuild;
-        if(props.hasOwnProperty('caret')) {
+        if(props.caret !== undefined) {
             await tick();
-            props.editor.setCaret(props.caret);
+            props.editor?.setCaret(props.caret);
         }
     };
 
@@ -151,7 +160,7 @@
         redoQueue = redoQueue;
     };
 
-    const pushUndo = extraProps => {
+    const pushUndo = (extraProps?: Partial<EditorUndoRedo>) => {
         if(!undoQueue) {
             undoQueue = [];
         }
@@ -170,7 +179,7 @@
         undoQueue = undoQueue;
     };
 
-    const soundLen = editor => {
+    const soundLen = (editor: EditorBox) => {
         if(editor == buildEditorComponent) {
             return soundManager.build.length;
         } else {
@@ -178,27 +187,27 @@
         }
     };
 
-    const otherEditor = oneEditor => {
+    const otherEditor = (oneEditor: EditorBox) => {
         return oneEditor == buildEditorComponent ? loopEditorComponent : buildEditorComponent;
     };
 
     // subtract or add '.' until the child is the same beat ratio as the parent
-    const resyncEditorLengths = parent => {
+    const resyncEditorLengths = (parent: EditorBox) => {
         if(independentBuild || !hasBoth) {
             return;
         }
 
         let child = otherEditor(parent);
 
-        const secPerBeat = soundLen(parent) / parent.section.chart.length;
+        const secPerBeat = soundLen(parent) / parent.section.chart!.length;
         let childBeats = Math.round(soundLen(child) / secPerBeat);
         // charts must have at least 1 character
         childBeats = Math.max(childBeats, 1);
-        if(childBeats > child.section.chart.length) {
-            const extra = childBeats - child.section.chart.length;
+        if(childBeats > child.section.chart!.length) {
+            const extra = childBeats - child.section.chart!.length;
             child.section.chart += '.'.repeat(extra);
-        } else if(childBeats < child.section.chart.length) {
-            child.section.chart = child.section.chart.slice(0, childBeats);
+        } else if(childBeats < child.section.chart!.length) {
+            child.section.chart = child.section.chart!.slice(0, childBeats);
         } else {
             return; // no change needed after all
         }
@@ -206,12 +215,12 @@
         child.section = child.section; // inform of changed data
     };
 
-    const doubleBeats = editor => {
-        editor.section.chart = editor.section.chart.replace(/(.)/g, "$1.");
+    const doubleBeats = (editor: EditorBox) => {
+        editor.section.chart = editor.section.chart!.replace(/(.)/g, "$1.");
         editor.section = editor.section; // inform of data change
     }
-    const halveBeats = editor => {
-        let ret = editor.section.chart.replace(/(.)./g, "$1");
+    const halveBeats = (editor: EditorBox) => {
+        let ret = editor.section.chart!.replace(/(.)./g, "$1");
         // don't allow an empty map
         if(!ret) {
             ret = '.';
@@ -220,7 +229,7 @@
         editor.section = editor.section; // inform of data change
     }
 
-    const halveDouble = (parent, apply) => {
+    const halveDouble = (parent: EditorBox, apply: (e:EditorBox) => void) => {
         pushUndo();
 
         apply(parent);
@@ -231,22 +240,22 @@
     };
 
     // not arrow functions - need `this`
-    function doubleClicked(event) {
+    function doubleClicked(this: EditorBox) {
         halveDouble(this, doubleBeats);
     }
-    function halveClicked(event) {
+    function halveClicked(this: EditorBox) {
         halveDouble(this, halveBeats);
     }
 
-    function editorBeforeInput(event) {
+    function editorBeforeInput(this: EditorBox) {
         pushUndo({
             caret: this.caret,
             editor: this,
         });
     }
 
-    function editorAfterInput(event) {
-        resyncEditorLengths(this, otherEditor(this));
+    function editorAfterInput(this: EditorBox) {
+        resyncEditorLengths(this);
     }
 
     export const resyncEditors = () => {
@@ -259,11 +268,11 @@
     //    open and genuinely be wanting input + focus at the same time
     // b) the defocus event fires before the buttons get disabled, and it's
     //    kinda difficult to fix that timing
-    function editorOnfocus(event) {
+    function editorOnfocus(this: EditorBox) {
         editorFocus = this;
     }
 
-    const changeRate = change => {
+    const changeRate = (change: number) => {
         let rate = soundManager.playbackRate;
         rate += change;
         soundManager.setRate(rate);
@@ -279,7 +288,7 @@
 
     onMount(resize);
 
-    const resizeMousedown = (e) => {
+    const resizeMousedown = (e: MouseEvent) => {
         e.preventDefault();
 
         let handleSize = resizeHandle.clientHeight;
@@ -287,7 +296,7 @@
         let handleMax = loopEditBox.getBoundingClientRect().bottom - loopHeader.clientHeight - handleSize/2;
         let handleRange = handleMax - handleMin;
 
-        let resizer = (e) => {
+        let resizer = (e: MouseEvent) => {
             let clamped = Math.max(handleMin, Math.min(handleMax, e.clientY));
             let percent = (clamped - handleMin) / handleRange;
 
@@ -295,7 +304,7 @@
             editArea.style.setProperty('--rhythm-ratio', (1 - percent) + "fr");
         };
 
-        let mouseup = function(e) {
+        let mouseup = () => {
             document.removeEventListener("mousemove", resizer);
             document.removeEventListener("mouseup", mouseup);
         };
@@ -304,7 +313,7 @@
         document.addEventListener("mouseup", mouseup);
     };
 
-    const keydown = event => {
+    const keydown = (event: KeyboardEvent) => {
         if(!event.ctrlKey) {
             return;
         }
@@ -421,7 +430,7 @@
 
         <EditorBox
             title="Rhythm"
-            showHelp=true
+            showHelp
             bind:this={loopEditorComponent}
             bind:section={loop}
             bind:header={loopHeader}

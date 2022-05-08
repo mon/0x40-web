@@ -1,36 +1,13 @@
-/* Copyright (c) 2015 William Toohey <will@mon.im>
- * Portions Copyright (c) 2015 Calvin Walton <calvin.walton@kepstin.ca>
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
- * THE SOFTWARE.
- */
-
 import '../css/hues-settings.css';
+import EventListener from './EventListener';
 
 import SettingsUI from './HuesSettings.svelte';
-
- (function(window, document) {
-"use strict";
+import type HuesWindow from './HuesWindow';
 
 /* If you're modifying settings for your hues, DON'T EDIT THIS
    - Go to the HTML and edit the `defaults` object instead!
  */
-const defaultSettings = {
+const defaultSettings: SettingsData = {
     // Location relative to root - where do the audio/zip workers live
     // This is required because Web Workers need an absolute path
     workersPath : "lib/workers/",
@@ -158,17 +135,66 @@ const settingsOptions = {
         name : "Skip preloader warning",
         options : ["off", "on"]
     }
-};
+} as const; // this magic little thing lets us use "options" as a tuple type!
 
-class HuesSettings {
-    constructor(defaults) {
-        this.eventListeners = {
-            /* callback updated()
-             *
-             * Called when settings are updated
-             */
+export type SettingsData = {
+    workersPath: string;
+    respacks: string[];
+    parseQueryString: boolean;
+    respackPath: string;
+    load: boolean;
+    autoplay: boolean;
+    overwriteLocal : boolean;
+    firstSong: string | null;
+    firstImage: string | null;
+    fullAuto: boolean;
+    packsURL: string;
+    disableRemoteResources: boolean;
+    enableWindow: boolean;
+    showWindow: boolean;
+    firstWindow: string;
+    preloadPrefix: string;
+    preloadBase: number;
+    preloadMax: number;
+    preloadTitle: string;
+    huesName: string;
+    root: HTMLElement | string | null;
+    disableKeyboard: boolean;
+
+    // UI accessible config
+    smartAlign:      typeof settingsOptions.smartAlign.options[number];
+    blurAmount:      typeof settingsOptions.blurAmount.options[number];
+    blurDecay:       typeof settingsOptions.blurDecay.options[number];
+    blurQuality:     typeof settingsOptions.blurQuality.options[number];
+    currentUI:       typeof settingsOptions.currentUI.options[number];
+    colourSet:       typeof settingsOptions.colourSet.options[number];
+    blackoutUI:      typeof settingsOptions.blackoutUI.options[number];
+    playBuildups:    typeof settingsOptions.playBuildups.options[number];
+    visualiser:      typeof settingsOptions.visualiser.options[number];
+    shuffleImages:   typeof settingsOptions.shuffleImages.options[number];
+    autoSong:        typeof settingsOptions.autoSong.options[number];
+    autoSongShuffle: typeof settingsOptions.autoSongShuffle.options[number];
+    autoSongFadeout: typeof settingsOptions.autoSongFadeout.options[number];
+    trippyMode:      typeof settingsOptions.trippyMode.options[number];
+    skipPreloader:   typeof settingsOptions.skipPreloader.options[number];
+    autoSongDelay: number;
+    volume: number;
+}
+
+type SettingsEvents = {
+    // Called when settings are updated
+    updated: (() => void)[];
+}
+
+export interface HuesSettings extends SettingsData {}
+export class HuesSettings extends EventListener<SettingsEvents> {
+    ephemerals: Partial<SettingsData>;
+    ui?: SettingsUI;
+
+    constructor(defaults: Partial<SettingsData>) {
+        super({
             updated : []
-        };
+        });
 
         let settingsVersion = "1";
         if(localStorage.settingsVersion != settingsVersion) {
@@ -178,19 +204,19 @@ class HuesSettings {
 
         this.ephemerals = {};
 
-        for(let attr in defaultSettings) {
-            if(!defaultSettings.hasOwnProperty(attr)) {
-                continue;
-            }
+        for(let _attr in defaultSettings) {
+            let attr = _attr as keyof SettingsData;
             Object.defineProperty(this, attr, {
-                set: this.makeSetter(attr), get: this.makeGetter(attr)
+                set: this.makeSetter(attr as keyof SettingsData), get: this.makeGetter(attr as keyof SettingsData)
             });
 
+            // this is too tricky for typescript and/or my brain, so just be
+            // lazy with the <any>
             if(defaults[attr] !== undefined) {
                 if(defaults.overwriteLocal) {
-                    this[attr] = defaults[attr];
+                    (<any>this)[attr] = defaults[attr];
                 } else {
-                    this.ephemerals[attr] = defaults[attr];
+                    (<any>this.ephemerals)[attr] = defaults[attr];
                 }
             }
         }
@@ -198,25 +224,26 @@ class HuesSettings {
         if (this.parseQueryString) {
             let querySettings = this.getQuerySettings();
 
-            for(let attr in defaultSettings) {
+            for(let _attr in defaultSettings) {
+                let attr = _attr as keyof SettingsData;
                 // query string overrides, finally
                 if(querySettings[attr] !== undefined && attr != 'respacks') {
-                    this.ephemerals[attr] = querySettings[attr];
+                    (<any>this.ephemerals)[attr] = querySettings[attr];
                 }
             }
 
-            this.respacks = this.respacks.concat(querySettings.respacks);
+            this.respacks = this.respacks.concat(querySettings.respacks!);
         }
     }
 
     getQuerySettings() {
-        let results = {};
+        let results: Partial<SettingsData> = {};
         results.respacks = [];
         let query = window.location.search.substring(1);
         let vars = query.split("&");
         for (let i=0;i<vars.length;i++) {
             let pair = vars[i].split("=");
-            let val = decodeURIComponent(pair[1]);
+            let val: string | boolean = decodeURIComponent(pair[1]);
             if(pair[0] == "packs" || pair[0] == "respacks"){
                 let packs = val.split(",");
                 for(let j = 0; j < packs.length; j++) {
@@ -228,13 +255,13 @@ class HuesSettings {
                 // since we can set ephemeral variables this way
                 if(val === "true" || val === "false")
                     val = val == "true";
-                results[pair[0]] = val;
+                (<any>results)[pair[0]] = val;
             }
         }
         return results;
     }
 
-    initUI(huesWin) {
+    initUI(huesWin: HuesWindow) {
         let uiTab = huesWin.addTab("OPTIONS");
         this.ui = new SettingsUI({
             target: uiTab,
@@ -244,12 +271,12 @@ class HuesSettings {
             },
         });
 
-        this.ui.$on('update', event => {
+        this.ui.$on('update', () => {
             this.callEventListeners("updated");
         });
     }
 
-    makeGetter(setting) {
+    makeGetter(setting: keyof SettingsData) {
         return () => {
             if(defaultSettings.hasOwnProperty(setting)) {
                 if(this.ephemerals[setting] !== undefined)
@@ -266,14 +293,14 @@ class HuesSettings {
     }
 
     // Set a named index to its named value, returns false if name doesn't exist
-    makeSetter(setting) {
-        return value => {
+    makeSetter<S extends keyof SettingsData>(setting: S) {
+        return (value: SettingsData[S]) => {
             if(this.isEphemeral(setting)) {
                 this.ephemerals[setting] = value;
             } else {
-                let opt = settingsOptions[setting];
+                let opt = (<any>settingsOptions)[setting];
                 if(!opt || opt.options.indexOf(value) == -1) {
-                    console.log(value, "is not a valid value for", setting);
+                    console.error(value, "is not a valid value for", setting);
                     return false;
                 }
                 localStorage[setting] = value;
@@ -287,38 +314,7 @@ class HuesSettings {
         };
     }
 
-    isEphemeral(setting) {
-        return settingsOptions[setting] === undefined;
-    }
-
-    callEventListeners(ev) {
-        let args = Array.prototype.slice.call(arguments, 1);
-        this.eventListeners[ev].forEach(function(callback) {
-            callback.apply(null, args);
-        });
-    }
-
-    addEventListener(ev, callback) {
-        ev = ev.toLowerCase();
-        if (typeof(this.eventListeners[ev]) !== "undefined") {
-            this.eventListeners[ev].push(callback);
-        } else {
-            throw Error("Unknown event: " + ev);
-        }
-    }
-
-    removeEventListener(ev, callback) {
-        ev = ev.toLowerCase();
-        if (typeof(this.eventListeners[ev]) !== "undefined") {
-            this.eventListeners[ev] = this.eventListeners[ev].filter(function(a) {
-                return (a !== callback);
-            });
-        } else {
-            throw Error("Unknown event: " + ev);
-        }
+    isEphemeral(setting: keyof SettingsData) {
+        return !settingsOptions.hasOwnProperty(setting);
     }
 }
-
-window.HuesSettings = HuesSettings;
-
-})(window, document);

@@ -1,33 +1,48 @@
-/* Copyright (c) 2015 William Toohey <will@mon.im>
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
- * THE SOFTWARE.
- */
+import type { EditorUndoRedo } from "./HuesEditor";
 
 import * as zip from "@zip.js/zip.js";
 
- (function(window, document) {
-"use strict";
+export interface HuesSongSection {
+    chart?: string;
+    sound?: ArrayBuffer;
+    fname?: string;
+    nameWithExt?: string;
+}
+
+export interface HuesSong {
+    title : string;
+    loop: HuesSongSection;
+    build: HuesSongSection;
+    source: string;
+    enabled: boolean;
+    charsPerBeat: number | null;
+    independentBuild: boolean;
+    // runtime
+    buildupPlayed: boolean;
+    // editor
+    undoQueue?: EditorUndoRedo;
+    redoQueue?: EditorUndoRedo;
+}
+
+export interface HuesImage {
+    name: string;
+    fullname: string;
+    align: "center" | "left" | "right";
+    bitmaps: HTMLImageElement[];
+    frameDurations :number[];
+    source: string;
+    enabled: boolean;
+    animated: boolean;
+    beatsPerAnim: number;
+    syncOffset?: number;
+}
+
+export type ProgressCallback = (percent: number, respack: Respack) => void;
 
 const debugConsole = false;
-function debug() {
+function debug(...args: any[]) {
     if(debugConsole) {
-        console.log.apply(window.console, arguments);
+        console.log(...args);
     }
 }
 
@@ -35,7 +50,42 @@ const audioExtensions = new RegExp("\\.(mp3|ogg|wav)$", "i");
 const imageExtensions = new RegExp("\\.(png|gif|jpg|jpeg)$", "i");
 const animRegex = new RegExp("(.*?)_\\d+$");
 
-class Respack {
+type ImageParseResult = {
+    bitmap: string; // base64 data URI
+    img: HuesImage;
+}
+
+function basename(entry: zip.Entry) {
+    const fullname = entry.filename;
+    const parts = fullname.split('/');
+    return parts.pop() || fullname;
+}
+
+export class Respack {
+    songs: HuesSong[];
+    songQueue: Promise<void>[];
+    images: HuesImage[];
+    imageQueue: Promise<ImageParseResult>[];
+
+    name: string;
+    author: string;
+    description: string;
+    link: string;
+
+    size: number;
+    downloaded: number;
+    enabled: boolean;
+
+    _xmlQueue: Promise<Document>[];
+
+    totalFiles: number;
+
+    // For zip parsing progress events
+    progressCallback: null | ProgressCallback;
+    filesToLoad: number;
+    filesLoaded: number;
+    loadedFromURL: boolean;
+
     constructor() {
         this.songs = [];
         this.songQueue = [];
@@ -45,7 +95,7 @@ class Respack {
         this.name = "<no name>";
         this.author = "<unknown>";
         this.description = "<no description>";
-        this.link = null;
+        this.link = "";
 
         this.size = -1;
         this.downloaded = -1;
@@ -55,24 +105,23 @@ class Respack {
 
         this.totalFiles = -1;
 
-        // For zip parsing progress events
         this.progressCallback = null;
         this.filesToLoad = 0;
         this.filesLoaded = 0;
         this.loadedFromURL = false;
     }
 
-    updateProgress(override) {
+    updateProgress(override?: number) {
         if(this.progressCallback) {
             let percent = this.filesLoaded / this.filesToLoad;
             if(this.loadedFromURL) {
                 percent = (percent / 2) + 0.5;
             }
-            this.progressCallback(typeof override === "number" ? override : percent, this);
+            this.progressCallback(override === undefined ? percent : override, this);
         }
     }
 
-    loadFromURL(url, progress) {
+    loadFromURL(url: string, progress: ProgressCallback) {
         this.loadedFromURL = true;
         if(progress) {
             this.progressCallback = progress;
@@ -84,11 +133,11 @@ class Respack {
         });
     }
 
-    getBlob(url, progress) {
-        if(progress) {
+    getBlob(url: string, progress?: ProgressCallback): Promise<Blob> {
+        if(progress !== undefined) {
             this.progressCallback = progress;
         }
-        return new Promise ((resolve, reject) => {
+        return new Promise<Blob>((resolve, reject) => {
             let req = new XMLHttpRequest();
             req.open('GET', url, true);
             req.responseType = 'blob';
@@ -123,37 +172,35 @@ class Respack {
         });
     }
 
-    loadFromBlob(blob, progress) {
-        if(progress) {
+    async loadFromBlob(blob: Blob, progress?: ProgressCallback) {
+        if(progress !== undefined) {
             this.progressCallback = progress;
         }
         this.updateProgress(this.loadedFromURL ? 0.5 : 0);
         this.size = blob.size;
-        let file = new zip.fs.FS();
-        return file.importBlob(blob)
-        .then(() => {
-            return this.parseZip(file);
-        }).then(() => {
+
+        const file = new zip.ZipReader(new zip.BlobReader(blob));
+        try {
+            const entries = await file.getEntries();
+            await this.parseZip(entries);
+
             return this;
-        }).catch(error => {
-            throw Error("Respack error:" + error.toString());
-        });
+        } catch(error: any) {
+            throw Error("Respack error:" + error);
+        };
     }
 
-    parseZip(zip) {
-        let entries = zip.entries;
-
+    parseZip(entries: zip.Entry[]) {
         this.totalFiles = 0;
         // Progress events
         this.filesToLoad = 0;
         this.filesLoaded = 0;
 
         // Get everything started
-        for(let i = 0; i < entries.length; i++) {
-            if(!entries[i].directory && entries[i].name) {
-                entries[i].extension = entries[i].name.split('.').pop().toLowerCase();
+        for(const file of entries) {
+            if(!file.directory && file.filename) {
                 this.totalFiles++;
-                this.parseFile(entries[i]);
+                this.parseFile(file);
             }
         }
 
@@ -170,73 +217,49 @@ class Respack {
         });
     }
 
-    parseFile(file) {
-        let name = file.name;
+    parseFile(file: zip.Entry) {
+        let name = basename(file);
         if (name.match(audioExtensions)) {
             this.songQueue.push(this.parseSong(file));
             this.filesToLoad++;
         } else if (name.match(imageExtensions)) {
-            this.imageQueue.push(this.parseImage(file));
-            this.filesToLoad++;
+            let parse = this.parseImage(file);
+            if(parse) {
+                this.imageQueue.push(parse);
+                this.filesToLoad++;
+            }
         } else if(name.toLowerCase().endsWith(".xml")){
             this._xmlQueue.push(this.loadXML(file));
         }
     }
 
-    parseSong(file) {
-        let name = file.name.replace(audioExtensions, "");
+    async parseSong(file: zip.Entry): Promise<void> {
+        let name = basename(file).replace(audioExtensions, "");
         debug("parsing song: " + name);
         if (this.containsSong(name)) {
             let oldSong = this.getSong(name);
-            debug("WARNING: Song", name, "already exists! Conflict with", name, "and", oldSong.loop.fname);
+            console.warn("Song", name, "already exists! Conflict with", name, "and", oldSong?.loop.fname);
         } else {
-            let newSong = {
-                title:null,
+            let newSong: HuesSong = {
+                title:"",
                 loop: {
-                    chart:null,
-                    sound:null,
                     fname:name,
-                    nameWithExt:file.name,
+                    nameWithExt:basename(file),
                 },
-                build: {
-                    chart:null,
-                    sound:null,
-                    fname:null,
-                    nameWithExt:null,
-                },
-                source:null,
+                build: {},
+                source:"",
                 enabled:true,
-                charsPerBeat: null};
-            let mime = "";
-            switch(file.extension) {
-                case "mp3":
-                    mime = "audio/mpeg3";
-                    break;
-                case "ogg":
-                    mime = "audio/ogg";
-                    break;
-                case "wav":
-                    mime = "audio/wav";
-                    break;
-                default:
-                    mime = "application/octet-stream";
-            }
+                charsPerBeat: null,
+                buildupPlayed: false,
+                independentBuild: false,
+            };
+
             this.songs.push(newSong);
-            return file.getBlob()
-            .then(blob => {
-                return new Promise((resolve, reject) => {
-                    // Because blobs are crap
-                    let fr = new FileReader();
-                    fr.onload = () => {
-                        resolve(fr.result);
-                    };
-                    fr.readAsArrayBuffer(blob);
-                });
-            }).then(sound => {
-                newSong.loop.sound = sound;
-                this.filesLoaded++;
-                this.updateProgress();
-            });
+
+            let arr = await file.getData!(new zip.Uint8ArrayWriter()) as Uint8Array;
+            newSong.loop.sound = arr.buffer;
+            this.filesLoaded++;
+            this.updateProgress();
         }
     }
 
@@ -249,51 +272,55 @@ class Respack {
         }, Promise.resolve());
     }
 
-    parseImage(file) {
+    parseImage(file: zip.Entry) {
         let match;
-        let name = file.name.replace(imageExtensions, "");
-        let img;
+        let name = basename(file).replace(imageExtensions, "");
+        let img: HuesImage | null;
 
         // Animation
         if((match = name.match(new RegExp("^(.*)_(\\d+)$")))) {
             img = this.getImage(match[1]);
             if(!img) { // make a fresh one
-                img = {"name":match[1],
-                        "fullname":match[1],
-                        "align":"center",
-                        //"crc":this.quickCRC(file),
-                        "bitmaps":[],
-                        "frameDurations":[33],
-                        "source":null,
-                        "enabled":true,
-                        "animated":true,
-                        "beatsPerAnim": null};
+                img = {
+                    name:match[1],
+                    fullname:match[1],
+                    align:"center",
+                    bitmaps:[],
+                    frameDurations:[33],
+                    source:"",
+                    enabled:true,
+                    animated:true,
+                    beatsPerAnim: 0
+                };
                 this.images.push(img);
             }
         // Normal image
         } else if (!this.containsImage(name)) {
-            img = {"name":name,
-                    "fullname":name,
-                    "bitmap":null,
-                    "align":"center",
-                    //"crc":this.quickCRC(file),
-                    "source":null,
-                    "enabled":true,
-                    "filename":file.name,
-                    "animated":false};
+            img = {
+                name:name,
+                fullname:name,
+                align:"center",
+                bitmaps:[],
+                frameDurations:[33],
+                source:"",
+                enabled:true,
+                animated:false,
+                beatsPerAnim: 0
+            };
             this.images.push(img);
         } else {
             let existing = this.getImage(name);
-            console.log("WARNING: Image", name, "already exists! Conflict with", file.name, "and", existing.name);
+            console.log("WARNING: Image", name, "already exists! Conflict with", basename(file), "and", existing?.name);
             return;
         }
 
         return this.loadImage(file, img);
     }
 
-    loadImage(imgFile, imageObj) {
+    async loadImage(imgFile: zip.Entry, imageObj: HuesImage): Promise<ImageParseResult> {
         let mime = "";
-        switch(imgFile.extension) {
+        const extension = imgFile.filename.split('.').pop()!.toLowerCase();
+        switch(extension) {
             case "png":
                 mime = "image/png";
                 break;
@@ -307,12 +334,10 @@ class Respack {
             default:
                 mime = "application/octet-stream";
         }
-        return imgFile.getData64URI(mime)
-        .then(bitmap => {
-            this.filesLoaded++;
-            this.updateProgress();
-            return {bitmap: bitmap, img: imageObj};
-        });
+        let bitmap = await imgFile.getData!(new zip.Data64URIWriter(mime)) as string;
+        this.filesLoaded++;
+        this.updateProgress();
+        return {bitmap: bitmap, img: imageObj};
     }
 
     parseImageQueue() {
@@ -326,30 +351,26 @@ class Respack {
                     return;
                 let newImg = new Image();
                 newImg.src = response.bitmap;
-                if (response.img.animated) {
-                    response.img.bitmaps.push(newImg);
-                } else {
-                    response.img.bitmap = newImg;
-                }
+                response.img.bitmaps.push(newImg);
             });
         }, Promise.resolve());
     }
 
-    loadXML(file) {
-        return file.getText()
-        .then(text => {
-            //XML parser will complain about a bare '&', but some respacks use &amp
-            text = text.replace(/&amp;/g, '&');
-            text = text.replace(/&/g, '&amp;');
-            let parser = new DOMParser();
-            let dom = parser.parseFromString(text, "text/xml");
-            return dom;
-        });
+    async loadXML(file: zip.Entry) {
+        let text = await file.getData!(new zip.TextWriter()) as string;
+
+        //XML parser will complain about a bare '&', but some respacks use &amp
+        text = text.replace(/&amp;/g, '&');
+        text = text.replace(/&/g, '&amp;');
+        let parser = new DOMParser();
+        let dom = parser.parseFromString(text, "text/xml");
+        return dom;
     }
 
     parseXML() {
+        let queue = []
         for(let i = 0; i < this._xmlQueue.length; i++) {
-            this._xmlQueue[i] = this._xmlQueue[i].then(dom => {
+            queue.push(this._xmlQueue[i].then(dom => {
                 switch(dom.documentElement.nodeName) {
                     case "songs":
                         if(this.songs.length > 0)
@@ -363,15 +384,15 @@ class Respack {
                         this.parseInfoFile(dom);
                         break;
                     default:
-                        console.log("XML found with no songs, images or info");
+                        console.warn("XML found with no songs, images or info");
                         break;
                 }
-            });
+            }));
         }
-        return Promise.all(this._xmlQueue);
+        return Promise.all(queue);
     }
 
-    parseSongFile(dom) {
+    parseSongFile(dom: Document) {
         debug(" - Parsing songFile");
 
         let newSongs = [];
@@ -379,19 +400,19 @@ class Respack {
         for(; el; el = el.nextElementSibling) {
             let song = this.getSong(el.attributes[0].value);
             if(song) {
-                song.title = el.getTag("title");
+                song.title = el.getTag("title") || "";
                 if(!song.title) {
                     song.title = "<no name>";
-                    debug("  WARNING!", song.loop.fname, "has no title!");
+                    console.warn(song.loop.fname, "has no title!");
                 }
 
-                song.loop.chart = el.getTag("rhythm");
+                song.loop.chart = el.getTag("rhythm") || undefined;
                 if(!song.loop.chart) {
                     song.loop.chart = "..no..rhythm..";
-                    debug("  WARNING!!", song.loop.fname, "has no rhythm!!");
+                    console.warn(song.loop.fname, "has no rhythm!!");
                 }
 
-                song.build.fname = el.getTag("buildup");
+                song.build.fname = el.getTag("buildup") || undefined;
                 if(song.build.fname) {
                     debug("  Finding a buildup '" + song.build.fname + "' for ", song.loop.fname);
                     let build = this.getSong(song.build.fname);
@@ -403,47 +424,43 @@ class Respack {
                         // get rid of the junk
                         this.songs.splice(this.songs.indexOf(build), 1);
                     } else {
-                        debug("  WARNING!", "Didn't find a buildup '" + song.build.fname + "'!");
+                        console.warn("Didn't find a buildup '" + song.build.fname + "'!");
                     }
                 }
 
-                song.build.chart = el.getTag("buildupRhythm");
-                song.independentBuild = el.getTag("independentBuild");
-                song.source = el.getTag("source");
-                song.charsPerBeat = parseFloat(el.getTag("charsPerBeat"));
+                song.build.chart = el.getTag("buildupRhythm") || undefined;
+                song.independentBuild = !!el.getTag("independentBuild");
+                song.source = el.getTag("source") || "";
+                song.charsPerBeat = parseFloat(el.getTag("charsPerBeat") || "0");
 
-                // Because PackShit breaks everything
-                if(this.name == "PackShit") {
-                    song.forceTrim  = true;
-                }
                 newSongs.push(song);
                 debug("  [I] " + song.loop.fname, ": '" + song.title + "' added to songs");
             } else {
-                debug("  WARNING!", "songs.xml: <song> element",
+                console.warn("songs.xml: <song> element",
                     + el.attributes[0].value + "- no song found");
             }
         }
         for(let i = 0; i < this.songs.length; i++) {
             if(newSongs.indexOf(this.songs[i]) == -1) {
-                debug("  WARNING!", "We have a file for", this.songs[i].name, "but no information for it");
+                console.warn("We have a file for", this.songs[i].loop.fname, "but no information for it");
             }
         }
         this.songs = newSongs;
     }
 
-    parseInfoFile(dom) {
+    parseInfoFile(dom: Document) {
         debug(" - Parsing infoFile");
 
         let info = dom.documentElement;
 
         // self reference strings to avoid changing strings twice in future
-        this.name = info.getTag("name", this.name);
-        this.author = info.getTag("author", this.author);
-        this.description = info.getTag("description", this.description);
-        this.link = info.getTag("link", this.link);
+        this.name = info.getTag("name", this.name)!;
+        this.author = info.getTag("author", this.author)!;
+        this.description = info.getTag("description", this.description)!;
+        this.link = info.getTag("link", this.link)!;
     }
 
-    parseImageFile(dom) {
+    parseImageFile(dom: Document) {
         debug(" - Parsing imagefile");
 
         let newImages = [];
@@ -451,15 +468,15 @@ class Respack {
         for(; el; el = el.nextElementSibling) {
             let image = this.getImage(el.attributes[0].value);
             if(image) {
-                image.fullname = el.getTag("fullname");
+                image.fullname = el.getTag("fullname") || "";
                 if(!image.fullname) {
-                    debug("  WARNING!", image.name, "has no full name!");
+                    console.warn(image.name, "has no full name!");
                 }
-                image.source = el.getTag("source");
+                image.source = el.getTag("source") || "";
                 // self reference defaults to avoid changing strings twice in future
-                image.align = el.getTag("align", image.align);
-                image.beatsPerAnim = parseFloat(el.getTag("beatsPerAnim"));
-                image.syncOffset = parseFloat(el.getTag("syncOffset"));
+                image.align = el.getTag("align", image.align)! as HuesImage["align"];
+                image.beatsPerAnim = parseFloat(el.getTag("beatsPerAnim") || "0");
+                image.syncOffset = parseFloat(el.getTag("syncOffset") || "0");
                 let frameDur = el.getTag("frameDuration");
                 if(frameDur) {
                     image.frameDurations = [];
@@ -473,14 +490,14 @@ class Respack {
                     debug("Frame durations:", image.frameDurations);
                 }
                 debug("  [I] " + image.name, ":", image.fullname, "added to images");
-                if (image.bitmap || image.bitmaps) {
+                if (image.bitmaps.length) {
                     newImages.push(image);
                 }
                 else {
-                    debug("  WARNING!!", "Image", image.name, "has no bitmap nor animation frames!");
+                    console.warn("Image", image.name, "has no bitmap nor animation frames!");
                 }
             } else {
-                debug("  WARNING!", "images.xml: no image '" + el.attributes[0].value + "' found");
+                console.warn("images.xml: no image '" + el.attributes[0].value + "' found");
             }
         }
         for(let i = 0; i < this.images.length; i++) {
@@ -496,15 +513,15 @@ class Respack {
         this.images = newImages;
     }
 
-    containsSong(name) {
+    containsSong(name: string) {
         return this.getSong(name) !== null;
     }
 
-    containsImage(name) {
+    containsImage(name: string) {
         return this.getImage(name) !== null;
     }
 
-    getSong(name) {
+    getSong(name: string): null | HuesSong {
         for(let song of this.songs) {
             if (name == song.loop.fname) {
                 return song;
@@ -513,7 +530,7 @@ class Respack {
         return null;
     }
 
-    getImage(name) {
+    getImage(name: string): null | HuesImage {
         for(let image of this.images) {
             if (name == image.name) {
                 return image;
@@ -523,12 +540,14 @@ class Respack {
     }
 }
 
-window.Respack = Respack;
+declare global {
+    interface Element {
+        getTag: (tag: string, def?: string) => string | null;
+    }
+}
 
 // Save some chars
-Element.prototype.getTag = function(tag, def) {
+Element.prototype.getTag = function<D extends string>(tag: string, def?: D): string | null {
     let t = this.getElementsByTagName(tag)[0];
     return t ? t.textContent : (def ? def : null);
 };
-
-})(window, document);

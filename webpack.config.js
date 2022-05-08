@@ -1,11 +1,13 @@
 const path = require('path');
 const MiniCssExtractPlugin = require("mini-css-extract-plugin");
 const CssMinimizerPlugin = require("css-minimizer-webpack-plugin");
+const SveltePreprocess = require('svelte-preprocess');
 
 module.exports = [
     {
-        entry: './src/js/HuesCore.js',
+        entry: './src/js/HuesCore.ts',
         mode: 'production',
+        devtool: 'source-map',
         output: {
             filename: 'lib/hues-min.js',
             path: path.resolve(__dirname, 'dist'),
@@ -18,7 +20,21 @@ module.exports = [
             rules: [
                 {
                     test: /\.svelte$/,
-                    use: ['svelte-loader'],
+                    use: {
+                        loader: 'svelte-loader',
+                        options: {
+                            preprocess: SveltePreprocess()
+                        }
+                    }
+                },
+                {
+                    test: /\.tsx?$/,
+                    loader: "ts-loader",
+                    exclude: /node_modules/
+                },
+                {
+                    test: /\.js$/,
+                    loader: "source-map-loader"
                 },
                 {
                     test: /.s?css$/,
@@ -34,6 +50,9 @@ module.exports = [
                     type: 'asset/resource',
                 },
             ],
+        },
+        resolve: {
+            extensions: ['.tsx', '.ts', '.js'],
         },
         optimization: {
             minimizer: [
