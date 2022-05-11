@@ -181,11 +181,10 @@ export default class HuesRender {
 
     blurDecay!: number;
     blurAmount!: number;
-    blurStart: [number, number]; // x, y
+    blurStart: [number?, number?]; // x, y
     blurDistance: [number, number]; // x, y
 
-    sliceDistance: number;
-    sliceStart: number;
+    sliceStart?: number;
     // marked as never-null since they get set with sliceStart
     sliceRampUp!: number;
     sliceRampDown!: number;
@@ -195,18 +194,17 @@ export default class HuesRender {
         y: SliceParams;
     };
 
-    shutterEnd: number;
+    shutterEnd?: number;
     shutterDuration: number;
     shutterDir: RenderParams['shutterDir'];
     shutterProgress: number;
 
-    trippyStart: [number, number]; // x, y
+    trippyStart: [number?, number?]; // x, y
     trippyRadii: [number, number]; // x, y
     trippyOn: boolean;
 
-    blackout: boolean;
     blackoutColour: number; // for the whiteout case we must store this
-    blackoutStart: number;
+    blackoutStart?: number;
     blackoutTimeout?: number;
     bOpacity: number;
     // frame drop mitigation on many fast consecutive short blackouts
@@ -216,11 +214,10 @@ export default class HuesRender {
 
     invert: boolean;
 
-    colourFade: boolean;
-    colourFadeStart: number;
-    colourFadeLength: number;
-    oldColour: number;
-    newColour: number;
+    colourFadeStart?: number;
+    colourFadeLength?: number;
+    oldColour!: number;
+    newColour!: number;
 
     blendMode: GlobalCompositeOperation;
 
@@ -244,42 +241,31 @@ export default class HuesRender {
         this.smartAlign = true; // avoid string comparisons every frame
 
         // dynamic
-        this.blurStart = [0, 0];
+        this.blurStart = [undefined, undefined];
         this.blurDistance = [0, 0];
 
-        this.sliceDistance = 0;
-        this.sliceStart = 0;
         this.slices = {
             x : this.makeSliceObj(25),
             y : this.makeSliceObj(15)
         };
 
-        this.shutterEnd = 0;
         this.shutterDuration = 0;
         this.shutterProgress = 0;
 
         // trippy mode
-        this.trippyStart = [0, 0]; // x, y
+        this.trippyStart = [undefined, undefined]; // x, y
         this.trippyRadii = [0, 0]; // x, y
         // force trippy mode
         this.trippyOn = false;
 
-        this.blackout = false;
         this.blackoutColour = 0x000000;
         this.bOpacity = 0;
-        this.blackoutStart = 0;
         // frame drop mitigation on many fast consecutive short blackouts
         this.lastBlackout = 0;
         this.currentBlackout = -1;
         this.lastFrameBlack = false;
 
         this.invert = false;
-
-        this.colourFade = false;
-        this.colourFadeStart=0;
-        this.colourFadeLength=0;
-        this.oldColour=0xFFFFFF;
-        this.newColour=0xFFFFFF;
 
         this.blendMode = "hard-light";
         // Chosen because they look decent
@@ -313,12 +299,10 @@ export default class HuesRender {
     }
 
     resetEffects() {
-        this.colourFadeStart = 0;
-        this.colourFade = false;
-        this.trippyStart = [0, 0];
-        this.sliceStart = 0;
-        this.blurStart = [0, 0];
-        this.blurDistance = [0, 0];
+        this.colourFadeStart = undefined;
+        this.trippyStart = [undefined, undefined];
+        this.sliceStart = undefined;
+        this.blurStart = [undefined, undefined];
     }
 
     resize() {
@@ -354,16 +338,16 @@ export default class HuesRender {
             outTrippy: this.trippyRadii[1],
             inTrippy: this.trippyRadii[0],
 
-            slices: this.sliceStart ? this.slices : undefined,
+            slices: (this.sliceStart !== undefined) ? this.slices : undefined,
         };
 
         this.render.draw(params);
     }
 
     animationLoop() {
-        if (this.colourFade) {
+        if (this.colourFadeStart !== undefined) {
             let delta = this.audio.currentTime - this.colourFadeStart;
-            let fadeVal = delta / this.colourFadeLength;
+            let fadeVal = delta / this.colourFadeLength!;
             if (fadeVal >= 1) {
                 this.stopFade();
                 this.colour = this.newColour;
@@ -372,10 +356,10 @@ export default class HuesRender {
             }
             this.needsRedraw = true;
         }
-        if(this.blackoutTimeout && this.audio.currentTime > this.blackoutTimeout) {
+        if(this.blackoutTimeout !== undefined && this.audio.currentTime > this.blackoutTimeout) {
             this.clearBlackout();
         }
-        if(this.blackout) {
+        if(this.blackoutStart !== undefined) {
             // original is 3 frames at 30fps, this is close
             this.bOpacity = (this.audio.currentTime - this.blackoutStart)*10;
 
@@ -394,73 +378,77 @@ export default class HuesRender {
         if(this.image.onRedraw()) {
             this.needsRedraw = true;
         }
-        for(let axis = 0; axis < 2; axis++) {
-            if(this.blurStart[axis]) {
+        for(const [axis, blur] of this.blurStart.entries()) {
+            if(blur !== undefined) {
                 // flash offsets blur gen by a frame
-                let delta = this.audio.currentTime - this.blurStart[axis] + (1/30);
+                let delta = this.audio.currentTime - blur + (1/30);
                 this.blurDistance[axis] = this.blurAmount * Math.exp(-this.blurDecay * delta);
 
                 // Update UI
                 this.updateCoreBlur();
+            } else {
+                this.blurDistance[axis] = 0;
             }
         }
-        if(this.sliceStart) {
+        if(this.sliceStart !== undefined) {
             let transitionPercent = 0.8;
             let delta;
+            let sliceDistance;
             let now = this.audio.currentTime;
             if(now < this.sliceRampUp) {
                 delta = this.sliceRampUp - now;
-                this.sliceDistance = (1-(delta / this.sliceTransitionTime)) * transitionPercent;
+                sliceDistance = (1-(delta / this.sliceTransitionTime)) * transitionPercent;
             } else if(now < this.sliceRampDown) {
                 delta = this.sliceRampDown - now;
                 let longTransition = this.sliceRampDown - this.sliceRampUp;
-                this.sliceDistance = transitionPercent + ((1-(delta / longTransition)) * (1-transitionPercent));
+                sliceDistance = transitionPercent + ((1-(delta / longTransition)) * (1-transitionPercent));
             } else {
                 let endEffect = this.sliceRampDown + this.sliceTransitionTime;
                 if(now > endEffect) {
-                    this.sliceStart = 0;
-                    this.sliceDistance = 0;
+                    this.sliceStart = undefined;
+                    sliceDistance = 0;
                 } else {
                     delta = endEffect - now;
-                    this.sliceDistance = delta / this.sliceTransitionTime;
+                    sliceDistance = delta / this.sliceTransitionTime;
                 }
             }
-            this.slices.x.percent = this.sliceDistance;
-            this.slices.y.percent = this.sliceDistance;
+            this.slices.x.percent = sliceDistance;
+            this.slices.y.percent = sliceDistance;
             this.needsRedraw = true;
         }
-        if(this.shutterEnd) {
+        if(this.shutterEnd !== undefined) {
             if(this.audio.currentTime < this.shutterEnd) {
                 let delta = this.shutterEnd - this.audio.currentTime;
                 this.shutterProgress = (this.shutterDuration-delta) / this.shutterDuration;
             } else {
-                this.shutterEnd = 0;
+                this.shutterEnd = undefined;
                 this.shutterProgress = 0;
             }
         }
         for(let i = 0; i < 2; i++) {
-            if(this.trippyStart[i] || this.trippyRadii[i]) {
+            if(this.trippyStart[i] !== undefined) {
                 this.needsRedraw = true;
-                this.trippyRadii[i] = (this.audio.currentTime - this.trippyStart[i]) * 2;
+                this.trippyRadii[i] = (this.audio.currentTime - this.trippyStart[i]!) * 2;
                 if(this.trippyRadii[i] > 1) {
-                    this.trippyStart[i] = 0;
-                    this.trippyRadii[i] = 0;
+                    this.trippyStart[i] = undefined;
                     continue;
                 }
                 // x comes from outside the window
                 if(i % 2 === 0) {
                     this.trippyRadii[i] = 1 - this.trippyRadii[i];
                 }
+            } else {
+                this.trippyRadii[i] = 0;
             }
         }
 
-        for(let axis = 0; axis < 2; axis++) {
-            if(this.blurStart[axis] && this.blurDistance[axis] < 0.0001) {
+        for(const [axis, blur] of this.blurStart.entries()) {
+            if(blur !== undefined && this.blurDistance[axis] < 0.0001) {
                 this.blurDistance[axis] = 0;
-                this.blurStart[axis] = 0;
+                this.blurStart[axis] = undefined;
                 this.updateCoreBlur();
                 this.needsRedraw = true;
-            } else if(this.blurStart[axis]) {
+            } else if(blur !== undefined) {
                 this.needsRedraw = true;
             }
         }
@@ -500,12 +488,11 @@ export default class HuesRender {
         } else {
             this.blackoutColour = 0x000000;
         }
-        this.blackoutTimeout = 0; // indefinite
+        this.blackoutTimeout = undefined; // indefinite
         // Don't restart the blackout animation if we're already blacked out
-        if(!this.blackout) {
+        if(this.blackoutStart == undefined) {
             this.blackoutStart = this.audio.currentTime;
         }
-        this.blackout = true;
         this.needsRedraw = true;
         if(this.core.settings.blackoutUI == "on") {
             this.core.userInterface?.hide();
@@ -513,8 +500,8 @@ export default class HuesRender {
     }
 
     clearBlackout() {
-        this.blackout = false;
-        this.blackoutTimeout = 0;
+        this.blackoutStart = undefined;
+        this.blackoutTimeout = undefined;
         this.needsRedraw = true;
         if(this.core.settings.blackoutUI == "on") {
             this.core.userInterface?.show();
@@ -535,16 +522,13 @@ export default class HuesRender {
     }
 
     doColourFade(length: number) {
-        this.colourFade = true;
         this.colourFadeLength = length;
         this.colourFadeStart = this.audio.currentTime;
         this.oldColour = this.colour;
     }
 
     stopFade() {
-        this.colourFade = false;
-        this.colourFadeStart = 0;
-        this.colourFadeLength = 0;
+        this.colourFadeStart = undefined;
     }
 
     mixColours(percent: number) {

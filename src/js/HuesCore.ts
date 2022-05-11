@@ -966,7 +966,7 @@ export class HuesCore extends EventListener<CoreEvents> {
             this.userInterface?.show();
             break;
         case "on":
-            if(this.renderer.blackout) {
+            if(this.renderer.blackoutStart !== undefined) {
                 this.userInterface?.hide();
             }
             break;
