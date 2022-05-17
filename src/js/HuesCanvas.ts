@@ -94,7 +94,8 @@ export default class HuesCanvas {
         this.offCanvas.width = this.canvas.width;
         this.offCanvas2.height = this.canvas.height;
         this.offCanvas2.width = this.canvas.width;
-        this.trippyRadius = Math.max(this.canvas.width, this.canvas.height) / 2;
+        // to fill a square to the edges
+        this.trippyRadius = (Math.max(this.canvas.width, this.canvas.height) / 2) * Math.SQRT2;
     }
 
     draw(params: RenderParams) {

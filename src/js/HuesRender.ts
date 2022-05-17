@@ -430,6 +430,7 @@ export default class HuesRender {
                 this.trippyRadii[i] = (this.audio.currentTime - this.trippyStart[i]!) * 2;
                 if(this.trippyRadii[i] > 1) {
                     this.trippyStart[i] = undefined;
+                    this.trippyRadii[i] = 0;
                     continue;
                 }
                 // x comes from outside the window
