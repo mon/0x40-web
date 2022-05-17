@@ -41,8 +41,8 @@ export type RenderParams = {
     yBlur: number;
 
     // percent, out starts in center and moves out, in is the reverse
-    outTrippy: number;
-    inTrippy: number;
+    outTrippy?: number;
+    inTrippy?: number;
 
     slices?: { // undefined for no slices at all, or...
         x: SliceParams;
@@ -200,7 +200,7 @@ export default class HuesRender {
     shutterProgress?: number;
 
     trippyStart: [number?, number?]; // x, y
-    trippyRadii: [number, number]; // x, y
+    trippyRadii: [number?, number?]; // x, y
     trippyOn: boolean;
 
     blackoutColour: number; // for the whiteout case we must store this
@@ -253,7 +253,7 @@ export default class HuesRender {
 
         // trippy mode
         this.trippyStart = [undefined, undefined]; // x, y
-        this.trippyRadii = [0, 0]; // x, y
+        this.trippyRadii = [undefined, undefined]; // x, y
         // force trippy mode
         this.trippyOn = false;
 
@@ -428,17 +428,17 @@ export default class HuesRender {
             if(this.trippyStart[i] !== undefined) {
                 this.needsRedraw = true;
                 this.trippyRadii[i] = (this.audio.currentTime - this.trippyStart[i]!) * 2;
-                if(this.trippyRadii[i] > 1) {
+                if(this.trippyRadii[i]! > 1) {
                     this.trippyStart[i] = undefined;
-                    this.trippyRadii[i] = 0;
+                    this.trippyRadii[i] = undefined;
                     continue;
                 }
                 // x comes from outside the window
                 if(i % 2 === 0) {
-                    this.trippyRadii[i] = 1 - this.trippyRadii[i];
+                    this.trippyRadii[i] = 1 - this.trippyRadii[i]!;
                 }
             } else {
-                this.trippyRadii[i] = 0;
+                this.trippyRadii[i] = undefined;
             }
         }
 

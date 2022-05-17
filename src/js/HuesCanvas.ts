@@ -266,8 +266,9 @@ export default class HuesCanvas {
     }
 
     drawColour(colour: number, blendMode: GlobalCompositeOperation,
-            outTrippy: number, inTrippy: number, width: number, height: number) {
-        if(outTrippy || inTrippy) {
+            outTrippy: number | undefined, inTrippy: number | undefined,
+            width: number, height: number) {
+        if(outTrippy !== undefined || inTrippy !== undefined) {
             this.drawTrippy(outTrippy, inTrippy, colour, width, height);
         } else {
             this.offContext.fillStyle = this.intToHex(colour);
@@ -380,36 +381,29 @@ export default class HuesCanvas {
     }
 
     // draws the correct trippy colour circles onto the offscreen canvas
-    drawTrippy(outTrippy: number, inTrippy: number, colour: number, width: number, height: number) {
-        outTrippy *= this.trippyRadius;
-        inTrippy *= this.trippyRadius;
-        // x blur moves inwards from the corners, y comes out
-        // So the base colour is inverted for y, normal for x
-        // Thus if the y start is more recent, we invert
+    drawTrippy(outTrippy: number | undefined, inTrippy: number | undefined,
+            colour: number, width: number, height: number) {
+        outTrippy = outTrippy === undefined ? 1 : outTrippy;
+        inTrippy = inTrippy === undefined ? 0 : inTrippy;
+
         let trippyRadii;
-        let baseInvert;
         if(outTrippy > inTrippy) {
-            baseInvert = true;
             trippyRadii = [outTrippy, inTrippy];
         } else {
-            baseInvert = false;
             trippyRadii = [inTrippy, outTrippy];
         }
 
         let invertC = this.intToHex(0xFFFFFF ^ colour);
         let normalC = this.intToHex(colour);
-        this.offContext.fillStyle = baseInvert ? invertC : normalC;
+        this.offContext.fillStyle = invertC;
         this.offContext.fillRect(0,0,width,height);
 
-        let invert = !baseInvert;
+        let invert = false;
         for(let i = 0; i < 2; i++) {
-            if(trippyRadii[i] === 0) {
-                continue;
-            }
             // Invert for each subsequent draw
             this.offContext.beginPath();
             this.offContext.fillStyle = invert ? invertC : normalC;
-            this.offContext.arc(width/2, height/2, Math.floor(trippyRadii[i]), 0, 2 * Math.PI, false);
+            this.offContext.arc(width/2, height/2, Math.floor(trippyRadii[i]! * this.trippyRadius), 0, 2 * Math.PI, false);
             this.offContext.fill();
             this.offContext.closePath();
             invert = !invert;
