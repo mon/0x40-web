@@ -919,6 +919,7 @@ export class HuesCore extends EventListener<CoreEvents> {
             }
             this.userInterface = this.uiArray[index];
             this.userInterface.connectCore(this);
+            this.userInterface.updateVolume(this.soundManager.lastVol);
             this.callEventListeners("newmode", this.settings.fullAuto);
             this.callEventListeners("newsong", this.currentSong);
             this.callEventListeners("newimage", this.currentImage);
