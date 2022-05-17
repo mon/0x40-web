@@ -34,7 +34,7 @@ export type RenderParams = {
     lastBitmap?: HTMLImageElement;
     lastBitmapAlign?: HuesImage["align"];
 
-    shutter: number;
+    shutter?: number;
     shutterDir?: "←" | "↓" | "↑" | "→";
 
     xBlur: number;
@@ -197,7 +197,7 @@ export default class HuesRender {
     shutterEnd?: number;
     shutterDuration: number;
     shutterDir: RenderParams['shutterDir'];
-    shutterProgress: number;
+    shutterProgress?: number;
 
     trippyStart: [number?, number?]; // x, y
     trippyRadii: [number, number]; // x, y
@@ -250,7 +250,6 @@ export default class HuesRender {
         };
 
         this.shutterDuration = 0;
-        this.shutterProgress = 0;
 
         // trippy mode
         this.trippyStart = [undefined, undefined]; // x, y
@@ -422,7 +421,7 @@ export default class HuesRender {
                 this.shutterProgress = (this.shutterDuration-delta) / this.shutterDuration;
             } else {
                 this.shutterEnd = undefined;
-                this.shutterProgress = 0;
+                this.shutterProgress = undefined;
             }
         }
         for(let i = 0; i < 2; i++) {

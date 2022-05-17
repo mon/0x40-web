@@ -121,7 +121,7 @@ export default class HuesCanvas {
         this.context.fillStyle = "#FFF";
         this.context.fillRect(0,0,width,height);
 
-        if(params.shutter) {
+        if(params.shutter !== undefined) {
             let vertical;
             let reverse;
 
