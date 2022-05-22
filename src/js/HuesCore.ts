@@ -105,6 +105,8 @@ const BeatTypes = {
     "*": [Effect.RandomImage],
     ")": [Effect.TrippyIn, ...ImageColour],
     "(": [Effect.TrippyOut, ...ImageColour],
+    ">": [Effect.TrippyIn, ...RandomColour],
+    "<": [Effect.TrippyOut, ...RandomColour],
     "~": [Effect.ColourFade],
     "=": [Effect.ColourFade, Effect.RandomImage],
     "i": [Effect.InvertToggle],
