@@ -66,6 +66,61 @@ type CoreEvents = {
     settingsupdated : (() => void)[],
 }
 
+enum Effect {
+    BlurX,
+    BlurY,
+    TrippyIn,
+    TrippyOut,
+    Blackout,
+    Whiteout,
+    ShortBlackout,
+    ShortWhiteout,
+    RandomColour,
+    ColourFade,
+    RandomImage,
+    SliceX,
+    SliceY,
+    ShutterUp,
+    ShutterDown,
+    ShutterLeft,
+    ShutterRight,
+    InvertToggle,
+}
+
+// since it's used in so many effects
+const ImageColour = [Effect.RandomColour, Effect.RandomImage];
+
+const BeatTypes = {
+    ".": [],
+    "X": [Effect.BlurY],
+    "x": [Effect.BlurY, ...ImageColour],
+    "O": [Effect.BlurX],
+    "o": [Effect.BlurX, ...ImageColour],
+    "-": [...ImageColour],
+    "+": [Effect.Blackout, Effect.BlurX],
+    "¤": [Effect.Whiteout, Effect.BlurX],
+    "|": [Effect.ShortBlackout, ...ImageColour],
+    "!": [Effect.ShortWhiteout, ...ImageColour],
+    ":": [Effect.RandomColour],
+    "*": [Effect.RandomImage],
+    ")": [Effect.TrippyIn, ...ImageColour],
+    "(": [Effect.TrippyOut, ...ImageColour],
+    "~": [Effect.ColourFade],
+    "=": [Effect.ColourFade, Effect.RandomImage],
+    "i": [Effect.InvertToggle],
+    "I": [Effect.InvertToggle, ...ImageColour],
+    "s": [Effect.SliceX],
+    "S": [Effect.SliceX, ...ImageColour],
+    "v": [Effect.SliceY],
+    "V": [Effect.SliceY, ...ImageColour],
+    "#": [Effect.SliceX, Effect.SliceY],
+    "@": [Effect.SliceX, Effect.SliceY, ...ImageColour],
+    "←": [Effect.ShutterLeft, ...ImageColour],
+    "↓": [Effect.ShutterDown, ...ImageColour],
+    "↑": [Effect.ShutterUp, ...ImageColour],
+    "→": [Effect.ShutterRight, ...ImageColour],
+};
+
 export class HuesCore extends EventListener<CoreEvents> {
     version: number;
     versionStr: string;
@@ -767,89 +822,80 @@ export class HuesCore extends EventListener<CoreEvents> {
 
     beater(beat: string) {
         this.callEventListeners("beat", this.getBeatString(), this.getBeatIndex());
-        switch(beat) {
-            case 'X':
-            case 'x':
-                this.renderer.doYBlur();
-                break;
-            case 'O':
-            case 'o':
-                this.renderer.doXBlur();
-                break;
-            case ')':
-                this.renderer.doTrippyX();
-                break;
-            case '(':
-                this.renderer.doTrippyY();
-                break;
-            case '+':
-                this.renderer.doXBlur();
-                this.renderer.doBlackout();
-                break;
-            case '¤':
-                this.renderer.doXBlur();
-                this.renderer.doBlackout(true);
-                break;
-            case '|':
-                this.renderer.doShortBlackout(this.getBeatLength());
-                this.randomColour();
-                break;
-            case '!':
-                this.renderer.doShortBlackout(this.getBeatLength(), true);
-                this.randomColour();
-                break;
-            case ':':
-                this.randomColour();
-                break;
-            case '*':
-                if(this.settings.fullAuto) {
-                    this.randomImage();
-                }
-                break;
-            case '=':
-                if(this.settings.fullAuto) {
-                    this.randomImage();
-                }
-                /* falls through */
-            case '~':
-                this.renderer.doColourFade(this.timeToNextBeat());
-                this.randomColour(true);
-                break;
-            case 'S':
-            case 's':
-                this.renderer.doSlice(this.getBeatLength(), this.charsToNextBeat(), false, true);
-                break;
-            case 'V':
-            case 'v':
-                this.renderer.doSlice(this.getBeatLength(), this.charsToNextBeat(), true, false);
-                break;
-            case '@':
-            case '#':
-                this.renderer.doSlice(this.getBeatLength(), this.charsToNextBeat(), true, true);
-                break;
-            case '→':
-            case '←':
-            case '↑':
-            case '↓':
-                this.renderer.doShutter(beat, this.getBeatLength(), this.charsToNextBeat());
-                break;
-            case 'I':
-                if (this.settings.fullAuto) {
-                    this.randomImage();
-                }
-                /* falls through */
-            case 'i':
-                this.toggleInvert();
-                break;
+
+        // any unknown beats always change image + colour
+        const effects : Effect[] = (BeatTypes as any)[beat] ?? ImageColour;
+
+        let clearBlackout = beat != '.'; // any non-blank char clears blackout
+        for(const effect of effects) {
+            switch(effect) {
+                case Effect.BlurX:
+                    this.renderer.doXBlur();
+                    break;
+                case Effect.BlurY:
+                    this.renderer.doYBlur();
+                    break;
+                case Effect.TrippyIn:
+                    this.renderer.doTrippyX();
+                    break;
+                case Effect.TrippyOut:
+                    this.renderer.doTrippyY();
+                    break;
+                case Effect.Blackout:
+                    this.renderer.doBlackout();
+                    clearBlackout = false;
+                    break;
+                case Effect.Whiteout:
+                    this.renderer.doBlackout(true);
+                    clearBlackout = false;
+                    break;
+                case Effect.ShortBlackout:
+                    this.renderer.doShortBlackout(this.getBeatLength());
+                    clearBlackout = false;
+                    break;
+                case Effect.ShortWhiteout:
+                    this.renderer.doShortBlackout(this.getBeatLength(), true);
+                    clearBlackout = false;
+                    break;
+                case Effect.RandomColour:
+                    this.randomColour();
+                    break;
+                case Effect.ColourFade:
+                    this.renderer.doColourFade(this.timeToNextBeat());
+                    this.randomColour(true);
+                    break;
+                case Effect.RandomImage:
+                    if(this.settings.fullAuto) {
+                        this.randomImage();
+                    }
+                    break;
+                case Effect.SliceX:
+                    // yes, SliceX is "y". I think I messed up. It renders right, don't worry
+                    this.renderer.doSlice(this.getBeatLength(), this.charsToNextBeat(), 'y');
+                    break;
+                case Effect.SliceY:
+                    this.renderer.doSlice(this.getBeatLength(), this.charsToNextBeat(), 'x');
+                    break;
+                case Effect.ShutterUp:
+                    this.renderer.doShutter('↑', this.getBeatLength(), this.charsToNextBeat());
+                    break;
+                case Effect.ShutterDown:
+                    this.renderer.doShutter('↓', this.getBeatLength(), this.charsToNextBeat());
+                    break;
+                case Effect.ShutterLeft:
+                    this.renderer.doShutter('←', this.getBeatLength(), this.charsToNextBeat());
+                    break;
+                case Effect.ShutterRight:
+                    this.renderer.doShutter('→', this.getBeatLength(), this.charsToNextBeat());
+                    break;
+                case Effect.InvertToggle:
+                    this.toggleInvert();
+                    break;
             }
-            if ([".", "+", "|", "!", "¤"].indexOf(beat) == -1) {
-                this.renderer.clearBlackout();
-            }
-            if([".", "+", "¤", ":", "*", "X", "O", "~", "=", "i", "I", "s", "v", "#"].indexOf(beat) == -1) {
-                this.randomColour();
-                if (this.settings.fullAuto) {
-                    this.randomImage();
-                }
+        }
+
+        if(clearBlackout) {
+            this.renderer.clearBlackout();
         }
     }
 
