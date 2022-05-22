@@ -50,6 +50,14 @@ export type RenderParams = {
     }
 }
 
+type SliceInfo = {
+    start?: number;
+    // set with sliceStart
+    rampUp?: number;
+    rampDown?: number;
+    transitionTime?: number;
+}
+
 // convenience container to calculate animation times and get the current frame
 class RenderImage {
     core: HuesCore;
@@ -184,15 +192,8 @@ export default class HuesRender {
     blurStart: [number?, number?]; // x, y
     blurDistance: [number, number]; // x, y
 
-    sliceStart?: number;
-    // marked as never-null since they get set with sliceStart
-    sliceRampUp!: number;
-    sliceRampDown!: number;
-    sliceTransitionTime!: number;
-    slices: {
-        x: SliceParams;
-        y: SliceParams;
-    };
+    sliceInfo: {x: SliceInfo; y: SliceInfo;};
+    slices: {x: SliceParams; y: SliceParams;};
 
     shutterEnd?: number;
     shutterDuration: number;
@@ -251,6 +252,8 @@ export default class HuesRender {
 
         this.shutterDuration = 0;
 
+        this.sliceInfo = {x:{}, y:{}};
+
         // trippy mode
         this.trippyStart = [undefined, undefined]; // x, y
         this.trippyRadii = [undefined, undefined]; // x, y
@@ -300,7 +303,10 @@ export default class HuesRender {
     resetEffects() {
         this.colourFadeStart = undefined;
         this.trippyStart = [undefined, undefined];
-        this.sliceStart = undefined;
+        this.sliceInfo.x.start = undefined;
+        this.sliceInfo.y.start = undefined;
+        this.resetSliceSegments('x');
+        this.resetSliceSegments('y');
         this.blurStart = [undefined, undefined];
     }
 
@@ -337,7 +343,7 @@ export default class HuesRender {
             outTrippy: this.trippyRadii[1],
             inTrippy: this.trippyRadii[0],
 
-            slices: (this.sliceStart !== undefined) ? this.slices : undefined,
+            slices: (this.sliceInfo.x.start !== undefined || this.sliceInfo.y.start !== undefined) ? this.slices : undefined,
         };
 
         this.render.draw(params);
@@ -389,31 +395,38 @@ export default class HuesRender {
                 this.blurDistance[axis] = 0;
             }
         }
-        if(this.sliceStart !== undefined) {
+        for(const [_axis, info] of Object.entries(this.sliceInfo)) {
+            const axis = _axis as "x" | "y";
+
+            if(info.start === undefined) {
+                continue;
+            }
+
             let transitionPercent = 0.8;
             let delta;
             let sliceDistance;
             let now = this.audio.currentTime;
-            if(now < this.sliceRampUp) {
-                delta = this.sliceRampUp - now;
-                sliceDistance = (1-(delta / this.sliceTransitionTime)) * transitionPercent;
-            } else if(now < this.sliceRampDown) {
-                delta = this.sliceRampDown - now;
-                let longTransition = this.sliceRampDown - this.sliceRampUp;
+            if(now < info.rampUp!) {
+                delta = info.rampUp! - now;
+                sliceDistance = (1-(delta / info.transitionTime!)) * transitionPercent;
+            } else if(now < info.rampDown!) {
+                delta = info.rampDown! - now;
+                let longTransition = info.rampDown! - info.rampUp!;
                 sliceDistance = transitionPercent + ((1-(delta / longTransition)) * (1-transitionPercent));
             } else {
-                let endEffect = this.sliceRampDown + this.sliceTransitionTime;
+                let endEffect = info.rampDown! + info.transitionTime!;
                 if(now > endEffect) {
-                    this.sliceStart = undefined;
+                    info.start = undefined;
+                    this.resetSliceSegments(axis);
                     sliceDistance = 0;
                 } else {
                     delta = endEffect - now;
-                    sliceDistance = delta / this.sliceTransitionTime;
+                    sliceDistance = delta / info.transitionTime!;
                 }
             }
-            this.slices.x.percent = sliceDistance;
-            this.slices.y.percent = sliceDistance;
+            this.slices[axis].percent = sliceDistance;
             this.needsRedraw = true;
+
         }
         if(this.shutterEnd !== undefined) {
             if(this.audio.currentTime < this.shutterEnd) {
@@ -594,22 +607,17 @@ export default class HuesRender {
         this.needsRedraw = true;
     }
 
-    doSlice(beatLength: number, beatCount: number, sliceX: boolean, sliceY: boolean) {
+    doSlice(beatLength: number, beatCount: number, dir: 'x' | 'y') {
         let transitionTime = Math.min(0.06, beatLength);
 
-        this.sliceStart = this.audio.currentTime;
-        this.sliceRampUp = this.sliceStart + transitionTime;
-        this.sliceRampDown = this.sliceStart + (beatLength * beatCount) - transitionTime;
-        this.sliceTransitionTime = transitionTime;
+        let info = this.sliceInfo[dir];
 
-        if (sliceX)
-            this.generateSliceSegments('x');
-        else
-            this.resetSliceSegments('x');
-        if (sliceY)
-            this.generateSliceSegments('y');
-        else
-            this.resetSliceSegments('y');
+        info.start = this.audio.currentTime;
+        info.rampUp = info.start + transitionTime;
+        info.rampDown = info.start + (beatLength * beatCount) - transitionTime;
+        info.transitionTime = transitionTime;
+
+        this.generateSliceSegments(dir);
 
         this.needsRedraw = true;
     }
