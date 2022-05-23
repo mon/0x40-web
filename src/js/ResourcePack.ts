@@ -48,7 +48,6 @@ function debug(...args: any[]) {
 
 const audioExtensions = new RegExp("\\.(mp3|ogg|wav)$", "i");
 const imageExtensions = new RegExp("\\.(png|gif|jpg|jpeg)$", "i");
-const animRegex = new RegExp("(.*?)_\\d+$");
 
 type ImageParseResult = {
     bitmap: string; // base64 data URI
@@ -186,6 +185,7 @@ export class Respack {
 
             return this;
         } catch(error: any) {
+            console.error(error); // more details
             throw Error("Respack error:" + error);
         };
     }
@@ -359,46 +359,67 @@ export class Respack {
     async loadXML(file: zip.Entry) {
         let text = await file.getData!(new zip.TextWriter()) as string;
 
-        //XML parser will complain about a bare '&', but some respacks use &amp
-        text = text.replace(/&amp;/g, '&');
-        text = text.replace(/&/g, '&amp;');
         let parser = new DOMParser();
         let dom = parser.parseFromString(text, "text/xml");
-        return dom;
+
+        // this is some real PHP-tier error reporting from this API
+        if(dom.querySelector('parsererror')) {
+            console.log("Respack parse failed, attempting ampersand sanitisation");
+            // Some respacks don't properly escape ampersands, which trips
+            // up the XML parser - so just escape them all and try again.
+            // Respacks that correctly escape *other* elements (like &lt;
+            // and &gt;) will also properly escape ampersands, so this
+            // should be OK and not result in "&amp;&lt;" nonsense.
+            text = text.replace(/&amp;/g, '&');
+            text = text.replace(/&/g, '&amp;');
+            console.log(text);
+            dom = parser.parseFromString(text, "text/xml");
+        }
+
+        return dom
     }
 
-    parseXML() {
+    async parseXML() {
+        // don't let a bad parse leave us with a bunch of dummy songs
+        let seenSongXml = false;
+
         let queue = []
         for(let i = 0; i < this._xmlQueue.length; i++) {
             queue.push(this._xmlQueue[i].then(dom => {
                 switch(dom.documentElement.nodeName) {
                     case "songs":
-                        if(this.songs.length > 0)
-                            this.parseSongFile(dom);
+                            if(this.songs.length > 0) {
+                                seenSongXml = true;
+                                this.parseSongFile(dom);
+                            }
                         break;
                     case "images":
                         if(this.images.length > 0)
-                            this.parseImageFile(dom);
+                                this.parseImageFile(dom);
                         break;
                     case "info":
-                        this.parseInfoFile(dom);
+                            this.parseInfoFile(dom);
                         break;
                     default:
-                        console.warn("XML found with no songs, images or info");
+                            console.warn("XML found with no <songs>, <images> or <info> tag");
                         break;
                 }
             }));
         }
-        return Promise.all(queue);
+        await Promise.all(queue);
+
+        if(this.songs.length > 0 && !seenSongXml) {
+            this.songs = [];
+            console.warn("Songs present in respack \"" + this.name + "\" but no XML to describe them");
+        }
     }
 
     parseSongFile(dom: Document) {
         debug(" - Parsing songFile");
 
         let newSongs = [];
-        let el = dom.documentElement.firstElementChild;
-        for(; el; el = el.nextElementSibling) {
-            let song = this.getSong(el.attributes[0].value);
+        for(const el of dom.documentElement.children) {
+            let song = this.getSong(el.getAttribute("name"));
             if(song) {
                 song.title = el.getTag("title") || "";
                 if(!song.title) {
@@ -436,8 +457,7 @@ export class Respack {
                 newSongs.push(song);
                 debug("  [I] " + song.loop.fname, ": '" + song.title + "' added to songs");
             } else {
-                console.warn("songs.xml: <song> element",
-                    + el.attributes[0].value + "- no song found");
+                console.warn("songs.xml: <song> element" + el.getAttribute("name") + "- no song found");
             }
         }
         for(let i = 0; i < this.songs.length; i++) {
@@ -464,9 +484,8 @@ export class Respack {
         debug(" - Parsing imagefile");
 
         let newImages = [];
-        let el = dom.documentElement.firstElementChild;
-        for(; el; el = el.nextElementSibling) {
-            let image = this.getImage(el.attributes[0].value);
+        for(const el of dom.documentElement.children) {
+            let image = this.getImage(el.getAttribute("name"));
             if(image) {
                 image.fullname = el.getTag("fullname") || "";
                 if(!image.fullname) {
@@ -497,7 +516,7 @@ export class Respack {
                     console.warn("Image", image.name, "has no bitmap nor animation frames!");
                 }
             } else {
-                console.warn("images.xml: no image '" + el.attributes[0].value + "' found");
+                console.warn("images.xml: no image '" + el.getAttribute("name") + "' found");
             }
         }
         for(let i = 0; i < this.images.length; i++) {
@@ -521,7 +540,7 @@ export class Respack {
         return this.getImage(name) !== null;
     }
 
-    getSong(name: string): null | HuesSong {
+    getSong(name: string | null): null | HuesSong {
         for(let song of this.songs) {
             if (name == song.loop.fname) {
                 return song;
@@ -530,7 +549,7 @@ export class Respack {
         return null;
     }
 
-    getImage(name: string): null | HuesImage {
+    getImage(name: string | null): null | HuesImage {
         for(let image of this.images) {
             if (name == image.name) {
                 return image;

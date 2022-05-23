@@ -1156,13 +1156,13 @@ export class HuesCore extends EventListener<CoreEvents> {
     }
 
     error(message: string) {
-        console.log(message);
+        console.error(message);
         this.preloadSubMsg.textContent = message;
         this.preloadMsg.style.color = "#F00";
     }
 
     warning(message: string) {
-        console.log(message);
+        console.warn(message);
         this.preloadSubMsg.innerHTML = message;
         this.preloadMsg.style.color = "#F93";
     }
