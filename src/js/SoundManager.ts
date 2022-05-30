@@ -365,7 +365,7 @@ export default class SoundManager extends EventListener<SoundCallbacks> {
         let promises = [this.loadBuffer(song.loop).then(buffer => {
             buffers.loop = buffer;
         })];
-        if(song.build.sound) {
+        if(song.build?.sound) {
             promises.push(this.loadBuffer(song.build).then(buffer => {
                 buffers.buildup = buffer;
             }));

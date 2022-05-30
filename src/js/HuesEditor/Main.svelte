@@ -11,6 +11,7 @@
     import type SoundManager from '../SoundManager';
     import type { HuesSongSection } from '../ResourcePack';
     import type { EditorUndoRedo } from '../HuesEditor';
+    import { HuesIcon } from '../HuesIcon';
 
     export let soundManager: SoundManager;
     export let huesRoot: HTMLElement; // required for size calculations
@@ -24,15 +25,16 @@
     export let disabled = true;
 
     // mirrored props from the song object, to make binding/events work nicely
-    export let independentBuild: boolean;
-    export let title: string;
-    export let source: string;
-    export let loop: HuesSongSection;
-    export let build: HuesSongSection;
-    export let undoQueue: EditorUndoRedo[];
-    export let redoQueue: EditorUndoRedo[];
-    export let songLoadPromise = Promise.reject();
-    export let locked: boolean; // link these together
+    export let independentBuild: boolean = false;
+    export let title: string = "";
+    export let source: string = "";
+    export let loop: HuesSongSection | undefined = undefined;
+    export let build: HuesSongSection | undefined = undefined;
+    export let undoQueue: EditorUndoRedo[] = [];
+    export let redoQueue: EditorUndoRedo[] = [];
+    export let hiddenBanks: boolean[] = [];
+    export let songLoadPromise: Promise<void> = Promise.reject();
+    export let locked: boolean = false; // link these together
 
     // and until we convert the rest of the app to svelte, this lets consumers
     // update their own state more simply
@@ -44,6 +46,7 @@
             source: source,
             loop: loop,
             build: build,
+            hiddenBanks: hiddenBanks,
         })
     };
 
@@ -99,10 +102,10 @@
     let statusMsg = "";
     let statusAnim = false;
 
-    $: buildIndex = (beatIndex < 0 && build.chart) ? build.chart.length + beatIndex : null;
+    $: buildIndex = (beatIndex < 0 && build) ? build.mapLen + beatIndex : null;
     $: loopIndex = beatIndex >= 0 ? beatIndex : null;
-    $: loopLen = loop?.chart ? loop.chart.length : NaN;
-    $: hasBoth = !!build?.chart && !!loop?.chart;
+    $: loopLen = loop ? loop.mapLen : NaN;
+    $: hasBoth = build && loop;
     $: editorFocussed = editorFocus !== null;
 
     let newLineAtBeat = 32;
@@ -123,8 +126,13 @@
         }
 
         // if you start saving more props, add them here
-        build.chart = props.build;
-        loop.chart = props.loop;
+        if(build && props.builds) {
+            build.banks = props.builds;
+        }
+        if(loop && props.loops) {
+            loop.banks = props.loops;
+        }
+
         independentBuild = props.independentBuild;
         if(props.caret !== undefined) {
             await tick();
@@ -132,12 +140,19 @@
         }
     };
 
-    const undoRedoSnapshot = () => {
-        return {
-            build: build.chart,
-            loop: loop.chart,
+    const undoRedoSnapshot = (): EditorUndoRedo => {
+        let ret: EditorUndoRedo = {
             independentBuild: independentBuild,
         };
+
+        if(build) {
+            ret.builds = [...build.banks];
+        }
+        if(loop) {
+            ret.loops = [...loop.banks];
+        }
+
+        return ret;
     }
 
     const undo = () => {
@@ -195,39 +210,53 @@
 
     // subtract or add '.' until the child is the same beat ratio as the parent
     const resyncEditorLengths = (parent: EditorBox) => {
+        parent.section?.recalcBeatString();
+
         if(independentBuild || !hasBoth) {
             return;
         }
 
         let child = otherEditor(parent);
 
-        const secPerBeat = soundLen(parent) / parent.section.chart!.length;
-        let childBeats = Math.round(soundLen(child) / secPerBeat);
-        // charts must have at least 1 character
-        childBeats = Math.max(childBeats, 1);
-        if(childBeats > child.section.chart!.length) {
-            const extra = childBeats - child.section.chart!.length;
-            child.section.chart += '.'.repeat(extra);
-        } else if(childBeats < child.section.chart!.length) {
-            child.section.chart = child.section.chart!.slice(0, childBeats);
-        } else {
+        let changed = false;
+        for(let i = 0; i < parent.section!.banks.length; i++) {
+            const secPerBeat = soundLen(parent) / parent.section!.banks[i].length;
+            let childBeats = Math.round(soundLen(child) / secPerBeat);
+            // charts must have at least 1 character
+            childBeats = Math.max(childBeats, 1);
+            if(childBeats > child.section!.banks[i].length) {
+                const extra = childBeats - child.section!.banks[i].length;
+                child.section!.banks[i] += '.'.repeat(extra);
+                changed = true;
+            } else if(childBeats < child.section!.banks[i].length) {
+                child.section!.banks[i] = child.section!.banks[i].slice(0, childBeats);
+                changed = true;
+            }
+        }
+
+        if(!changed) {
             return; // no change needed after all
         }
 
+        child.section!.recalcBeatString();
         child.section = child.section; // inform of changed data
     };
 
     const doubleBeats = (editor: EditorBox) => {
-        editor.section.chart = editor.section.chart!.replace(/(.)/g, "$1.");
+        for(let i = 0; i < editor.section!.banks.length; i++) {
+            editor.section!.banks[i] = editor.section!.banks[i]!.replace(/(.)/g, "$1.");
+        }
         editor.section = editor.section; // inform of data change
     }
     const halveBeats = (editor: EditorBox) => {
-        let ret = editor.section.chart!.replace(/(.)./g, "$1");
-        // don't allow an empty map
-        if(!ret) {
-            ret = '.';
+        for(let i = 0; i < editor.section!.banks.length; i++) {
+            let ret = editor.section!.banks[i].replace(/(.)./g, "$1");
+            // don't allow an empty map
+            if(!ret) {
+                ret = '.';
+            }
+            editor.section!.banks[i] = ret;
         }
-        editor.section.chart = ret;
         editor.section = editor.section; // inform of data change
     }
 
@@ -403,6 +432,35 @@
             disabled={!hasBoth}
         />
 
+        <div class="banks">
+            <div class="banks-span-both">BANKS</div>
+            {#if loop}
+            {#each loop.banks as bank, i}
+            <HuesButton
+                nopad title="Toggle bank visibility"
+                on:click={() => {hiddenBanks[i] = !hiddenBanks[i]}}>
+                {i+1} <span class="hues-icon">{@html hiddenBanks[i] ? HuesIcon.EYE_CLOSED : '&emsp;'}</span>
+            </HuesButton>
+            {#if loop.banks.length == 1}
+                <div></div>
+            {:else}
+                <HuesButton
+                    nopad nouppercase title="Remove bank"
+                    on:click={() => {pushUndo(); dispatch('removebank', i)}}>
+                    x
+                </HuesButton>
+            {/if}
+            {/each}
+            {/if}
+            <div class="banks-span-both">
+                <HuesButton
+                    title="Add bank"
+                    on:click={() => {pushUndo(); dispatch('addbank')}}>
+                    +
+                </HuesButton>
+            </div>
+        </div>
+
         <EditorBox
             title="Buildup"
             bind:this={buildEditorComponent}
@@ -412,22 +470,23 @@
             on:rewind={() => soundManager.seek(-soundManager.build.length)}
             on:seek={event => soundManager.seek(-soundManager.build.length * (1 - event.detail))}
             on:error={event => alert(event.detail)}
-            on:songload={event => dispatch('loadbuildup', event)}
+            on:songload={event => dispatch('loadbuildup', event.detail)}
             on:double={doubleClicked}
             on:halve={halveClicked}
             on:beforeinput={editorBeforeInput}
             on:afterinput={editorAfterInput}
             on:focus={editorOnfocus}
-            on:songremove
+            on:songremove={event => dispatch('removebuildup')}
             on:songnew
             beatIndex={buildIndex}
             {newLineAtBeat}
             {soundManager}
+            {hiddenBanks}
         />
 
         <div title="Resize" class="resize-handle" on:mousedown={resizeMousedown} bind:this={resizeHandle}>
-            <!-- DRAG HANDLE -->
-            <div class="hues-icon handle">&#xe908;</div>
+            <!-- MENU looks like a drag handle when wide enough -->
+            <div class="hues-icon handle">{@html HuesIcon.MENU}</div>
         </div>
 
         <EditorBox
@@ -441,17 +500,18 @@
             on:rewind={() => soundManager.seek(0)}
             on:seek={event => soundManager.seek(soundManager.loop.length * event.detail)}
             on:error={event => alert(event.detail)}
-            on:songload={event => dispatch('loadrhythm', event)}
+            on:songload={event => dispatch('loadrhythm', event.detail)}
             on:double={doubleClicked}
             on:halve={halveClicked}
             on:beforeinput={editorBeforeInput}
             on:afterinput={editorAfterInput}
             on:focus={editorOnfocus}
-            on:songremove
+            on:songremove={event => dispatch('removerhythm')}
             on:songnew
             beatIndex={loopIndex}
             {newLineAtBeat}
             {soundManager}
+            {hiddenBanks}
         />
 
         <!-- Beat inserter buttons -->
@@ -471,9 +531,9 @@
         <!-- Footer buttons -->
         <div class="controls">
             <!-- Backward -->
-            <HuesButton icon on:click={() => {changeRate(-0.25)}}>&#xe909;</HuesButton>
+            <HuesButton icon on:click={() => {changeRate(-0.25)}}>{@html HuesIcon.BACKWARD}</HuesButton>
             <!-- Forward -->
-            <HuesButton icon on:click={() => {changeRate(0.25)}}>&#xe90a;</HuesButton>
+            <HuesButton icon on:click={() => {changeRate(0.25)}}>{@html HuesIcon.FORWARD}</HuesButton>
 
             <!-- lazy spacer -->
             <div/>
@@ -565,6 +625,21 @@ hr {
     align-self: center;
 }
 
+.banks {
+    grid-column: editor-banks;
+    grid-row: 1/-1;
+    align-self: center;
+    text-align: center;
+
+    display: grid;
+    grid-template-columns: auto 1.5ch;
+    justify-items: stretch;
+}
+
+.banks-span-both {
+    grid-column: 1/-1;
+}
+
 .edit-area {
     --buildup-ratio: 1fr;
     --rhythm-ratio: 3fr;
@@ -574,6 +649,7 @@ hr {
 
     display: grid;
     grid-template-columns:
+        [editor-banks] min-content
         [editor-link] min-content
         [editors] auto;
     /* Magically works since EditorBox has 2 sub-elements */

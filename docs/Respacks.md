@@ -94,7 +94,9 @@ Name | Options | Default | Description
 title | Any text | `<no name>` | The full name of the song
 source | Any text | None | The source URL of the song, clickable in the UI
 rhythm (**required**) | Any text | None | The beatmap of the song. Create one in the [editor](Editor.md).
+rhythm2, rhythm3... (**web Hues only**) | Any text | None | Additional banks of beats to run in parallel.
 buildup | Filename minus extension | None | The filename of the buildup - the lead-in to the main loop.
 buildupRhythm | Any text | `.` for the entire build | A rhythm for the buildup, if any.
+buildupRhythm2, buildupRhythm3... (**web Hues only**) | Any text | None | Additional banks of buildup beats to run in parallel.
 independentBuild (**web Hues only**) | Anything | None | By default, the length of a buildup is set so the buildup beatmap runs at the same speed as the main loop. If this is set, the buildup's beatmap can be any length, and will run faster or slower than the main loop. Best set using the [editor](Editor.md).
 charsPerBeat (**web Hues only**) | Any number | None | For synchronising animations. Specifies how many characters of the beatmap make up a beat in the song. If an animation is playing and has a matching `beatsPerAnim` setting, the animation will be synchronised.

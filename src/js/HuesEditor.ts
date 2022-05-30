@@ -1,15 +1,15 @@
 import xmlbuilder from 'xmlbuilder';
 import * as zip from "@zip.js/zip.js";
 
-import { Respack, type HuesSong, type HuesSongSection } from './ResourcePack';
+import { HuesSong, Respack, type HuesSongSection } from './ResourcePack';
 import EditorMain from './HuesEditor/Main.svelte';
 import type { HuesCore } from './HuesCore';
 import type HuesWindow from './HuesWindow';
 import type EditorBoxSvelte from './HuesEditor/EditorBox.svelte';
 
 export interface EditorUndoRedo {
-    build?: string;
-    loop?: string;
+    builds?: string[];
+    loops?: string[];
     independentBuild: boolean;
     caret?: number;
     editor?: EditorBoxSvelte;
@@ -25,11 +25,16 @@ export class HuesEditor {
     // for storing respacks created with "new"
     respack?: Respack;
 
+    // to avoid recursion
+    midUpdate!: boolean;
+
     constructor(core: HuesCore, huesWin: HuesWindow) {
         this.core = core;
         if(!core.settings.enableWindow) {
             return;
         }
+
+        this.midUpdate = false;
 
         let container = huesWin.addTab("EDITOR");
         this.editor = new EditorMain({
@@ -45,6 +50,10 @@ export class HuesEditor {
         });
 
         core.addEventListener("newsong", (song) => {
+            if(this.midUpdate) {
+                return;
+            }
+
             this.song = song;
             this.editor.$set({
                 independentBuild: song?.independentBuild,
@@ -54,6 +63,7 @@ export class HuesEditor {
                 build: song?.build,
                 undoQueue: song?.undoQueue,
                 redoQueue: song?.redoQueue,
+                hiddenBanks: song?.hiddenBanks,
                 disabled: !song,
             });
         });
@@ -73,13 +83,19 @@ export class HuesEditor {
                 this.core.updateBeatLength();
                 // We may have to go backwards in time
                 this.core.recalcBeatIndex();
-                //this.core.callEventListeners("newsong", core.currentSong);
+
+                this.midUpdate = true;
+                this.core.callEventListeners("newsong", core.currentSong);
+                this.midUpdate = false;
             }
         });
 
-        this.editor.$on('loadbuildup', event => this.loadAudio('build'));
-        this.editor.$on('loadrhythm', event => this.loadAudio('loop'));
-        this.editor.$on('songremove', event => this.removeAudio());
+        this.editor.$on('loadbuildup', event => this.onLoadAudio('build', event.detail));
+        this.editor.$on('loadrhythm', event => this.onLoadAudio('loop', event.detail));
+        this.editor.$on('removebuildup', event => this.onRemoveAudio('build'));
+        this.editor.$on('removerhythm', event => this.onRemoveAudio('loop'));
+        this.editor.$on('addbank', event => this.addBank());
+        this.editor.$on('removebank', event => this.removeBank(event.detail));
         this.editor.$on('songnew', event => this.newSong());
         this.editor.$on('savezip', event => this.saveZIP());
         this.editor.$on('savexml', event => this.saveXML());
@@ -90,13 +106,16 @@ export class HuesEditor {
         return {'build':'loop', 'loop':'build'}[section] as SectionName;
     }
 
-    async loadAudio(section: SectionName) {
+    async onLoadAudio(section: SectionName, sectionData: HuesSongSection) {
         // If first load, this makes fresh, gets the core synced up
         this.newSong(this.song);
 
+        // brand new section may be added (eg: new build, fresh loop)
+        this.editor.$set({[section]: sectionData});
+
         // Have we just added a build to a song with a rhythm, or vice versa?
         // If so, link their lengths
-        let newlyLinked = !this.song![section].sound && !!this.song![this.other(section)].sound;
+        let newlyLinked = !this.song![section]?.sound && !!this.song![this.other(section)]?.sound;
 
         // Do we have a loop to play?
         if(this.song!.loop.sound) {
@@ -112,28 +131,48 @@ export class HuesEditor {
         }
     }
 
-    removeAudio() {
+    onRemoveAudio(section: SectionName) {
         // Is the loop playable?
-        if(this.song?.loop.sound) {
-            this.core.soundManager.playSong(this.song, true, true);
+        if(this.song!.loop.sound) {
+            this.core.soundManager.playSong(this.song!, true, true);
         } else {
             this.core.soundManager.stop();
+        }
+
+        if(section == "build") {
+            this.editor.$set({build: undefined});
+        }
+    }
+
+    addBank() {
+        if(this.song) {
+            this.song.addBank();
+            // resync UI
+            this.editor.$set({
+                loop: this.song.loop,
+                build: this.song.build,
+                hiddenBanks: this.song.hiddenBanks,
+            });
+        }
+    }
+
+    removeBank(index: number) {
+        if(this.song) {
+            this.song.removeBank(index);
+            // resync UI
+            this.editor.$set({
+                loop: this.song.loop,
+                build: this.song.build,
+                hiddenBanks: this.song.hiddenBanks,
+            });
         }
     }
 
     newSong(song?: HuesSong) {
         if(!song) {
-            song = {
-                title:"Title",
-                loop: {},
-                build: {},
-                source:"",
-                enabled:true,
-                charsPerBeat: null,
-                // Because new songs are empty
-                independentBuild: true,
-                buildupPlayed: false,
-            };
+            song = new HuesSong("Title");
+            // editor-created charts are a little more vibrant
+            song.loop.banks = ["x...o...x...o..."];
            if(!this.respack) {
                this.respack = new Respack();
                this.respack.name = "Editor Respack";
@@ -161,7 +200,7 @@ export class HuesEditor {
         // Force independent build if only 1 source is present
 
         // Effectively `buildup ^ loop` - does only 1 exist?
-        let hasBuild = !!this.song?.build.sound;
+        let hasBuild = !!this.song?.build?.sound;
         let hasLoop = !!this.song?.loop.sound;
         if(hasBuild != hasLoop) {
             this.setIndependentBuild(true);
@@ -181,15 +220,24 @@ export class HuesEditor {
         if(!root) {
             root = xmlbuilder.begin();
         }
-        xml = root.ele('song', {'name': this.song.loop.fname});
+        xml = root.ele('song', {'name': this.song.loop.basename});
         xml.ele('title', this.song.title);
         if(this.song.source) {
             xml.ele('source', this.song.source);
         }
-        xml.ele('rhythm', this.song.loop.chart);
-        if(this.song.build.sound) {
-            xml.ele('buildup', this.song.build.fname);
-            xml.ele('buildupRhythm', this.song.build.chart);
+        xml.ele('rhythm', this.song.loop.banks[0]);
+        for(let bank = 1; bank < this.song.loop.banks.length; bank++) {
+            // rhythm2, rhythm3 etc
+            xml.ele('rhythm' + (bank+1), this.song.loop.banks[bank]);
+        }
+
+        if(this.song.build?.sound) {
+            xml.ele('buildup', this.song.build.basename);
+            xml.ele('buildupRhythm', this.song.build.banks[0]);
+            for(let bank = 1; bank < this.song.build.banks.length; bank++) {
+                // buildupRhythm2, buildupRhythm3 etc
+                xml.ele('buildupRhythm' + (bank+1), this.song.build.banks[bank]);
+            }
             if(this.song.independentBuild) {
                 xml.ele('independentBuild', 'true');
             }
@@ -211,12 +259,12 @@ export class HuesEditor {
         document.body.removeChild(element);
     }
 
-    async addSectionToZip(zipWriter: zip.ZipWriter, section: HuesSongSection) {
-        if(!section.sound) {
+    async addSectionToZip(zipWriter: zip.ZipWriter, section?: HuesSongSection) {
+        if(!section?.sound) {
             return;
         }
         const u8 = new Uint8Array(section.sound);
-        await zipWriter.add(section.nameWithExt!, new zip.Uint8ArrayReader(u8));
+        await zipWriter.add(section.filename!, new zip.Uint8ArrayReader(u8));
     }
 
     async saveZIP() {
@@ -234,7 +282,7 @@ export class HuesEditor {
 
         this.downloadURI(
             dataURI,
-            "0x40Hues - " + this.song!.loop.fname + ".zip"
+            "0x40Hues - " + this.song!.loop.basename + ".zip"
         );
 
         window.onbeforeunload = null;
@@ -248,7 +296,7 @@ export class HuesEditor {
 
         this.downloadURI(
             'data:text/plain;charset=utf-8,' + encodeURIComponent(result),
-            "0x40Hues - " + this.song!.loop.fname + ".xml"
+            "0x40Hues - " + this.song!.loop.basename + ".xml"
         );
 
         window.onbeforeunload = null;

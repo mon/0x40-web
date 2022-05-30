@@ -8,6 +8,7 @@ import '../css/huesUI-weed.css';
 import '../css/huesUI-xmas.css';
 import type { HuesColour, HuesCore } from './HuesCore';
 import type { HuesImage, HuesSong } from './ResourcePack';
+import { HuesIcon } from './HuesIcon';
 
 /*
     Base UI Class for Hues display. Parent is an element
@@ -138,7 +139,7 @@ export class HuesUI {
 
         // Config stuff
         this.settingsToggle = document.createElement("div");
-        this.settingsToggle.innerHTML = '&#xe900;'; // COG
+        this.settingsToggle.innerHTML = HuesIcon.COG;
         this.settingsToggle.className = 'hues-icon';
         this.settingsToggle.onclick = () => {
             this.core?.window.toggle();
@@ -650,7 +651,7 @@ export class ModernUI extends HuesUI {
         this.songPrev.className = "hues-m-prevbutton";
         this.songNext.className = "hues-m-nextbutton";
         this.songShuffle = document.createElement("div");
-        this.songShuffle.innerHTML = '&#xe903;'; // SHUFFLE
+        this.songShuffle.innerHTML = HuesIcon.SHUFFLE;
         this.songShuffle.className = "hues-m-actbutton hues-icon";
         this.songShuffle.onclick = () => {this.core?.randomSong();};
         songs.appendChild(this.songList);
@@ -669,7 +670,7 @@ export class ModernUI extends HuesUI {
         imageControls.className = "hues-m-controlbuttons";
 
         this.imageMode = document.createElement("div");
-        this.imageMode.innerHTML = "&#xe901;"; // PLAY
+        this.imageMode.innerHTML = HuesIcon.PLAY;
         this.imageMode.className = "hues-m-actbutton hues-icon";
         this.imageMode.onclick = () => {this.core?.toggleFullAuto();};
         this.imagePrev.className = "hues-m-prevbutton";
@@ -760,9 +761,9 @@ export class ModernUI extends HuesUI {
 
     newMode (isAuto: boolean) {
         if(isAuto) {
-            this.imageMode.innerHTML = '&#xe902;'; // PAUSE;
+            this.imageMode.innerHTML = HuesIcon.PAUSE;
         } else {
-            this.imageMode.innerHTML = "&#xe901;"; // PLAY
+            this.imageMode.innerHTML = HuesIcon.PLAY;
         }
     }
 

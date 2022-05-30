@@ -2,6 +2,7 @@
     import HuesButton from '../Components/HuesButton.svelte';
 
     import { createEventDispatcher } from 'svelte';
+import { HuesIcon } from '../HuesIcon';
 
     export let unlocked = true;
     export let disabled = false;
@@ -24,7 +25,7 @@
         {disabled}
         on:click={click}
         title="Lock Buildup/Rhythm beat lengths">
-            {@html realUnlocked ? '&#xe904;' : '&#xe905;'}
+            {@html realUnlocked ? HuesIcon.CHAIN_BROKEN : HuesIcon.CHAIN}
     </HuesButton>
 </div>
 

@@ -8,7 +8,7 @@ import HuesWindow from './HuesWindow';
 import {HuesUI, RetroUI, WeedUI, ModernUI, XmasUI, HalloweenUI, MinimalUI} from './HuesUI';
 import Resources from './ResourceManager';
 import SoundManager from './SoundManager';
-import type { HuesImage, HuesSong } from './ResourcePack';
+import { HuesSong, type HuesImage } from './ResourcePack';
 import EventListener from './EventListener';
 import HuesInfo from './HuesInfo.svelte';
 
@@ -66,7 +66,7 @@ type CoreEvents = {
     settingsupdated : (() => void)[],
 }
 
-enum Effect {
+export enum Effect {
     BlurX,
     BlurY,
     TrippyIn,
@@ -88,10 +88,10 @@ enum Effect {
 }
 
 // since it's used in so many effects
-const ImageColour = [Effect.RandomColour, Effect.RandomImage];
+export const ImageColour = [Effect.RandomColour, Effect.RandomImage];
 
-const BeatTypes = {
-    ".": [],
+export const BeatTypes = {
+    ".": [] as Effect[],
     "X": [Effect.BlurY],
     "x": [Effect.BlurY, ...ImageColour],
     "O": [Effect.BlurX],
@@ -460,8 +460,9 @@ export class HuesCore extends EventListener<CoreEvents> {
         }
         for(let beatTime = this.beatIndex * this.getBeatLength(); beatTime < now;
                 beatTime = ++this.beatIndex * this.getBeatLength()) {
-            let beat = this.getBeat(this.beatIndex);
-            this.beater(beat);
+            for(const [bank, beat] of this.getBeats(this.beatIndex).entries()) {
+                this.beater(beat, bank);
+            }
         }
         this.callEventListeners("frame");
     }
@@ -477,22 +478,30 @@ export class HuesCore extends EventListener<CoreEvents> {
         }
 
         // We should sync up to how many inverts there are
-        let build = this.currentSong.build.chart;
-        let rhythm = this.currentSong.loop.chart || '';
-        let mapSoFar;
-        if(this.beatIndex < 0) {
-            // Clamp to 0 in case we've juuust started
-            mapSoFar = build!.slice(0, Math.max(this.beatIndex + build!.length, 0));
-        } else {
-            // If the rhythm has an odd number of inverts, don't reset because it
-            // alternates on each loop anyway
-            if((rhythm.match(/i|I/g)||[]).length % 2) {
-                return;
+        let invertCount = 0;
+        let rhythmInverts = 0;
+        for(let bank = 0; bank < this.currentSong.bankCount; bank++) {
+            const rhythm = this.currentSong.loop.banks[bank];
+            const build = this.currentSong.build?.banks[bank];
+            let mapSoFar;
+
+            if(this.beatIndex < 0) {
+                // Clamp to 0 in case we've juuust started
+                mapSoFar = build!.slice(0, Math.max(this.beatIndex + build!.length, 0));
+            } else {
+                rhythmInverts += (rhythm.match(/i|I/g)||[]).length % 2;
+
+                mapSoFar = (build ? build : "") + rhythm.slice(0, this.beatIndex);
             }
-            mapSoFar = (build ? build : "") + rhythm.slice(0, this.beatIndex);
+
+            invertCount += (mapSoFar.match(/i|I/g)||[]).length;
+        }
+        // If the rhythm has an odd number of inverts, don't reset because it
+        // alternates on each loop anyway
+        if(rhythmInverts % 2) {
+            return;
         }
         // If there's an odd amount of inverts thus far, invert our display
-        let invertCount = (mapSoFar.match(/i|I/g)||[]).length;
         this.setInvert(invertCount % 2);
     }
 
@@ -502,7 +511,7 @@ export class HuesCore extends EventListener<CoreEvents> {
         } else if(this.beatIndex < 0) {
             return this.beatIndex;
         } else {
-            return this.beatIndex % this.currentSong.loop.chart!.length;
+            return this.beatIndex % this.currentSong.loop.mapLen;
         }
     }
 
@@ -563,21 +572,12 @@ export class HuesCore extends EventListener<CoreEvents> {
         this.songIndex = index;
         this.currentSong = this.resourceManager.enabledSongs[this.songIndex];
         if (this.currentSong === undefined) {
-            this.currentSong = {
-                title:"None",
-                loop: {},
-                build: {},
-                source:"",
-                enabled:true,
-                charsPerBeat: null,
-                buildupPlayed: false,
-                independentBuild: false,
-            };
+            this.currentSong = new HuesSong("None");
         }
         console.log("Next song:", this.songIndex, this.currentSong);
         this.callEventListeners("newsong", this.currentSong);
         this.loopCount = 0;
-        if (this.currentSong.build.sound) {
+        if (this.currentSong.build?.sound) {
             switch (this.settings.playBuildups) {
             case "off":
                 this.currentSong.buildupPlayed = true;
@@ -604,16 +604,13 @@ export class HuesCore extends EventListener<CoreEvents> {
 
     updateBeatLength() {
         if(this.currentSong?.loop.sound) {
-            this.loopLength = this.soundManager.loop.length / this.currentSong.loop.chart!.length;
+            this.loopLength = this.soundManager.loop.length / this.currentSong.loop.mapLen;
         } else {
             this.loopLength = -1;
         }
 
-        if(this.currentSong?.build.sound) {
-            if (!this.currentSong.build.chart) {
-                this.currentSong.build.chart = ".";
-            }
-            this.buildLength = this.soundManager.build.length / this.currentSong.build.chart.length;
+        if(this.currentSong?.build?.sound) {
+            this.buildLength = this.soundManager.build.length / this.currentSong.build.mapLen;
         } else {
             this.buildLength = -1;
         }
@@ -630,7 +627,7 @@ export class HuesCore extends EventListener<CoreEvents> {
     fillBuildup() {
         // update loop length for flash style filling
         this.updateBeatLength();
-        if(this.currentSong?.build.sound) {
+        if(this.currentSong?.build?.sound) {
             if(this.currentSong.independentBuild) {
                 console.log("New behaviour - separate build/loop lengths");
                 // Do nothing
@@ -640,10 +637,15 @@ export class HuesCore extends EventListener<CoreEvents> {
                 if(buildBeats < 1) {
                     buildBeats = 1;
                 }
-                while (this.currentSong.build.chart!.length < buildBeats) {
-                    this.currentSong.build.chart += ".";
-                }
                 console.log("Buildup length:", buildBeats);
+
+                let builds = this.currentSong.build.banks;
+                for(let bank = 0; bank < builds.length; bank++) {
+                    while (builds[bank].length < buildBeats) {
+                        builds[bank] += ".";
+                    }
+                }
+                this.currentSong.build.checkConsistency();
             }
         }
         // update with a buildup of possibly different length
@@ -813,16 +815,26 @@ export class HuesCore extends EventListener<CoreEvents> {
         this.callEventListeners("newcolour", colour, isFade);
     }
 
-    getBeat(index: number) {
+    getBeat(index: number, bank: number) {
         let song = this.currentSong!;
         if(index < 0) {
-            return song.build.chart![song.build.chart!.length+index];
+            return song.build!.banks[bank][song.build!.mapLen + index];
         } else {
-            return song.loop.chart![index % song.loop.chart!.length];
+            return song.loop.banks[bank][index % song.loop.mapLen];
         }
     }
 
-    beater(beat: string) {
+    // getBeat for all banks at once
+    getBeats(index: number): string[] {
+        let song = this.currentSong!;
+        if(index < 0) {
+            return song.build!.beatsAt(song.build!.mapLen + index);
+        } else {
+            return song.loop.beatsAt(index % song.loop.mapLen);
+        }
+    }
+
+    beater(beat: string, bank: number) {
         this.callEventListeners("beat", this.getBeatString(), this.getBeatIndex());
 
         // any unknown beats always change image + colour
@@ -863,7 +875,7 @@ export class HuesCore extends EventListener<CoreEvents> {
                     this.randomColour();
                     break;
                 case Effect.ColourFade:
-                    this.renderer.doColourFade(this.timeToNextBeat());
+                    this.renderer.doColourFade(this.timeToNextBeat(bank));
                     this.randomColour(true);
                     break;
                 case Effect.RandomImage:
@@ -873,22 +885,22 @@ export class HuesCore extends EventListener<CoreEvents> {
                     break;
                 case Effect.SliceX:
                     // yes, SliceX is "y". I think I messed up. It renders right, don't worry
-                    this.renderer.doSlice(this.getBeatLength(), this.charsToNextBeat(), 'y');
+                    this.renderer.doSlice(this.getBeatLength(), this.charsToNextBeat(bank), 'y');
                     break;
                 case Effect.SliceY:
-                    this.renderer.doSlice(this.getBeatLength(), this.charsToNextBeat(), 'x');
+                    this.renderer.doSlice(this.getBeatLength(), this.charsToNextBeat(bank), 'x');
                     break;
                 case Effect.ShutterUp:
-                    this.renderer.doShutter('↑', this.getBeatLength(), this.charsToNextBeat());
+                    this.renderer.doShutter('↑', this.getBeatLength(), this.charsToNextBeat(bank));
                     break;
                 case Effect.ShutterDown:
-                    this.renderer.doShutter('↓', this.getBeatLength(), this.charsToNextBeat());
+                    this.renderer.doShutter('↓', this.getBeatLength(), this.charsToNextBeat(bank));
                     break;
                 case Effect.ShutterLeft:
-                    this.renderer.doShutter('←', this.getBeatLength(), this.charsToNextBeat());
+                    this.renderer.doShutter('←', this.getBeatLength(), this.charsToNextBeat(bank));
                     break;
                 case Effect.ShutterRight:
-                    this.renderer.doShutter('→', this.getBeatLength(), this.charsToNextBeat());
+                    this.renderer.doShutter('→', this.getBeatLength(), this.charsToNextBeat(bank));
                     break;
                 case Effect.InvertToggle:
                     this.toggleInvert();
@@ -902,37 +914,39 @@ export class HuesCore extends EventListener<CoreEvents> {
     }
 
 
-    charsToNextBeat() {
+    charsToNextBeat(bank: number) {
         // case: fade in build, not in rhythm. Must max out fade timer.
-        let maxSearch = this.currentSong!.loop.chart!.length;
+        let maxSearch = this.currentSong!.loop.mapLen;
         if(this.beatIndex < 0) {
             maxSearch -= this.beatIndex;
         }
         let nextBeat;
         for (nextBeat = 1; nextBeat <= maxSearch; nextBeat++) {
-            if (this.getBeat(nextBeat + this.beatIndex) != ".") {
+            if (this.getBeat(nextBeat + this.beatIndex, bank) != ".") {
                 break;
             }
         }
         return nextBeat;
     }
 
-    timeToNextBeat() {
-        return (this.charsToNextBeat() * this.getBeatLength()) / this.soundManager.playbackRate;
+    timeToNextBeat(bank: number) {
+        return (this.charsToNextBeat(bank) * this.getBeatLength()) / this.soundManager.playbackRate;
     }
 
+    // gets the best effort banks flattened down to a single string for display
     getBeatString(length = 256) {
         let beatString = "";
-        let song = this.currentSong;
-        if (song) {
+        if (this.currentSong) {
+            const build = this.currentSong.build?.beatString;
+            const loop = this.currentSong.loop.beatString;
+
             if(this.beatIndex < 0) {
-                beatString = song.build.chart!.slice(
-                        song.build.chart!.length + this.beatIndex);
+                beatString = build!.slice(build!.length + this.beatIndex);
             } else {
-                beatString = song.loop.chart!.slice(this.beatIndex % song.loop.chart!.length);
+                beatString = loop.slice(this.beatIndex % loop.length);
             }
             while (beatString.length < length) {
-                beatString += song.loop.chart;
+                beatString += loop;
             }
         }
 

@@ -6,7 +6,10 @@
     // some situations require an opaque button
     export let opaque = false;
     export let title = "";
+    // maybe in the future I'll work out some way to style components properly
     export let nouppercase = false;
+    export let nopad = false;
+    export let noborder = false;
 </script>
 
 <button
@@ -16,7 +19,9 @@
     class:glow
     class:opaque
     class:nouppercase
-    class="{icon ? 'hues-icon' : ''}"
+    class:nopad
+    class:noborder
+    class:hues-icon={icon}
     {title}
 >
     <slot></slot>
@@ -40,6 +45,14 @@ button {
 
 button.nouppercase {
     text-transform: none;
+}
+
+button.nopad {
+    margin: 0;
+}
+
+button.noborder {
+    border: none;
 }
 
 button:hover {
