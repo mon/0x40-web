@@ -81,6 +81,11 @@ export class HuesSongSection {
     // intensive I guess and doesn't have to be dynamically done each frame.
     // It could certainly be optimised, but I think it should be fine
     recalcBeatString() {
+        if(this.banks.length == 1) {
+            this.beatString = this.banks[0];
+            return;
+        }
+
         let beatBits: {[beat: number]: string} = {};
         for(const [char, effects] of Object.entries(BeatTypes)) {
             beatBits[this.effectsToBits(effects)] = char;
