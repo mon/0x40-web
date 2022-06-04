@@ -209,6 +209,7 @@ export default class HuesRender {
 
     blackoutBank?: number;
     blackoutColour: number; // for the whiteout case we must store this
+    blackoutLength?: number;
     blackoutStart?: number;
     blackoutTimeout?: number;
     bOpacity: number;
@@ -403,8 +404,8 @@ export default class HuesRender {
             this.clearBlackout();
         }
         if(this.blackoutStart !== undefined) {
-            // original is 3 frames at 30fps, this is close
-            this.bOpacity = (this.audio.currentTime - this.blackoutStart)*10;
+            const delta = this.audio.currentTime - this.blackoutStart;
+            this.bOpacity = delta / this.blackoutLength!;
 
             // If a short blackout is scheduled, but we missed the image frame
             // from the last one, you can get only black frames over and over
@@ -533,7 +534,7 @@ export default class HuesRender {
         this.needsRedraw = true;
     }
 
-    doBlackout(whiteout: boolean, bank: number) {
+    doBlackout(whiteout: boolean, bank: number, fadeLength?: number) {
         this.blackoutBank = bank;
         if(whiteout) {
             this.blackoutColour = 0xFFFFFF;
@@ -544,6 +545,12 @@ export default class HuesRender {
         // Don't restart the blackout animation if we're already blacked out
         if(this.blackoutStart == undefined) {
             this.blackoutStart = this.audio.currentTime;
+        }
+        if(fadeLength === undefined) {
+            // original is 3 frames at 30fps, this is close
+            this.blackoutLength = 0.1;
+        } else {
+            this.blackoutLength = fadeLength;
         }
         this.needsRedraw = true;
         if(this.core.settings.blackoutUI == "on") {

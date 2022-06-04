@@ -86,6 +86,10 @@ export enum Effect {
     Whiteout,
     ShortBlackout,
     ShortWhiteout,
+    TimedBlackout,
+    TimedWhiteout,
+    InstantBlackout,
+    InstantWhiteout,
     RandomColour,
     ColourFade,
     RandomImage,
@@ -115,6 +119,10 @@ export const BeatTypes = {
     "¤": [Effect.Whiteout, Effect.BlurX],
     "|": [Effect.ShortBlackout, ...ImageColour],
     "!": [Effect.ShortWhiteout, ...ImageColour],
+    "B": [Effect.InstantBlackout],
+    "W": [Effect.InstantWhiteout],
+    "b": [Effect.TimedBlackout],
+    "w": [Effect.TimedWhiteout],
     ":": [Effect.RandomColour],
     "*": [Effect.RandomImage],
     ")": [Effect.TrippyIn, ...ImageColour],
@@ -858,7 +866,8 @@ export class HuesCore extends EventListener<CoreEvents> {
         // any unknown beats always change image + colour
         const effects : Effect[] = (BeatTypes as any)[beat] ?? ImageColour;
 
-        let clearBlackout = beat != '.'; // any non-blank char clears blackout
+        // any non-blank/stop char clears blackout
+        let clearBlackout = beat != '.' && beat != '¯';
         for(const effect of effects) {
             switch(effect) {
                 case Effect.StopAll:
@@ -882,6 +891,22 @@ export class HuesCore extends EventListener<CoreEvents> {
                     break;
                 case Effect.Whiteout:
                     this.renderer.doBlackout(true, bank);
+                    clearBlackout = false;
+                    break;
+                case Effect.InstantBlackout:
+                    this.renderer.doInstantBlackout(false, bank);
+                    clearBlackout = false;
+                    break;
+                case Effect.InstantWhiteout:
+                    this.renderer.doInstantBlackout(true, bank);
+                    clearBlackout = false;
+                    break;
+                case Effect.TimedBlackout:
+                    this.renderer.doBlackout(false, bank, this.timeToNextBeat(bank));
+                    clearBlackout = false;
+                    break;
+                case Effect.TimedWhiteout:
+                    this.renderer.doBlackout(true, bank, this.timeToNextBeat(bank));
                     clearBlackout = false;
                     break;
                 case Effect.ShortBlackout:
@@ -953,7 +978,8 @@ export class HuesCore extends EventListener<CoreEvents> {
     }
 
     timeToNextBeat(bank: number) {
-        return (this.charsToNextBeat(bank) * this.getBeatLength()) / this.soundManager.playbackRate;
+        // don't need to scale by playbackRate because currentTime is scaled
+        return this.charsToNextBeat(bank) * this.getBeatLength();
     }
 
     // gets the best effort banks flattened down to a single string for display
