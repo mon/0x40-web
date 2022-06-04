@@ -63,7 +63,8 @@ var defaults = {
 ```
 
 ## Settings object  
-See [HuesSettings.js](./src/js/HuesSettings.js#L29) for the possible options you can put into the `defaults` object.
+See [HuesSettings.js](./src/js/HuesSettings.js#L29) for the possible options you
+can put into the `defaults` object.
 
 ## Query string
 Any setting that can go in the `defaults` object can also be dynamically specified in the URL.
@@ -71,7 +72,8 @@ For example: http://0x40.mon.im/custom.html?packs=BIOS.zip,kitchen.zip&currentUI
 
 There are two special settings here:
 * `firstSong` can just be written as `song`.
-* Anything given as `packs` or `respacks` will be appended to the respacks specified in the `defaults` object, as opposed to overwriting them.
+* Anything given as `packs` or `respacks` will be appended to the respacks
+  specified in the `defaults` object, as opposed to overwriting them.
 
 ## Building
 Install [Node.js](https://nodejs.org/en/). I used v16, but it should work with newer releases.
@@ -79,5 +81,17 @@ Install the required packages for the build:
 ```bash
 npm install
 ```
-Build with `npx webpack`. It will create a `dist` folder. For seamless development with auto-reload, `npx webpack serve` - if you do this, put any respacks in `public/respacks`
-so they're found by the local server.
+Build with `npx webpack`. It will create a `dist` folder. For seamless
+development with auto-reload, `npx webpack serve` - if you do this, put any
+respacks in `public/respacks` so they're found by the local server.
+
+## Adding a new beat character
+There's a few places to change, here's a list:
+- The documentation in the INFO tab. Found in HuesInfo.svelte
+- The mouseover documentation & button for the beat in EDITOR. Found in HuesEditor/Main.svelte
+- The list of beats in HuesCore.ts
+- If you've added some new display behaviour:
+  - A new beat type in the `Effect` enum
+  - A handler in the `beater` function
+  - Appropriate state for the effect in HuesRender.ts
+  - Appropriate rendering code in HuesCanvas.ts
