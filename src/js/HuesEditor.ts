@@ -72,7 +72,7 @@ export class HuesEditor {
             this.editor.$set({songLoadPromise: promise});
         });
 
-        core.addEventListener("beat", (beatString, beatIndex) => {
+        core.addEventListener("beatstring", (beatString, beatIndex) => {
             this.editor.$set({beatIndex: beatIndex});
         });
 

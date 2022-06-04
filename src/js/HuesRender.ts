@@ -73,7 +73,7 @@ class RenderImage {
         this.core = core;
         this.audio = soundManager;
 
-        core.addEventListener("beat", this.beat.bind(this));
+        core.addEventListener("beatstring", this.beat.bind(this));
         core.addEventListener("songstarted", this.resetAnimation.bind(this));
 
         this.animFrame = 0;

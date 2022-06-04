@@ -47,10 +47,20 @@ type CoreEvents = {
     // Called on mode change. (full auto or locked to one image)
     newmode : ((mode: boolean) => void)[],
 
-    // Called on every new beat.
-    // beatString is a 256 char long string of current and upcoming beat chars
+    // Called on every non-blank beat character. If multiple banks are being
+    //   used, this may be called several times per frame.
+    // beat is the new beat
     // beatIndex is the beat index. Negative during buildups
-    beat : ((beatString: string, beatIndex: number) => void)[],
+    // bank is the bank this beat is from
+    beat : ((beat: string, beatIndex: number, bank: number) => void)[],
+
+    // Called on every beat.
+    // beatString is a 256 char long string of current and upcoming beat chars
+    // - if banks are being used, and many characters fall on the same beat, the
+    //   beat at a given index will be the closest normal beat character that
+    //   has the effects being used.
+    // beatIndex is the beat index. Negative during buildups
+    beatstring : ((beatString: string, beatIndex: number) => void)[],
 
     // Called whenever the invert state changes.
     invert : ((isInverted: boolean) => void)[],
@@ -178,6 +188,7 @@ export class HuesCore extends EventListener<CoreEvents> {
             newcolour : [],
             newmode : [],
             beat : [],
+            beatstring : [],
             invert : [],
             frame : [],
             songstarted : [],
@@ -460,6 +471,9 @@ export class HuesCore extends EventListener<CoreEvents> {
         }
         for(let beatTime = this.beatIndex * this.getBeatLength(); beatTime < now;
                 beatTime = ++this.beatIndex * this.getBeatLength()) {
+
+            this.callEventListeners("beatstring", this.getBeatString(), this.getBeatIndex());
+
             for(const [bank, beat] of this.getBeats(this.beatIndex).entries()) {
                 this.beater(beat, bank);
             }
@@ -835,7 +849,7 @@ export class HuesCore extends EventListener<CoreEvents> {
     }
 
     beater(beat: string, bank: number) {
-        this.callEventListeners("beat", this.getBeatString(), this.getBeatIndex());
+        this.callEventListeners("beat", beat, this.getBeatIndex(), bank);
 
         // any unknown beats always change image + colour
         const effects : Effect[] = (BeatTypes as any)[beat] ?? ImageColour;
@@ -986,7 +1000,7 @@ export class HuesCore extends EventListener<CoreEvents> {
             this.callEventListeners("newsong", this.currentSong);
             this.callEventListeners("newimage", this.currentImage);
             this.callEventListeners("newcolour", this.colours[this.colourIndex], false);
-            this.callEventListeners("beat", this.getBeatString(), this.getBeatIndex());
+            this.callEventListeners("beatstring", this.getBeatString(), this.getBeatIndex());
             this.callEventListeners("invert", this.invert);
         }
     }

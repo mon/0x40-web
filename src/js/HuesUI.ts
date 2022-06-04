@@ -376,7 +376,7 @@ export class RetroUI extends HuesUI {
         this.visualiserContainer.className = "hues-r-visualisercontainer";
         this.root.appendChild(this.visualiserContainer);
 
-        this.addCoreCallback("beat", this.beat.bind(this));
+        this.addCoreCallback("beatstring", this.beat.bind(this));
         this.addCoreCallback("newmode", this.newMode.bind(this));
     }
 
@@ -728,7 +728,7 @@ export class ModernUI extends HuesUI {
         this.listContainer.className = "hues-m-listcontainer";
         this.root.appendChild(this.listContainer);
 
-        this.addCoreCallback("beat", this.beat.bind(this));
+        this.addCoreCallback("beatstring", this.beat.bind(this));
         this.addCoreCallback("newmode", this.newMode.bind(this));
     }
 
