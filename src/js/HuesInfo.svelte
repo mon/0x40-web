@@ -33,6 +33,8 @@
         "# Double slice",
         "@ Double slice and change image",
         "←↓↑→ Shutter",
+        "_ Stop timed effects (fade, slice etc)",
+        "¯ Stop all effects in bank immediately"
     ];
 
     const shortcuts = [

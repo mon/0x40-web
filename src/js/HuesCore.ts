@@ -77,6 +77,7 @@ type CoreEvents = {
 }
 
 export enum Effect {
+    StopAll,
     BlurX,
     BlurY,
     TrippyIn,
@@ -101,7 +102,10 @@ export enum Effect {
 export const ImageColour = [Effect.RandomColour, Effect.RandomImage];
 
 export const BeatTypes = {
+    "_": [] as Effect[],
+    // has to be after _ or it doesn't get picked for the beat string compression
     ".": [] as Effect[],
+    "¯": [Effect.StopAll],
     "X": [Effect.BlurY],
     "x": [Effect.BlurY, ...ImageColour],
     "O": [Effect.BlurX],
@@ -607,7 +611,7 @@ export class HuesCore extends EventListener<CoreEvents> {
             }
         }
         this.setInvert(false);
-        this.renderer.doInstantBlackout();
+        this.renderer.doInstantBlackout(false, -1);
         return this.soundManager.playSong(this.currentSong, this.doBuildup)
         .then(() => {
             this.resetAudio();
@@ -857,39 +861,42 @@ export class HuesCore extends EventListener<CoreEvents> {
         let clearBlackout = beat != '.'; // any non-blank char clears blackout
         for(const effect of effects) {
             switch(effect) {
+                case Effect.StopAll:
+                    this.renderer.stopEffects(bank);
+                    break;
                 case Effect.BlurX:
-                    this.renderer.doXBlur();
+                    this.renderer.doXBlur(bank);
                     break;
                 case Effect.BlurY:
-                    this.renderer.doYBlur();
+                    this.renderer.doYBlur(bank);
                     break;
                 case Effect.TrippyIn:
-                    this.renderer.doTrippyX();
+                    this.renderer.doTrippyX(bank);
                     break;
                 case Effect.TrippyOut:
-                    this.renderer.doTrippyY();
+                    this.renderer.doTrippyY(bank);
                     break;
                 case Effect.Blackout:
-                    this.renderer.doBlackout();
+                    this.renderer.doBlackout(false, bank);
                     clearBlackout = false;
                     break;
                 case Effect.Whiteout:
-                    this.renderer.doBlackout(true);
+                    this.renderer.doBlackout(true, bank);
                     clearBlackout = false;
                     break;
                 case Effect.ShortBlackout:
-                    this.renderer.doShortBlackout(this.getBeatLength());
+                    this.renderer.doShortBlackout(this.getBeatLength(), false, bank);
                     clearBlackout = false;
                     break;
                 case Effect.ShortWhiteout:
-                    this.renderer.doShortBlackout(this.getBeatLength(), true);
+                    this.renderer.doShortBlackout(this.getBeatLength(), true, bank);
                     clearBlackout = false;
                     break;
                 case Effect.RandomColour:
                     this.randomColour();
                     break;
                 case Effect.ColourFade:
-                    this.renderer.doColourFade(this.timeToNextBeat(bank));
+                    this.renderer.doColourFade(this.timeToNextBeat(bank), bank);
                     this.randomColour(true);
                     break;
                 case Effect.RandomImage:
@@ -899,10 +906,10 @@ export class HuesCore extends EventListener<CoreEvents> {
                     break;
                 case Effect.SliceX:
                     // yes, SliceX is "y". I think I messed up. It renders right, don't worry
-                    this.renderer.doSlice(this.getBeatLength(), this.charsToNextBeat(bank), 'y');
+                    this.renderer.doSlice(this.getBeatLength(), this.charsToNextBeat(bank), 'y', bank);
                     break;
                 case Effect.SliceY:
-                    this.renderer.doSlice(this.getBeatLength(), this.charsToNextBeat(bank), 'x');
+                    this.renderer.doSlice(this.getBeatLength(), this.charsToNextBeat(bank), 'x', bank);
                     break;
                 case Effect.ShutterUp:
                     this.renderer.doShutter('↑', this.getBeatLength(), this.charsToNextBeat(bank));
@@ -936,7 +943,9 @@ export class HuesCore extends EventListener<CoreEvents> {
         }
         let nextBeat;
         for (nextBeat = 1; nextBeat <= maxSearch; nextBeat++) {
-            if (this.getBeat(nextBeat + this.beatIndex, bank) != ".") {
+            const beat = this.getBeat(nextBeat + this.beatIndex, bank);
+            // immediate stop char is meant to look jarring, for effect
+            if (beat != "." && beat != "¯") {
                 break;
             }
         }

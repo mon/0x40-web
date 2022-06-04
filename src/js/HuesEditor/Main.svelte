@@ -84,6 +84,8 @@
         ["↓", "Shutter down"],
         ["↑", "Shutter up"],
         ["→", "Shutter right"],
+        ["_", "Stop timed effects"],
+        ["¯", "Stop all effects"],
     ];
 
     let editor: HTMLDivElement;

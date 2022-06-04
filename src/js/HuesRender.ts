@@ -51,6 +51,7 @@ export type RenderParams = {
 }
 
 type SliceInfo = {
+    bank?: number;
     start?: number;
     // set with sliceStart
     rampUp?: number;
@@ -189,6 +190,7 @@ export default class HuesRender {
 
     blurDecay!: number;
     blurAmount!: number;
+    blurBank: [number?, number?]; // x, y
     blurStart: [number?, number?]; // x, y
     blurDistance: [number, number]; // x, y
 
@@ -200,10 +202,12 @@ export default class HuesRender {
     shutterDir: RenderParams['shutterDir'];
     shutterProgress?: number;
 
+    trippyBank: [number?, number?]; // x, y
     trippyStart: [number?, number?]; // x, y
     trippyRadii: [number?, number?]; // x, y
     trippyOn: boolean;
 
+    blackoutBank?: number;
     blackoutColour: number; // for the whiteout case we must store this
     blackoutStart?: number;
     blackoutTimeout?: number;
@@ -215,6 +219,7 @@ export default class HuesRender {
 
     invert: boolean;
 
+    colourFadeBank?: number;
     colourFadeStart?: number;
     colourFadeLength?: number;
     oldColour!: number;
@@ -242,6 +247,7 @@ export default class HuesRender {
         this.smartAlign = true; // avoid string comparisons every frame
 
         // dynamic
+        this.blurBank = [undefined, undefined];
         this.blurStart = [undefined, undefined];
         this.blurDistance = [0, 0];
 
@@ -255,6 +261,7 @@ export default class HuesRender {
         this.sliceInfo = {x:{}, y:{}};
 
         // trippy mode
+        this.trippyBank = [undefined, undefined]; // x, y
         this.trippyStart = [undefined, undefined]; // x, y
         this.trippyRadii = [undefined, undefined]; // x, y
         // force trippy mode
@@ -308,6 +315,37 @@ export default class HuesRender {
         this.resetSliceSegments('x');
         this.resetSliceSegments('y');
         this.blurStart = [undefined, undefined];
+    }
+
+    stopEffects(bank: number) {
+        if(this.colourFadeBank == bank) {
+            this.colourFadeStart = undefined;
+        }
+        if(this.trippyBank[0] == bank) {
+            this.trippyStart[0] = undefined;
+        }
+        if(this.trippyBank[1] == bank) {
+            this.trippyStart[1] = undefined;
+        }
+        if(this.sliceInfo.x.bank == bank) {
+            this.sliceInfo.x.start = undefined;
+            this.resetSliceSegments('x');
+        }
+        if(this.sliceInfo.y.bank == bank) {
+            this.sliceInfo.y.start = undefined;
+            this.resetSliceSegments('y');
+        }
+        if(this.blurBank[0] == bank) {
+            this.blurStart[0] = undefined;
+        }
+        if(this.blurBank[1] == bank) {
+            this.blurStart[1] = undefined;
+        }
+        if(this.blackoutBank == bank) {
+            this.clearBlackout();
+        }
+
+        this.needsRedraw = true;
     }
 
     resize() {
@@ -495,7 +533,8 @@ export default class HuesRender {
         this.needsRedraw = true;
     }
 
-    doBlackout(whiteout = false) {
+    doBlackout(whiteout: boolean, bank: number) {
+        this.blackoutBank = bank;
         if(whiteout) {
             this.blackoutColour = 0xFFFFFF;
         } else {
@@ -521,20 +560,21 @@ export default class HuesRender {
         }
     }
 
-    doShortBlackout(beatTime: number, whiteout = false) {
+    doShortBlackout(beatTime: number, whiteout: boolean, bank: number) {
         // looks better if we go right to black
-        this.doInstantBlackout(whiteout);
+        this.doInstantBlackout(whiteout, bank);
         this.blackoutTimeout = this.audio.currentTime + beatTime / 1.7;
         this.currentBlackout++;
     }
 
-    doInstantBlackout(whiteout = false) {
-        this.doBlackout(whiteout);
+    doInstantBlackout(whiteout: boolean, bank: number) {
+        this.doBlackout(whiteout, bank);
         // sufficiently negative
         this.blackoutStart = -Math.pow(2, 32);
     }
 
-    doColourFade(length: number) {
+    doColourFade(length: number, bank: number) {
+        this.colourFadeBank = bank;
         this.colourFadeLength = length;
         this.colourFadeStart = this.audio.currentTime;
         this.oldColour = this.colour;
@@ -564,35 +604,38 @@ export default class HuesRender {
         this.core.blurUpdated(x, y);
     }
 
-    doBlur(axis: 0 | 1) {
+    doBlur(axis: 0 | 1, bank: number) {
+        this.blurBank[axis] = bank;
         this.blurStart[axis] = this.audio.currentTime;
-        if(this.trippyOn)
+        if(this.trippyOn) {
             this.trippyStart[axis] = this.blurStart[axis];
+            this.trippyBank[axis] = bank;
+        }
         this.needsRedraw = true;
     }
 
-    doXBlur() {
-        this.doBlur(0);
+    doXBlur(bank: number) {
+        this.doBlur(0, bank);
     }
 
-    doYBlur() {
-        this.doBlur(1);
+    doYBlur(bank: number) {
+        this.doBlur(1, bank);
     }
 
-    doTrippy(axis: 0 | 1) {
+    doTrippy(axis: 0 | 1, bank: number) {
         let saveTrippy = this.trippyOn;
         // force trippy
         this.trippyOn = true;
-        this.doBlur(axis);
+        this.doBlur(axis, bank);
         this.trippyOn = saveTrippy;
     }
 
-    doTrippyX() {
-        this.doTrippy(0);
+    doTrippyX(bank: number) {
+        this.doTrippy(0, bank);
     }
 
-    doTrippyY() {
-        this.doTrippy(1);
+    doTrippyY(bank: number) {
+        this.doTrippy(1, bank);
     }
 
     doShutter(beat: RenderParams['shutterDir'], beatLength: number, beatCount: number) {
@@ -607,11 +650,12 @@ export default class HuesRender {
         this.needsRedraw = true;
     }
 
-    doSlice(beatLength: number, beatCount: number, dir: 'x' | 'y') {
+    doSlice(beatLength: number, beatCount: number, dir: 'x' | 'y', bank: number) {
         let transitionTime = Math.min(0.06, beatLength);
 
         let info = this.sliceInfo[dir];
 
+        info.bank = bank;
         info.start = this.audio.currentTime;
         info.rampUp = info.start + transitionTime;
         info.rampDown = info.start + (beatLength * beatCount) - transitionTime;
