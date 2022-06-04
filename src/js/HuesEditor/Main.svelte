@@ -267,6 +267,10 @@
         if(!independentBuild && hasBoth) {
             apply(otherEditor(parent));
             resyncEditorLengths(parent);
+        } else {
+            // still need to do this regardless
+            parent.section?.recalcBeatString();
+            otherEditor(parent).section?.recalcBeatString();
         }
     };
 
