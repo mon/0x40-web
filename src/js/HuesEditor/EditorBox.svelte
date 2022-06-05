@@ -451,6 +451,13 @@ information.
     padding-bottom: 5px;
 }
 
+@media (max-width: 710px) {
+    .header {
+        display: flex;
+        flex-wrap: wrap;
+    }
+}
+
 .beat-count {
     font-size: 10px;
     margin-left: 4px;

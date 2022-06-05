@@ -324,7 +324,7 @@
     // unlike all the other info tabs, we want the editor to *grow* to fit
     // all the available space, instead of being the minimum possible size.
     let resize = () => {
-        editor.style.height = (huesRoot.clientHeight - 250) + 'px';
+        editor.style.minHeight = (huesRoot.clientHeight - 260) + 'px';
     };
 
     onMount(resize);
@@ -610,6 +610,7 @@ hr {
 
 .title-buttons {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
 }
 
@@ -696,6 +697,7 @@ hr {
 .beats {
     grid-column: editors;
     display: flex;
+    flex-wrap: wrap;
     margin: 3px 10px 0;
 }
 
@@ -705,6 +707,13 @@ hr {
     grid-template-columns: repeat(3, max-content) auto repeat(2, max-content);
     align-items: center;
     margin: 3px 10px;
+}
+
+@media (max-width: 470px) {
+    .controls {
+        display: flex;
+        flex-wrap: wrap;
+    }
 }
 
 /* hide the spin box on number input */

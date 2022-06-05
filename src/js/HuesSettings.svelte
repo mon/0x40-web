@@ -76,12 +76,12 @@
 .options {
     display:flex;
     flex-wrap: wrap;
-    width: 640px;
+    max-width: 640px;
     padding: 5px;
 }
 
 .category {
-    font-size: 16px;
+    font-size: min(16px, 3vw);
     width: 50%;
     float: left;
     margin-bottom: 10px;

@@ -69,7 +69,7 @@
 .ref {
     display:flex;
     flex-wrap: wrap;
-    width: 640px;
+    max-width: 640px;
     align-items:center;
     justify-content: center;
     padding: 5px;

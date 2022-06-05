@@ -11,7 +11,6 @@
 .hues-win {
     position: relative;
     z-index: 9;
-    min-width: 640px;
     max-height: calc(100% - 120px);
     margin: 10px;
     overflow-y: auto;
@@ -21,6 +20,13 @@
     border-color: black;
     border-width: 2px;
     border-style: solid;
+}
+
+@media (max-width: 768px) {
+    .hues-win {
+        /* to account for modern UI */
+        max-height: calc(100% - 190px);
+    }
 }
 
 .hues-win__closebtn {
@@ -39,6 +45,8 @@
     margin: -1px;
     padding-top: 22px;
     display: flex;
+    /* looks pretty shit when they do wrap, but the alternative is an unusable UI */
+    flex-wrap: wrap;
 }
 
 .tab-label{

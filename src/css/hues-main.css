@@ -110,20 +110,25 @@
 }
 
 .hues-preloader__title {
-    font-size: 30pt;
+    /* Just ballpark it and hope the given title isn't super long */
+    font-size: min(30pt, calc(100vw / 15));
 }
 
 .hues-preloader__text {
+    /* "Initialising..." is 15 chars long, clamp to the viewport width */
+    font-size: min(25pt, calc(100vw / 15));
     display: block;
     text-align: center;
 }
 
 .hues-preloader__subtext {
-    font-size: 12pt;
+    /* "Tap or click to start" is 21 chars long, clamp to the viewport width */
+    font-size: min(12pt, calc(100vw / 21));
     text-align: center;
 }
 
 .hues-preloader__subtext span{
+    /* 8pt is sufficiently small to not worry about clamping */
     font-size: 8pt;
     opacity: 0.7;
 }
