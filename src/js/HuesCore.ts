@@ -619,7 +619,7 @@ export class HuesCore extends EventListener<CoreEvents> {
             }
         }
         this.setInvert(false);
-        this.renderer.doInstantBlackout(false, -1);
+        this.renderer.doInstantBlackout(false, undefined);
         return this.soundManager.playSong(this.currentSong, this.doBuildup)
         .then(() => {
             this.resetAudio();
@@ -867,7 +867,7 @@ export class HuesCore extends EventListener<CoreEvents> {
         const effects : Effect[] = (BeatTypes as any)[beat] ?? ImageColour;
 
         // any non-blank/stop char clears blackout
-        let clearBlackout = beat != '.' && beat != '¯';
+        let clearBlackout = beat != '.' && beat != '_';
         for(const effect of effects) {
             switch(effect) {
                 case Effect.StopAll:
@@ -955,7 +955,7 @@ export class HuesCore extends EventListener<CoreEvents> {
         }
 
         if(clearBlackout) {
-            this.renderer.clearBlackout();
+            this.renderer.clearBlackout(bank);
         }
     }
 

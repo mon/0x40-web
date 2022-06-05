@@ -316,6 +316,7 @@ export default class HuesRender {
         this.resetSliceSegments('x');
         this.resetSliceSegments('y');
         this.blurStart = [undefined, undefined];
+        this.clearBlackout();
     }
 
     stopEffects(bank: number) {
@@ -342,9 +343,7 @@ export default class HuesRender {
         if(this.blurBank[1] == bank) {
             this.blurStart[1] = undefined;
         }
-        if(this.blackoutBank == bank) {
-            this.clearBlackout();
-        }
+        this.clearBlackout(bank);
 
         this.needsRedraw = true;
     }
@@ -534,7 +533,7 @@ export default class HuesRender {
         this.needsRedraw = true;
     }
 
-    doBlackout(whiteout: boolean, bank: number, fadeLength?: number) {
+    doBlackout(whiteout: boolean, bank?: number, fadeLength?: number) {
         this.blackoutBank = bank;
         if(whiteout) {
             this.blackoutColour = 0xFFFFFF;
@@ -558,7 +557,13 @@ export default class HuesRender {
         }
     }
 
-    clearBlackout() {
+    clearBlackout(bank?: number) {
+        // only clear blackouts in this bank, unless the blackout was set by
+        // song change (ie blackoutBank === undefined)
+        if(bank !== undefined && this.blackoutBank !== undefined && bank != this.blackoutBank) {
+            return;
+        }
+
         this.blackoutStart = undefined;
         this.blackoutTimeout = undefined;
         this.needsRedraw = true;
@@ -574,7 +579,7 @@ export default class HuesRender {
         this.currentBlackout++;
     }
 
-    doInstantBlackout(whiteout: boolean, bank: number) {
+    doInstantBlackout(whiteout: boolean, bank?: number) {
         this.doBlackout(whiteout, bank);
         // sufficiently negative
         this.blackoutStart = -Math.pow(2, 32);
