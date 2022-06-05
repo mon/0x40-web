@@ -162,6 +162,9 @@
     }
 
     const undo = () => {
+        if(!undoQueue) {
+            return;
+        }
         if(!redoQueue) {
             redoQueue = [];
         }
