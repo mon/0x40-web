@@ -620,8 +620,7 @@ export default class HuesRender {
         this.blurBank[axis] = bank;
         this.blurStart[axis] = this.audio.currentTime;
         if(this.trippyOn) {
-            this.trippyStart[axis] = this.blurStart[axis];
-            this.trippyBank[axis] = bank;
+            this.doTrippy(axis, bank);
         }
         this.needsRedraw = true;
     }
@@ -635,11 +634,8 @@ export default class HuesRender {
     }
 
     doTrippy(axis: 0 | 1, bank: number) {
-        let saveTrippy = this.trippyOn;
-        // force trippy
-        this.trippyOn = true;
-        this.doBlur(axis, bank);
-        this.trippyOn = saveTrippy;
+        this.trippyStart[axis] = this.audio.currentTime;
+        this.trippyBank[axis] = bank;
     }
 
     doTrippyX(bank: number) {
