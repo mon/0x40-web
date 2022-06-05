@@ -1,7 +1,24 @@
 const path = require('path');
+const process = require('process');
 const MiniCssExtractPlugin = require("mini-css-extract-plugin");
 const CssMinimizerPlugin = require("css-minimizer-webpack-plugin");
 const SveltePreprocess = require('svelte-preprocess');
+
+const isDevServer = process.env.WEBPACK_SERVE;
+
+let optimization;
+if(isDevServer) {
+    optimization = {
+        minimize: false
+    };
+} else {
+    optimization = {
+        minimizer: [
+            `...`,
+            new CssMinimizerPlugin(),
+        ],
+    };
+}
 
 module.exports = [
     {
@@ -54,12 +71,7 @@ module.exports = [
         resolve: {
             extensions: ['.tsx', '.ts', '.js'],
         },
-        optimization: {
-            minimizer: [
-                `...`,
-                new CssMinimizerPlugin(),
-            ],
-        },
+        optimization: optimization,
         plugins: [new MiniCssExtractPlugin({
             filename: 'css/hues-min.css',
         })],
