@@ -445,30 +445,32 @@
         <div class="banks">
             <div class="banks-span-both">BANKS</div>
             {#if loop}
-            {#each loop.banks as bank, i}
-            <HuesButton
-                nopad title="Toggle bank visibility"
-                on:click={() => {hiddenBanks[i] = !hiddenBanks[i]}}>
-                {i+1} <span class="hues-icon">{@html hiddenBanks[i] ? HuesIcon.EYE_CLOSED : '&emsp;'}</span>
-            </HuesButton>
-            {#if loop.banks.length == 1}
-                <div></div>
-            {:else}
+                {#each loop.banks as bank, i}
                 <HuesButton
-                    nopad nouppercase title="Remove bank"
-                    on:click={() => {pushUndo(); dispatch('removebank', i)}}>
-                    x
+                    nopad title="Toggle bank visibility"
+                    on:click={() => {hiddenBanks[i] = !hiddenBanks[i]}}>
+                    {i+1} <span class="hues-icon">{@html hiddenBanks[i] ? HuesIcon.EYE_CLOSED : '&emsp;'}</span>
                 </HuesButton>
+                {#if loop.banks.length == 1}
+                    <div></div>
+                {:else}
+                    <HuesButton
+                        nopad nouppercase title="Remove bank"
+                        on:click={() => {pushUndo(); dispatch('removebank', i)}}>
+                        x
+                    </HuesButton>
+                {/if}
+                {/each}
+                {#if loop.banks.length < 16}
+                <div class="banks-span-both">
+                    <HuesButton
+                        title="Add bank"
+                        on:click={() => {pushUndo(); dispatch('addbank')}}>
+                        +
+                    </HuesButton>
+                </div>
+                {/if}
             {/if}
-            {/each}
-            {/if}
-            <div class="banks-span-both">
-                <HuesButton
-                    title="Add bank"
-                    on:click={() => {pushUndo(); dispatch('addbank')}}>
-                    +
-                </HuesButton>
-            </div>
         </div>
 
         <EditorBox
