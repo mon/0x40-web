@@ -535,16 +535,9 @@ export default class HuesRender {
 
     doBlackout(whiteout: boolean, bank?: number, fadeLength?: number) {
         this.blackoutBank = bank;
-        if(whiteout) {
-            this.blackoutColour = 0xFFFFFF;
-        } else {
-            this.blackoutColour = 0x000000;
-        }
+        this.blackoutColour = whiteout ? 0xFFFFFF : 0x000000;
         this.blackoutTimeout = undefined; // indefinite
-        // Don't restart the blackout animation if we're already blacked out
-        if(this.blackoutStart == undefined) {
-            this.blackoutStart = this.audio.currentTime;
-        }
+        this.blackoutStart = this.audio.currentTime;
         if(fadeLength === undefined) {
             // original is 3 frames at 30fps, this is close
             this.blackoutLength = 0.1;
