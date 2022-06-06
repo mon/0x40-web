@@ -49,10 +49,12 @@ type CoreEvents = {
 
     // Called on every non-blank beat character. If multiple banks are being
     //   used, this may be called several times per frame.
+    // For custom hooks: You can optionally return `true` to stop HuesCore from
+    //   processing this beat.
     // beat is the new beat
     // beatIndex is the beat index. Negative during buildups
     // bank is the bank this beat is from
-    beat : ((beat: string, beatIndex: number, bank: number) => void)[],
+    beat : ((beat: string, beatIndex: number, bank: number) => boolean | undefined)[],
 
     // Called on every beat.
     // beatString is a 256 char long string of current and upcoming beat chars
@@ -861,7 +863,10 @@ export class HuesCore extends EventListener<CoreEvents> {
     }
 
     beater(beat: string, bank: number) {
-        this.callEventListeners("beat", beat, this.getBeatIndex(), bank);
+        // if someone hooked into us decided to cancel this beat
+        if(this.callEventListeners("beat", beat, this.getBeatIndex(), bank) === true) {
+            return;
+        }
 
         // any unknown beats always change image + colour
         const effects : Effect[] = (BeatTypes as any)[beat] ?? ImageColour;

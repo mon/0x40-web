@@ -1,5 +1,5 @@
 interface Event {
-    [ev: string]: ((...args: any[]) => void)[];
+    [ev: string]: ((...args: any[]) => any)[];
 }
 
 export default class EventListener<Events extends Event> {
@@ -12,9 +12,15 @@ export default class EventListener<Events extends Event> {
     }
 
     callEventListeners<E extends keyof Events>(ev: E, ...args: any) {
+        let ret = undefined;
         for(const callback of this.eventListeners[ev]) {
-            callback(...args);
+            const callbackRet = callback(...args);
+            if(callbackRet !== undefined) {
+                ret = callbackRet;
+            }
         }
+
+        return ret;
     }
 
     addEventListener<E extends keyof Events>(ev: E, callback: Events[E][number]) {
