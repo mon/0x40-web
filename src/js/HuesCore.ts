@@ -673,6 +673,7 @@ export class HuesCore extends EventListener<CoreEvents> {
                         builds[bank] += ".";
                     }
                 }
+                this.currentSong.build.recalcBeatString();
                 this.currentSong.build.checkConsistency();
             }
         }
