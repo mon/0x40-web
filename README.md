@@ -55,7 +55,7 @@ Finally there's these, which hook into the Hues javascript events to do somethin
 ```javascript
 var defaults = {
     workersPath : "lib/workers/",
-    respacks : ["./respacks/Defaults_v5.0.zip", 
+    respacks : ["./respacks/Defaults_v5.0_Opaque.zip", 
                 "./respacks/HuesMixA.zip"
                 ],
     firstSong : "Nhato - Miss You",
