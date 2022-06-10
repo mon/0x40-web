@@ -799,3 +799,6 @@ Element.prototype.getTag = function<D extends string>(tag: string, def?: D): str
     let t = this.getElementsByTagName(tag)[0];
     return t ? t.textContent : (def ? def : null);
 };
+
+// used by thunk.html
+(<any>window).Respack = Respack;
