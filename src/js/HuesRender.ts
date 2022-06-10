@@ -21,6 +21,7 @@ export type RenderParams = {
     colour: number; // base colour
     lastColour: number; // previous colour
     blendMode:  GlobalCompositeOperation;
+    whiteBg: boolean;
 
     overlayColour: number; // blackout/whiteout, hex string
     overlayPercent: number;
@@ -226,8 +227,6 @@ export default class HuesRender {
     oldColour!: number;
     newColour!: number;
 
-    blendMode: GlobalCompositeOperation;
-
     constructor(root: HTMLElement, soundManager: SoundManager, core: HuesCore) {
         this.render = new HuesCanvas(root, core);
         this.audio = soundManager;
@@ -277,7 +276,6 @@ export default class HuesRender {
 
         this.invert = false;
 
-        this.blendMode = "hard-light";
         // Chosen because they look decent
         this.setBlurAmount("medium");
         this.setBlurDecay("fast");
@@ -356,10 +354,19 @@ export default class HuesRender {
         // when images aren't changing, shutter needs something to feed off
         let lastImage = this.core.settings.fullAuto ? this.lastImage : this.image;
 
+        let blend = this.core.settings.blendMode;
+        let whiteBg = false;
+        // slightly different behaviour for "classic" hues
+        if(blend === "default") {
+            blend = "hard-light";
+            whiteBg = true;
+        }
+
         let params = {
             colour: this.colour,
             lastColour: this.lastColour,
-            blendMode: this.blendMode,
+            blendMode: blend,
+            whiteBg: whiteBg,
 
             overlayColour: this.blackoutColour,
             overlayPercent: this.bOpacity,

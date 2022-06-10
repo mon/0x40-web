@@ -22,6 +22,7 @@
             "smartAlign",
             "shuffleImages",
             "colourSet",
+            "blendMode",
             "visualiser"
         ],
         "Interface" : [

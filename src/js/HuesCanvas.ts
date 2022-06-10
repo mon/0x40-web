@@ -119,8 +119,12 @@ export default class HuesCanvas {
         // might be doing a clipping region for shutter
         this.context.save();
 
-        this.context.fillStyle = "#FFF";
-        this.context.fillRect(0,0,width,height);
+        if(params.whiteBg) {
+            this.context.fillStyle = "#FFF";
+            this.context.fillRect(0,0,width,height);
+        } else {
+            this.context.clearRect(0,0,width,height);
+        }
 
         if(params.shutter !== undefined) {
             let vertical;
