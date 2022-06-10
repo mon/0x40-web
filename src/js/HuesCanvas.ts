@@ -18,6 +18,7 @@ export default class HuesCanvas {
     blurIterations!: number;
     blurDelta!: number;
     blurAlpha!: number;
+    blurFinalAlpha!: number;
 
     trippyRadius: number;
     shutterWidth: number;
@@ -82,6 +83,15 @@ export default class HuesCanvas {
         // think...)
         this.blurDelta = 1 / (this.blurIterations/2);
         this.blurAlpha = 1 / (this.blurIterations/2);
+        // because, again, premultiplied alpha, the final stack isn't fully
+        // opaque. To avoid a "pop" as the non-blurred render kicks in, we
+        // actually render at this opacity. Sucks, but whatever... Worse case is
+        // "extreme" which renders at 87% final opacity.
+        this.blurFinalAlpha = 1 - Math.pow(1 - this.blurAlpha, this.blurIterations);
+        // but low quality can just use full alpha
+        if(this.blurIterations == -1) {
+            this.blurFinalAlpha = 1;
+        }
     }
 
     resize() {
@@ -263,7 +273,7 @@ export default class HuesCanvas {
             if(xBlur || yBlur) {
                 this.drawBlur(bitmap, offset, drawWidth, drawHeight, xBlur, yBlur);
             } else {
-                this.context.globalAlpha = 1;
+                this.context.globalAlpha = this.blurFinalAlpha;
                 this.context.drawImage(bitmap, offset, 0, drawWidth, drawHeight);
             }
         }
@@ -339,12 +349,13 @@ export default class HuesCanvas {
         let bitmap = _bitmap!; // only ever called with valid data
         if(this.blurIterations < 0) {
             // "LOW" blur quality is special - just warps the images
-            let xDist = xBlur * 720;
-            let yDist = yBlur * 720;
+            // extra little oomph to make it more obvious
+            let xDist = xBlur * 720 * 1.5;
+            let yDist = yBlur * 720 * 1.5;
 
             this.context.globalAlpha = 1;
             this.context.drawImage(bitmap,
-                Math.floor(offset - xDist/2), Math.floor(-yDist/2),
+                Math.round(offset - xDist/2), Math.round(-yDist/2),
                 drawWidth + xDist, drawHeight + yDist);
         } else {
             this.context.globalAlpha = this.blurAlpha;
@@ -365,7 +376,7 @@ export default class HuesCanvas {
                 // since blur is based on 720p
                 dist = xBlur * 720;
                 for(let i=-1; i<=1; i+= this.blurDelta) {
-                    xContext.drawImage(bitmap, Math.floor(dist * i) + offset, 0, drawWidth, drawHeight);
+                    xContext.drawImage(bitmap, Math.round(dist * i) + offset, 0, drawWidth, drawHeight);
                 }
 
                 if(yBlur) {
@@ -378,7 +389,7 @@ export default class HuesCanvas {
             if(yBlur) {
                 dist = yBlur * 720;
                 for(let i=-1; i<=1; i+= this.blurDelta) {
-                    this.context.drawImage(bitmap, offset, Math.floor(dist * i), drawWidth, drawHeight);
+                    this.context.drawImage(bitmap, offset, Math.round(dist * i), drawWidth, drawHeight);
                 }
             }
         }
