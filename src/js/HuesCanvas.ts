@@ -129,11 +129,13 @@ export default class HuesCanvas {
         // might be doing a clipping region for shutter
         this.context.save();
 
-        if(params.whiteBg) {
-            this.context.fillStyle = "#FFF";
-            this.context.fillRect(0,0,width,height);
-        } else {
+        if(params.bgColour === "transparent") {
             this.context.clearRect(0,0,width,height);
+        } else {
+            this.context.fillStyle = this.intToHex(params.bgColour);
+            this.context.fillRect(0,0,width,height);
+            this.context.globalAlpha = 1;
+            this.context.globalCompositeOperation = "source-over";
         }
 
         if(params.shutter !== undefined) {

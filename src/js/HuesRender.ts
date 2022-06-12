@@ -21,7 +21,7 @@ export type RenderParams = {
     colour: number; // base colour
     lastColour: number; // previous colour
     blendMode:  GlobalCompositeOperation;
-    whiteBg: boolean;
+    bgColour: number | "transparent"; // base/backdrop colour for render stack
 
     overlayColour: number; // blackout/whiteout, hex string
     overlayPercent: number;
@@ -189,6 +189,8 @@ export default class HuesRender {
     lastImage: RenderImage;
     smartAlign: boolean;
 
+    bgColour!: number | "transparent";
+
     blurDecay!: number;
     blurAmount!: number;
     blurBank: [number?, number?]; // x, y
@@ -279,6 +281,7 @@ export default class HuesRender {
         // Chosen because they look decent
         this.setBlurAmount("medium");
         this.setBlurDecay("fast");
+        this.setBgColour("white");
 
         window.addEventListener('resize', this.resize.bind(this));
         this.resize();
@@ -303,6 +306,7 @@ export default class HuesRender {
         this.setSmartAlign(this.core.settings.smartAlign);
         this.setBlurAmount(this.core.settings.blurAmount);
         this.setBlurDecay(this.core.settings.blurDecay);
+        this.setBgColour(this.core.settings.bgColour);
         this.trippyOn = this.core.settings.trippyMode == "on";
     }
 
@@ -354,19 +358,11 @@ export default class HuesRender {
         // when images aren't changing, shutter needs something to feed off
         let lastImage = this.core.settings.fullAuto ? this.lastImage : this.image;
 
-        let blend = this.core.settings.blendMode;
-        let whiteBg = false;
-        // slightly different behaviour for "classic" hues
-        if(blend === "default") {
-            blend = "hard-light";
-            whiteBg = true;
-        }
-
         let params = {
             colour: this.colour,
             lastColour: this.lastColour,
-            blendMode: blend,
-            whiteBg: whiteBg,
+            blendMode: this.core.settings.blendMode,
+            bgColour: this.bgColour,
 
             overlayColour: this.blackoutColour,
             overlayPercent: this.bOpacity,
@@ -710,6 +706,10 @@ export default class HuesRender {
         // flash is pixel counts based off 1280x720 res
         // x is more striking so ignore aspect ratio disparity on y
         this.blurAmount = {"low" : 48/1280, "medium" : 96/1280, "high" : 384/1280}[amount];
+    }
+
+    setBgColour(colour: SettingsData['bgColour']) {
+        this.bgColour = {"white": 0xFFFFFF, "black": 0, "transparent": "transparent"}[colour] as typeof this.bgColour;
     }
 
     setSmartAlign(align: SettingsData['smartAlign']) {

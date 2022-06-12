@@ -60,7 +60,8 @@ const defaultSettings: SettingsData = {
     blurQuality: "medium",
     currentUI: "modern",
     colourSet: "normal",
-    blendMode: "default",
+    blendMode: "hard-light",
+    bgColour: "white",
     blackoutUI: "off",
     playBuildups: "on",
     visualiser: "off",
@@ -106,7 +107,11 @@ const settingsOptions = {
     },
     blendMode : {
         name : "Blend mode",
-        options : ["default", "hard-light", "screen", "source-in", "source-out", "multiply"]
+        options : ["hard-light", "screen", "source-in", "source-out", "multiply"]
+    },
+    bgColour : {
+        name : "Render backdrop",
+        options : ["white", "black", "transparent"]
     },
     blackoutUI : {
         name : "Blackout affects UI",
@@ -174,6 +179,7 @@ export type SettingsData = {
     currentUI:       typeof settingsOptions.currentUI.options[number];
     colourSet:       typeof settingsOptions.colourSet.options[number];
     blendMode:       typeof settingsOptions.blendMode.options[number];
+    bgColour:        typeof settingsOptions.bgColour.options[number];
     blackoutUI:      typeof settingsOptions.blackoutUI.options[number];
     playBuildups:    typeof settingsOptions.playBuildups.options[number];
     visualiser:      typeof settingsOptions.visualiser.options[number];

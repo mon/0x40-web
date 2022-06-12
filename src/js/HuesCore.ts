@@ -838,6 +838,12 @@ export class HuesCore extends EventListener<CoreEvents> {
         this.setColour(index, isFade);
     }
 
+    // for experiments
+    getRandomColour() {
+        let index=this.randomColourIndex();
+        return this.colours[index];
+    }
+
     setColour(index: number, isFade: boolean = false) {
         this.colourIndex = index;
         let colour = this.colours[this.colourIndex];

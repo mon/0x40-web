@@ -23,6 +23,7 @@
             "shuffleImages",
             "colourSet",
             "blendMode",
+            "bgColour",
             "visualiser"
         ],
         "Interface" : [
