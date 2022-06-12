@@ -107,7 +107,7 @@ const settingsOptions = {
     },
     blendMode : {
         name : "Blend mode",
-        options : ["hard-light", "screen", "source-in", "source-out", "multiply"]
+        options : ["hard-light", "screen", "multiply"]
     },
     bgColour : {
         name : "Render backdrop",
