@@ -62,10 +62,12 @@
         ["¤", "Whiteout"],
         ["|", "Short blackout"],
         ["!", "Short whiteout"],
-        ["B", "Instant blackout"],
-        ["W", "Instant whiteout"],
-        ["b", "Timed blackout"],
-        ["w", "Timed whiteout"],
+        ["┊", "Instant blackout"],
+        ["¡", "Instant whiteout"],
+        ["▽", "Fade to black"],
+        ["▼", "Fade to white"],
+        ["△", "Fade in from black"],
+        ["▲", "Fade in from white"],
         [":", "Color only"],
         ["*", "Image only"],
         ["X", "Vertical blur only"],
@@ -88,8 +90,8 @@
         ["↓", "Shutter down"],
         ["↑", "Shutter up"],
         ["→", "Shutter right"],
+        ["¯", "Stop all effects immediately"],
         ["_", "Stop timed effects"],
-        ["¯", "Stop all effects"],
     ];
 
     let editor: HTMLDivElement;

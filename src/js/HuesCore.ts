@@ -88,8 +88,10 @@ export enum Effect {
     Whiteout,
     ShortBlackout,
     ShortWhiteout,
-    TimedBlackout,
-    TimedWhiteout,
+    FadeOutBlackout,
+    FadeOutWhiteout,
+    FadeInBlackout,
+    FadeInWhiteout,
     InstantBlackout,
     InstantWhiteout,
     RandomColour,
@@ -121,10 +123,12 @@ export const BeatTypes = {
     "¤": [Effect.Whiteout, Effect.BlurX],
     "|": [Effect.ShortBlackout, ...ImageColour],
     "!": [Effect.ShortWhiteout, ...ImageColour],
-    "B": [Effect.InstantBlackout],
-    "W": [Effect.InstantWhiteout],
-    "b": [Effect.TimedBlackout],
-    "w": [Effect.TimedWhiteout],
+    "┊": [Effect.InstantBlackout],
+    "¡": [Effect.InstantWhiteout],
+    "▽": [Effect.FadeOutBlackout],
+    "▼": [Effect.FadeOutWhiteout],
+    "△": [Effect.FadeInBlackout],
+    "▲": [Effect.FadeInWhiteout],
     ":": [Effect.RandomColour],
     "*": [Effect.RandomImage],
     ")": [Effect.TrippyIn, Effect.BlurX, ...ImageColour],
@@ -913,12 +917,20 @@ export class HuesCore extends EventListener<CoreEvents> {
                     this.renderer.doInstantBlackout(true, bank);
                     clearBlackout = false;
                     break;
-                case Effect.TimedBlackout:
+                case Effect.FadeOutBlackout:
                     this.renderer.doBlackout(false, bank, this.timeToNextBeat(bank));
                     clearBlackout = false;
                     break;
-                case Effect.TimedWhiteout:
+                case Effect.FadeOutWhiteout:
                     this.renderer.doBlackout(true, bank, this.timeToNextBeat(bank));
+                    clearBlackout = false;
+                    break;
+                case Effect.FadeInBlackout:
+                    this.renderer.doBlackout(false, bank, this.timeToNextBeat(bank), true);
+                    clearBlackout = false;
+                    break;
+                case Effect.FadeInWhiteout:
+                    this.renderer.doBlackout(true, bank, this.timeToNextBeat(bank), true);
                     clearBlackout = false;
                     break;
                 case Effect.ShortBlackout:

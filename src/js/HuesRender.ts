@@ -215,6 +215,7 @@ export default class HuesRender {
     blackoutLength?: number;
     blackoutStart?: number;
     blackoutTimeout?: number;
+    blackoutFadeIn?: boolean;
     bOpacity: number;
     // frame drop mitigation on many fast consecutive short blackouts
     lastBlackout: number;
@@ -391,8 +392,11 @@ export default class HuesRender {
     }
 
     animationLoop() {
+        // some if statements rely on this not changing throughout the func
+        const now = this.audio.currentTime;
+
         if (this.colourFadeStart !== undefined) {
-            let delta = this.audio.currentTime - this.colourFadeStart;
+            let delta = now - this.colourFadeStart;
             let fadeVal = delta / this.colourFadeLength!;
             if (fadeVal >= 1) {
                 this.stopFade();
@@ -402,12 +406,16 @@ export default class HuesRender {
             }
             this.needsRedraw = true;
         }
-        if(this.blackoutTimeout !== undefined && this.audio.currentTime > this.blackoutTimeout) {
+        if(this.blackoutTimeout !== undefined && now > this.blackoutTimeout) {
             this.clearBlackout();
         }
         if(this.blackoutStart !== undefined) {
-            const delta = this.audio.currentTime - this.blackoutStart;
+            const delta = now - this.blackoutStart;
             this.bOpacity = delta / this.blackoutLength!;
+
+            if(this.blackoutFadeIn) {
+                this.bOpacity = 1 - this.bOpacity;
+            }
 
             // If a short blackout is scheduled, but we missed the image frame
             // from the last one, you can get only black frames over and over
@@ -427,7 +435,7 @@ export default class HuesRender {
         for(const [axis, blur] of this.blurStart.entries()) {
             if(blur !== undefined) {
                 // flash offsets blur gen by a frame
-                let delta = this.audio.currentTime - blur + (1/30);
+                let delta = now - blur + (1/30);
                 this.blurDistance[axis] = this.blurAmount * Math.exp(-this.blurDecay * delta);
 
                 // Update UI
@@ -446,7 +454,6 @@ export default class HuesRender {
             let transitionPercent = 0.8;
             let delta;
             let sliceDistance;
-            let now = this.audio.currentTime;
             if(now < info.rampUp!) {
                 delta = info.rampUp! - now;
                 sliceDistance = (1-(delta / info.transitionTime!)) * transitionPercent;
@@ -470,8 +477,8 @@ export default class HuesRender {
 
         }
         if(this.shutterEnd !== undefined) {
-            if(this.audio.currentTime < this.shutterEnd) {
-                let delta = this.shutterEnd - this.audio.currentTime;
+            if(now < this.shutterEnd) {
+                let delta = this.shutterEnd - now;
                 this.shutterProgress = (this.shutterDuration-delta) / this.shutterDuration;
             } else {
                 this.shutterEnd = undefined;
@@ -481,7 +488,7 @@ export default class HuesRender {
         for(let i = 0; i < 2; i++) {
             if(this.trippyStart[i] !== undefined) {
                 this.needsRedraw = true;
-                this.trippyRadii[i] = (this.audio.currentTime - this.trippyStart[i]!) * 2;
+                this.trippyRadii[i] = (now - this.trippyStart[i]!) * 2;
                 if(this.trippyRadii[i]! > 1) {
                     this.trippyStart[i] = undefined;
                     this.trippyRadii[i] = undefined;
@@ -536,17 +543,26 @@ export default class HuesRender {
         this.needsRedraw = true;
     }
 
-    doBlackout(whiteout: boolean, bank?: number, fadeLength?: number) {
+    doBlackout(whiteout: boolean, bank?: number, fadeLength?: number, fadeIn?: boolean) {
         this.blackoutBank = bank;
         this.blackoutColour = whiteout ? 0xFFFFFF : 0x000000;
         this.blackoutTimeout = undefined; // indefinite
         this.blackoutStart = this.audio.currentTime;
+        this.blackoutFadeIn = false;
+
         if(fadeLength === undefined) {
             // original is 3 frames at 30fps, this is close
             this.blackoutLength = 0.1;
         } else {
             this.blackoutLength = fadeLength;
+
+            // fadeIn only valid when also given fadeLength
+            if(fadeIn) {
+                this.blackoutFadeIn = true;
+                this.blackoutTimeout = this.blackoutStart + fadeLength;
+            }
         }
+
         this.needsRedraw = true;
         if(this.core.settings.blackoutUI == "on") {
             this.core.userInterface?.hide();
