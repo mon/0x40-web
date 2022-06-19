@@ -48,6 +48,11 @@ const defaultSettings: SettingsData = {
     preloadTitle: "",
     // Info customisation
     huesName: "0x40 Hues of JS, v%VERSION%",
+    huesDesc:
+        `0x40 Hues has some music and a few images, and the
+        music plays and the images change.
+        This is such a fine idea, like wowzers.
+        Som- many like it!`,
     // If unset, uses <body>, otherwise sets which element to turn hues-y
     root: null,
     // If set, keyboard shortcuts are ignored
@@ -168,6 +173,7 @@ export type SettingsData = {
     preloadMax: number;
     preloadTitle: string;
     huesName: string;
+    huesDesc: string;
     root: HTMLElement | string | null;
     disableKeyboard: boolean;
 

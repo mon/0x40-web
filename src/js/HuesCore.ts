@@ -289,6 +289,7 @@ export class HuesCore extends EventListener<CoreEvents> {
             props: {
               version: this.versionStr,
               huesName: this.settings.huesName,
+              huesDesc: this.settings.huesDesc,
             }
         });
 

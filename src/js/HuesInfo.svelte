@@ -1,6 +1,7 @@
 <script lang="ts">
     export let version: string;
     export let huesName: string;
+    export let huesDesc: string | undefined;
 
     $: name = huesName.replace("%VERSION%", version);
 
@@ -56,11 +57,19 @@
 </script>
 
 <div class="ref">
-    <div class="about">
+    <div>
         <h1>{name}</h1>
+        <hr/>
+        {#if huesDesc}
+            <h2>
+                {huesDesc}
+            </h2>
+            <hr/>
+        {/if}
         <h2>Adapted from the <a target="_blank" href="http://0x40hues.blogspot.com">0x40 Flash</a></h2>
-        <h2>Web-ified by <a target="_blank" href="https://github.com/mon">mon</a></h2>
+        <h2>Web-ified by <a target="_blank" href="https://github.com/mon/0x40-web">mon</a></h2>
         <h3>With help from <a target="_blank" href="https://github.com/kepstin/0x40hues-html5">Kepstin</a></h3>
+        <hr/>
     </div>
     <HuesInfoList name="Beat glossary" items={beatGlossary}/>
     <HuesInfoList name="Keyboard shortcuts" items={shortcuts}/>
@@ -76,7 +85,7 @@
     padding: 5px;
 }
 
-.about {
+hr {
     border-bottom: 2px solid black;
 }
 </style>
