@@ -7,20 +7,20 @@
     import HuesInfoList from './HuesInfoList.svelte';
 
     const beatGlossary = [
-        "x Vertical blur (snare)",
-        "o Horizontal blur (bass)",
-        "- No blur",
-        "+¤ Blackout/whiteout",
-        "|! Short blackout/whiteout",
-        "BW Instant blackout/whiteout",
-        "bw Timed blackout/whiteout",
-        ": Color only",
+        "x Vertical blur, image and colour (snare)",
+        "o Horizontal blur, image and colour (bass)",
+        "- Change image and colour (no blur)",
+        ": Colour only",
         "* Image only",
         "X Vertical blur only",
         "O Horizontal blur only",
+        "+¤ Blackout/whiteout (classic)",
+        "|! Blackout/whiteout (short)",
+        "BW Blackout/whiteout (instant)",
+        "bw Blackout/whiteout (timed)",
         ")( Trippy cirle in/out and change image",
         ">< Trippy cirle in/out",
-        "~ Fade color",
+        "~ Fade colour",
         "= Fade and change image",
         "i Invert all colours",
         "I Invert & change image",
@@ -29,8 +29,8 @@
         "# Double slice",
         "@ Double slice and change image",
         "←↓↑→ Shutter",
+        "¯ Stop all effects in bank immediately",
         "_ Stop timed effects (fade, slice etc)",
-        "¯ Stop all effects in bank immediately"
     ];
 
     const shortcuts = [
