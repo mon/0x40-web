@@ -261,6 +261,8 @@
         let text = event.clipboardData?.getData('text/plain');
 
         if(text) {
+            // remove newlines
+            text = text.replace(/[\n\r]/g, "");
             // insert text manually
             fakeInput(text);
         }
