@@ -52,47 +52,60 @@
 
     const MAX_UNDO = 200;
 
-    // very slightly different to HuesInfo - does not combine shutter etc into a
-    // single line
-    const beatGlossary = [
-        ["x", "Vertical blur"],
-        ["o", "Horizontal blur"],
-        ["-", "Change image"],
-        ["+", "Blackout"],
-        ["¤", "Whiteout"],
-        ["|", "Short blackout"],
-        ["!", "Short whiteout"],
-        ["┊", "Instant blackout"],
-        ["¡", "Instant whiteout"],
-        ["▼", "Fade to black"],
-        ["▽", "Fade to white"],
-        ["▲", "Fade in from black"],
-        ["△", "Fade in from white"],
-        [":", "Color only"],
-        ["*", "Image only"],
-        ["X", "Vertical blur only"],
-        ["O", "Horizontal blur only"],
-        [")", "Trippy cirle in and change image"],
-        ["(", "Trippy circle out and change image"],
-        [">", "Trippy cirle in"],
-        ["<", "Trippy circle out"],
-        ["~", "Fade color"],
-        ["=", "Fade and change image"],
-        ["i", "Invert all colours"],
-        ["I", "Invert & change image"],
-        ["s", "Horizontal slice"],
-        ["S", "Horizontal slice and change image"],
-        ["v", "Vertical slice"],
-        ["V", "Vertical slice and change image"],
-        ["#", "Double slice"],
-        ["@", "Double slice and change image"],
-        ["←", "Shutter left"],
-        ["↓", "Shutter down"],
-        ["↑", "Shutter up"],
-        ["→", "Shutter right"],
-        ["¯", "Stop all effects immediately"],
-        ["_", "Stop timed effects"],
-    ];
+    // different to HuesInfo - does not combine similar beats into a single line
+    const beatGlossary = {
+        "Blur": [
+            ["x", "Vertical blur"],
+            ["o", "Horizontal blur"],
+            ["X", "Vertical blur only"],
+            ["O", "Horizontal blur only"],
+        ],
+        "Colour": [
+            ["-", "Change image"],
+            [":", "Color only"],
+            ["*", "Image only"],
+            ["~", "Fade color"],
+            ["=", "Fade and change image"],
+            ["i", "Invert all colours"],
+            ["I", "Invert & change image"],
+        ],
+        "Blackout": [
+            ["+", "Blackout"],
+            ["¤", "Whiteout"],
+            ["|", "Short blackout"],
+            ["!", "Short whiteout"],
+            ["┊", "Instant blackout"],
+            ["¡", "Instant whiteout"],
+            ["▼", "Fade to black"],
+            ["▽", "Fade to white"],
+            ["▲", "Fade in from black"],
+            ["△", "Fade in from white"],
+        ],
+        "Trippy": [
+            [")", "Trippy cirle in and change image"],
+            ["(", "Trippy circle out and change image"],
+            [">", "Trippy cirle in"],
+            ["<", "Trippy circle out"],
+        ],
+        "Slice": [
+            ["s", "Horizontal slice"],
+            ["S", "Horizontal slice and change image"],
+            ["v", "Vertical slice"],
+            ["V", "Vertical slice and change image"],
+            ["#", "Double slice"],
+            ["@", "Double slice and change image"],
+        ],
+        "Shutter": [
+            ["←", "Shutter left"],
+            ["↓", "Shutter down"],
+            ["↑", "Shutter up"],
+            ["→", "Shutter right"],
+        ],
+        "Util": [
+            ["¯", "Stop all effects immediately"],
+            ["_", "Stop timed effects"],
+        ]
+    };
 
     let editor: HTMLDivElement;
     let editArea: HTMLDivElement;
@@ -533,15 +546,20 @@
 
         <!-- Beat inserter buttons -->
         <div class="beats">
-            {#each beatGlossary as beat}
-                <HuesButton
-                    title="{beat[1]}"
-                    on:click={() => {if(editorFocus) editorFocus.fakeInput(beat[0])}}
-                    nouppercase
-                    disabled={!editorFocussed}
-                >
-                    {beat[0]}
-                </HuesButton>
+            {#each Object.entries(beatGlossary) as [category, beats]}
+                <div>
+                    <span class="beat-category">{category}</span>
+                    {#each beats as beat}
+                        <HuesButton
+                            title="{beat[1]}"
+                            on:click={() => {if(editorFocus) editorFocus.fakeInput(beat[0])}}
+                            nouppercase
+                            disabled={!editorFocussed}
+                        >
+                            {beat[0]}
+                        </HuesButton>
+                    {/each}
+                </div>
             {/each}
         </div>
 
@@ -714,6 +732,13 @@ hr {
     grid-template-columns: repeat(3, max-content) auto repeat(2, max-content);
     align-items: center;
     margin: 3px 10px;
+}
+
+.beat-category {
+    font-size: 10px;
+    margin-left: 4px;
+    /* really not sure why I need this */
+    margin-right: -9px;
 }
 
 @media (max-width: 470px) {
