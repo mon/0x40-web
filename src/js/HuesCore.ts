@@ -392,7 +392,12 @@ export class HuesCore extends EventListener<CoreEvents> {
             if(this.settings.firstImage) {
                 this.setImageByName(this.settings.firstImage);
             } else {
-                this.setImage(0);
+                // keep things like the flash
+                this.setImageByName("Airi Akizuki");
+                // it will fallback to image index 0 if not present
+                if(this.imageIndex === 0) {
+                    this.setImageByName("Megumi"); // alternate name
+                }
             }
             if(this.settings.autoplay) {
                 if(this.settings.firstSong) {
