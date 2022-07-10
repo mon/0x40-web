@@ -91,7 +91,7 @@ module.exports = [
             rules: [
                 // audio worker + sources should just be copied as-is
                 {
-                    test: /(mpg123|ogg|vorbis)\.js$/,
+                    test: /(mpg123|ogg|vorbis|opus)\.js$/,
                     type: 'asset/resource',
                     generator : {filename : 'lib/[name][ext][query]'},
                 },

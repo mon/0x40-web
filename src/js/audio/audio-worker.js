@@ -17,7 +17,7 @@ var deinterleave = function(buffer, asset) {
 
 self.addEventListener('message', function(e) {
     if(!e.data.ogg) {
-        importScripts('../ogg.js', '../vorbis.js');
+        importScripts('../ogg.js', '../vorbis.js', '../opus.js');
     }
     if(!e.data.mp3) {
         importScripts('../mpg123.js');
