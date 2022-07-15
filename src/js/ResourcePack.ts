@@ -378,7 +378,7 @@ export class Respack {
         this.updateProgress(this.loadedFromURL ? 0.5 : 0);
         this.size = blob.size;
 
-        const file = new zip.ZipReader(new zip.BlobReader(blob));
+        const file = new zip.ZipReader(new zip.BlobReader(blob), {filenameEncoding: 'utf8'});
         try {
             const entries = await file.getEntries();
             await this.parseZip(entries);
