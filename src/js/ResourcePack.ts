@@ -44,9 +44,7 @@ export class HuesSongSection {
         if(!this.filename) {
             return undefined;
         }
-        // don't do a generic extension pop since audio extensions are checked
-        // when parsing
-        return this.filename.replace(audioExtensions, "");
+        return plainName(this.filename);
     }
 
     // get the beatmap length - all banks have the same length
@@ -224,17 +222,40 @@ export class HuesSong {
     }
 }
 
-export interface HuesImage {
+export class HuesImage {
+    public static readonly DEFAULT_ANIM_FRAME_TIME = 66; // 15fps
     name: string;
     fullname: string;
     align: "center" | "left" | "right";
     bitmaps: HTMLImageElement[];
-    frameDurations :number[];
+    frameDurations: number[];
+    // straight from the XML
+    rawFrameDurations?: string;
     source: string;
     enabled: boolean;
-    animated: boolean;
     beatsPerAnim: number;
-    syncOffset?: number;
+    syncOffset: number;
+
+    constructor(name = "None", fullname = "None", bitmaps: HTMLImageElement[] = []) {
+        this.name = name;
+        this.fullname = fullname;
+        this.align = "center";
+        this.bitmaps = bitmaps;
+        this.frameDurations = [];
+        this.source = "";
+        this.enabled = true;
+        this.beatsPerAnim =  0;
+        this.syncOffset =  0;
+
+        if(bitmaps.length > 1) {
+            // default/unset animation speed
+            this.frameDurations = Array(bitmaps.length).fill(HuesImage.DEFAULT_ANIM_FRAME_TIME);
+        }
+    }
+
+    get animated() {
+        return this.bitmaps.length > 1;
+    }
 }
 
 export type ProgressCallback = (percent: number, respack: Respack) => void;
@@ -242,16 +263,37 @@ export type ProgressCallback = (percent: number, respack: Respack) => void;
 const debugConsole = false;
 function debug(...args: any[]) {
     if(debugConsole) {
-        console.log(...args);
+        console.debug(...args);
     }
 }
 
-const audioExtensions = new RegExp("\\.(mp3|ogg|wav)$", "i");
-const imageExtensions = new RegExp("\\.(png|gif|jpg|jpeg)$", "i");
+const audioMimes = new Set([
+    "audio/mpeg",
+    "audio/ogg",
+    "audio/x-wav",
+]);
+const imageMines = new Set([
+    "image/png",
+    "image/gif",
+    "image/jpeg",
+    "image/bmp",
+]);
 
-type ImageParseResult = {
-    bitmap: string; // base64 data URI
-    img: HuesImage;
+interface LoadedFile {
+    filename: string;
+    plainName: string; // without extension
+    mime: string;
+    data: Uint8Array;
+}
+
+interface LoadedImage {
+    plainName: string;
+    imgs: HTMLImageElement[];
+}
+
+// used for lookups in the file lists
+interface LoadedThing {
+    plainName: string;
 }
 
 function basename(entry: zip.Entry) {
@@ -260,11 +302,14 @@ function basename(entry: zip.Entry) {
     return parts.pop() || fullname;
 }
 
+// filename without extension
+function plainName(filename: string): string {
+    return filename.replace(/\.[^/.]+$/, "");
+}
+
 export class Respack {
     songs: HuesSong[];
-    songQueue: Promise<void>[];
     images: HuesImage[];
-    imageQueue: Promise<ImageParseResult>[];
 
     name: string;
     author: string;
@@ -274,8 +319,6 @@ export class Respack {
     size: number;
     downloaded: number;
     enabled: boolean;
-
-    _xmlQueue: Promise<Document>[];
 
     totalFiles: number;
 
@@ -287,9 +330,7 @@ export class Respack {
 
     constructor() {
         this.songs = [];
-        this.songQueue = [];
         this.images = [];
-        this.imageQueue = [];
 
         this.name = "<no name>";
         this.author = "<unknown>";
@@ -299,8 +340,6 @@ export class Respack {
         this.size = -1;
         this.downloaded = -1;
         this.enabled = true;
-
-        this._xmlQueue = [];
 
         this.totalFiles = -1;
 
@@ -390,169 +429,135 @@ export class Respack {
         };
     }
 
-    parseZip(entries: zip.Entry[]) {
+    async parseZip(entries: zip.Entry[]) {
+        // just metadata, not used for anything
         this.totalFiles = 0;
         // Progress events
         this.filesToLoad = 0;
         this.filesLoaded = 0;
 
-        // Get everything started
+        let songQueue = [];
+        let imageQueue = [];
+        let xmlQueue = [];
+
+        // Don't parse in this loop - work out how many files for progress
         for(const file of entries) {
             if(!file.directory && file.filename) {
                 this.totalFiles++;
-                this.parseFile(file);
+
+                const mime = zip.getMimeType(file.filename);
+                if(audioMimes.has(mime)) {
+                    songQueue.push(file);
+                } else if(imageMines.has(mime)) {
+                    imageQueue.push(file);
+                } else if(mime == "application/xml"){
+                    xmlQueue.push(file);
+                }
             }
         }
 
-        return this.parseSongQueue()
-        .then(() => {
-            return this.parseImageQueue();
-        }).then(() => {
-            return this.parseXML();
-        }).then(() => {
-            // Cleanup
-            this._xmlQueue = [];
-            console.log("Loaded", this.name, "successfully with", this.songs.length,
-                        "songs and", this.images.length, "images.");
+        this.filesToLoad = songQueue.length + imageQueue.length + xmlQueue.length;
+        let songs = await this.loadQueue(songQueue);
+        let images = await this.createImgElements(await this.loadQueue(imageQueue));
+        let xmls = await this.loadQueue(xmlQueue);
+        debug('songs', songs);
+        debug('images', images);
+        debug('xmls', xmls);
+
+        for(const xml of xmls) {
+            this.parseXML(xml, songs, images);
+        }
+
+        // any remaining songs had no XML definition / mistyped name or similar
+        for(const song of songs) {
+            console.warn("We have a file for", song.filename, "but no information for it");
+        }
+        // any remaining images are still valid, just have no extra info
+        for(const image of images) {
+            const img = new HuesImage(image.plainName, image.plainName, image.imgs);
+            this.images.push(img);
+            debug("  [I] " + img.name, ":", img.fullname, "added to images");
+        }
+        // sort images alphabetically
+        this.images.sort(function(a, b) {
+            return a.name.localeCompare(b.name);
         });
+
+        console.log("Loaded", this.name, "successfully with", this.songs.length,
+                    "songs and", this.images.length, "images.");
     }
 
-    parseFile(file: zip.Entry) {
-        let name = basename(file);
-        if (name.match(audioExtensions)) {
-            this.songQueue.push(this.parseSong(file));
-            this.filesToLoad++;
-        } else if (name.match(imageExtensions)) {
-            let parse = this.parseImage(file);
-            if(parse) {
-                this.imageQueue.push(parse);
-                this.filesToLoad++;
-            }
-        } else if(name.toLowerCase().endsWith(".xml")){
-            this._xmlQueue.push(this.loadXML(file));
-        }
-    }
+    async loadQueue(files: zip.Entry[]): Promise<LoadedFile[]> {
+        let res = [];
+        for(const file of files) {
+            const data = await file.getData!(new zip.Uint8ArrayWriter()) as Uint8Array;
+            const mime = zip.getMimeType(file.filename);
+            const filename = basename(file);
+            const plain = plainName(filename);
+            res.push({filename, plainName: plain, mime, data});
 
-    async parseSong(file: zip.Entry): Promise<void> {
-        let newSong = new HuesSong("", file.filename);
-
-        debug("parsing song: " + newSong.loop.filename);
-
-        const oldSong = this.getSong(newSong.loop.basename);
-        if (oldSong) {
-            console.warn("Song", newSong.loop.filename, "already exists! Conflict with " + oldSong);
-        } else {
-            this.songs.push(newSong);
-
-            let arr = await file.getData!(new zip.Uint8ArrayWriter()) as Uint8Array;
-            newSong.loop.sound = arr.buffer;
             this.filesLoaded++;
             this.updateProgress();
         }
+
+        return res;
     }
 
-    parseSongQueue() {
-        return this.songQueue.reduce((sequence, songPromise) => {
-            return sequence.then(() => {
-                // Maintain order
-                return songPromise;
+    async createImgElements(files: LoadedFile[]): Promise<LoadedImage[]> {
+        let imgs = []
+        for(const file of files) {
+            const blob = new Blob([file.data.buffer], {type : file.mime});
+            const img = new Image();
+
+            const prom = new Promise(resolve => {
+                img.onload = resolve;
+                img.src = URL.createObjectURL(blob);
             });
-        }, Promise.resolve());
-    }
+            await prom;
+            imgs.push({filename: file.filename, plainName: file.plainName, img});
+        }
 
-    parseImage(file: zip.Entry) {
-        let match;
-        let name = basename(file).replace(imageExtensions, "");
-        let img: HuesImage | null;
+        // group animations
+        const res = []; // duplicate image names are acceptable, so this is a list
+        const animations = new Map<string, HTMLImageElement[]>();
+        for(const img of imgs) {
+            let plain = img.plainName;
+            const match = plain.match(new RegExp("^(.*)_(\\d+)$"));
+            if(match) { //animation
 
-        // Animation
-        if((match = name.match(new RegExp("^(.*)_(\\d+)$")))) {
-            img = this.getImage(match[1]);
-            if(!img) { // make a fresh one
-                img = {
-                    name:match[1],
-                    fullname:match[1],
-                    align:"center",
-                    bitmaps:[],
-                    frameDurations:[33],
-                    source:"",
-                    enabled:true,
-                    animated:true,
-                    beatsPerAnim: 0
-                };
-                this.images.push(img);
+                plain = match[1];
+                const frame = parseInt(match[2]);
+                if(!animations.has(plain)) {
+                    animations.set(plain, []);
+                }
+                animations.get(plain)![frame] = img.img;
+            } else { // normal
+                res.push({plainName: plain, imgs: [img.img]});
             }
-        // Normal image
-        } else if (!this.containsImage(name)) {
-            img = {
-                name:name,
-                fullname:name,
-                align:"center",
-                bitmaps:[],
-                frameDurations:[33],
-                source:"",
-                enabled:true,
-                animated:false,
-                beatsPerAnim: 0
-            };
-            this.images.push(img);
-        } else {
-            let existing = this.getImage(name);
-            console.log("WARNING: Image", name, "already exists! Conflict with", basename(file), "and", existing?.name);
-            return;
         }
 
-        return this.loadImage(file, img);
-    }
+        // clean animations and add to result
+        for(let [plain, imgs] of animations.entries()) {
+            // an animation with frames 0, 3, 4, because of mislabelled files,
+            // must be squashed into a single contiguous array
+            imgs = imgs.filter(Boolean);
 
-    async loadImage(imgFile: zip.Entry, imageObj: HuesImage): Promise<ImageParseResult> {
-        let mime = "";
-        const extension = imgFile.filename.split('.').pop()!.toLowerCase();
-        switch(extension) {
-            case "png":
-                mime = "image/png";
-                break;
-            case "gif":
-                mime = "image/gif";
-                break;
-            case "jpg":
-            case "jpeg":
-                mime = "image/jpeg";
-                break;
-            default:
-                mime = "application/octet-stream";
+            // add back to the result
+            res.push({plainName: plain, imgs: imgs});
         }
-        let bitmap = await imgFile.getData!(new zip.Data64URIWriter(mime)) as string;
-        this.filesLoaded++;
-        this.updateProgress();
-        return {bitmap: bitmap, img: imageObj};
+
+        return res;
     }
 
-    parseImageQueue() {
-        return this.imageQueue.reduce((sequence, imagePromise) => {
-            return sequence.then(() => {
-                // Maintain order
-                return imagePromise;
-            }).then(response => {
-                // Don't crash if the respack had duplicate images
-                if(!response)
-                    return;
-                let newImg = new Image();
-                newImg.src = response.bitmap;
-                response.img.bitmaps.push(newImg);
-            });
-        }, Promise.resolve());
-    }
-
-    async loadXML(file: zip.Entry) {
-        let text = await file.getData!(new zip.TextWriter()) as string;
+    XMLtoDOM(file: LoadedFile) {
+        let text = new TextDecoder().decode(file.data);
 
         let parser = new DOMParser();
         let dom = parser.parseFromString(text, "text/xml");
 
         // this is some real PHP-tier error reporting from this API
         if(dom.querySelector('parsererror')) {
-            console.log("Respack parse failed, attempting ampersand sanitisation");
+            console.log("Respack XML parse failed, attempting ampersand sanitisation");
             // Some respacks don't properly escape ampersands, which trips
             // up the XML parser - so just escape them all and try again.
             // Respacks that correctly escape *other* elements (like &lt;
@@ -560,46 +565,58 @@ export class Respack {
             // should be OK and not result in "&amp;&lt;" nonsense.
             text = text.replace(/&amp;/g, '&');
             text = text.replace(/&/g, '&amp;');
-            console.log(text);
             dom = parser.parseFromString(text, "text/xml");
+
+            if(dom.querySelector('parsererror')) {
+                console.error("Respack XML parse failed again, ignoring");
+                console.log(text);
+                return null;
+            }
         }
 
         return dom
     }
 
-    async parseXML() {
-        // don't let a bad parse leave us with a bunch of dummy songs
-        let seenSongXml = false;
-
-        let queue = []
-        for(let i = 0; i < this._xmlQueue.length; i++) {
-            queue.push(this._xmlQueue[i].then(dom => {
-                switch(dom.documentElement.nodeName) {
-                    case "songs":
-                            if(this.songs.length > 0) {
-                                seenSongXml = true;
-                                this.parseSongFile(dom);
-                            }
-                        break;
-                    case "images":
-                        if(this.images.length > 0)
-                                this.parseImageFile(dom);
-                        break;
-                    case "info":
-                            this.parseInfoFile(dom);
-                        break;
-                    default:
-                            console.warn("XML found with no <songs>, <images> or <info> tag");
-                        break;
-                }
-            }));
+    async parseXML(xml: LoadedFile, songs: LoadedFile[], images: LoadedImage[]) {
+        let dom = this.XMLtoDOM(xml);
+        if(!dom) {
+            return;
         }
-        await Promise.all(queue);
 
-        if(this.songs.length > 0 && !seenSongXml) {
-            this.songs = [];
-            console.warn("Songs present in respack \"" + this.name + "\" but no XML to describe them");
+        debug("Parsing", xml.filename);
+
+        for(const songNode of dom.getElementsByTagName("songs")) {
+            this.parseSongFile(songNode, songs);
         }
+        for(const imageNode of dom.getElementsByTagName("images")) {
+            this.parseImageFile(imageNode, images);
+        }
+        for(const infoNode of dom.getElementsByTagName("info")) {
+            this.parseInfoFile(infoNode);
+        }
+    }
+
+    private findFile<T extends LoadedThing>(fileList: T[], plainName: string, errorMsgPrefix: string): T | undefined {
+        const res: T[] = [];
+        for(const f of fileList) {
+            if(plainName == f.plainName) {
+                res.push(f);
+            }
+        }
+
+        if(res.length == 0) {
+            console.warn(`${errorMsgPrefix}: respack zip has no file with that name`);
+        } else if(res.length > 1) {
+            console.warn(`${errorMsgPrefix}: respack zip has ${res.length} files with that name. Using the first one we saw`);
+        }
+
+        // all callers use the value, so drop it from the list
+        const val = res[0];
+        if(val !== undefined) {
+            fileList.splice(fileList.indexOf(val), 1);
+        }
+
+        return val;
     }
 
     loadExtraCharts(el: Element, section: HuesSongSection, tagPrefix: string, expected?: number) {
@@ -634,131 +651,123 @@ export class Respack {
         }
     }
 
-    parseSongFile(dom: Document) {
-        debug(" - Parsing songFile");
-
-        let newSongs = [];
-        for(const el of dom.documentElement.children) {
-            let song = this.getSong(el.getAttribute("name"));
-            if(song) {
-                song.title = el.getTag("title") || "";
-                if(!song.title) {
-                    song.title = "<no name>";
-                    console.warn(song.loop.basename, "has no title!");
-                }
-
-                let chart = el.getTag("rhythm");
-                if(chart === null) {
-                    chart = "..no..rhythm..";
-                    console.warn(song.loop.basename, "has no rhythm!!");
-                }
-                song.loop.banks = [chart];
-                this.loadExtraCharts(el, song.loop, "rhythm");
-
-                const buildName = el.getTag("buildup") || undefined;
-                if(buildName) {
-                    debug("  Finding a buildup '" + buildName + "' for ", song.loop.basename);
-                    let build = this.getSong(buildName);
-                    if(build) {
-                        // migrate this from loop to build
-                        song.build = build.loop;
-                        // get rid of the junk
-                        this.songs.splice(this.songs.indexOf(build), 1);
-
-                        let buildChart = el.getTag("buildupRhythm");
-                        if(buildChart === null) {
-                            buildChart = ".";
-                            console.warn(song.loop.basename, "has no buildup, despite having a buildup sound!!");
-                        }
-                        song.build.banks = [buildChart];
-                        this.loadExtraCharts(el, song.build, "buildupRhythm", song.loop.banks.length);
-                    } else {
-                        console.warn("Didn't find a buildup '" + buildName + "'!");
-                    }
-                }
-
-                song.independentBuild = !!el.getTag("independentBuild");
-                song.source = el.getTag("source") || "";
-                song.charsPerBeat = parseFloat(el.getTag("charsPerBeat") || "0");
-
-                song.recalcBeatStrings();
-                song.checkConsistency();
-                newSongs.push(song);
-                debug("  [I] " + song.loop.basename, ": '" + song.title + "' added to songs");
-            } else {
-                console.warn("songs.xml: <song> element" + el.getAttribute("name") + "- no song found");
-            }
-        }
-        for(let i = 0; i < this.songs.length; i++) {
-            if(newSongs.indexOf(this.songs[i]) == -1) {
-                console.warn("We have a file for", this.songs[i].loop.basename, "but no information for it");
-            }
-        }
-        this.songs = newSongs;
-    }
-
-    parseInfoFile(dom: Document) {
+    parseInfoFile(info: Element) {
         debug(" - Parsing infoFile");
 
-        let info = dom.documentElement;
-
         // self reference strings to avoid changing strings twice in future
-        this.name = info.getTag("name", this.name)!;
-        this.author = info.getTag("author", this.author)!;
-        this.description = info.getTag("description", this.description)!;
-        this.link = info.getTag("link", this.link)!;
+        this.name = info.getTag("name", this.name);
+        this.author = info.getTag("author", this.author);
+        this.description = info.getTag("description", this.description);
+        this.link = info.getTag("link", this.link);
     }
 
-    parseImageFile(dom: Document) {
+    parseSongFile(dom: Element, songs: LoadedFile[]) {
+        debug(" - Parsing songFile");
+
+        for(const el of dom.children) {
+            const plainName = el.getAttribute("name");
+            if(!plainName) {
+                console.warn("songs xml: <song> element has no 'name' attribute, skipping");
+                continue;
+            }
+
+            const file = this.findFile(songs, plainName, `songs xml: <song> element ${plainName}`);
+            if(!file) {
+                continue;
+            }
+
+            const song = new HuesSong("", file.filename);
+            song.loop.sound = file.data;
+
+            song.title = el.getTag("title", "");
+            if(!song.title) {
+                song.title = "<no name>";
+                console.warn(song.loop.basename, "has no title!");
+            }
+
+            let chart = el.getTag("rhythm");
+            if(chart === null) {
+                chart = "..no..rhythm..";
+                console.warn(song.loop.basename, "has no rhythm!!");
+            }
+            song.loop.banks = [chart];
+            this.loadExtraCharts(el, song.loop, "rhythm");
+
+            const buildName = el.getTag("buildup");
+            if(buildName) {
+                debug("  Finding a buildup '" + buildName + "' for ", song.loop.basename);
+                const build = this.findFile(songs, buildName, `songs xml: buildup ${buildName}`);
+                if(build) {
+                    // create the build section
+                    song.build = new HuesSongSection(build.filename);
+                    song.build.sound = build.data;
+
+                    let buildChart = el.getTag("buildupRhythm");
+                    if(buildChart === null) {
+                        buildChart = ".";
+                        console.warn(song.loop.basename, "has no buildup, despite having a buildup sound!!");
+                    }
+                    song.build.banks = [buildChart];
+                    this.loadExtraCharts(el, song.build, "buildupRhythm", song.loop.banks.length);
+                }
+            }
+
+            song.independentBuild = !!el.getTag("independentBuild");
+            song.source = el.getTag("source", "");
+            song.charsPerBeat = parseFloat(el.getTag("charsPerBeat", "0"));
+
+            song.recalcBeatStrings();
+            song.checkConsistency();
+            this.songs.push(song);
+            debug("  [I] " + song.loop.basename, ": '" + song.title + "' added to songs");
+        }
+    }
+
+    parseImageFile(dom: Element, images: LoadedImage[]) {
         debug(" - Parsing imagefile");
 
-        let newImages = [];
-        for(const el of dom.documentElement.children) {
-            let image = this.getImage(el.getAttribute("name"));
-            if(image) {
-                image.fullname = el.getTag("fullname") || "";
-                if(!image.fullname) {
-                    console.warn(image.name, "has no full name!");
-                }
-                image.source = el.getTag("source") || "";
-                // self reference defaults to avoid changing strings twice in future
-                image.align = el.getTag("align", image.align)! as HuesImage["align"];
-                image.beatsPerAnim = parseFloat(el.getTag("beatsPerAnim") || "0");
-                image.syncOffset = parseFloat(el.getTag("syncOffset") || "0");
-                let frameDur = el.getTag("frameDuration");
-                if(frameDur) {
-                    image.frameDurations = [];
-                    let strSplit = frameDur.split(",");
-                    for(let j = 0; j < strSplit.length; j++) {
-                        image.frameDurations.push(parseInt(strSplit[j]));
-                    }
-                    while (image.frameDurations.length < image.bitmaps.length) {
-                        image.frameDurations.push(image.frameDurations[image.frameDurations.length - 1]);
-                    }
-                    debug("Frame durations:", image.frameDurations);
-                }
-                debug("  [I] " + image.name, ":", image.fullname, "added to images");
-                if (image.bitmaps.length) {
-                    newImages.push(image);
-                }
-                else {
-                    console.warn("Image", image.name, "has no bitmap nor animation frames!");
-                }
-            } else {
-                console.warn("images.xml: no image '" + el.getAttribute("name") + "' found");
+        for(const el of dom.children) {
+            const plainName = el.getAttribute("name");
+            if(!plainName) {
+                console.warn("images xml: <image> element has no 'name' attribute, skipping");
+                continue;
             }
-        }
-        for(let i = 0; i < this.images.length; i++) {
-            let image = this.images[i];
-            // Add all images with no info
-            if(newImages.indexOf(image) == -1) {
-                newImages.push(image);
+
+            const file = this.findFile(images, plainName, `images xml: <image> element ${plainName}`);
+            if(!file) {
+                continue;
             }
+
+            const image = new HuesImage(plainName, "", file.imgs);
+
+            image.fullname = el.getTag("fullname", "");
+            if(!image.fullname) {
+                console.warn(image.name, "has no full name!");
+            }
+            image.source = el.getTag("source", "");
+            image.align = el.getTag("align", image.align)! as HuesImage["align"];
+            image.beatsPerAnim = parseFloat(el.getTag("beatsPerAnim", "0"));
+            image.syncOffset = parseFloat(el.getTag("syncOffset", "0"));
+            let frameDur = el.getTag("frameDuration");
+            if(frameDur) {
+                image.rawFrameDurations = frameDur;
+                image.frameDurations = [];
+                let strSplit = frameDur.split(",");
+                for(let j = 0; j < strSplit.length; j++) {
+                    image.frameDurations.push(parseInt(strSplit[j]));
+                }
+                // repeat the last duration if there's not enough
+                if(image.frameDurations.length == 0) {
+                    image.frameDurations.push(HuesImage.DEFAULT_ANIM_FRAME_TIME);
+                }
+                while (image.frameDurations.length < image.bitmaps.length) {
+                    image.frameDurations.push(image.frameDurations[image.frameDurations.length - 1]);
+                }
+                debug("Frame durations:", image.frameDurations);
+            }
+            this.images.push(image);
+            debug("  [I] " + image.name, ":", image.fullname, "added to images");
         }
-        newImages.sort(function(a, b) {
-            return a.name.localeCompare(b.name);
-        });
-        this.images = newImages;
     }
 
     containsSong(name: string) {
@@ -790,14 +799,15 @@ export class Respack {
 
 declare global {
     interface Element {
-        getTag: (tag: string, def?: string) => string | null;
+        getTag(tag: string): string | null;
+        getTag(tag: string, def: string): string;
     }
 }
 
 // Save some chars
-Element.prototype.getTag = function<D extends string>(tag: string, def?: D): string | null {
+Element.prototype.getTag = function(tag: string, def?: string): any {
     let t = this.getElementsByTagName(tag)[0];
-    return t ? t.textContent : (def ? def : null);
+    return t ? t.textContent : (def !== undefined ? def : null);
 };
 
 // used by thunk.html

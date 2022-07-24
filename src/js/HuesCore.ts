@@ -8,7 +8,7 @@ import HuesWindow from './HuesWindow';
 import {HuesUI, RetroUI, WeedUI, ModernUI, XmasUI, HalloweenUI, MinimalUI} from './HuesUI';
 import Resources from './ResourceManager';
 import SoundManager from './SoundManager';
-import { HuesSong, type HuesImage } from './ResourcePack';
+import { HuesImage, HuesSong } from './ResourcePack';
 import EventListener from './EventListener';
 import HuesInfo from './HuesInfo.svelte';
 
@@ -803,9 +803,7 @@ export class HuesCore extends EventListener<CoreEvents> {
         if (img) {
             this.currentImage = img;
         } else {
-            this.currentImage = {
-                enabled:true, name:"None", fullname:"None", align:"center", bitmaps:[],
-                source:"", frameDurations:[], animated:false, beatsPerAnim:0};
+            this.currentImage = new HuesImage();
             this.imageIndex = -1;
             this.lastImageArray = [];
         }
