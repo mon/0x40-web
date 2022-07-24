@@ -677,7 +677,7 @@ export class Respack {
             }
 
             const song = new HuesSong("", file.filename);
-            song.loop.sound = file.data;
+            song.loop.sound = file.data.buffer;
 
             song.title = el.getTag("title", "");
             if(!song.title) {
@@ -700,7 +700,7 @@ export class Respack {
                 if(build) {
                     // create the build section
                     song.build = new HuesSongSection(build.filename);
-                    song.build.sound = build.data;
+                    song.build.sound = build.data.buffer;
 
                     let buildChart = el.getTag("buildupRhythm");
                     if(buildChart === null) {
