@@ -63,7 +63,7 @@ var defaults = {
 ```
 
 ## Settings object  
-See [HuesSettings.js](./src/js/HuesSettings.js#L29) for the possible options you
+See [HuesSettings.ts](./src/js/HuesSettings.ts#L10) for the possible options you
 can put into the `defaults` object.
 
 ## Query string
