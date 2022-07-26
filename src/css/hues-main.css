@@ -24,6 +24,7 @@
     overflow: hidden;
     font-family: 'PetMe64Web';
     position: relative;
+    background-color: transparent;
 }
 
 .hues-root h1, .hues-root h2, .hues-root h3 {
