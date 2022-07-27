@@ -142,11 +142,11 @@ export class HuesUI {
         this.settingsToggle.innerHTML = HuesIcon.COG;
         this.settingsToggle.className = 'hues-icon';
         this.settingsToggle.onclick = () => {
-            this.core?.window.toggle();
+            this.core?.window.selectOrToggle("OPTIONS");
         };
 
         this.hideToggle = document.createElement("div");
-        this.hideToggle.innerHTML = "&#x25BC;";
+        this.hideToggle.innerHTML = "▼";
         this.hideToggle.onclick = () => {
             this.toggleHide();
         };
@@ -364,7 +364,7 @@ export class RetroUI extends HuesUI {
 
         this.hideRestore = document.createElement("div");
         this.hideRestore.className = "hues-r-hiderestore";
-        this.hideRestore.innerHTML = "&#x25B2;";
+        this.hideRestore.innerHTML = "▲";
         this.hideRestore.onclick = () => {
             this.toggleHide();
         };
@@ -620,7 +620,7 @@ export class ModernUI extends HuesUI {
         this.infoToggle.innerHTML = '?';
         this.infoToggle.className = "hues-m-question";
         this.infoToggle.onclick = () => {
-            this.core?.window.selectTab("INFO");
+            this.core?.window.selectOrToggle("INFO");
         };
         volCluster.appendChild(this.infoToggle);
 

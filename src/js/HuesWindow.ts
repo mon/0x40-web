@@ -18,6 +18,7 @@ export default class HuesWindow extends EventListener<WindowEvents> {
     contents: Element[];
     tabs: Element[];
     tabNames: string[];
+    tabSelected?: string;
 
     constructor(root: Element, settings: HuesSettings) {
         super({
@@ -92,11 +93,26 @@ export default class HuesWindow extends EventListener<WindowEvents> {
             if(tabName.toLowerCase() == name.toLowerCase()) {
                 this.contents[i].classList.add("tab-content--active");
                 this.tabs[i].classList.add("tab-label--active");
+                this.tabSelected = name;
                 this.callEventListeners("tabselected", name);
             } else {
                 this.contents[i].classList.remove("tab-content--active");
                 this.tabs[i].classList.remove("tab-label--active");
             }
+        }
+    }
+
+    // If the window isn't shown, show it. If the tab isn't selected, select it.
+    // If the window is shown AND the tab is selected, hide the window
+    selectOrToggle(tabName: string) {
+        if(!this.hasUI)
+            return;
+
+        if(tabName.toLowerCase() == this.tabSelected?.toLowerCase()) {
+            this.toggle();
+        } else {
+            this.show();
+            this.selectTab(tabName);
         }
     }
 
@@ -119,10 +135,14 @@ export default class HuesWindow extends EventListener<WindowEvents> {
     toggle() {
         if(!this.hasUI)
             return;
-        if(this.window.classList.contains("hidden")) {
+        if(this.hidden) {
             this.show();
         } else {
             this.hide();
         }
+    }
+
+    get hidden() {
+        return this.window.classList.contains("hidden");
     }
 }
