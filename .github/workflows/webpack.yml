@@ -26,3 +26,9 @@ jobs:
       run: |
         npm install
         npx webpack
+
+    - name: Save artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: hues
+        path: dist/**/*
