@@ -281,19 +281,22 @@ export class HuesCore extends EventListener<CoreEvents> {
         this.soundManager = new SoundManager(this, this.settings.volume);
         this.resourceManager = new Resources(this, this.window);
         this.editor = new HuesEditor(this, this.window);
-        this.settings.initUI(this.window);
 
-        let infoContents = this.window.addTab("INFO");
-        new HuesInfo({
-            target: infoContents,
-            props: {
-              version: this.versionStr,
-              huesName: this.settings.huesName,
-              huesDesc: this.settings.huesDesc,
-            }
-        });
+        if(this.settings.enableWindow) {
+            this.settings.initUI(this.window);
 
-        this.window.selectTab(this.settings.firstWindow, true);
+            let infoContents = this.window.addTab("INFO");
+            new HuesInfo({
+                target: infoContents,
+                props: {
+                version: this.versionStr,
+                huesName: this.settings.huesName,
+                huesDesc: this.settings.huesDesc,
+                }
+            });
+
+            this.window.selectTab(this.settings.firstWindow, true);
+        }
 
         let ui = document.createElement("div");
         ui.className = "hues-ui";

@@ -178,12 +178,14 @@ export default class Resources {
         this.rebuildEnabled();
         this.updateTotals();
 
-        this.appendListItem("respacks", pack.name, "res" + id, this.packsView.respackList,
-            checked => {
-                pack.enabled = checked;
-                this.rebuildEnabled();
-            },
-            () => this.selectPack(id));
+        if(this.core.settings.enableWindow) {
+            this.appendListItem("respacks", pack.name, "res" + id, this.packsView.respackList,
+                checked => {
+                    pack.enabled = checked;
+                    this.rebuildEnabled();
+                },
+                () => this.selectPack(id));
+        }
     }
 
     addResourcesToArrays(pack: Respack) {

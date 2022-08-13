@@ -117,9 +117,6 @@ export default class HuesWindow extends EventListener<WindowEvents> {
     }
 
     hide() {
-        if(!this.hasUI)
-            return;
-
         this.window.classList.add("hidden");
         this.callEventListeners("windowshown", false);
     }
