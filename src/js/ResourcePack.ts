@@ -360,6 +360,7 @@ export class Respack {
     }
 
     loadFromURL(url: string, progress: ProgressCallback) {
+        debug(`Loading ${url}`);
         this.loadedFromURL = true;
         if(progress) {
             this.progressCallback = progress;
@@ -509,8 +510,9 @@ export class Respack {
             const blob = new Blob([file.data.buffer], {type : file.mime});
             const img = new Image();
 
-            const prom = new Promise(resolve => {
+            const prom = new Promise((resolve, reject) => {
                 img.onload = resolve;
+                img.onerror = reject;
                 img.src = URL.createObjectURL(blob);
             });
             await prom;
