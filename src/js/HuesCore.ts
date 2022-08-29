@@ -326,9 +326,9 @@ export class HuesCore extends EventListener<CoreEvents> {
                     target.contentEditable === "true") {
                     return true;
                 }
-                let key = e.keyCode || e.which;
+                let key = e.key
                 // Special case for Alt+Enter fullscreen
-                if(e.altKey && key == 13) {
+                if(e.altKey && key == 'Enter') {
                     document.body.requestFullscreen();
                 }
                 // Ignore modifiers so we don't steal other events
@@ -1162,85 +1162,81 @@ export class HuesCore extends EventListener<CoreEvents> {
         }
     }
 
-    keyHandler(key: number) {
+    keyHandler(key: string) {
         switch (key) {
-        case 37: // LEFT
+        case "ArrowLeft":
             this.previousImage();
             break;
-        case 39: // RIGHT
+        case "ArrowRight":
             this.nextImage();
             break;
-        case 38: // UP
+        case "ArrowUp":
             this.nextSong();
             break;
-        case 40: // DOWN
+        case "ArrowDown":
             this.previousSong();
             break;
-        case 70: // F
+        case "f":
             this.toggleFullAuto();
             break;
-        case 109: // NUMPAD_SUBTRACT
-        case 189: // MINUS
-        case 173: // MINUS, legacy
+        case "-":
             this.soundManager.decreaseVolume();
             break;
-        case 107: // NUMPAD_ADD
-        case 187: // EQUAL
-        case 61: // EQUAL, legacy
+        case "=": // actualy a "+" but shift is disabled
             this.soundManager.increaseVolume();
             break;
-        case 66: // B
+        case "b":
             this.soundManager.seek(-this.soundManager.build.length);
             break;
-        case 77: // M
+        case "m":
             this.soundManager.toggleMute();
             break;
-        case 72: // H
+        case "h":
             this.userInterface?.toggleHide();
             break;
-        case 82: // R
+        case "r":
             this.window.selectTab("RESOURCES");
             break;
-        case 69: // E
+        case "e":
             this.window.selectTab("EDITOR");
             break;
-        case 79: // O
+        case "o":
             this.window.selectTab("OPTIONS");
             break;
-        case 73: // I
+        case "i":
             this.window.selectTab("INFO");
             break;
-        case 49: // NUMBER_1
+        case "1":
             this.settings.currentUI = "retro";
             break;
-        case 50: // NUMBER_2
+        case "2":
             this.settings.currentUI = "v4.20";
             break;
-        case 51: // NUMBER_3
+        case "3":
             this.settings.currentUI = "modern";
             break;
-        case 52: // NUMBER_4
+        case "4":
             this.settings.currentUI = "xmas";
             break;
-        case 53: // NUMBER_5
+        case "5":
             this.settings.currentUI = "hlwn";
             break;
-        case 54: // NUMBER_6
+        case "6":
             this.settings.currentUI = "mini";
             break;
-        case 67: // C
+        case "c":
             this.toggleImageList();
             break;
-        case 83: // S
+        case "s":
             this.toggleSongList();
             break;
-        case 87: // W
+        case "w":
             this.window.toggle();
             break;
-        case 78: // N
+        case "n":
             this.randomSong();
             break;
-        case 76: // L
+        case "l":
             this.resourceManager.fileInput.click();
             break;
         default:
