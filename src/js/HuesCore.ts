@@ -1171,9 +1171,11 @@ export class HuesCore extends EventListener<CoreEvents> {
             this.nextImage();
             break;
         case "ArrowUp":
+        case "MediaTrackNext":
             this.nextSong();
             break;
         case "ArrowDown":
+        case "MediaTrackPrevious":
             this.previousSong();
             break;
         case "f":
