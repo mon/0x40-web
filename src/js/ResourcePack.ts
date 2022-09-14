@@ -296,6 +296,36 @@ interface LoadedThing {
     plainName: string;
 }
 
+// just like getMineType from zip.js, but only the mimes we care for, as well as
+// adding .opus support
+const mimes = {
+    'audio/mpeg': ["mpga", "mpega", "mp2", "mp3", "m4a", "mp2a", "m2a", "m3a"],
+    'audio/ogg': ["ogg", "opus"],
+    'audio/x-wav': ["wav"],
+    "image/png": ["png"],
+    "image/gif": ["gif"],
+    "image/jpeg": ["jpeg", "jpg", "jpe"],
+    "image/bmp": ["bmp"],
+    "application/xml": ["xml"],
+};
+
+function flattenMimes(mimes: {[key: string]: string[]}) {
+    let ret: {[key: string]: string} = {};
+    for(const [key, vals] of Object.entries(mimes)) {
+        for(const val of vals) {
+            ret[val] = key;
+        }
+    }
+    return ret;
+}
+
+const mimeTypes = flattenMimes(mimes);
+
+function getMime(filename: string) {
+    const defaultValue = "application/octet-stream";
+	return filename && mimeTypes[filename.split(".").pop()?.toLowerCase()!] || defaultValue;
+}
+
 function basename(entry: zip.Entry) {
     const fullname = entry.filename;
     const parts = fullname.split('/');
@@ -446,7 +476,7 @@ export class Respack {
             if(!file.directory && file.filename) {
                 this.totalFiles++;
 
-                const mime = zip.getMimeType(file.filename);
+                const mime = getMime(file.filename);
                 if(audioMimes.has(mime)) {
                     songQueue.push(file);
                 } else if(imageMines.has(mime)) {
@@ -492,7 +522,7 @@ export class Respack {
         let res = [];
         for(const file of files) {
             const data = await file.getData!(new zip.Uint8ArrayWriter()) as Uint8Array;
-            const mime = zip.getMimeType(file.filename);
+            const mime = getMime(file.filename);
             const filename = basename(file);
             const plain = plainName(filename);
             res.push({filename, plainName: plain, mime, data});

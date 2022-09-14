@@ -369,7 +369,7 @@
         type="file"
         style="display:none"
         bind:this={fileInput}
-        accept=".mp3, .wav, .ogg"
+        accept=".mp3, .wav, .ogg, .opus"
         on:change={loadSong}
     />
     <HuesButton on:click={() => fileInput.click()}>
