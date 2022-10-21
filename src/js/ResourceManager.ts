@@ -830,7 +830,11 @@ export default class Resources {
         this.addAll([pack.url], (progress, respack) => {
                 this.remoteProgress(progress, respack);
             }
-        ).then(this.remoteComplete.bind(this));
+        ).then(() => {
+            if (pack === this.packView.pack) {
+                this.remoteComplete();
+            }
+        });
     }
 
     remoteProgress(progress: number, respack: Respack) {
