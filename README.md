@@ -41,6 +41,13 @@ Finally there's these, which hook into the Hues javascript events to do somethin
 0x40 Hues comes with an integrated editor to create new songs and inspect existing ones.
 [Read how to use it here](https://github.com/mon/0x40-web/blob/master/docs/Editor.md) - it's easier than you think!
 
+## Editing respacks
+There is an extremely basic respack editor at respack_edit.html. I also host it
+on [my site](https://0x40.mon.im/respack_edit.html). It does not support adding
+images, nor does it support adding songs. You can, however, edit all properties
+of an existing respack's songs and images. If this is lacking features you would
+like, please open a ticket. It was mostly made for editing centerPixel values.
+
 ## Install (Make your own Hues website)
 1. Start by downloading the latest [release](https://github.com/mon/0x40-web/releases). These are minified and load faster.
 2. Put your respack zips somewhere they can be found by your web server. My hues have a `respacks/` folder under the main directory.
