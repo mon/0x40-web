@@ -1,6 +1,7 @@
 import type { EditorUndoRedo } from "./HuesEditor";
 
 import * as zip from "@zip.js/zip.js";
+import xmlbuilder from "xmlbuilder";
 import { BeatTypes, Effect, ImageColour } from "./HuesCore";
 
 export class HuesSongSection {
@@ -220,14 +221,57 @@ export class HuesSong {
         this.loop.checkConsistency();
         this.build?.checkConsistency();
     }
+
+    generateXML(root: xmlbuilder.XMLNode) {
+        let xml = root.ele('song', {'name': this.loop.basename});
+        xml.ele('title', this.title);
+        if(this.source) {
+            xml.ele('source', this.source);
+        }
+        xml.ele('rhythm', this.loop.banks[0]);
+        for(let bank = 1; bank < this.loop.banks.length; bank++) {
+            // rhythm2, rhythm3 etc
+            xml.ele('rhythm' + (bank+1), this.loop.banks[bank]);
+        }
+
+        if(this.build?.sound) {
+            xml.ele('buildup', this.build.basename);
+            xml.ele('buildupRhythm', this.build.banks[0]);
+            for(let bank = 1; bank < this.build.banks.length; bank++) {
+                // buildupRhythm2, buildupRhythm3 etc
+                xml.ele('buildupRhythm' + (bank+1), this.build.banks[bank]);
+            }
+            if(this.independentBuild) {
+                xml.ele('independentBuild', 'true');
+            }
+        }
+    }
+
+    protected async addSectionToZip(zipWriter: zip.ZipWriter, section?: HuesSongSection) {
+        if(!section?.sound) {
+            return;
+        }
+        const u8 = new Uint8Array(section.sound);
+        await zipWriter.add('Songs/' + section.filename!, new zip.Uint8ArrayReader(u8));
+    }
+
+    async addZipAssets(zipWriter: zip.ZipWriter) {
+        await this.addSectionToZip(zipWriter, this.loop);
+        await this.addSectionToZip(zipWriter, this.build);
+    }
 }
+
+interface HuesImageElement extends HTMLImageElement {
+    // we need to keep the blob around to save a modified respack
+    blob: Blob
+};
 
 export class HuesImage {
     public static readonly DEFAULT_ANIM_FRAME_TIME = 66; // 15fps
     name: string;
     fullname: string;
     align: "center" | "left" | "right";
-    bitmaps: HTMLImageElement[];
+    bitmaps: HuesImageElement[];
     frameDurations: number[];
     // straight from the XML
     rawFrameDurations?: string;
@@ -235,8 +279,10 @@ export class HuesImage {
     enabled: boolean;
     beatsPerAnim: number;
     syncOffset: number;
+    // for handling vertical/mobile screens better
+    centerPixel?: number;
 
-    constructor(name = "None", fullname = "None", bitmaps: HTMLImageElement[] = []) {
+    constructor(name = "None", fullname = "None", bitmaps: HuesImageElement[] = []) {
         this.name = name;
         this.fullname = fullname;
         this.align = "center";
@@ -255,6 +301,62 @@ export class HuesImage {
 
     get animated() {
         return this.bitmaps.length > 1;
+    }
+
+    generateXML(root: xmlbuilder.XMLNode) {
+        let xml = root.ele('image', {'name': this.name});
+
+        if(this.fullname && (this.fullname != this.name)) {
+            xml.ele('fullname', this.fullname);
+        }
+        if(this.source) {
+            xml.ele('source', this.source);
+        }
+        if(this.align != "center") {
+            xml.ele('align', this.align);
+        }
+        if(this.centerPixel !== undefined) {
+            xml.ele('centerPixel', this.centerPixel);
+        }
+        // Note! frameDurations not used, if it can be changed, might want to
+        // change this too...
+        if(this.rawFrameDurations) {
+            xml.ele('frameDuration', this.rawFrameDurations);
+        }
+        if(this.beatsPerAnim) {
+            xml.ele('beatsPerAnim', this.beatsPerAnim);
+        }
+        if(this.syncOffset) {
+            xml.ele('syncOffset', this.syncOffset);
+        }
+    }
+
+    protected async addImagesToZip(zipWriter: zip.ZipWriter, folder: string) {
+        // pad with 0s any animation frames
+        let pad = 1 + Math.floor(Math.log10(this.bitmaps.length));
+
+        for(const [i,bitmap] of this.bitmaps.entries()) {
+            let name = this.name;
+            if(this.animated) {
+                name += '_' + (i+1).toString().padStart(pad, '0');
+            }
+            const ext = getExtensionFromMime(bitmap.blob.type);
+            // shouldn't ever throw, because the respack images can only come
+            // from known mimes
+            if(!ext) {
+                throw new Error(`Unknown image MIME type ${bitmap.blob.type}`);
+            }
+
+            await zipWriter.add(folder + '/' + name + '.' + ext, new zip.BlobReader(bitmap.blob));
+        }
+    }
+
+    async addZipAssets(zipWriter: zip.ZipWriter) {
+        if(this.animated) {
+            await this.addImagesToZip(zipWriter, "Animations/" + this.name);
+        } else {
+            await this.addImagesToZip(zipWriter, "Images");
+        }
     }
 }
 
@@ -288,7 +390,7 @@ interface LoadedFile {
 
 interface LoadedImage {
     plainName: string;
-    imgs: HTMLImageElement[];
+    imgs: HuesImageElement[];
 }
 
 // used for lookups in the file lists
@@ -298,13 +400,13 @@ interface LoadedThing {
 
 // just like getMineType from zip.js, but only the mimes we care for, as well as
 // adding .opus support
-const mimes = {
+const mimes: {[key: string]: string[]} = {
     'audio/mpeg': ["mpga", "mpega", "mp2", "mp3", "m4a", "mp2a", "m2a", "m3a"],
     'audio/ogg': ["ogg", "opus"],
     'audio/x-wav': ["wav"],
     "image/png": ["png"],
     "image/gif": ["gif"],
-    "image/jpeg": ["jpeg", "jpg", "jpe"],
+    "image/jpeg": ["jpg", "jpeg", "jpe"],
     "image/bmp": ["bmp"],
     "application/xml": ["xml"],
 };
@@ -324,6 +426,10 @@ const mimeTypes = flattenMimes(mimes);
 function getMime(filename: string) {
     const defaultValue = "application/octet-stream";
 	return filename && mimeTypes[filename.split(".").pop()?.toLowerCase()!] || defaultValue;
+}
+
+function getExtensionFromMime(mime: string): string | undefined {
+    return mimes[mime]?.[0];
 }
 
 function basename(entry: zip.Entry) {
@@ -538,12 +644,13 @@ export class Respack {
         let imgs = []
         for(const file of files) {
             const blob = new Blob([file.data.buffer], {type : file.mime});
-            const img = new Image();
+            const img = new Image() as HuesImageElement;
 
             const prom = new Promise((resolve, reject) => {
                 img.onload = resolve;
                 img.onerror = reject;
                 img.src = URL.createObjectURL(blob);
+                img.blob = blob;
             });
             await prom;
             imgs.push({filename: file.filename, plainName: file.plainName, img});
@@ -551,7 +658,7 @@ export class Respack {
 
         // group animations
         const res = []; // duplicate image names are acceptable, so this is a list
-        const animations = new Map<string, HTMLImageElement[]>();
+        const animations = new Map<string, HuesImageElement[]>();
         for(const img of imgs) {
             let plain = img.plainName;
             const match = plain.match(new RegExp("^(.*)_(\\d+)$"));
@@ -773,13 +880,14 @@ export class Respack {
             const image = new HuesImage(plainName, "", file.imgs);
 
             image.fullname = el.getTag("fullname", "");
-            if(!image.fullname) {
-                console.warn(image.name, "has no full name!");
-            }
             image.source = el.getTag("source", "");
             image.align = el.getTag("align", image.align)! as HuesImage["align"];
             image.beatsPerAnim = parseFloat(el.getTag("beatsPerAnim", "0"));
             image.syncOffset = parseFloat(el.getTag("syncOffset", "0"));
+            const centerPixel = el.getTag("centerPixel");
+            if(centerPixel !== null) {
+                image.centerPixel = parseInt(centerPixel);
+            }
             let frameDur = el.getTag("frameDuration");
             if(frameDur) {
                 image.rawFrameDurations = frameDur;
@@ -826,6 +934,57 @@ export class Respack {
             }
         }
         return null;
+    }
+
+    downloadBlob(blob: Blob, filename: string) {
+        const url = URL.createObjectURL(blob);
+        let element = document.createElement('a');
+        element.setAttribute('href', url);
+        element.setAttribute('download', filename);
+
+        element.style.display = 'none';
+        document.body.appendChild(element);
+
+        element.click();
+
+        document.body.removeChild(element);
+        URL.revokeObjectURL(url);
+    }
+
+    async saveZIP() {
+        const zip = await this.generateZIP();
+        this.downloadBlob(zip, this.name + ".zip");
+    }
+
+    protected async addXML(name: string, zipWriter: zip.ZipWriter, xml: xmlbuilder.XMLNode) {
+        await zipWriter.add(name, new zip.TextReader(xml.end({pretty: true})));
+    }
+
+    async generateZIP() {
+        const zipWriter = new zip.ZipWriter(new zip.BlobWriter("application/zip"));
+
+        const songXml = xmlbuilder.create('songs');
+        for(const song of this.songs) {
+            song.generateXML(songXml);
+            await song.addZipAssets(zipWriter);
+        }
+        await this.addXML("songs.xml", zipWriter, songXml);
+
+        const imageXml = xmlbuilder.create('images');
+        for(const image of this.images) {
+            image.generateXML(imageXml);
+            await image.addZipAssets(zipWriter);
+        }
+        await this.addXML("images.xml", zipWriter, imageXml);
+
+        const infoXml = xmlbuilder.create('info');
+        infoXml.ele("name", this.name);
+        infoXml.ele("author", this.author);
+        infoXml.ele("description", this.description);
+        infoXml.ele("link", this.link);
+        await this.addXML("info.xml", zipWriter, infoXml);
+
+        return await zipWriter.close();
     }
 }
 

@@ -238,7 +238,7 @@ export default class Resources {
                 });
             }
             for(const [i, image] of this.enabledImages.entries()) {
-                this.appendSimpleListItem(image.name, imageList, () => {
+                this.appendSimpleListItem(image.fullname || image.name, imageList, () => {
                     this.core.setImage(i);
                     this.core.setIsFullAuto(false);
                 });
@@ -621,7 +621,7 @@ export default class Resources {
         }
 
         for(const [i, image] of pack.images.entries()) {
-            this.appendListItem("images", image.name, "image" + i, imageList,
+            this.appendListItem("images", image.fullname || image.name, "image" + i, imageList,
                 checked => this.selectResourceCallback(image, checked),
                 () => this.clickResourceCallback(image, false),
                 image.enabled);

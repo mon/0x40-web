@@ -1073,6 +1073,9 @@ export class HuesCore extends EventListener<CoreEvents> {
 
     settingsUpdated() {
         this.callEventListeners("settingsupdated");
+        // not an event listener - HuesCanvas can't be attached to HuesCore for
+        // ease of respack_edit.html
+        this.renderer.render.setBlurQuality(this.settings.blurQuality);
         switch (this.settings.currentUI) {
         case "retro":
             this.changeUI(0);

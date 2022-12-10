@@ -625,6 +625,7 @@ export class ModernUI extends HuesUI {
         volCluster.appendChild(this.infoToggle);
 
         let input = document.createElement("input");
+        input.className = "hues-m-range";
         input.type = "range";
         input.min = "0";
         input.max = "1";

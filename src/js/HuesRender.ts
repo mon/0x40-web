@@ -30,10 +30,12 @@ export type RenderParams = {
 
     bitmap?: HTMLImageElement;
     bitmapAlign?: HuesImage["align"];
+    bitmapCenter?: number; // optional point to center on for slim displays
 
     // same as bitmap, just the previous image
     lastBitmap?: HTMLImageElement;
     lastBitmapAlign?: HuesImage["align"];
+    lastBitmapCenter?: number;
 
     shutter?: number;
     shutterDir?: "←" | "↓" | "↑" | "→";
@@ -49,6 +51,10 @@ export type RenderParams = {
         x: SliceParams;
         y: SliceParams;
     }
+
+    // debugging features
+    border?: boolean; // draw red borders around image bounds, not incl slice/blur
+    centerLine?: boolean; // draw green line at image centerpoint
 }
 
 type SliceInfo = {
@@ -231,7 +237,7 @@ export default class HuesRender {
     newColour!: number;
 
     constructor(root: HTMLElement, soundManager: SoundManager, core: HuesCore) {
-        this.render = new HuesCanvas(root, core);
+        this.render = new HuesCanvas(root);
         this.audio = soundManager;
         soundManager.addEventListener("seek", this.resetEffects.bind(this));
         core.addEventListener("newsong", this.resetEffects.bind(this));
@@ -357,9 +363,9 @@ export default class HuesRender {
 
     redraw() {
         // when images aren't changing, shutter needs something to feed off
-        let lastImage = this.core.settings.fullAuto ? this.lastImage : this.image;
+        const lastImage = this.core.settings.fullAuto ? this.lastImage : this.image;
 
-        let params = {
+        const params = {
             colour: this.colour,
             lastColour: this.lastColour,
             blendMode: this.core.settings.blendMode,
@@ -372,9 +378,11 @@ export default class HuesRender {
 
             bitmap: this.image.getBitmap(),
             bitmapAlign: this.smartAlign ? this.image.getBitmapAlign() : undefined,
+            bitmapCenter: this.image.image?.centerPixel,
 
             lastBitmap: lastImage.getBitmap(),
             lastBitmapAlign: lastImage.getBitmapAlign(),
+            lastBitmapCenter: lastImage.image?.centerPixel,
 
             shutter: this.shutterProgress,
             shutterDir: this.shutterDir,

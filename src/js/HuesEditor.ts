@@ -211,37 +211,17 @@ export class HuesEditor {
         this.editor.$set({independentBuild: indep});
     }
 
-    generateXML(root?: xmlbuilder.XMLElement | xmlbuilder.XMLDocument) {
+    generateXML(root?: xmlbuilder.XMLNode) {
         if(!this.song) {
             return null;
         }
 
-        let xml;
         if(!root) {
             root = xmlbuilder.begin();
         }
-        xml = root.ele('song', {'name': this.song.loop.basename});
-        xml.ele('title', this.song.title);
-        if(this.song.source) {
-            xml.ele('source', this.song.source);
-        }
-        xml.ele('rhythm', this.song.loop.banks[0]);
-        for(let bank = 1; bank < this.song.loop.banks.length; bank++) {
-            // rhythm2, rhythm3 etc
-            xml.ele('rhythm' + (bank+1), this.song.loop.banks[bank]);
-        }
 
-        if(this.song.build?.sound) {
-            xml.ele('buildup', this.song.build.basename);
-            xml.ele('buildupRhythm', this.song.build.banks[0]);
-            for(let bank = 1; bank < this.song.build.banks.length; bank++) {
-                // buildupRhythm2, buildupRhythm3 etc
-                xml.ele('buildupRhythm' + (bank+1), this.song.build.banks[bank]);
-            }
-            if(this.song.independentBuild) {
-                xml.ele('independentBuild', 'true');
-            }
-        }
+        this.song.generateXML(root);
+
         return root.end({ pretty: true});
     }
 
@@ -259,14 +239,6 @@ export class HuesEditor {
         document.body.removeChild(element);
     }
 
-    async addSectionToZip(zipWriter: zip.ZipWriter, section?: HuesSongSection) {
-        if(!section?.sound) {
-            return;
-        }
-        const u8 = new Uint8Array(section.sound);
-        await zipWriter.add(section.filename!, new zip.Uint8ArrayReader(u8));
-    }
-
     async saveZIP() {
         let result = this.generateXML(xmlbuilder.create('songs'));
         if(!result) {
@@ -275,8 +247,7 @@ export class HuesEditor {
 
         const zipWriter = new zip.ZipWriter(new zip.Data64URIWriter("application/zip"));
         await zipWriter.add("songs.xml", new zip.TextReader(result));
-        await this.addSectionToZip(zipWriter, this.song!.loop);
-        await this.addSectionToZip(zipWriter, this.song!.build);
+        await this.song!.addZipAssets(zipWriter);
 
         const dataURI = await zipWriter.close();
 

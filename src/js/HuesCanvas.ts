@@ -1,6 +1,5 @@
 // HTML5 canvas backend for HuesRender
 
-import type { HuesCore } from "./HuesCore";
 import type { RenderParams } from "./HuesRender";
 import type { SettingsData } from "./HuesSettings";
 
@@ -10,7 +9,7 @@ type Drawable = HTMLImageElement | HTMLCanvasElement | undefined;
 
 /*  Takes root DOM element to attach to */
 export default class HuesCanvas {
-    core: HuesCore;
+    root: HTMLElement;
 
     baseWidth: number;
     baseHeight: number;
@@ -31,9 +30,8 @@ export default class HuesCanvas {
     offCanvas2: HTMLCanvasElement;
     offContext2: CanvasRenderingContext2D;
 
-    constructor(root: HTMLElement, core: HuesCore) {
-        core.addEventListener("settingsupdated", this.settingsUpdated.bind(this));
-        this.core = core;
+    constructor(root: HTMLElement) {
+        this.root = root;
 
         // 720p has great performance and our images are matched to it.
         // Higher resolutions don't get us many benefits
@@ -66,10 +64,6 @@ export default class HuesCanvas {
         this.resize();
     }
 
-    settingsUpdated() {
-        this.setBlurQuality(this.core.settings.blurQuality);
-    }
-
     setBlurQuality(quality: SettingsData["blurQuality"]) {
         this.blurIterations = {"low" : -1, "medium" : 11, "high" : 19, "extreme" : 35}[quality];
         // you might be thinking "hey aren't you approximating a gaussian
@@ -96,8 +90,8 @@ export default class HuesCanvas {
 
     resize() {
         // height is clamped, we expand width to suit
-        let height = this.core.root.clientHeight;
-        let ratio = this.core.root.clientWidth / height;
+        let height = this.root.clientHeight;
+        let ratio = this.root.clientWidth / height;
         this.canvas.height = Math.min(height, this.baseHeight);
         this.canvas.width = Math.ceil(this.canvas.height * ratio);
         this.offCanvas.height = this.canvas.height;
@@ -206,7 +200,9 @@ export default class HuesCanvas {
                 params.lastBitmapAlign,
                 width, height,
                 params.slices,
-                params.xBlur, params.yBlur);
+                params.xBlur, params.yBlur,
+                params.lastBitmapCenter,
+                params.border, params.centerLine);
 
             this.drawColour(
                 params.lastColour, params.blendMode,
@@ -224,7 +220,9 @@ export default class HuesCanvas {
             params.bitmapAlign,
             width, height,
             params.slices,
-            params.xBlur, params.yBlur);
+            params.xBlur, params.yBlur,
+            params.bitmapCenter,
+            params.border, params.centerLine);
 
         this.drawColour(
             params.colour, params.blendMode,
@@ -246,38 +244,107 @@ export default class HuesCanvas {
     }
 
     drawBitmap(bitmap: Drawable, bitmapAlign: RenderParams["bitmapAlign"],
-            width: number, height: number, slices: RenderParams["slices"], xBlur: number, yBlur: number) {
+            width: number, height: number, slices: RenderParams["slices"],
+            xBlur: number, yBlur: number, bitmapCenter?: number,
+            borders?: boolean, centerLine?: boolean) {
+
+        if(!bitmap) {
+            return;
+        }
+
         let offset; // for centering/right/left align
 
-        if(bitmap) {
-            let drawHeight = bitmap.height * (height / bitmap.height);
-            let drawWidth = (bitmap.width / bitmap.height) * drawHeight;
+        let drawHeight = bitmap.height * (height / bitmap.height);
+        let drawWidth = (bitmap.width / bitmap.height) * drawHeight;
+        switch(bitmapAlign) {
+            case "left":
+                offset = 0;
+                break;
+            case "right":
+                offset = width - drawWidth;
+                break;
+            default:
+                offset = width/2 - drawWidth/2;
+                break;
+        }
+
+        // if we have a custom center and the screen is too thin, focus
+        // on the custom center instead
+        if(bitmapCenter !== undefined) {
+            // scale to canvas
+            bitmapCenter *= (drawWidth / bitmap.width);
+
+            let safeWidth;
             switch(bitmapAlign) {
                 case "left":
-                    offset = 0;
+                    safeWidth = bitmapCenter * 2;
                     break;
                 case "right":
-                    offset = width - drawWidth;
+                    safeWidth = (drawWidth - bitmapCenter) * 2;
                     break;
                 default:
-                    offset = width/2 - drawWidth/2;
+                    if(width < drawWidth) {
+                        // pretend to be left or right aligned based on whether
+                        // the custom center is left or right leaning
+                        const drawCenter = drawWidth / 2;
+                        if(bitmapCenter < drawCenter) {
+                            offset = 0;
+                            safeWidth = bitmapCenter * 2;
+                        } else {
+                            offset = width - drawWidth;
+                            safeWidth = (drawWidth - bitmapCenter) * 2;
+                        }
+                    } else {
+                        safeWidth = drawWidth;
+                    }
                     break;
             }
 
-            if(slices) {
-                bitmap = this.drawSlice(slices, bitmap, offset, drawWidth, drawHeight, width, height);
-                // since the bitmap is replaced with a correctly offset and scaled version
-                drawWidth = width;
-                drawHeight = height;
-                offset = 0;
+            // realign if needed
+            if(width < safeWidth) {
+                offset = width/2 - bitmapCenter;
             }
+        }
 
-            if(xBlur || yBlur) {
-                this.drawBlur(bitmap, offset, drawWidth, drawHeight, xBlur, yBlur);
-            } else {
-                this.context.globalAlpha = this.blurFinalAlpha;
-                this.context.drawImage(bitmap, offset, 0, drawWidth, drawHeight);
-            }
+        // cleaner rendering via exact pixels
+        offset = Math.round(offset);
+
+        // the debugging draws have to happen last, but these are modified in between
+        const origHeight = drawHeight;
+        const origWidth = drawWidth;
+        const origOffset = offset;
+
+        if(slices) {
+            bitmap = this.drawSlice(slices, bitmap, offset, drawWidth, drawHeight, width, height);
+            // since the bitmap is replaced with a correctly offset and scaled version
+            drawWidth = width;
+            drawHeight = height;
+            offset = 0;
+        }
+
+        if(xBlur || yBlur) {
+            this.drawBlur(bitmap, offset, drawWidth, drawHeight, xBlur, yBlur);
+        } else {
+            this.context.globalAlpha = this.blurFinalAlpha;
+            this.context.drawImage(bitmap, offset, 0, drawWidth, drawHeight);
+        }
+
+        // debug stuff
+        if(borders) {
+            this.context.strokeStyle = '#f00';
+            this.context.lineWidth = 1;
+            this.context.strokeRect(origOffset, 0, origWidth, origHeight);
+        }
+        if(centerLine && bitmapCenter !== undefined) {
+            const center = origOffset + bitmapCenter;
+            this.context.strokeStyle = '#0f0';
+            this.context.lineWidth = 1;
+            // this produces 2 lines sometimes for some reason
+            // this.context.strokeRect(center, 0, center, origHeight);
+            this.context.beginPath();
+            this.context.moveTo(center, 0);
+            this.context.lineTo(center, origHeight);
+            this.context.stroke();
         }
     }
 
