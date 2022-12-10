@@ -46,6 +46,7 @@ Name | Options | Default | Description
 fullname | Any text | The image filename | If you would like a longer name than your file, specify one here. Some UIs display the longer name, some display the shorter name.
 align | `left`, `right`, `center` | `center` | If the "Smart align images" option is set, the image will be aligned to the specified side of the screen.
 source | Any link | None | If you would like to provide a link to where you found the image, put one here. It will be clickable in the UI
+centerPixel (**web Hues only**) | Any number | None | If the screen used to view hues is smaller than the image (for example, a vertical phone), which pixel to use as the center point for cropping. The respack editor is useful to understand how this works.
 
 ### Animations  
 Animations are a special class of image. Because of limitations with using either gifs or videos, animations must be individual frames saved in the respack. The name of animated files must be `Name_x.ext` where `x` is the frame number and `ext` is png/jpg etc.
