@@ -214,7 +214,7 @@ export class HuesCore extends EventListener<CoreEvents> {
         });
 
         // Bunch-o-initialisers
-        this.version = 51;
+        this.version = 52;
         this.versionStr = (this.version/10).toFixed(1);
         this.versionHex = this.version.toString(16);
         this.beatIndex = 0;
