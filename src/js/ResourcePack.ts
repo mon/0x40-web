@@ -963,19 +963,23 @@ export class Respack {
     async generateZIP() {
         const zipWriter = new zip.ZipWriter(new zip.BlobWriter("application/zip"));
 
-        const songXml = xmlbuilder.create('songs');
-        for(const song of this.songs) {
-            song.generateXML(songXml);
-            await song.addZipAssets(zipWriter);
+        if(this.songs.length > 0) {
+            const songXml = xmlbuilder.create('songs');
+            for(const song of this.songs) {
+                song.generateXML(songXml);
+                await song.addZipAssets(zipWriter);
+            }
+            await this.addXML("songs.xml", zipWriter, songXml);
         }
-        await this.addXML("songs.xml", zipWriter, songXml);
 
-        const imageXml = xmlbuilder.create('images');
-        for(const image of this.images) {
-            image.generateXML(imageXml);
-            await image.addZipAssets(zipWriter);
+        if(this.images.length > 0) {
+            const imageXml = xmlbuilder.create('images');
+            for(const image of this.images) {
+                image.generateXML(imageXml);
+                await image.addZipAssets(zipWriter);
+            }
+            await this.addXML("images.xml", zipWriter, imageXml);
         }
-        await this.addXML("images.xml", zipWriter, imageXml);
 
         const infoXml = xmlbuilder.create('info');
         infoXml.ele("name", this.name);
