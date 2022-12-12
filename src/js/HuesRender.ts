@@ -362,6 +362,10 @@ export default class HuesRender {
     }
 
     redraw() {
+        if(this.core.settings.blackoutUI === "on") {
+            this.core.userInterface?.setOpacity(1.0 - this.bOpacity);
+        }
+
         // when images aren't changing, shutter needs something to feed off
         const lastImage = this.core.settings.fullAuto ? this.lastImage : this.image;
 
@@ -572,9 +576,6 @@ export default class HuesRender {
         }
 
         this.needsRedraw = true;
-        if(this.core.settings.blackoutUI == "on") {
-            this.core.userInterface?.hide();
-        }
     }
 
     clearBlackout(bank?: number) {
@@ -587,9 +588,6 @@ export default class HuesRender {
         this.blackoutStart = undefined;
         this.blackoutTimeout = undefined;
         this.needsRedraw = true;
-        if(this.core.settings.blackoutUI == "on") {
-            this.core.userInterface?.show();
-        }
     }
 
     doShortBlackout(beatTime: number, whiteout: boolean, bank: number) {

@@ -1107,15 +1107,9 @@ export class HuesCore extends EventListener<CoreEvents> {
             this.colours = weedColours;
             break;
         }
-        switch (this.settings.blackoutUI) {
-        case "off":
+        // the actual opacity is handled by the renderer
+        if(this.settings.blackoutUI === "off") {
             this.userInterface?.show();
-            break;
-        case "on":
-            if(this.renderer.blackoutStart !== undefined) {
-                this.userInterface?.hide();
-            }
-            break;
         }
         switch (this.settings.visualiser) {
         case "off":

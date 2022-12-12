@@ -193,9 +193,14 @@ export class HuesUI {
         window.removeEventListener('resize', this.resizeHandler);
     }
 
+    setOpacity(opacity: number) {
+        this.root.style.opacity = opacity.toString();
+    }
+
     // ONLY FOR CHANGING UI, NOT FOR "HIDE" FEATURE
     show() {
         this.root.style.visibility = "visible";
+        this.setOpacity(1.0);
     }
 
     // ONLY FOR CHANGING UI, NOT FOR "HIDE" FEATURE
