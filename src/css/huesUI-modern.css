@@ -389,6 +389,7 @@
 .hues-m-listcontainer {
     position: absolute;
     right: 8px;
+    left: 8px;
     bottom: 110px;
     z-index: 1; /* put it in front of xmas UI lights */
 }
@@ -530,7 +531,6 @@ input.hues-m-range[type=range]::-ms-thumb {
     bottom: 60px;
     max-width: 992px;
     margin: 0 auto;
-    left: 8px;
     }
   .hues-m-visualisercontainer {
     bottom:58px;

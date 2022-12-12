@@ -2,7 +2,7 @@
     display: flex;
     box-sizing: border-box;
     width: 640px;
-    
+
     margin: 5px;
     height: 400px;
     font-size: 14px;
@@ -31,7 +31,7 @@
 
 .resource-list {
     flex-grow: 1;
-    
+
     border: 2px solid black;
     background: rgba(255,255,255,0.3);
     overflow: auto;
@@ -54,7 +54,7 @@
     width: 100%;
     height: 100%;
     padding: 2px;
-    
+
     cursor: pointer;
 }
 
@@ -68,11 +68,11 @@
 
 .respacks-listitem > label {
     content: "";
- 
+
     width: 12px;
     height: 10px;
     margin: auto 2px;
-    
+
     background-color: #ccc;
     border: 1px solid black;
     cursor: pointer;
@@ -198,4 +198,18 @@
 
 .respacks-enabledimages {
     width: 315px;
+}
+
+/* smol screens */
+@media (max-width: 700px) {
+    .respacks-enabledsongs {
+        left: 0;
+        width: auto;
+    }
+}
+@media (max-width: 400px) {
+    .respacks-enabledimages {
+        left: 0;
+        width: auto;
+    }
 }

@@ -119,3 +119,9 @@
     top: 0;
     left: 0;
 }
+
+@media (max-width: 700px) {
+    .hues-r-listcontainer {
+        left: 130px;
+    }
+}
