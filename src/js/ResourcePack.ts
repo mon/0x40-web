@@ -611,7 +611,7 @@ export class Respack {
         }
         // any remaining images are still valid, just have no extra info
         for(const image of images) {
-            const img = new HuesImage(image.plainName, image.plainName, image.imgs);
+            const img = new HuesImage(image.plainName, "", image.imgs);
             this.images.push(img);
             debug("  [I] " + img.name, ":", img.fullname, "added to images");
         }
