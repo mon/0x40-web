@@ -25,27 +25,27 @@ export type HuesColour = {
 
 type CoreEvents = {
     // When everything has completely loaded and we're ready to go
-    loaded : (() => void)[],
+    loaded : () => void,
 
     // When the song time is updated - negative for buildup
-    time : ((seconds: number) => void)[],
+    time : (seconds: number) => void,
 
     // The current blur amounts, in percent of full blur
-    blurupdate : ((xPercent: number, yPercent: number) => void)[],
+    blurupdate : (xPercent: number, yPercent: number) => void,
 
     // Called on song change, whether user triggered or autosong.
-    newsong : ((song: HuesSong) => void)[],
+    newsong : (song: HuesSong) => void,
 
     // Called on image change, whether user triggered or FULL AUTO mode.
-    newimage : ((image: HuesImage) => void)[],
+    newimage : (image: HuesImage) => void,
 
     // Called on colour change.
     // colour: colour object.
     // isFade: if the colour is fading from the previous value
-    newcolour : ((colour: HuesColour, isFade: boolean) => void)[],
+    newcolour : (colour: HuesColour, isFade: boolean) => void,
 
     // Called on mode change. (full auto or locked to one image)
-    newmode : ((mode: boolean) => void)[],
+    newmode : (mode: boolean) => void,
 
     // Called on every non-blank beat character. If multiple banks are being
     //   used, this may be called several times per frame.
@@ -54,7 +54,7 @@ type CoreEvents = {
     // beat is the new beat
     // beatIndex is the beat index. Negative during buildups
     // bank is the bank this beat is from
-    beat : ((beat: string, beatIndex: number, bank: number) => boolean | undefined)[],
+    beat : (beat: string, beatIndex: number, bank: number) => boolean | undefined,
 
     // Called on every beat.
     // beatString is a 256 char long string of current and upcoming beat chars
@@ -62,20 +62,20 @@ type CoreEvents = {
     //   beat at a given index will be the closest normal beat character that
     //   has the effects being used.
     // beatIndex is the beat index. Negative during buildups
-    beatstring : ((beatString: string, beatIndex: number) => void)[],
+    beatstring : (beatString: string, beatIndex: number) => void,
 
     // Called whenever the invert state changes.
-    invert : ((isInverted: boolean) => void)[],
+    invert : (isInverted: boolean) => void,
 
     // Called on each new frame, at the end of all other frame processing
-    frame : (() => void)[],
+    frame : () => void,
 
     // Called when the song actually begins to play, not just when the new song
     // processing begins.
-    songstarted : ((song: HuesSong) => void)[],
+    songstarted : (song: HuesSong) => void,
 
     // Called when settings are updated and should be re-read from the settings object
-    settingsupdated : (() => void)[],
+    settingsupdated : () => void,
 }
 
 export enum Effect {
@@ -197,21 +197,7 @@ export class HuesCore extends EventListener<CoreEvents> {
     vCtx!: CanvasRenderingContext2D;
 
     constructor(defaults: Partial<SettingsData>) {
-        super({
-            loaded : [],
-            time : [],
-            blurupdate : [],
-            newsong : [],
-            newimage : [],
-            newcolour : [],
-            newmode : [],
-            beat : [],
-            beatstring : [],
-            invert : [],
-            frame : [],
-            songstarted : [],
-            settingsupdated : []
-        });
+        super();
 
         // Bunch-o-initialisers
         this.version = 53;

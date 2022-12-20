@@ -201,7 +201,7 @@ export type SettingsData = {
 
 type SettingsEvents = {
     // Called when settings are updated
-    updated: (() => void)[];
+    updated: () => void;
 }
 
 export interface HuesSettings extends SettingsData {}
@@ -210,9 +210,7 @@ export class HuesSettings extends EventListener<SettingsEvents> {
     ui?: SettingsUI;
 
     constructor(defaults: Partial<SettingsData>) {
-        super({
-            updated : []
-        });
+        super();
 
         let settingsVersion = "1";
         if(localStorage.settingsVersion != settingsVersion) {

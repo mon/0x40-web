@@ -4,12 +4,12 @@ import EventListener from "./EventListener";
 
 type SoundCallbacks = {
     // Called when the audio has been seeked - reset time determined transforms
-    seek : (() => void)[],
+    seek : () => void,
 
     // Called when someone requests a new song to be played - used when
     // you want to do something with the finished AudioBuffers, like
     // display length, or display a waveform.
-    songloading : ((promise: Promise<void>, song: HuesSong) => void)[],
+    songloading : (promise: Promise<void>, song: HuesSong) => void,
 }
 
 type SongBuffer = {
@@ -71,10 +71,7 @@ export default class SoundManager extends EventListener<SoundCallbacks> {
 
     constructor(core: HuesCore, initialVolume = 1) {
         // Perhaps this will do more later
-        super({
-            seek : [],
-            songloading : [],
-        });
+        super();
 
         this.core = core;
         this.playing = false;

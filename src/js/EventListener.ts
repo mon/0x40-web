@@ -1,19 +1,24 @@
 interface Event {
-    [ev: string]: ((...args: any[]) => any)[];
+    [ev: string]: (...args: any[]) => any;
 }
 
 export default class EventListener<Events extends Event> {
-    eventListeners: Events;
+    listeners: Partial<{
+        // each event gets an array of event handlers
+        [ev in keyof Events]: Set<Events[ev]>
+    }>;
 
-    // can't work out how to make this automatic so just let the caller
-    // initialise it
-    constructor(listeners: Events) {
-        this.eventListeners = listeners;
+    constructor() {
+        this.listeners = {};
     }
 
     callEventListeners<E extends keyof Events>(ev: E, ...args: any) {
+        if(!(ev in this.listeners)) {
+            return;
+        }
+
         let ret = undefined;
-        for(const callback of this.eventListeners[ev]) {
+        for(const callback of this.listeners[ev]!) {
             const callbackRet = callback(...args);
             if(callbackRet !== undefined) {
                 ret = callbackRet;
@@ -23,13 +28,17 @@ export default class EventListener<Events extends Event> {
         return ret;
     }
 
-    addEventListener<E extends keyof Events>(ev: E, callback: Events[E][number]) {
-        this.eventListeners[ev].push(callback);
+    addEventListener<E extends keyof Events>(ev: E, callback: Events[E]) {
+        if(!(ev in this.listeners)) {
+            this.listeners[ev] = new Set();
+        }
+        this.listeners[ev]!.add(callback);
     }
 
-    removeEventListener<E extends keyof Events>(ev: E, callback: Events[E][number]) {
-        this.eventListeners[ev] = this.eventListeners[ev].filter(function(a) {
-            return (a !== callback);
-        }) as Events[E];
+    removeEventListener<E extends keyof Events>(ev: E, callback: Events[E]) {
+        if(!(ev in this.listeners)) {
+            return;
+        }
+        this.listeners[ev]!.delete(callback);
     }
 }

@@ -4,9 +4,9 @@ import type { HuesSettings } from './HuesSettings';
 type WindowEvents = {
     // When the window is shown, hidden or toggled this fires.
     // 'shown' is true if the window was made visible, false otherwise
-    windowshown: ((shown: boolean) => void)[];
+    windowshown: (shown: boolean) => void;
     //The name of the tab that was selected
-    tabselected: ((tabName: string) => void)[];
+    tabselected: (tabName: string) => void;
 }
 
 export default class HuesWindow extends EventListener<WindowEvents> {
@@ -21,10 +21,7 @@ export default class HuesWindow extends EventListener<WindowEvents> {
     tabSelected?: string;
 
     constructor(root: Element, settings: HuesSettings) {
-        super({
-            windowshown : [],
-            tabselected : []
-        });
+        super();
 
         this.hasUI = settings.enableWindow;
 
