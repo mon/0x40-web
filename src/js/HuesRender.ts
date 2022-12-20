@@ -6,6 +6,21 @@ import type { HuesImage } from "./ResourcePack";
 import type SoundManager from "./SoundManager";
 // import './HuesPixi'; // new WebGL renderer, maybe later
 
+// percent 0.0 = oldColour, percent 1.0 = newColour
+export function mixColours(oldColour: number, newColour: number, percent: number) {
+    percent = Math.min(1, percent);
+    let oldR = oldColour >> 16 & 0xFF;
+    let oldG = oldColour >> 8  & 0xFF;
+    let oldB = oldColour       & 0xFF;
+    let newR = newColour >> 16 & 0xFF;
+    let newG = newColour >> 8  & 0xFF;
+    let newB = newColour       & 0xFF;
+    let mixR = oldR * (1 - percent) + newR * percent;
+    let mixG = oldG * (1 - percent) + newG * percent;
+    let mixB = oldB * (1 - percent) + newB * percent;
+    return mixR << 16 | mixG << 8 | mixB;
+}
+
 type SliceParams = {
     count: number; // 1 for no slice, >1 for slices
     percent: number; // ignored if count == 1,
@@ -20,6 +35,7 @@ type SliceParams = {
 export type RenderParams = {
     colour: number; // base colour
     lastColour: number; // previous colour
+    colourFade?: number; // optional mix between lastColour and colour, from 0.0 to 1.0
     blendMode:  GlobalCompositeOperation;
     bgColour: number | "transparent"; // base/backdrop colour for render stack
 
@@ -233,8 +249,7 @@ export default class HuesRender {
     colourFadeBank?: number;
     colourFadeStart?: number;
     colourFadeLength?: number;
-    oldColour!: number;
-    newColour!: number;
+    colourFadePercent?: number;
 
     constructor(root: HTMLElement, soundManager: SoundManager, core: HuesCore) {
         this.render = new HuesCanvas(root);
@@ -369,9 +384,10 @@ export default class HuesRender {
         // when images aren't changing, shutter needs something to feed off
         const lastImage = this.core.settings.fullAuto ? this.lastImage : this.image;
 
-        const params = {
+        const params: RenderParams = {
             colour: this.colour,
             lastColour: this.lastColour,
+            colourFade: this.colourFadeStart ? this.colourFadePercent : undefined,
             blendMode: this.core.settings.blendMode,
             bgColour: this.bgColour,
 
@@ -408,13 +424,12 @@ export default class HuesRender {
         const now = this.audio.currentTime;
 
         if (this.colourFadeStart !== undefined) {
-            let delta = now - this.colourFadeStart;
-            let fadeVal = delta / this.colourFadeLength!;
+            const delta = now - this.colourFadeStart;
+            const fadeVal = delta / this.colourFadeLength!;
             if (fadeVal >= 1) {
-                this.stopFade();
-                this.colour = this.newColour;
+                this.colourFadeStart = undefined;
             } else {
-                this.mixColours(fadeVal);
+                this.colourFadePercent = fadeVal;
             }
             this.needsRedraw = true;
         }
@@ -545,12 +560,18 @@ export default class HuesRender {
         if(colour.c == this.colour) {
             return;
         }
-        this.lastColour = this.colour;
-        if(isFade) {
-            this.newColour = colour.c;
+
+        if(this.colourFadeStart !== undefined) {
+            // we're interrupting an existing fade, so properly mix the last frame
+            this.lastColour = mixColours(this.lastColour, this.colour, this.colourFadePercent!);
         } else {
-            this.stopFade();
-            this.colour = colour.c;
+            this.lastColour = this.colour;
+        }
+
+        this.colour = colour.c;
+
+        if(!isFade) {
+            this.colourFadeStart = undefined;
         }
         this.needsRedraw = true;
     }
@@ -607,25 +628,6 @@ export default class HuesRender {
         this.colourFadeBank = bank;
         this.colourFadeLength = length;
         this.colourFadeStart = this.audio.currentTime;
-        this.oldColour = this.colour;
-    }
-
-    stopFade() {
-        this.colourFadeStart = undefined;
-    }
-
-    mixColours(percent: number) {
-        percent = Math.min(1, percent);
-        let oldR = this.oldColour >> 16 & 0xFF;
-        let oldG = this.oldColour >> 8  & 0xFF;
-        let oldB = this.oldColour       & 0xFF;
-        let newR = this.newColour >> 16 & 0xFF;
-        let newG = this.newColour >> 8  & 0xFF;
-        let newB = this.newColour       & 0xFF;
-        let mixR = oldR * (1 - percent) + newR * percent;
-        let mixG = oldG * (1 - percent) + newG * percent;
-        let mixB = oldB * (1 - percent) + newB * percent;
-        this.colour = mixR << 16 | mixG << 8 | mixB;
     }
 
     updateCoreBlur() {

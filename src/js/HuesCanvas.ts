@@ -1,6 +1,6 @@
 // HTML5 canvas backend for HuesRender
 
-import type { RenderParams } from "./HuesRender";
+import { mixColours, type RenderParams } from "./HuesRender";
 import type { SettingsData } from "./HuesSettings";
 
 // can't just use CanvasImageSource since some of the options (SVG stuff) don't
@@ -224,8 +224,12 @@ export default class HuesCanvas {
             params.bitmapCenter,
             params.border, params.centerLine);
 
+        const colour = params.colourFade !== undefined ?
+            mixColours(params.lastColour, params.colour, params.colourFade)
+            : params.colour;
+
         this.drawColour(
-            params.colour, params.blendMode,
+            colour, params.blendMode,
             params.outTrippy, params.inTrippy,
             width, height);
 
