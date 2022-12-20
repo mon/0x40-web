@@ -1,6 +1,6 @@
 // HTML5 canvas backend for HuesRender
 
-import { mixColours, type RenderParams } from "./HuesRender";
+import { mixColours, type RenderParams, type HuesCanvas, calculateImageDrawCoords } from "./HuesRender";
 import type { SettingsData } from "./HuesSettings";
 
 // can't just use CanvasImageSource since some of the options (SVG stuff) don't
@@ -8,10 +8,9 @@ import type { SettingsData } from "./HuesSettings";
 type Drawable = HTMLImageElement | HTMLCanvasElement | undefined;
 
 /*  Takes root DOM element to attach to */
-export default class HuesCanvas {
+export default class HuesCanvas2D implements HuesCanvas {
     root: HTMLElement;
 
-    baseWidth: number;
     baseHeight: number;
 
     blurIterations!: number;
@@ -30,13 +29,10 @@ export default class HuesCanvas {
     offCanvas2: HTMLCanvasElement;
     offContext2: CanvasRenderingContext2D;
 
-    constructor(root: HTMLElement) {
+    constructor(root: HTMLElement, height: number) {
         this.root = root;
 
-        // 720p has great performance and our images are matched to it.
-        // Higher resolutions don't get us many benefits
-        this.baseWidth = 1280;
-        this.baseHeight = 720;
+        this.baseHeight = height;
 
         this.trippyRadius = 0;
 
@@ -49,8 +45,6 @@ export default class HuesCanvas {
         this.canvas = document.createElement('canvas');
         // marked as never-null because if this fails, you're screwed
         this.context = this.canvas.getContext("2d")!;
-        this.canvas.width = this.baseWidth;
-        this.canvas.height = this.baseHeight;
         this.canvas.className = "hues-canvas";
         root.appendChild(this.canvas);
 
@@ -59,9 +53,14 @@ export default class HuesCanvas {
 
         this.offCanvas2 = document.createElement('canvas');
         this.offContext2 = this.offCanvas2.getContext('2d')!;
+    }
 
-        window.addEventListener('resize', this.resize.bind(this));
-        this.resize();
+    get width() {
+        return this.canvas.width;
+    }
+
+    get height() {
+        return this.canvas.height;
     }
 
     setBlurQuality(quality: SettingsData["blurQuality"]) {
@@ -256,91 +255,37 @@ export default class HuesCanvas {
             return;
         }
 
-        let offset; // for centering/right/left align
-
-        let drawHeight = bitmap.height * (height / bitmap.height);
-        let drawWidth = (bitmap.width / bitmap.height) * drawHeight;
-        switch(bitmapAlign) {
-            case "left":
-                offset = 0;
-                break;
-            case "right":
-                offset = width - drawWidth;
-                break;
-            default:
-                offset = width/2 - drawWidth/2;
-                break;
-        }
-
-        // if we have a custom center and the screen is too thin, focus
-        // on the custom center instead
-        if(bitmapCenter !== undefined) {
-            // scale to canvas
-            bitmapCenter *= (drawWidth / bitmap.width);
-
-            let safeWidth;
-            switch(bitmapAlign) {
-                case "left":
-                    safeWidth = bitmapCenter * 2;
-                    break;
-                case "right":
-                    safeWidth = (drawWidth - bitmapCenter) * 2;
-                    break;
-                default:
-                    if(width < drawWidth) {
-                        // pretend to be left or right aligned based on whether
-                        // the custom center is left or right leaning
-                        const drawCenter = drawWidth / 2;
-                        if(bitmapCenter < drawCenter) {
-                            offset = 0;
-                            safeWidth = bitmapCenter * 2;
-                        } else {
-                            offset = width - drawWidth;
-                            safeWidth = (drawWidth - bitmapCenter) * 2;
-                        }
-                    } else {
-                        safeWidth = drawWidth;
-                    }
-                    break;
-            }
-
-            // realign if needed
-            if(width < safeWidth) {
-                offset = width/2 - bitmapCenter;
-            }
-        }
-
-        // cleaner rendering via exact pixels
-        offset = Math.round(offset);
+        let [x, _y, drawWidth, drawHeight] = calculateImageDrawCoords(
+            width, height, bitmap.width, bitmap.height, bitmapAlign, bitmapCenter);
 
         // the debugging draws have to happen last, but these are modified in between
         const origHeight = drawHeight;
         const origWidth = drawWidth;
-        const origOffset = offset;
+        const origX = x;
 
         if(slices) {
-            bitmap = this.drawSlice(slices, bitmap, offset, drawWidth, drawHeight, width, height);
+            bitmap = this.drawSlice(slices, bitmap, x, drawWidth, drawHeight, width, height);
             // since the bitmap is replaced with a correctly offset and scaled version
             drawWidth = width;
             drawHeight = height;
-            offset = 0;
+            x = 0;
         }
 
         if(xBlur || yBlur) {
-            this.drawBlur(bitmap, offset, drawWidth, drawHeight, xBlur, yBlur);
+            this.drawBlur(bitmap, x, drawWidth, drawHeight, xBlur, yBlur);
         } else {
             this.context.globalAlpha = this.blurFinalAlpha;
-            this.context.drawImage(bitmap, offset, 0, drawWidth, drawHeight);
+            this.context.drawImage(bitmap, x, 0, drawWidth, drawHeight);
         }
 
         // debug stuff
         if(borders) {
             this.context.strokeStyle = '#f00';
             this.context.lineWidth = 1;
-            this.context.strokeRect(origOffset, 0, origWidth, origHeight);
+            this.context.strokeRect(origX, 0, origWidth, origHeight);
         }
         if(centerLine && bitmapCenter !== undefined) {
-            const center = origOffset + bitmapCenter;
+            const center = origX + bitmapCenter;
             this.context.strokeStyle = '#0f0';
             this.context.lineWidth = 1;
             // this produces 2 lines sometimes for some reason

@@ -1,4 +1,4 @@
-import HuesCanvas from "./HuesCanvas";
+import HuesCanvas2D from "./HuesCanvas2D";
 import type { HuesColour } from "./HuesCore";
 import type { HuesCore } from "./HuesCore";
 import type { SettingsData } from "./HuesSettings";
@@ -19,6 +19,81 @@ export function mixColours(oldColour: number, newColour: number, percent: number
     let mixG = oldG * (1 - percent) + newG * percent;
     let mixB = oldB * (1 - percent) + newB * percent;
     return mixR << 16 | mixG << 8 | mixB;
+}
+
+// Given the dimensions of the drawing surface, the dimensions of the image, and
+// the image alignment, provide the output x, y, width and height of the image.
+// This function will also handle centering the image when the screen is too
+// thin, for example on mobile devices.
+export function calculateImageDrawCoords(
+        canvasWidth: number, canvasHeight: number,
+        bitmapWidth: number, bitmapHeight: number,
+        bitmapAlign: RenderParams["bitmapAlign"], bitmapCenter: RenderParams["bitmapCenter"]) {
+    let offset; // for centering/right/left align
+
+    let drawHeight = canvasHeight;
+    let drawWidth = (bitmapWidth / bitmapHeight) * drawHeight;
+    switch(bitmapAlign) {
+        case "left":
+            offset = 0;
+            break;
+        case "right":
+            offset = canvasWidth - drawWidth;
+            break;
+        default:
+            offset = canvasWidth/2 - drawWidth/2;
+            break;
+    }
+
+    // if we have a custom center and the screen is too thin, focus
+    // on the custom center instead
+    if(bitmapCenter !== undefined) {
+        // scale to canvas
+        bitmapCenter *= (drawWidth / bitmapWidth);
+
+        let safeWidth;
+        switch(bitmapAlign) {
+            case "left":
+                safeWidth = bitmapCenter * 2;
+                break;
+            case "right":
+                safeWidth = (drawWidth - bitmapCenter) * 2;
+                break;
+            default:
+                if(canvasWidth < drawWidth) {
+                    // pretend to be left or right aligned based on whether
+                    // the custom center is left or right leaning
+                    const drawCenter = drawWidth / 2;
+                    if(bitmapCenter < drawCenter) {
+                        offset = 0;
+                        safeWidth = bitmapCenter * 2;
+                    } else {
+                        offset = canvasWidth - drawWidth;
+                        safeWidth = (drawWidth - bitmapCenter) * 2;
+                    }
+                } else {
+                    safeWidth = drawWidth;
+                }
+                break;
+        }
+
+        // realign if needed
+        if(canvasWidth < safeWidth) {
+            offset = canvasWidth/2 - bitmapCenter;
+        }
+    }
+
+    // cleaner rendering via exact pixels
+    offset = Math.round(offset);
+
+    // x, y, width, height
+    return [offset, 0, drawWidth, drawHeight];
+}
+
+export interface HuesCanvas {
+    draw(params: RenderParams): void;
+    resize(): void;
+    setBlurQuality(quality: SettingsData["blurQuality"]): void;
 }
 
 type SliceParams = {
@@ -200,7 +275,7 @@ class RenderImage {
 /*  Takes root element to attach to, and an audio context element for
     getting the current time with reasonable accuracy */
 export default class HuesRender {
-    render: HuesCanvas;
+    render: HuesCanvas2D;
     audio: SoundManager;
     core: HuesCore;
 
@@ -252,7 +327,9 @@ export default class HuesRender {
     colourFadePercent?: number;
 
     constructor(root: HTMLElement, soundManager: SoundManager, core: HuesCore) {
-        this.render = new HuesCanvas(root);
+        // 720p has great performance and our images are matched to it.
+        // Higher resolutions don't get us many benefits
+        this.render = new HuesCanvas2D(root, 720);
         this.audio = soundManager;
         soundManager.addEventListener("seek", this.resetEffects.bind(this));
         core.addEventListener("newsong", this.resetEffects.bind(this));
@@ -374,6 +451,7 @@ export default class HuesRender {
 
     resize() {
         this.needsRedraw = true;
+        this.render.resize();
     }
 
     redraw() {

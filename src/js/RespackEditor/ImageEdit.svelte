@@ -1,6 +1,6 @@
 <script lang="ts">
 import { onMount, tick } from "svelte";
-import HuesCanvas from "../HuesCanvas";
+import HuesCanvas2D from "../HuesCanvas2D";
 import type { HuesImage } from "../ResourcePack";
 
 export let images: HuesImage[];
@@ -9,7 +9,7 @@ let selectedImage: HuesImage | undefined;
 let animI = 0;
 let animTimeout: NodeJS.Timeout | undefined;
 
-let canvas: HuesCanvas;
+let canvas: HuesCanvas2D;
 let imboxEl: HTMLDivElement;
 
 let centerLine = false;
@@ -70,7 +70,7 @@ function onFrame() {
 onMount(async () => {
     await tick();
 
-    canvas = new HuesCanvas(imboxEl);
+    canvas = new HuesCanvas2D(imboxEl);
 
     let raf: number;
     let cb = () => {
