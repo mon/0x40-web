@@ -18,6 +18,8 @@ export default class HuesCanvas2D implements HuesCanvas {
     blurAlpha!: number;
     blurFinalAlpha!: number;
 
+    invertEverything!: boolean;
+
     trippyRadius: number;
     shutterWidth: number;
 
@@ -42,6 +44,9 @@ export default class HuesCanvas2D implements HuesCanvas {
         // Chosen because it looks decent
         this.setBlurQuality("high");
 
+        // matches the flash
+        this.setInvertStyle("everything");
+
         this.canvas = document.createElement('canvas');
         // marked as never-null because if this fails, you're screwed
         this.context = this.canvas.getContext("2d")!;
@@ -61,6 +66,10 @@ export default class HuesCanvas2D implements HuesCanvas {
 
     get height() {
         return this.canvas.height;
+    }
+
+    setInvertStyle(style: SettingsData["invertStyle"]) {
+        this.invertEverything = style === "everything";
     }
 
     setBlurQuality(quality: SettingsData["blurQuality"]) {
@@ -223,6 +232,10 @@ export default class HuesCanvas2D implements HuesCanvas {
             params.bitmapCenter,
             params.border, params.centerLine);
 
+        if(params.invert && !this.invertEverything) {
+            this.drawInvert();
+        }
+
         const colour = params.colourFade !== undefined ?
             mixColours(params.lastColour, params.colour, params.colourFade)
             : params.colour;
@@ -241,7 +254,7 @@ export default class HuesCanvas2D implements HuesCanvas {
             this.context.fillRect(0,0,width,height);
         }
 
-        if(params.invert) {
+        if(params.invert && this.invertEverything) {
             this.drawInvert();
         }
     }

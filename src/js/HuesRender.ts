@@ -94,6 +94,7 @@ export interface HuesCanvas {
     draw(params: RenderParams): void;
     resize(): void;
     setBlurQuality(quality: SettingsData["blurQuality"]): void;
+    setInvertStyle(style: SettingsData["invertStyle"]): void;
 }
 
 type SliceParams = {

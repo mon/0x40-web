@@ -68,6 +68,7 @@ const defaultSettings: SettingsData = {
     blendMode: "hard-light",
     bgColour: "white",
     blackoutUI: "off",
+    invertStyle: "everything",
     playBuildups: "on",
     visualiser: "off",
     shuffleImages: "on",
@@ -121,6 +122,10 @@ const settingsOptions = {
     blackoutUI : {
         name : "Blackout affects UI",
         options : ["off", "on"]
+    },
+    invertStyle : {
+        name : "Invert affects",
+        options : ["everything", "image"]
     },
     playBuildups : {
         name : "Play buildups",
@@ -187,6 +192,7 @@ export type SettingsData = {
     blendMode:       typeof settingsOptions.blendMode.options[number];
     bgColour:        typeof settingsOptions.bgColour.options[number];
     blackoutUI:      typeof settingsOptions.blackoutUI.options[number];
+    invertStyle:     typeof settingsOptions.invertStyle.options[number];
     playBuildups:    typeof settingsOptions.playBuildups.options[number];
     visualiser:      typeof settingsOptions.visualiser.options[number];
     shuffleImages:   typeof settingsOptions.shuffleImages.options[number];

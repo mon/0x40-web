@@ -24,6 +24,7 @@
             "colourSet",
             "blendMode",
             "bgColour",
+            "invertStyle",
             "visualiser"
         ],
         "Interface" : [
