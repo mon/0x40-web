@@ -28,7 +28,8 @@ export function mixColours(oldColour: number, newColour: number, percent: number
 export function calculateImageDrawCoords(
         canvasWidth: number, canvasHeight: number,
         bitmapWidth: number, bitmapHeight: number,
-        bitmapAlign: RenderParams["bitmapAlign"], bitmapCenter: RenderParams["bitmapCenter"]) {
+        bitmapAlign: RenderParams["bitmapAlign"], bitmapCenter: RenderParams["bitmapCenter"]):
+        [number, number, number, number, number | undefined] {
     let offset; // for centering/right/left align
 
     let drawHeight = canvasHeight;
@@ -87,7 +88,7 @@ export function calculateImageDrawCoords(
     offset = Math.round(offset);
 
     // x, y, width, height
-    return [offset, 0, drawWidth, drawHeight];
+    return [offset, 0, drawWidth, drawHeight, bitmapCenter];
 }
 
 export interface HuesCanvas {

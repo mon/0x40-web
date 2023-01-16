@@ -31,7 +31,7 @@ export default class HuesCanvas2D implements HuesCanvas {
     offCanvas2: HTMLCanvasElement;
     offContext2: CanvasRenderingContext2D;
 
-    constructor(root: HTMLElement, height: number) {
+    constructor(root: HTMLElement, height = 720) {
         this.root = root;
 
         this.baseHeight = height;
@@ -268,7 +268,7 @@ export default class HuesCanvas2D implements HuesCanvas {
             return;
         }
 
-        let [x, _y, drawWidth, drawHeight] = calculateImageDrawCoords(
+        let [x, _y, drawWidth, drawHeight, scaledBitmapCenter] = calculateImageDrawCoords(
             width, height, bitmap.width, bitmap.height, bitmapAlign, bitmapCenter);
 
         // the debugging draws have to happen last, but these are modified in between
@@ -297,8 +297,8 @@ export default class HuesCanvas2D implements HuesCanvas {
             this.context.lineWidth = 1;
             this.context.strokeRect(origX, 0, origWidth, origHeight);
         }
-        if(centerLine && bitmapCenter !== undefined) {
-            const center = origX + bitmapCenter;
+        if(centerLine && scaledBitmapCenter !== undefined) {
+            const center = origX + scaledBitmapCenter;
             this.context.strokeStyle = '#0f0';
             this.context.lineWidth = 1;
             // this produces 2 lines sometimes for some reason
