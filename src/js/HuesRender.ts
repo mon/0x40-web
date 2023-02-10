@@ -403,8 +403,6 @@ export default class HuesRender {
     resetEffects() {
         this.colourFadeStart = undefined;
         this.invertFadeStart = undefined;
-        this.invertStart = 1.0;
-        this.invertTarget = 0.0;
         this.trippyStart = [undefined, undefined];
         this.sliceInfo.x.start = undefined;
         this.sliceInfo.y.start = undefined;

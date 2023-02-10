@@ -482,6 +482,7 @@ export default class HuesCanvas2D implements HuesCanvas {
                 // do we even need the offCanvas?
                 if(yBlur) {
                     this.offContext2.globalAlpha = this.blurAlpha;
+                    this.offContext2.globalCompositeOperation = "source-over";
                     this.offContext2.clearRect(0,0,this.canvas.width,this.canvas.height);
                     xContext = this.offContext2;
                 }

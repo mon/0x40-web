@@ -437,13 +437,13 @@ export class HuesCore extends EventListener<CoreEvents> {
         this.vCtx.clearRect(0, 0, this.vCtx.canvas.width, this.vCtx.canvas.height);
 
         let gradient=this.vCtx.createLinearGradient(0,64,0,0);
-        if(this.invert) {
-            gradient.addColorStop(1,"rgba(20,20,20,0.6)");
-            gradient.addColorStop(0,"rgba(255,255,255,0.6)");
-        } else {
-            gradient.addColorStop(1,"rgba(255,255,255,0.6)");
-            gradient.addColorStop(0,"rgba(20,20,20,0.6)");
-        }
+        // 8% to 100%
+        const gVal = this.renderer.invert * 92;
+        const gStart = 8 + gVal;
+        const gEnd = 100 - gVal;
+        gradient.addColorStop(0,`hsla(0, 0%, ${gStart}%, 0.6)`);
+        gradient.addColorStop(1,`hsla(0, 0%, ${gEnd}%, 0.6)`);
+
         this.vCtx.fillStyle = gradient;
 
         let barWidth = 2;
