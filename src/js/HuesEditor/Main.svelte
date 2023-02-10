@@ -68,6 +68,7 @@
             ["=", "Fade and change image"],
             ["i", "Invert all colours"],
             ["I", "Invert & change image"],
+            ["ı", "Fade invert"],
         ],
         "Blackout": [
             ["+", "Blackout"],
@@ -681,7 +682,8 @@ hr {
     --rhythm-ratio: 3fr;
 
     flex-grow: 1;
-    min-height: 0;
+    /* without this, mobile users cannot see the beatmap at all */
+    min-height: 300px;
 
     display: grid;
     grid-template-columns:

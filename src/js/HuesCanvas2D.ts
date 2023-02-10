@@ -1,7 +1,8 @@
 // HTML5 canvas backend for HuesRender
 
-import { mixColours, type RenderParams, type HuesCanvas, calculateImageDrawCoords } from "./HuesRender";
+import { type RenderParams, type HuesCanvas, calculateImageDrawCoords } from "./HuesRender";
 import type { SettingsData } from "./HuesSettings";
+import { mixColours, intToHex } from "./Utils";
 
 // can't just use CanvasImageSource since some of the options (SVG stuff) don't
 // have width/height
@@ -26,10 +27,13 @@ export default class HuesCanvas2D implements HuesCanvas {
     canvas: HTMLCanvasElement;
     context: CanvasRenderingContext2D;
 
+    // these may be better suited as arrays but somehow I can visualise this better
     offCanvas: HTMLCanvasElement;
     offContext: CanvasRenderingContext2D;
     offCanvas2: HTMLCanvasElement;
     offContext2: CanvasRenderingContext2D;
+    offCanvas3: HTMLCanvasElement;
+    offContext3: CanvasRenderingContext2D;
 
     constructor(root: HTMLElement, height = 720) {
         this.root = root;
@@ -58,6 +62,9 @@ export default class HuesCanvas2D implements HuesCanvas {
 
         this.offCanvas2 = document.createElement('canvas');
         this.offContext2 = this.offCanvas2.getContext('2d')!;
+
+        this.offCanvas3 = document.createElement('canvas');
+        this.offContext3 = this.offCanvas3.getContext('2d')!;
     }
 
     get width() {
@@ -106,6 +113,8 @@ export default class HuesCanvas2D implements HuesCanvas {
         this.offCanvas.width = this.canvas.width;
         this.offCanvas2.height = this.canvas.height;
         this.offCanvas2.width = this.canvas.width;
+        this.offCanvas3.height = this.canvas.height;
+        this.offCanvas3.width = this.canvas.width;
         // to fill a square to the edges
         this.trippyRadius = (Math.max(this.canvas.width, this.canvas.height) / 2) * Math.SQRT2;
     }
@@ -120,10 +129,10 @@ export default class HuesCanvas2D implements HuesCanvas {
 
         // optimise the draw
         if(params.overlayPercent >= 1) {
-            this.context.fillStyle = this.intToHex(params.overlayColour);
+            this.context.fillStyle = intToHex(params.overlayColour);
             this.context.fillRect(0,0,width,height);
-            if(params.invert) {
-                this.drawInvert();
+            if(params.invert && this.invertEverything) {
+                this.drawInvert(params.invert);
             }
             return;
         }
@@ -131,13 +140,14 @@ export default class HuesCanvas2D implements HuesCanvas {
         // might be doing a clipping region for shutter
         this.context.save();
 
+        this.context.globalAlpha = 1;
+        this.context.globalCompositeOperation = "source-over";
+
         if(params.bgColour === "transparent") {
             this.context.clearRect(0,0,width,height);
         } else {
-            this.context.fillStyle = this.intToHex(params.bgColour);
+            this.context.fillStyle = intToHex(params.bgColour);
             this.context.fillRect(0,0,width,height);
-            this.context.globalAlpha = 1;
-            this.context.globalCompositeOperation = "source-over";
         }
 
         if(params.shutter !== undefined) {
@@ -209,11 +219,12 @@ export default class HuesCanvas2D implements HuesCanvas {
                 width, height,
                 params.slices,
                 params.xBlur, params.yBlur,
+                params.invert,
                 params.lastBitmapCenter,
                 params.border, params.centerLine);
 
             this.drawColour(
-                params.lastColour, params.blendMode,
+                params.lastColour, params.blendMode, params.bgColour,
                 params.outTrippy, params.inTrippy,
                 width, height);
 
@@ -229,19 +240,16 @@ export default class HuesCanvas2D implements HuesCanvas {
             width, height,
             params.slices,
             params.xBlur, params.yBlur,
+            params.invert,
             params.bitmapCenter,
             params.border, params.centerLine);
-
-        if(params.invert && !this.invertEverything) {
-            this.drawInvert();
-        }
 
         const colour = params.colourFade !== undefined ?
             mixColours(params.lastColour, params.colour, params.colourFade)
             : params.colour;
 
         this.drawColour(
-            colour, params.blendMode,
+            colour, params.blendMode, params.bgColour,
             params.outTrippy, params.inTrippy,
             width, height);
 
@@ -250,18 +258,18 @@ export default class HuesCanvas2D implements HuesCanvas {
 
         if(params.overlayPercent > 0) {
             this.context.globalAlpha = params.overlayPercent;
-            this.context.fillStyle = this.intToHex(params.overlayColour);
+            this.context.fillStyle = intToHex(params.overlayColour);
             this.context.fillRect(0,0,width,height);
         }
 
         if(params.invert && this.invertEverything) {
-            this.drawInvert();
+            this.drawInvert(params.invert);
         }
     }
 
     drawBitmap(bitmap: Drawable, bitmapAlign: RenderParams["bitmapAlign"],
             width: number, height: number, slices: RenderParams["slices"],
-            xBlur: number, yBlur: number, bitmapCenter?: number,
+            xBlur: number, yBlur: number, invert: number, bitmapCenter?: number,
             borders?: boolean, centerLine?: boolean) {
 
         if(!bitmap) {
@@ -275,6 +283,29 @@ export default class HuesCanvas2D implements HuesCanvas {
         const origHeight = drawHeight;
         const origWidth = drawWidth;
         const origX = x;
+
+        // invert image-only if needed, correctly handling cursed transparency
+        // see drawColour for more information
+        if(invert && !this.invertEverything) {
+            // invert layer
+            this.offContext3.globalCompositeOperation = "copy";
+            this.offContext3.fillStyle = intToHex(mixColours(0, 0xFFFFFF, invert));
+            this.offContext3.fillRect(0,0,this.canvas.width,this.canvas.height);
+            // mask with image
+            this.offContext3.globalCompositeOperation = "destination-in";
+            this.offContext3.drawImage(bitmap, x, 0, drawWidth, drawHeight);
+
+            // perform invert for real
+            this.offContext3.globalCompositeOperation = "difference";
+            this.offContext3.drawImage(bitmap, x, 0, drawWidth, drawHeight);
+
+            // since the bitmap is replaced with a correctly offset and scaled version
+            drawWidth = width;
+            drawHeight = height;
+            x = 0;
+
+            bitmap = this.offCanvas3;
+        }
 
         if(slices) {
             bitmap = this.drawSlice(slices, bitmap, x, drawWidth, drawHeight, width, height);
@@ -311,23 +342,75 @@ export default class HuesCanvas2D implements HuesCanvas {
     }
 
     drawColour(colour: number, blendMode: GlobalCompositeOperation,
+            bgColour: number | "transparent",
             outTrippy: number | undefined, inTrippy: number | undefined,
             width: number, height: number) {
         if(outTrippy !== undefined || inTrippy !== undefined) {
             this.drawTrippy(outTrippy, inTrippy, colour, width, height);
         } else {
-            this.offContext.fillStyle = this.intToHex(colour);
+            this.offContext.fillStyle = intToHex(colour);
             this.offContext.fillRect(0,0,width,height);
         }
-        this.context.globalAlpha = 0.7;
-        this.context.globalCompositeOperation = blendMode;
-        this.context.drawImage(this.offCanvas, 0, 0);
+
+        if(bgColour !== "transparent") {
+            // sane draw
+            this.context.globalAlpha = 0.7;
+            this.context.globalCompositeOperation = blendMode;
+            this.context.drawImage(this.offCanvas, 0, 0);
+        } else {
+            // so basically, HTML canvas blend modes act nothing like what you
+            // would expect when you start using alpha with them. If you try and
+            // fade invert the image later, the first frame of the invert, where
+            // the difference layer is opaque black pixels (theoretically a
+            // no-op), actually dims the entire background by a significant
+            // amount. So we need to copy the look of the transparent
+            // background, but make the image totally opaque so our filters
+            // work. This is done by:
+            // - Isolating the pixels *without* the image, and drawing the
+            //   colour over a white background with no blend
+            // - Isolating the pixels *with* the image, and blending the colour
+            //   as normal
+            // At this point in the code, we now have:
+            // - context: the image (sliced and/or blurred) with transparency
+            // - offContext: the colour (maybe trippy)
+            // So we can use offContext2 and offContext3 as scratch space
+
+            // backup the image
+            this.offContext3.globalCompositeOperation = 'copy';
+            this.offContext3.drawImage(this.canvas, 0, 0);
+            // re-add white background to main canvas
+            this.context.globalAlpha = 1;
+            this.context.globalCompositeOperation = "destination-over";
+            this.context.fillStyle = '#fff';
+            this.context.fillRect(0, 0, width, height);
+
+            this.context.globalAlpha = 0.7;
+            this.context.globalCompositeOperation = blendMode;
+
+            // create colour only where the image is
+            this.offContext2.globalCompositeOperation = 'copy';
+            this.offContext2.drawImage(this.offCanvas, 0, 0);
+            this.offContext2.globalCompositeOperation = 'destination-in';
+            this.offContext2.drawImage(this.offCanvas3, 0, 0);
+            // draw this with the right blend
+            this.context.drawImage(this.offCanvas2, 0, 0);
+
+            // create colour only where the image *isn't*
+            this.offContext2.globalCompositeOperation = 'copy';
+            this.offContext2.drawImage(this.offCanvas, 0, 0);
+            this.offContext2.globalCompositeOperation = 'destination-out';
+            this.offContext2.drawImage(this.offCanvas3, 0, 0);
+            // draw this with no blend
+            this.context.globalCompositeOperation = 'source-over';
+            this.context.drawImage(this.offCanvas2, 0, 0);
+        }
     }
 
-    drawInvert() {
+    drawInvert(invert: number) {
         this.context.globalAlpha = 1;
         this.context.globalCompositeOperation = "difference";
-        this.context.fillStyle = "#FFF";
+        this.context.fillStyle = intToHex(mixColours(0, 0xFFFFFF, invert));
+
         this.context.fillRect(0,0,this.canvas.width,this.canvas.height);
     }
 
@@ -381,8 +464,8 @@ export default class HuesCanvas2D implements HuesCanvas {
         if(this.blurIterations < 0) {
             // "LOW" blur quality is special - just warps the images
             // extra little oomph to make it more obvious
-            let xDist = xBlur * 720 * 1.5;
-            let yDist = yBlur * 720 * 1.5;
+            let xDist = xBlur * this.baseHeight * 1.5;
+            let yDist = yBlur * this.baseHeight * 1.5;
 
             this.context.globalAlpha = 1;
             this.context.drawImage(bitmap,
@@ -404,8 +487,8 @@ export default class HuesCanvas2D implements HuesCanvas {
                 }
 
 
-                // since blur is based on 720p
-                dist = xBlur * 720;
+                // since blur is based on render height
+                dist = xBlur * this.baseHeight;
                 for(let i=-1; i<=1; i+= this.blurDelta) {
                     xContext.drawImage(bitmap, Math.round(dist * i) + offset, 0, drawWidth, drawHeight);
                 }
@@ -418,7 +501,7 @@ export default class HuesCanvas2D implements HuesCanvas {
                 }
             }
             if(yBlur) {
-                dist = yBlur * 720;
+                dist = yBlur * this.baseHeight;
                 for(let i=-1; i<=1; i+= this.blurDelta) {
                     this.context.drawImage(bitmap, offset, Math.round(dist * i), drawWidth, drawHeight);
                 }
@@ -439,8 +522,8 @@ export default class HuesCanvas2D implements HuesCanvas {
             trippyRadii = [inTrippy, outTrippy];
         }
 
-        let invertC = this.intToHex(0xFFFFFF ^ colour);
-        let normalC = this.intToHex(colour);
+        let invertC = intToHex(0xFFFFFF ^ colour);
+        let normalC = intToHex(colour);
         this.offContext.fillStyle = invertC;
         this.offContext.fillRect(0,0,width,height);
 
@@ -454,12 +537,5 @@ export default class HuesCanvas2D implements HuesCanvas {
             this.offContext.closePath();
             invert = !invert;
         }
-    }
-
-    /* Second fastest method from
-        http://stackoverflow.com/questions/10073699/pad-a-number-with-leading-zeros-in-javascript
-        It stil does millions of ops per second, and isn't ugly like the integer if/else */
-    intToHex(num: number) {
-        return '#' + ("00000"+num.toString(16)).slice(-6);
     }
 }

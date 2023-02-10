@@ -1,7 +1,8 @@
 /* WeedUI */
 
-.WeedUI.inverted {
-    color: white;
+.WeedUI {
+    /* from black to white */
+    color: hsl(0, 0%, calc(var(--invert) * 100%));
 }
 
 .hues-w-controls {
@@ -70,14 +71,13 @@
     text-align:center;
     font-size: 35px;
     opacity: 0;
+    /* from grey to not so grey */
+    text-shadow: hsl(0, 0%, calc(40% + var(--invert) * 20%));
     text-shadow: -2px 2px 0 #666;
-    
+
     animation-name: fallspin;
     animation-timing-function: cubic-bezier(0.215, 0.61, 0.355, 1);
     animation-duration: 0.5s;
-}
-.inverted .hues-w-beataccent{
-    text-shadow: -2px 2px 0 #999;
 }
 
 @keyframes fallspin {

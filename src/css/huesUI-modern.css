@@ -39,18 +39,18 @@
     left: 8px;
     right: 8px;
     color: white;
-    background: rgba(127,127,127,0.5);
+    /* grey to white */
+    background: hsla(0, 0%, calc(50% + var(--invert) * 50%), 0.5);
     border-color: rgba(0,0,0,0.5);
     border-width: 0 4px 4px;
     border-style: solid;
 }
-.inverted .hues-m-beatbar {
-    border-color: rgba(255,255,255,0.5);
-}
 
 .hues-m-beatleft, .hues-m-beatright, .hues-m-songtitle, .hues-m-imagename, .hues-m-huename {
-    color: white;
-    background: rgba(0,0,0,0.7);
+    /* white to black */
+    color: hsl(0, 0%, calc(100% - var(--invert) * 100%));
+    /* black to white */
+    background: hsla(0, 0%, calc(var(--invert) * 100%), 0.7);
     height: 20px;
     line-height: 20px;
     font-size: 12px;
@@ -58,22 +58,15 @@
     white-space: nowrap;
     border-radius: 10px;
 }
-.inverted .hues-m-beatleft, .inverted .hues-m-beatright,
-.inverted .hues-m-songtitle, .inverted .hues-m-imagename, .inverted .hues-m-huename {
-    color: black;
-    background: rgba(255,255,255,0.7);
-}
 
 .hues-m-leftinfo, .hues-m-rightinfo {
     position: absolute;
     font-size: 10px;
     text-align: center;
-    color: rgba(255,255,255, 0.7);
+    /* white to black */
+    color: hsla(0, 0%, calc(100% - var(--invert) * 100%), 0.7);
     bottom: 79px;
     width: 100px;
-}
-.inverted .hues-m-leftinfo, .inverted .hues-m-rightinfo {
-    color: rgba(0,0,0, 0.7);
 }
 
 .hues-m-leftinfo {
@@ -116,18 +109,16 @@
     margin: 0 auto;
     height: 40px;
     width: 40px;
-    color: white;
-    background: #505050;
+    /* white to black */
+    color: hsl(0, 0%, calc(100% - var(--invert) * 100%));
+    /* grey to less grey */
+    background: hsl(0, 0%, calc(31% + var(--invert) * 38%));
     font-size: 20px;
     line-height: 40px;
     border-radius: 20px;
     text-align: center;
-    box-shadow: inset 0 0 12px rgba(0,0,0,0.5);
-}
-.inverted .hues-m-beatcenter {
-    color: black;
-    background: #afafaf;
-    box-shadow: inset 0 0 12px rgba(255,255,255,0.5);
+    /* black to white */
+    box-shadow: inset 0 0 12px hsla(0, 0%, calc(var(--invert) * 100%), 0.5);
 }
 
 .hues-m-beatcenter > span {
@@ -155,15 +146,13 @@
     margin: 0 auto;
     left: 8px;
     right: 8px;
-    color: rgba(255,255,255,0.7);
+    /* white to black */
+    color: hsla(0, 0%, calc(100% - var(--invert) * 100%), 0.7);
     background: rgba(127,127,127,0.5);
-    border-color: rgba(0,0,0,0.5);
+    /* half grey to white */
+    border-color: hsla(0, 0%, calc(50% + var(--invert) * 50%), 0.5);
     border-width: 4px 4px 0;
     border-style: solid;
-}
-.inverted .hues-m-controls {
-    color: rgba(0,0,0,0.7);
-    border-color: rgba(255,255,255,0.5);
 }
 
 .hues-m-songtitle, .hues-m-imagename, .hues-m-huename {
@@ -244,27 +233,21 @@
 }
 
 .hues-m-prevbutton:hover, .hues-m-nextbutton:hover, .hues-m-actbutton:hover {
-    background: #646464;
-}
-.inverted .hues-m-prevbutton:hover,
-.inverted .hues-m-nextbutton:hover,
-.inverted .hues-m-actbutton:hover {
-    background: #9b9b9b;
+    /* grey to less grey */
+    background: hsl(0, 0%, calc(39% + var(--invert) * 30%));
 }
 
 .hues-m-prevbutton, .hues-m-nextbutton {
-    color: white;
-    background: #282828;
+    /* white to black */
+    color: hsl(0, 0%, calc(100% - var(--invert) * 100%));
+    /* grey to less grey */
+    background: hsl(0, 0%, calc(16% + var(--invert) * 68%));
     height: 20px;
     line-height: 20px;
     font-size: 12px;
     white-space: nowrap;
     border-radius: 10px;
     top: 7.5px;
-}
-.inverted .hues-m-prevbutton, .inverted .hues-m-nextbutton {
-    color: black;
-    background: #D7D7D7;
 }
 
 .hues-m-prevbutton {
@@ -283,17 +266,15 @@
     height: 35px;
     width: 35px;
     left: 17.5px;
-    color: white;
-    background: #202020;
+    /* white to black */
+    color: hsl(0, 0%, calc(100% - var(--invert) * 100%));
+    /* grey to less grey */
+    background: hsl(0, 0%, calc(13% + var(--invert) * 74%));
     font-size: 20px;
     line-height: 35px;
     border-radius: 20px;
     text-align: center;
     z-index: 1;
-}
-.inverted .hues-m-actbutton {
-    color: black;
-    background: #DFDFDF;
 }
 
 .hues-m-huename {
@@ -334,10 +315,10 @@
 }
 
 .hues-m-hiderestore:hover {
-    background: linear-gradient(rgba(0,0,0,0), rgba(0,0,0,0.4));
-}
-.inverted .hues-m-hiderestore:hover {
-    background: linear-gradient(rgba(255,255,255,0), rgba(255,255,255,0.4));
+    background: linear-gradient(
+        hsla(0, 0%, calc(var(--invert) * 100%), 0),
+        hsla(0, 0%, calc(var(--invert) * 100%), 0.4)
+    );
 }
 
 .hues-m-hiderestore.hues-ui--hidden {
@@ -409,12 +390,10 @@ input.hues-m-range[type=range] {
 input.hues-m-range[type=range]::-webkit-slider-runnable-track {
     width: 100%;
     height: 4px;
-    background: rgba(255,255,255,0.7);
+    /* white to black */
+    background: hsla(0, 0%, calc(100% - var(--invert) * 100%), 0.7);
     border: none;
     border-radius: 0;
-}
-.inverted input.hues-m-range[type=range]::-webkit-slider-runnable-track {
-    background: rgba(0,0,0,0.7);
 }
 
 input.hues-m-range[type=range]::-webkit-slider-thumb {
@@ -425,22 +404,16 @@ input.hues-m-range[type=range]::-webkit-slider-thumb {
     height: 12px;
     width: 4px;
     border-radius: 0;
-    background: white;
+    background: hsla(0, 0%, calc(100% - var(--invert) * 100%), 0.7);
     margin-top: -4px; /* You need to specify a margin in Chrome, but in Firefox and IE it is automatic */
-}
-.inverted input.hues-m-range[type=range]::-webkit-slider-thumb {
-    background: white;
 }
 
 input.hues-m-range[type=range]::-moz-range-track {
     width: 100%;
     height: 4px;
-    background: rgba(255,255,255,0.7);
+    background: hsla(0, 0%, calc(100% - var(--invert) * 100%), 0.7);
     border: none;
     border-radius: 0;
-}
-.inverted input.hues-m-range[type=range]::-moz-range-track {
-    background: rgba(0,0,0,0.7);
 }
 
 input.hues-m-range[type=range]::-moz-range-thumb {
@@ -449,10 +422,7 @@ input.hues-m-range[type=range]::-moz-range-thumb {
     height: 12px;
     width: 4px;
     border-radius: 0;
-    background: white;
-}
-.inverted input.hues-m-range[type=range]::-moz-range-thumb {
-    background: black;
+    background: hsl(0, 0%, calc(100% - var(--invert) * 100%));
 }
 
 input.hues-m-range[type=range]::-ms-track {
@@ -465,16 +435,10 @@ input.hues-m-range[type=range]::-ms-track {
 }
 
 input.hues-m-range[type=range]::-ms-fill-lower {
-    background: rgba(255,255,255,0.7);
-}
-.inverted input.hues-m-range[type=range]::-ms-fill-lower {
-    background: rgba(0,0,0,0.7);
+    background: hsla(0, 0%, calc(100% - var(--invert) * 100%), 0.7);
 }
 input.hues-m-range[type=range]::-ms-fill-upper {
-    background: rgba(0,0,0,0.7);
-}
-.inverted input.hues-m-range[type=range]::-ms-fill-upper {
-    background: rgba(255,255,255,0.7);
+    background: hsla(0, 0%, calc(100% - var(--invert) * 100%), 0.7);
 }
 
 input.hues-m-range[type=range]::-ms-thumb {
@@ -483,10 +447,7 @@ input.hues-m-range[type=range]::-ms-thumb {
     height: 12px;
     width: 4px;
     border-radius: 0;
-    background: white;
-}
-.inverted input.hues-m-range[type=range]::-ms-thumb {
-    background: black;
+    background: hsl(0, 0%, calc(100% - var(--invert) * 100%));
 }
 
 @media (min-width: 768px) {

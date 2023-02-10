@@ -64,9 +64,6 @@ type CoreEvents = {
     // beatIndex is the beat index. Negative during buildups
     beatstring : (beatString: string, beatIndex: number) => void,
 
-    // Called whenever the invert state changes.
-    invert : (isInverted: boolean) => void,
-
     // Called on each new frame, at the end of all other frame processing
     frame : () => void,
 
@@ -104,6 +101,7 @@ export enum Effect {
     ShutterLeft,
     ShutterRight,
     InvertToggle,
+    InvertFade,
 }
 
 // since it's used in so many effects
@@ -139,6 +137,7 @@ export const BeatTypes = {
     "=": [Effect.ColourFade, Effect.RandomImage],
     "i": [Effect.InvertToggle],
     "I": [Effect.InvertToggle, ...ImageColour],
+    "ı": [Effect.InvertFade],
     "s": [Effect.SliceX],
     "S": [Effect.SliceX, ...ImageColour],
     "v": [Effect.SliceY],
@@ -173,7 +172,6 @@ export class HuesCore extends EventListener<CoreEvents> {
     weedColours: HuesColour[];
     pastelColours: HuesColour[];
 
-    invert: boolean;
     autoSong: SettingsData['autoSong'];
     loopCount: number;
     doBuildup: boolean;
@@ -224,7 +222,6 @@ export class HuesCore extends EventListener<CoreEvents> {
         this.colourIndex = 0x3f;
         this.colours = this.oldColours;
 
-        this.invert = false;
         this.loopCount = 0;
         this.doBuildup = true;
         this.uiArray = [];
@@ -500,7 +497,7 @@ export class HuesCore extends EventListener<CoreEvents> {
         this.beatIndex = Math.floor(now / (now < 0 ? this.buildLength : this.loopLength));
         // beatIndex is NaN, abort
         if(this.beatIndex != this.beatIndex || !this.currentSong) {
-            this.setInvert(false);
+            this.renderer.setInvert(false);
             return;
         }
 
@@ -516,12 +513,12 @@ export class HuesCore extends EventListener<CoreEvents> {
                 // Clamp to 0 in case we've juuust started
                 mapSoFar = build!.slice(0, Math.max(this.beatIndex + build!.length, 0));
             } else {
-                rhythmInverts += (rhythm.match(/i|I/g)||[]).length % 2;
+                rhythmInverts += (rhythm.match(/i|I|ı/g)||[]).length % 2;
 
                 mapSoFar = (build ? build : "") + rhythm.slice(0, this.beatIndex);
             }
 
-            invertCount += (mapSoFar.match(/i|I/g)||[]).length;
+            invertCount += (mapSoFar.match(/i|I|ı/g)||[]).length;
         }
         // If the rhythm has an odd number of inverts, don't reset because it
         // alternates on each loop anyway
@@ -529,7 +526,7 @@ export class HuesCore extends EventListener<CoreEvents> {
             return;
         }
         // If there's an odd amount of inverts thus far, invert our display
-        this.setInvert(invertCount % 2);
+        this.renderer.setInvert(invertCount % 2 === 1);
     }
 
     getBeatIndex() {
@@ -619,7 +616,7 @@ export class HuesCore extends EventListener<CoreEvents> {
                 break;
             }
         }
-        this.setInvert(false);
+        this.renderer.setInvert(false);
         this.renderer.doInstantBlackout(false, undefined);
         return this.soundManager.playSong(this.currentSong, this.doBuildup)
         .then(() => {
@@ -966,7 +963,10 @@ export class HuesCore extends EventListener<CoreEvents> {
                     this.renderer.doShutter('→', this.getBeatLength(), this.charsToNextBeat(bank));
                     break;
                 case Effect.InvertToggle:
-                    this.toggleInvert();
+                    this.renderer.toggleInvert();
+                    break;
+                case Effect.InvertFade:
+                    this.renderer.doInvertFade(this.timeToNextBeat(bank), bank);
                     break;
             }
         }
@@ -1030,15 +1030,6 @@ export class HuesCore extends EventListener<CoreEvents> {
         this.setIsFullAuto(!this.settings.fullAuto);
     }
 
-    setInvert(invert: any) {
-        this.invert = !!invert;
-        this.callEventListeners("invert", invert);
-    }
-
-    toggleInvert() {
-        this.setInvert(!this.invert);
-    }
-
     changeUI(index: number) {
         if (index >= 0 && this.uiArray.length > index && this.userInterface != this.uiArray[index]) {
             this.hideLists();
@@ -1053,7 +1044,6 @@ export class HuesCore extends EventListener<CoreEvents> {
             this.callEventListeners("newimage", this.currentImage);
             this.callEventListeners("newcolour", this.colours[this.colourIndex], false);
             this.callEventListeners("beatstring", this.getBeatString(), this.getBeatIndex());
-            this.callEventListeners("invert", this.invert);
         }
     }
 
@@ -1249,7 +1239,7 @@ export class HuesCore extends EventListener<CoreEvents> {
     }
 }
 
-const oldColours =
+export const oldColours =
    [{'c': 0x000000, 'n': 'black'},
     {'c': 0x550000, 'n': 'brick'},
     {'c': 0xAA0000, 'n': 'crimson'},
@@ -1314,7 +1304,7 @@ const oldColours =
     {'c': 0x55FFFF, 'n': 'turquoise'},
     {'c': 0xAAFFFF, 'n': 'powder'},
     {'c': 0xFFFFFF, 'n': 'white'}];
-const pastelColours =
+export const pastelColours =
    [{'c': 0xCD4A4A, 'n': 'Mahogany'},
     {'c': 0xFAE7B5, 'n': 'Banana Mania'},
     {'c': 0x9F8170, 'n': 'Beaver'},
@@ -1379,7 +1369,7 @@ const pastelColours =
     {'c': 0xFCE883, 'n': 'Yellow'},
     {'c': 0xC5E384, 'n': 'Yellow Green'},
     {'c': 0xFFB653, 'n': 'Yellow Orange'}];
-const weedColours =
+export const weedColours =
    [{'c': 0x00FF00, 'n': 'Green'},
     {'c': 0x5A6351, 'n': 'Lizard'},
     {'c': 0x636F57, 'n': 'Cactus'},

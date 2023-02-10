@@ -2,6 +2,8 @@
 import { onMount, tick } from "svelte";
 import HuesCanvas2D from "../HuesCanvas2D";
 import type { HuesImage } from "../ResourcePack";
+import { oldColours } from "../HuesCore";
+import { intToHex } from "../Utils";
 
 export let images: HuesImage[];
 
@@ -14,6 +16,13 @@ let imboxEl: HTMLDivElement;
 
 let centerLine = false;
 let phoneRatio: number = 22/9;
+
+// other render options
+// closest to no filter, best for most image editing scenarios
+let blendMode: GlobalCompositeOperation = "multiply";
+let bgColour: number | "transparent" = 0xFFFFFF;
+let colour = 0xFFFFFF; // white
+let invert = 0.0;
 
 async function resizeCanvas() {
     await tick();
@@ -45,15 +54,15 @@ function toggleCenter(e: Event) {
 
 function onFrame() {
     canvas.draw({
-        colour: 0xFFFFFF,
+        colour,
         lastColour: 0xFFFFFF,
-        blendMode:  'soft-light',
-        bgColour: 0xFFFFFF,
+        blendMode,
+        bgColour,
 
         overlayColour: 0,
         overlayPercent: 0,
 
-        invert: false,
+        invert,
 
         bitmap: selectedImage?.bitmaps[animI],
         bitmapAlign: selectedImage?.align,
@@ -72,6 +81,9 @@ onMount(async () => {
 
     canvas = new HuesCanvas2D(imboxEl);
 
+    window.addEventListener('resize', resizeCanvas);
+    await resizeCanvas();
+
     let raf: number;
     let cb = () => {
         onFrame();
@@ -81,6 +93,7 @@ onMount(async () => {
 
     return () => {
         window.cancelAnimationFrame(raf);
+        window.removeEventListener('resize', resizeCanvas);
     };
 })
 
@@ -166,6 +179,43 @@ const newImage = () => {
         step=0.01
     />
 
+    <div>
+        <label for="colour">Colour</label>
+        <select id="colour" bind:value={colour}>
+            {#each oldColours as col}
+            <option value={col['c']}>{col['n']}</option>
+            {/each}
+        </select>
+        <span class="colourbox" style="background-color: {intToHex(colour)}"/>
+
+        <label for="blendMode">Blend mode</label>
+        <select id="blendMode" bind:value={blendMode}>
+            {#each ["hard-light", "screen", "multiply"] as blend}
+                <option value={blend}>{blend}</option>
+            {/each}
+        </select>
+
+        <label for="bgColour">Background colour</label>
+        <select id="bgColour" bind:value={bgColour}>
+            <option value={0xFFFFFF}>White</option>
+            <option value={0}>Black</option>
+            <option value="transparent">Transparent</option>
+        </select>
+
+        <label for="invert">Invert</label>
+        <input id="invert" type="range"
+            bind:value={invert}
+            min={0}
+            max={1}
+            step=0.01
+        />
+
+        {#if canvas}
+            <label for="errythin">invert everything</label>
+            <input id="errythin" type="checkbox" bind:checked={canvas.invertEverything}/>
+        {/if}
+    </div>
+
     <!-- Make a super-wide preview box to demonstrate image alignment -->
     <div class="imbox" bind:this={imboxEl} style="aspect-ratio:{phoneRatio}" />
 </div>
@@ -175,6 +225,12 @@ const newImage = () => {
 .controls {
     display: flex;
     align-items: center;
+}
+
+.colourbox {
+    display: inline-block;
+    width: 3em;
+    height: 1em;
 }
 
 .imbox {

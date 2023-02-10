@@ -1,10 +1,12 @@
 /* HalloweenUI */
 
 .hues-h-text  {
-    color: #ff3300;
-}
-.inverted .hues-h-text {
-    color: #00ccff;
+    /* red to cyan, but do it through RGB to avoid rainbows */
+    color: rgb(
+        calc(255 - var(--invert) * 255),
+        calc(51 + var(--invert) * 153),
+        calc(0 + var(--invert) * 255)
+    );
 }
 
 .hues-preloader.hues-h-text {
@@ -14,10 +16,12 @@
 }
 
 .hues-h-textfade {
-    color: rgba(255, 51, 0, 0.6);
-}
-.inverted .hues-h-textfade {
-    color: rgba(0, 204, 255, 0.6);
+    color: rgba(
+        calc(255 - var(--invert) * 255),
+        calc(51 + var(--invert) * 153),
+        calc(0 + var(--invert) * 255),
+        0.6
+    )
 }
 
 .hues-m-beatbar.hues-h-beatbar {
@@ -28,15 +32,21 @@
 
 .hues-m-beatcenter.hues-h-text {
     background: none;
-    background-image: url('../../img/skull.png');
     top: 0;
     width: 42px;
     height: 43px;
     box-shadow: none;
     padding-top: 21px;
+    z-index: 1;
 }
-.inverted .hues-m-beatcenter.hues-h-text {
+.hues-m-beatcenter.hues-h-skull {
+    background-image: url('../../img/skull.png');
+    z-index: 0;
+    opacity: calc(1 - var(--invert));
+}
+.hues-m-beatcenter.hues-h-skull.inverted {
     background-position: -42px 0;
+    opacity: var(--invert);
 }
 
 .hues-m-beatcenter.hues-h-text > span {
@@ -56,15 +66,39 @@
     box-shadow: none;
 
     animation-duration: 150ms;
-    animation-name: hues-m-beatcenter;
+    animation-name: hues-h-beatcenter;
     animation-fill-mode: forwards;
 }
-.inverted .hues-h-eyes {
+.inverted.hues-h-eyes {
     /* Set again to override the other .inverted selector from modern */
     background: none;
     background-image: url('../../img/skull-eyes.png');
     box-shadow: none;
     background-position: -42px 0;
+    animation-name: hues-h-beatcenter-invert;
+}
+
+@keyframes hues-h-beatcenter {
+    from {
+    opacity: calc(1 - var(--invert));
+    }
+    50% {
+    opacity: calc(1 - var(--invert));
+    }
+    to {
+    opacity: 0;
+    }
+}
+@keyframes hues-h-beatcenter-invert {
+    from {
+    opacity: var(--invert);
+    }
+    50% {
+    opacity: var(--invert);
+    }
+    to {
+    opacity: 0;
+    }
 }
 
 .hues-h-left-hand {
@@ -82,9 +116,11 @@
     height: 42px;
     position: absolute;
     background-repeat: no-repeat;
+    opacity: calc(1 - var(--invert));
 }
-.inverted .hues-h-left-hand, .inverted  .hues-h-right-hand {
+.inverted.hues-h-left-hand, .inverted.hues-h-right-hand {
     background-position: -63px 0;
+    opacity: var(--invert);
 }
 
 .hues-m-controls.hues-h-controls {
@@ -103,11 +139,28 @@
     padding: 4px 0;
     margin: 0 5px;
     background: none;
+    /* border-style: solid;
+    border-width: 0 19px 0 18px;
+    border-image: url(../../img/bones.png) 29 19 0 18 fill repeat stretch; */
+}
+/* cheeky hacks to fade over invert */
+.hues-m-songtitle.hues-h-text::before, .hues-m-imagename.hues-h-text::before,
+.hues-m-songtitle.hues-h-text::after,  .hues-m-imagename.hues-h-text::after
+ {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    z-index: -1;
+    opacity: calc(1 - var(--invert));
     border-style: solid;
     border-width: 0 19px 0 18px;
     border-image: url(../../img/bones.png) 29 19 0 18 fill repeat stretch;
 }
-.inverted .hues-m-songtitle.hues-h-text, .inverted .hues-m-imagename.hues-h-text {
+.hues-m-songtitle.hues-h-text::after, .hues-m-imagename.hues-h-text::after {
+    opacity: var(--invert);
     border-image-slice: 0 19 29 18 fill;
 }
 
@@ -166,50 +219,30 @@
     border-style: solid;
     border-width: 22px 40px 0 42px;
     border-image: url(../../img/tombstone.png) 22 42 0 fill stretch;
+    opacity: calc(1 - var(--invert));
 }
-.inverted .hues-h-tombstone {
+.inverted.hues-h-tombstone {
     border-image: url(../../img/tombstone_invert.png) 22 42 0 fill stretch;
+    opacity: var(--invert);
 }
 
 .hues-h-text + input[type=range]::-webkit-slider-runnable-track {
-    background: #ff3300;
+    background: rgb(calc(255 - var(--invert) * 255), calc(51 + var(--invert) * 153), calc(0 + var(--invert) * 255));
 }
-.inverted .hues-h-text + input[type=range]::-webkit-slider-runnable-track {
-    background: #00ccff;
-}
-
 .hues-h-text + input[type=range]::-webkit-slider-thumb {
-    background: #ff3300;
+    background: rgb(calc(255 - var(--invert) * 255), calc(51 + var(--invert) * 153), calc(0 + var(--invert) * 255));
 }
-.inverted .hues-h-text + input[type=range]::-webkit-slider-thumb {
-    background: #00ccff;
-}
-
 .hues-h-text + input[type=range]::-moz-range-track {
-    background: #ff3300;
+    background: rgb(calc(255 - var(--invert) * 255), calc(51 + var(--invert) * 153), calc(0 + var(--invert) * 255));
 }
-.inverted .hues-h-text + input[type=range]::-moz-range-track {
-    background: #00ccff;
-}
-
 .hues-h-text + input[type=range]::-moz-range-thumb {
-    background: #ff3300;
+    background: rgb(calc(255 - var(--invert) * 255), calc(51 + var(--invert) * 153), calc(0 + var(--invert) * 255));
 }
-.inverted .hues-h-text + input[type=range]::-moz-range-thumb {
-    background: #00ccff;
-}
-
 .hues-h-text + input[type=range]::-ms-fill-lower {
-    background: #ff3300;
-}
-.inverted .hues-h-text + input[type=range]::-ms-fill-lower {
-    background: #00ccff;
+    background: rgb(calc(255 - var(--invert) * 255), calc(51 + var(--invert) * 153), calc(0 + var(--invert) * 255));
 }
 .hues-h-text + input[type=range]::-ms-thumb {
-    background: #ff3300;
-}
-.inverted .hues-h-text + input[type=range]::-ms-thumb {
-    background: #00ccff;
+    background: rgb(calc(255 - var(--invert) * 255), calc(51 + var(--invert) * 153), calc(0 + var(--invert) * 255));
 }
 
 .hues-h-topleft, .hues-h-topright, .hues-h-bottomright {
@@ -230,18 +263,22 @@
     background-image: url("../../img/web-topleft.png");
     width: 269px;
     height: 237px;
+    opacity: calc(1 - var(--invert));
 }
-.inverted .hues-h-topleft {
+.hues-h-topleft.inverted {
     background-position: -269px 0;
+    opacity: var(--invert);
 }
 
 .hues-h-topright {
     background-image: url("../../img/web-topright.png");
     width: 215px;
     height: 220px;
+    opacity: calc(1 - var(--invert));
 }
-.inverted .hues-h-topright {
+.hues-h-topright.inverted {
     background-position: -215px 0;
+    opacity: var(--invert);
 }
 
 .hues-h-bottomright {
@@ -249,9 +286,11 @@
     bottom: 0;
     width:358px;
     height: 284px;
+    opacity: calc(1 - var(--invert));
 }
-.inverted .hues-h-bottomright {
+.hues-h-bottomright.inverted {
     background-position: -358px 0;
+    opacity: var(--invert);
 }
 
 .hues-h-vignette {

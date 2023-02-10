@@ -1,7 +1,8 @@
 /* RetroUI */
 
-.RetroUI.inverted {
-    color: white;
+.RetroUI {
+    /* from black to white */
+    color: hsl(0, 0%, calc(var(--invert) * 100%));
 }
 
 .hues-r-container {

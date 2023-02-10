@@ -26,6 +26,7 @@
         "= Fade and change image",
         "i Invert all colours",
         "I Invert & change image",
+        "ı Fade invert",
         "sv Horizontal/vertical slice",
         "SV Horizontal/vertical slice and change image",
         "# Double slice",

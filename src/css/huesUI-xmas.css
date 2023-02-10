@@ -15,17 +15,24 @@
     overflow: visible;
 }
 
-.hues-x-light {
+.hues-x-lightbox {
     position: absolute;
     width: 68px;
     height: 113px;
     transform-origin: 32px 69px;
+}
+.hues-x-light {
+    position: absolute;
+    width: 100%;
+    height: 100%;
     background-image: url("../../img/lightbase.png");
     background-position: 0 0;
     background-repeat: no-repeat;
+    opacity: calc(1 - var(--invert));
 }
-.inverted .hues-x-light {
+.hues-x-light.inverted {
     background-position: -68px 0;
+    opacity: var(--invert);
 }
 
 .hues-x-fade{
@@ -42,18 +49,19 @@
 }
 
 .hues-x-lighton {
-    opacity: 1;
     background-image: url("../../img/lighton.png");
+    opacity: calc(1 - var(--invert));
 }
-.inverted .hues-x-lighton {
+.hues-x-lighton.inverted {
     background-image: url("../../img/lighton_inverted.png");
+    opacity: var(--invert);
 }
 
 .hues-x-lightoff {
     opacity: 0;
     background-image: url("../../img/lightoff.png");
 }
-.inverted .hues-x-lightoff {
+.hues-x-lightoff.inverted {
     background-image: url("../../img/lightoff_inverted.png");
 }
 
@@ -62,7 +70,11 @@
 }
 
 .hues-x-lightoff.off{
-    opacity: 1;
+    opacity: calc(1 - var(--invert));
+}
+
+.hues-x-lightoff.off.inverted{
+    opacity: var(--invert);
 }
 
 .hues-x-wiresleft, .hues-x-wiresbottom, .hues-x-wiresright {
@@ -83,9 +95,11 @@
     width: 60px;
     height: 1435px;
     background-image: url("../../img/wiresleft.png");
+    opacity: calc(1 - var(--invert));
 }
-.inverted .hues-x-wiresleft::before {
+.hues-x-wiresleft.inverted::before {
     background-position: -60px 0;
+    opacity: var(--invert);
 }
 
 .hues-x-wiresright {
@@ -96,9 +110,11 @@
     width: 58px;
     height: 1261px;
     background-image: url("../../img/wiresright.png");
+    opacity: calc(1 - var(--invert));
 }
-.inverted .hues-x-wiresright::before {
+.hues-x-wiresright.inverted::before {
     background-position: -58px 0;
+    opacity: var(--invert);
 }
 
 .hues-x-wiresbottomhelper {
@@ -122,9 +138,11 @@
     height: 49px;
     background-image: url("../../img/wiresbottom.png");
     background-position: 127px -49px;
+    opacity: calc(1 - var(--invert));
 }
-.inverted .hues-x-wiresbottom::before {
+.hues-x-wiresbottom.inverted::before {
     background-position: 127px 0;
+    opacity: var(--invert);
 }
 
 .hues-x-wiresleft::before, .hues-x-wiresbottom::before, .hues-x-wiresright::before {

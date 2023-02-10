@@ -4,22 +4,8 @@ import type { HuesCore } from "./HuesCore";
 import type { SettingsData } from "./HuesSettings";
 import type { HuesImage } from "./ResourcePack";
 import type SoundManager from "./SoundManager";
+import { mixColours } from "./Utils";
 // import './HuesPixi'; // new WebGL renderer, maybe later
-
-// percent 0.0 = oldColour, percent 1.0 = newColour
-export function mixColours(oldColour: number, newColour: number, percent: number) {
-    percent = Math.min(1, percent);
-    let oldR = oldColour >> 16 & 0xFF;
-    let oldG = oldColour >> 8  & 0xFF;
-    let oldB = oldColour       & 0xFF;
-    let newR = newColour >> 16 & 0xFF;
-    let newG = newColour >> 8  & 0xFF;
-    let newB = newColour       & 0xFF;
-    let mixR = oldR * (1 - percent) + newR * percent;
-    let mixG = oldG * (1 - percent) + newG * percent;
-    let mixB = oldB * (1 - percent) + newB * percent;
-    return mixR << 16 | mixG << 8 | mixB;
-}
 
 // Given the dimensions of the drawing surface, the dimensions of the image, and
 // the image alignment, provide the output x, y, width and height of the image.
@@ -119,7 +105,7 @@ export type RenderParams = {
     overlayColour: number; // blackout/whiteout, hex string
     overlayPercent: number;
 
-    invert: boolean;
+    invert: number; // 0.0: normal, 1.0: fully inverted
 
     bitmap?: HTMLImageElement;
     bitmapAlign?: HuesImage["align"];
@@ -321,7 +307,14 @@ export default class HuesRender {
     currentBlackout: number;
     lastFrameBlack: boolean;
 
-    invert: boolean;
+    invert: number;
+    invertFadeBank?: number;
+    invertFadeStart?: number;
+    invertFadeLength?: number;
+    // having start/target just be 0/1 is "useless" but might come in handy later
+    // if we want to do partial inverts
+    invertStart: number;
+    invertTarget: number;
 
     colourFadeBank?: number;
     colourFadeStart?: number;
@@ -337,7 +330,6 @@ export default class HuesRender {
         core.addEventListener("newsong", this.resetEffects.bind(this));
         core.addEventListener("newimage", this.setImage.bind(this));
         core.addEventListener("newcolour", this.setColour.bind(this));
-        core.addEventListener("invert", this.setInvert.bind(this));
         core.addEventListener("settingsupdated", this.settingsUpdated.bind(this));
         core.addEventListener("frame", this.animationLoop.bind(this));
         this.core = core;
@@ -377,7 +369,9 @@ export default class HuesRender {
         this.currentBlackout = -1;
         this.lastFrameBlack = false;
 
-        this.invert = false;
+        this.invert = 0.0;
+        this.invertStart = 1.0;
+        this.invertTarget = 0.0;
 
         // Chosen because they look decent
         this.setBlurAmount("medium");
@@ -398,11 +392,6 @@ export default class HuesRender {
         };
     }
 
-    setInvert(invert: boolean) {
-        this.invert = invert;
-        this.needsRedraw = true;
-    }
-
     settingsUpdated() {
         this.setSmartAlign(this.core.settings.smartAlign);
         this.setBlurAmount(this.core.settings.blurAmount);
@@ -413,6 +402,9 @@ export default class HuesRender {
 
     resetEffects() {
         this.colourFadeStart = undefined;
+        this.invertFadeStart = undefined;
+        this.invertStart = 1.0;
+        this.invertTarget = 0.0;
         this.trippyStart = [undefined, undefined];
         this.sliceInfo.x.start = undefined;
         this.sliceInfo.y.start = undefined;
@@ -425,6 +417,9 @@ export default class HuesRender {
     stopEffects(bank: number) {
         if(this.colourFadeBank == bank) {
             this.colourFadeStart = undefined;
+        }
+        if(this.invertFadeBank == bank) {
+            this.invertFadeStart = undefined;
         }
         if(this.trippyBank[0] == bank) {
             this.trippyStart[0] = undefined;
@@ -512,6 +507,20 @@ export default class HuesRender {
                 this.colourFadePercent = fadeVal;
             }
             this.needsRedraw = true;
+        }
+        if (this.invertFadeStart !== undefined) {
+            const delta = now - this.invertFadeStart;
+
+            const fadeVal = delta / this.invertFadeLength!;
+            if(fadeVal >= 1.0) {
+                this.invert = this.invertTarget;
+                this.invertFadeStart = undefined;
+            } else {
+                this.invert = this.invertStart + ((this.invertTarget - this.invertStart) * fadeVal);
+            }
+            this.needsRedraw = true;
+        } else {
+            this.invert = this.invertTarget;
         }
         if(this.blackoutTimeout !== undefined && now > this.blackoutTimeout) {
             this.clearBlackout();
@@ -708,6 +717,27 @@ export default class HuesRender {
         this.colourFadeBank = bank;
         this.colourFadeLength = length;
         this.colourFadeStart = this.audio.currentTime;
+    }
+
+    // hard set invert for new song or seeking
+    setInvert(invert: boolean) {
+        this.invertTarget = Number(invert);
+        this.invertStart = Number(!invert);
+
+        this.invertFadeStart = undefined;
+        this.needsRedraw = true;
+    }
+
+    toggleInvert() {
+        // if a fade is ongoing, this won't interrupt it, just polarity inverts it
+        [this.invertStart, this.invertTarget] = [this.invertTarget, this.invertStart];
+    }
+
+    doInvertFade(length: number, bank: number) {
+        this.invertFadeBank = bank;
+        this.invertFadeLength = length;
+        this.invertFadeStart = this.audio.currentTime;
+        this.toggleInvert();
     }
 
     updateCoreBlur() {

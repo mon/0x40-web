@@ -9,6 +9,14 @@ import '../css/huesUI-xmas.css';
 import type { HuesColour, HuesCore } from './HuesCore';
 import type { HuesImage, HuesSong } from './ResourcePack';
 import { HuesIcon } from './HuesIcon';
+import { mixColours, intToHex } from "./Utils";
+
+// useful utility
+function makeDiv(cls: string) {
+    const d = document.createElement("div");
+    d.className = cls;
+    return d;
+};
 
 /*
     Base UI Class for Hues display. Parent is an element
@@ -52,6 +60,8 @@ export class HuesUI {
 
     // some UIs have a 3 stage hide, so not bool
     hidden!: number | boolean;
+
+    lastInvert = 0;
 
     // To deregister on UI hide we need to keep track of these
     // Add using this.addCoreCallback
@@ -159,7 +169,7 @@ export class HuesUI {
         this.addCoreCallback("newcolour", this.newColour.bind(this));
         this.addCoreCallback("blurupdate", this.blurUpdated.bind(this));
         this.addCoreCallback("time", this.updateTime.bind(this));
-        this.addCoreCallback("invert", this.invert.bind(this));
+        this.addCoreCallback("frame", this.onFrame.bind(this));
         this.resizeHandler = this.resize.bind(this);
     }
 
@@ -256,20 +266,18 @@ export class HuesUI {
         this.timer.textContent = "T=" + this.intToHex(time, 5);
     }
 
-    intToHex(num: number, pad: number) {
-        let str = Math.abs(num).toString(16);
-        while (str.length < pad)
-            str = "0" + str;
-        let prefix = num < 0 ? "-" : "$";
-        return prefix + "0x" + str;
+    onFrame() {
+        const newInvert = this.core?.renderer.invert;
+        if(newInvert !== undefined && newInvert != this.lastInvert) {
+            this.root.style.setProperty("--invert", newInvert.toString());
+            this.lastInvert = newInvert;
+        }
     }
 
-    invert(invert: boolean) {
-        if (invert) {
-            this.root.classList.add("inverted");
-        } else {
-            this.root.classList.remove("inverted");
-        }
+    intToHex(num: number, pad: number) {
+        let str = intToHex(Math.abs(num), pad).slice(1);
+        let prefix = num < 0 ? "-" : "$";
+        return prefix + "0x" + str;
     }
 }
 
@@ -867,8 +875,11 @@ export class ModernUI extends HuesUI {
 
 interface XmasLight extends HTMLDivElement {
     on: HTMLDivElement;
+    onInvert: HTMLDivElement;
     off: HTMLDivElement;
+    offInvert: HTMLDivElement;
     bulb: HTMLDivElement;
+    bulbInvert: HTMLDivElement;
 }
 
 export class XmasUI extends ModernUI {
@@ -886,19 +897,14 @@ export class XmasUI extends ModernUI {
         super(parent, name ? name : "XmasUI");
         this.initSnow();
 
-         // This will cache our inverted lights images
-        this.invert(true);
-
         this.controls.className += " hues-x-controls";
         this.beatBar.className += " hues-x-beatbar";
 
         this.lights = [];
 
-        let wires = document.createElement("div");
-        wires.className = "hues-x-wires";
+        let wires = makeDiv("hues-x-wires");
 
-        let left = document.createElement("div");
-        left.className = "hues-x-wiresleft";
+        let left = makeDiv("hues-x-wiresleft");
         for(const l of xleft) {
             let light = this.newLight(left);
             light.style.transform = "rotate(" + l.angle + "deg)";
@@ -907,8 +913,7 @@ export class XmasUI extends ModernUI {
             this.lights.push(light);
         }
 
-        let right = document.createElement("div");
-        right.className = "hues-x-wiresright";
+        let right = makeDiv("hues-x-wiresright");
         for(const l of xright) {
             let light = this.newLight(right);
             light.style.transform = "rotate(" + (-l.angle) + "deg)";
@@ -917,10 +922,8 @@ export class XmasUI extends ModernUI {
             this.lights.push(light);
         }
 
-        let bottomHelper = document.createElement("div");
-        bottomHelper.className = "hues-x-wiresbottomhelper";
-        let bottom = document.createElement("div");
-        bottom.className = "hues-x-wiresbottom";
+        let bottomHelper = makeDiv("hues-x-wiresbottomhelper");
+        let bottom = makeDiv("hues-x-wiresbottom");
         for(const l of xbottom) {
             let light = this.newLight(bottom);
             light.style.transform = "rotate(" + l.angle + "deg)";
@@ -930,24 +933,17 @@ export class XmasUI extends ModernUI {
         }
 
         wires.appendChild(left);
+        wires.appendChild(makeDiv("hues-x-wiresleft inverted"));
         wires.appendChild(right);
+        wires.appendChild(makeDiv("hues-x-wiresright inverted"));
         bottomHelper.appendChild(bottom);
+        bottomHelper.appendChild(makeDiv("hues-x-wiresbottom inverted"));
         wires.appendChild(bottomHelper);
         this.root.appendChild(wires);
 
         this.visualiserContainer.className = "hues-x-visualisercontainer";
         this.controls.removeChild(this.visualiserContainer);
         this.beatBar.appendChild(this.visualiserContainer);
-    }
-
-    invert(invert: boolean) {
-        super.invert(invert);
-
-        if(invert) {
-            this.snowContext.fillStyle = "rgba(0, 0, 0, 0.8)";
-        } else {
-            this.snowContext.fillStyle = "rgba(255, 255, 255, 0.8)";
-        }
     }
 
     connectCore(core: HuesCore) {
@@ -962,23 +958,32 @@ export class XmasUI extends ModernUI {
 
     lightOn(light: XmasLight) {
         light.on.className = "hues-x-lighton";
+        light.onInvert.className = "hues-x-lighton inverted";
         light.off.className = "hues-x-lightoff";
+        light.offInvert.className = "hues-x-lightoff inverted";
     }
 
     lightOff(light: XmasLight) {
         light.on.className = "hues-x-lighton off";
+        light.onInvert.className = "hues-x-lighton off inverted";
         light.off.className = "hues-x-lightoff off";
+        light.offInvert.className = "hues-x-lightoff off inverted";
     }
 
     lightFadeOut(light: XmasLight) {
         light.on.className = "hues-x-lighton hues-x-fade off";
+        light.onInvert.className = "hues-x-lighton hues-x-fade off inverted";
         light.off.className = "hues-x-lightoff hues-x-fade off";
+        light.offInvert.className = "hues-x-lightoff hues-x-fade off inverted";
     }
 
     lightRecolour(light: XmasLight) {
         let hue = Math.floor(Math.random() * 7) * -56;
-        light.on.style.backgroundPosition = hue + "px 0";
-        light.off.style.backgroundPosition = hue + "px 0";
+        const pos = hue + "px 0";
+        light.on.style.backgroundPosition = pos;
+        light.onInvert.style.backgroundPosition = pos;
+        light.off.style.backgroundPosition = pos;
+        light.offInvert.style.backgroundPosition = pos;
     }
 
     randomLight(light: XmasLight) {
@@ -991,17 +996,28 @@ export class XmasUI extends ModernUI {
 
     newLight(parent: HTMLElement): XmasLight {
         let light = document.createElement("div") as XmasLight;
-        light.className = "hues-x-light";
+        light.className = "hues-x-lightbox";
         let bulb = document.createElement("div");
+        let bulbInvert = document.createElement("div");
         let on = document.createElement("div");
+        let onInvert = document.createElement("div");
         let off = document.createElement("div");
+        let offInvert = document.createElement("div");
         bulb.appendChild(on);
+        bulb.appendChild(onInvert);
         bulb.appendChild(off);
+        bulb.appendChild(offInvert);
         light.appendChild(bulb);
+        light.appendChild(bulbInvert);
+        light.appendChild(makeDiv("hues-x-light"));
+        light.appendChild(makeDiv("hues-x-light inverted"));
         parent.appendChild(light);
         light.on = on;
+        light.onInvert = onInvert;
         light.off = off;
+        light.offInvert = offInvert;
         light.bulb = bulb;
+        light.bulbInvert = bulbInvert;
         this.randomLight(light);
         this.lightRecolour(light);
         return light;
@@ -1071,6 +1087,10 @@ export class XmasUI extends ModernUI {
     }
 
     drawSnow() {
+        const snowColour = intToHex(mixColours(0xFFFFFF, 0, this.core!.renderer.invert));
+        // 80% alpha
+        this.snowContext.fillStyle = snowColour + "cc";
+
         let width = this.snowCanvas.width;
         let height = this.snowCanvas.height;
         let now = Date.now() / 1000;
@@ -1133,8 +1153,6 @@ export class HalloweenUI extends ModernUI {
 
     constructor(parent: HTMLElement, name?: string) {
         super(parent, name ? name : "HalloweenUI");
-        // This will cache our inverted tombstone image
-        this.invert(true);
     }
 
     initUI() {
@@ -1171,35 +1189,29 @@ export class HalloweenUI extends ModernUI {
         this.xBlur.className = "hues-h-textfade";
         this.yBlur.className = "hues-h-textfade";
 
-        let leftBoxTomb = document.createElement("div");
-        leftBoxTomb.className = "hues-h-tombstone";
-        this.leftBox.appendChild(leftBoxTomb);
+        this.leftBox.appendChild(makeDiv("hues-h-tombstone"));
+        this.leftBox.appendChild(makeDiv("hues-h-tombstone inverted"));
 
-        let songTomb = document.createElement("div");
-        songTomb.className = "hues-h-tombstone";
-        this.songBlock.insertBefore(songTomb,this.songBlock.firstChild);
+        this.songBlock.insertBefore(makeDiv("hues-h-tombstone"), this.songBlock.firstChild);
+        this.songBlock.insertBefore(makeDiv("hues-h-tombstone inverted"), this.songBlock.firstChild);
 
-        let imageTomb = document.createElement("div");
-        imageTomb.className = "hues-h-tombstone";
-        this.imageBlock.insertBefore(imageTomb,this.imageBlock.firstChild);
+        this.imageBlock.insertBefore(makeDiv("hues-h-tombstone"),this.imageBlock.firstChild);
+        this.imageBlock.insertBefore(makeDiv("hues-h-tombstone inverted"),this.imageBlock.firstChild);
 
-        let topLeft = document.createElement("div");
-        topLeft.className = "hues-h-topleft";
-        let topRight = document.createElement("div");
-        topRight.className = "hues-h-topright";
-        let bottomRight = document.createElement("div");
-        bottomRight.className = "hues-h-bottomright";
+        this.root.appendChild(makeDiv("hues-m-beatcenter hues-h-text hues-h-skull"));
+        this.root.appendChild(makeDiv("hues-m-beatcenter hues-h-text hues-h-skull inverted"));
 
-        this.root.appendChild(topLeft);
-        this.root.appendChild(topRight);
-        this.root.appendChild(bottomRight);
+        this.root.appendChild(makeDiv("hues-h-topleft"));
+        this.root.appendChild(makeDiv("hues-h-topleft inverted"));
+        this.root.appendChild(makeDiv("hues-h-topright"));
+        this.root.appendChild(makeDiv("hues-h-topright inverted"));
+        this.root.appendChild(makeDiv("hues-h-bottomright"));
+        this.root.appendChild(makeDiv("hues-h-bottomright inverted"));
 
-        let leftHand = document.createElement("div");
-        leftHand.className = "hues-h-left-hand";
-        this.beatBar.appendChild(leftHand);
-        let rightHand = document.createElement("div");
-        rightHand.className = "hues-h-right-hand";
-        this.beatBar.appendChild(rightHand);
+        this.beatBar.appendChild(makeDiv("hues-h-left-hand"));
+        this.beatBar.appendChild(makeDiv("hues-h-left-hand inverted"));
+        this.beatBar.appendChild(makeDiv("hues-h-right-hand"));
+        this.beatBar.appendChild(makeDiv("hues-h-right-hand inverted"));
 
         this.vignette = document.createElement("div");
         this.vignette.className = "hues-h-vignette";
@@ -1210,8 +1222,11 @@ export class HalloweenUI extends ModernUI {
         super.beat(beats, index);
 
         if (this.currentBeat != ".") {
-            let eyes = this.beatCenter.ownerDocument.createElement("div");
+            let eyes = document.createElement("div");
             eyes.className = "hues-m-beatcenter hues-h-eyes";
+            this.beatCenter.appendChild(eyes);
+            eyes = document.createElement("div");
+            eyes.className = "hues-m-beatcenter hues-h-eyes inverted";
             this.beatCenter.appendChild(eyes);
         }
     }
