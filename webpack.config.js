@@ -3,7 +3,7 @@ const process = require('process');
 const MiniCssExtractPlugin = require("mini-css-extract-plugin");
 const SveltePreprocess = require('svelte-preprocess');
 const SvelteCheckPlugin = require('svelte-check-plugin');
-const { ESBuildMinifyPlugin } = require('esbuild-loader');
+const { EsbuildPlugin } = require('esbuild-loader');
 
 const isDevServer = process.env.WEBPACK_SERVE;
 
@@ -17,7 +17,7 @@ if(isDevServer) {
 } else {
     optimization = {
         minimizer: [
-            new ESBuildMinifyPlugin({
+            new EsbuildPlugin({
                 target: 'es2020',  // Syntax to compile to (see options below for possible values)
                 css: true  // Apply minification to CSS assets
             }),
