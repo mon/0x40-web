@@ -1,3 +1,4 @@
+const webpack = require('webpack');
 const path = require('path');
 const process = require('process');
 const MiniCssExtractPlugin = require("mini-css-extract-plugin");
@@ -67,6 +68,13 @@ const commonRules = [
     },
 ];
 
+const commonPlugins = [
+    new webpack.DefinePlugin({
+        VERSION: JSON.stringify(require("./package.json").version)
+    }),
+    ...svelteCheck
+];
+
 module.exports = [
     {
         ...commonSettings,
@@ -90,7 +98,7 @@ module.exports = [
 
         plugins: [new MiniCssExtractPlugin({
             filename: 'css/hues-min.css',
-        }), ...svelteCheck],
+        }), ...commonPlugins],
     },
     {
         ...commonSettings,
@@ -107,9 +115,12 @@ module.exports = [
             ],
         },
 
-        plugins: [new MiniCssExtractPlugin({
-            filename: 'css/respack-editor-min.css',
-        }), ...svelteCheck],
+        plugins: [
+            new MiniCssExtractPlugin({
+                filename: 'css/respack-editor-min.css',
+            }),
+            ...commonPlugins
+        ],
     },
     // audio workers are lazy-loaded so get compiled separately
     {

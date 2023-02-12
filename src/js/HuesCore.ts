@@ -198,8 +198,10 @@ export class HuesCore extends EventListener<CoreEvents> {
         super();
 
         // Bunch-o-initialisers
-        this.version = 54;
-        this.versionStr = (this.version/10).toFixed(1);
+
+        // provided by webpack, x.y
+        this.versionStr = VERSION;
+        this.version = parseInt(VERSION.replace(".",""));
         this.versionHex = this.version.toString(16);
         this.beatIndex = 0;
 
