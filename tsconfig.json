@@ -2,9 +2,11 @@
     "extends": "@tsconfig/svelte/tsconfig.json",
     "compilerOptions": {
         "allowJs": true,
-        "target": "es2017",
+        "target": "es2020",
         "sourceMap": true,
         "strict": true,
+        // Don't clobber the src dir if accidentally running tsc
+        "outDir": "dist_tsc"
     },
     "include": ["./src/**/*"]
 }

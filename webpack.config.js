@@ -16,54 +16,67 @@ if(isDevServer) {
     optimization = {
         minimizer: [
             new ESBuildMinifyPlugin({
-                target: 'es2015',  // Syntax to compile to (see options below for possible values)
+                target: 'es2020',  // Syntax to compile to (see options below for possible values)
                 css: true  // Apply minification to CSS assets
             }),
         ],
     };
 }
 
+const commonSettings = {
+    mode: 'production',
+    devtool: 'source-map',
+    performance: {
+        hints: false,
+    },
+    resolve: {
+        extensions: ['.tsx', '.ts', '.js'],
+    },
+    optimization: optimization,
+};
+
+const commonRules = [
+    {
+        test: /\.svelte$/,
+        use: {
+            loader: 'svelte-loader',
+            options: {
+                preprocess: SveltePreprocess()
+            }
+        }
+    },
+    {
+        test: /\.tsx?$/,
+        loader: "esbuild-loader",
+        exclude: /node_modules/,
+        options: {
+            loader: 'ts',
+            target: 'es2020'
+        }
+    },
+    {
+        test: /.s?css$/,
+        use: [MiniCssExtractPlugin.loader, "css-loader"],//, "sass-loader"],
+    },
+    {
+        test: /\.(png|jpe?g|gif|eot|svg|ttf|woff|ico|html)$/i,
+        type: 'asset/resource',
+    },
+];
+
 module.exports = [
     {
+        ...commonSettings,
         entry: './src/js/HuesCore.ts',
-        mode: 'production',
-        devtool: 'source-map',
         output: {
             filename: 'lib/hues-min.js',
             path: path.resolve(__dirname, 'dist'),
             assetModuleFilename: '[path][name][ext][query]'
         },
-        performance: {
-            hints: false,
-        },
+
         module: {
             rules: [
-                {
-                    test: /\.svelte$/,
-                    use: {
-                        loader: 'svelte-loader',
-                        options: {
-                            preprocess: SveltePreprocess()
-                        }
-                    }
-                },
-                {
-                    test: /\.tsx?$/,
-                    loader: "esbuild-loader",
-                    exclude: /node_modules/,
-                    options: {
-                        loader: 'ts',
-                        target: 'es2015'
-                    }
-                },
-                {
-                    test: /.s?css$/,
-                    use: [MiniCssExtractPlugin.loader, "css-loader"],//, "sass-loader"],
-                },
-                {
-                    test: /\.(png|jpe?g|gif|eot|svg|ttf|woff|ico|html)$/i,
-                    type: 'asset/resource',
-                },
+                ...commonRules,
                 // audio worker + sources should just be copied as-is
                 {
                     test: /(audio-worker|mpg123|ogg|vorbis)\.js$/,
@@ -71,60 +84,26 @@ module.exports = [
                 },
             ],
         },
-        resolve: {
-            extensions: ['.tsx', '.ts', '.js'],
-        },
-        optimization: optimization,
+
         plugins: [new MiniCssExtractPlugin({
             filename: 'css/hues-min.css',
         })],
     },
     {
+        ...commonSettings,
         entry: './src/js/RespackEditor/main.ts',
-        mode: 'production',
-        devtool: 'source-map',
         output: {
             filename: 'lib/respack-editor-min.js',
             path: path.resolve(__dirname, 'dist'),
             assetModuleFilename: '[path][name][ext][query]'
         },
-        performance: {
-            hints: false,
-        },
+
         module: {
             rules: [
-                {
-                    test: /\.svelte$/,
-                    use: {
-                        loader: 'svelte-loader',
-                        options: {
-                            preprocess: SveltePreprocess()
-                        }
-                    }
-                },
-                {
-                    test: /\.tsx?$/,
-                    loader: "esbuild-loader",
-                    exclude: /node_modules/,
-                    options: {
-                        loader: 'ts',
-                        target: 'es2015'
-                    }
-                },
-                {
-                    test: /.s?css$/,
-                    use: [MiniCssExtractPlugin.loader, "css-loader"],//, "sass-loader"],
-                },
-                {
-                    test: /\.(png|jpe?g|gif|eot|svg|ttf|woff|ico|html)$/i,
-                    type: 'asset/resource',
-                },
+                ...commonRules,
             ],
         },
-        resolve: {
-            extensions: ['.tsx', '.ts', '.js'],
-        },
-        optimization: optimization,
+
         plugins: [new MiniCssExtractPlugin({
             filename: 'css/respack-editor-min.css',
         })],
