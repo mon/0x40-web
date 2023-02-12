@@ -745,6 +745,13 @@ export default class HuesRender {
     }
 
     doBlur(axis: 0 | 1, bank: number) {
+        // only allow one blur type at a time per bank. Matches flash behaviour,
+        // while letting multi-bank be used for dual blur
+        const other = Number(!axis);
+        if(this.blurBank[other] === bank) {
+            this.blurStart[other] = undefined;
+        }
+
         this.blurBank[axis] = bank;
         this.blurStart[axis] = this.audio.currentTime;
         if(this.trippyOn) {
