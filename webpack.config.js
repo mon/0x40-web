@@ -1,17 +1,19 @@
 const path = require('path');
 const process = require('process');
 const MiniCssExtractPlugin = require("mini-css-extract-plugin");
-const CssMinimizerPlugin = require("css-minimizer-webpack-plugin");
 const SveltePreprocess = require('svelte-preprocess');
+const SvelteCheckPlugin = require('svelte-check-plugin');
 const { ESBuildMinifyPlugin } = require('esbuild-loader');
 
 const isDevServer = process.env.WEBPACK_SERVE;
 
 let optimization;
+let svelteCheck;
 if(isDevServer) {
     optimization = {
         minimize: false
     };
+    svelteCheck = [];
 } else {
     optimization = {
         minimizer: [
@@ -21,6 +23,7 @@ if(isDevServer) {
             }),
         ],
     };
+    svelteCheck = [new SvelteCheckPlugin()];
 }
 
 const commonSettings = {
@@ -87,7 +90,7 @@ module.exports = [
 
         plugins: [new MiniCssExtractPlugin({
             filename: 'css/hues-min.css',
-        })],
+        }), ...svelteCheck],
     },
     {
         ...commonSettings,
@@ -106,7 +109,7 @@ module.exports = [
 
         plugins: [new MiniCssExtractPlugin({
             filename: 'css/respack-editor-min.css',
-        })],
+        }), ...svelteCheck],
     },
     // audio workers are lazy-loaded so get compiled separately
     {
