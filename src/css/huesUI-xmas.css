@@ -1,162 +1,168 @@
 /* XmasUI */
 
 .hues-m-controls.hues-x-controls {
-    z-index: 1;
+  z-index: 1;
 }
 
 .hues-x-snow {
-    z-index: -9;
-    background-color: transparent;
+  z-index: -9;
+  background-color: transparent;
 }
 
 .hues-m-beatbar.hues-x-beatbar {
-    background: none;
-    border-style: none;
-    overflow: visible;
+  background: none;
+  border-style: none;
+  overflow: visible;
 }
 
 .hues-x-lightbox {
-    position: absolute;
-    width: 68px;
-    height: 113px;
-    transform-origin: 32px 69px;
+  position: absolute;
+  width: 68px;
+  height: 113px;
+  transform-origin: 32px 69px;
 }
 .hues-x-light {
-    position: absolute;
-    width: 100%;
-    height: 100%;
-    background-image: url("../../img/lightbase.png");
-    background-position: 0 0;
-    background-repeat: no-repeat;
-    opacity: calc(1 - var(--invert));
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  background-image: url("../../img/lightbase.png");
+  background-position: 0 0;
+  background-repeat: no-repeat;
+  opacity: calc(1 - var(--invert));
 }
 .hues-x-light.inverted {
-    background-position: -68px 0;
-    opacity: var(--invert);
+  background-position: -68px 0;
+  opacity: var(--invert);
 }
 
-.hues-x-fade{
-    transition: opacity 0.1s linear;
+.hues-x-fade {
+  transition: opacity 0.1s linear;
 }
 
-.hues-x-lighton, .hues-x-lightoff {
-    position: absolute;
-    width: 56px;
-    height: 81px;
-    left: 5px;
-    top: 9px;
-    background-repeat: no-repeat;
+.hues-x-lighton,
+.hues-x-lightoff {
+  position: absolute;
+  width: 56px;
+  height: 81px;
+  left: 5px;
+  top: 9px;
+  background-repeat: no-repeat;
 }
 
 .hues-x-lighton {
-    background-image: url("../../img/lighton.png");
-    opacity: calc(1 - var(--invert));
+  background-image: url("../../img/lighton.png");
+  opacity: calc(1 - var(--invert));
 }
 .hues-x-lighton.inverted {
-    background-image: url("../../img/lighton_inverted.png");
-    opacity: var(--invert);
+  background-image: url("../../img/lighton_inverted.png");
+  opacity: var(--invert);
 }
 
 .hues-x-lightoff {
-    opacity: 0;
-    background-image: url("../../img/lightoff.png");
+  opacity: 0;
+  background-image: url("../../img/lightoff.png");
 }
 .hues-x-lightoff.inverted {
-    background-image: url("../../img/lightoff_inverted.png");
+  background-image: url("../../img/lightoff_inverted.png");
 }
 
-.hues-x-lighton.off{
-    opacity: 0;
+.hues-x-lighton.off {
+  opacity: 0;
 }
 
-.hues-x-lightoff.off{
-    opacity: calc(1 - var(--invert));
+.hues-x-lightoff.off {
+  opacity: calc(1 - var(--invert));
 }
 
-.hues-x-lightoff.off.inverted{
-    opacity: var(--invert);
+.hues-x-lightoff.off.inverted {
+  opacity: var(--invert);
 }
 
-.hues-x-wiresleft, .hues-x-wiresbottom, .hues-x-wiresright {
-    position: absolute;
+.hues-x-wiresleft,
+.hues-x-wiresbottom,
+.hues-x-wiresright {
+  position: absolute;
 }
 
-.hues-x-wiresleft, .hues-x-wiresright {
-    height: 100%;
-    width: 200px;
-    top: 0;
-    overflow: hidden;
+.hues-x-wiresleft,
+.hues-x-wiresright {
+  height: 100%;
+  width: 200px;
+  top: 0;
+  overflow: hidden;
 }
 
 .hues-x-wiresleft {
-    left: 0;
+  left: 0;
 }
 .hues-x-wiresleft::before {
-    width: 60px;
-    height: 1435px;
-    background-image: url("../../img/wiresleft.png");
-    opacity: calc(1 - var(--invert));
+  width: 60px;
+  height: 1435px;
+  background-image: url("../../img/wiresleft.png");
+  opacity: calc(1 - var(--invert));
 }
 .hues-x-wiresleft.inverted::before {
-    background-position: -60px 0;
-    opacity: var(--invert);
+  background-position: -60px 0;
+  opacity: var(--invert);
 }
 
 .hues-x-wiresright {
-    right: 0;
+  right: 0;
 }
 .hues-x-wiresright::before {
-    right: 0;
-    width: 58px;
-    height: 1261px;
-    background-image: url("../../img/wiresright.png");
-    opacity: calc(1 - var(--invert));
+  right: 0;
+  width: 58px;
+  height: 1261px;
+  background-image: url("../../img/wiresright.png");
+  opacity: calc(1 - var(--invert));
 }
 .hues-x-wiresright.inverted::before {
-    background-position: -58px 0;
-    opacity: var(--invert);
+  background-position: -58px 0;
+  opacity: var(--invert);
 }
 
 .hues-x-wiresbottomhelper {
-    position: absolute;
-    bottom: 0;
-    width: 100%;
-    height: 200px;
-    overflow: hidden;
+  position: absolute;
+  bottom: 0;
+  width: 100%;
+  height: 200px;
+  overflow: hidden;
 }
 
 .hues-x-wiresbottom {
-    height: 200px;
-    width:2621px;
-    left:50%;
-    margin-left: -1310.5px;
-    overflow: hidden;
+  height: 200px;
+  width: 2621px;
+  left: 50%;
+  margin-left: -1310.5px;
+  overflow: hidden;
 }
 .hues-x-wiresbottom::before {
-    bottom: 0;
-    width: 2621px;
-    height: 49px;
-    background-image: url("../../img/wiresbottom.png");
-    background-position: 127px -49px;
-    opacity: calc(1 - var(--invert));
+  bottom: 0;
+  width: 2621px;
+  height: 49px;
+  background-image: url("../../img/wiresbottom.png");
+  background-position: 127px -49px;
+  opacity: calc(1 - var(--invert));
 }
 .hues-x-wiresbottom.inverted::before {
-    background-position: 127px 0;
-    opacity: var(--invert);
+  background-position: 127px 0;
+  opacity: var(--invert);
 }
 
-.hues-x-wiresleft::before, .hues-x-wiresbottom::before, .hues-x-wiresright::before {
-    content: '';
-    position: absolute;
-    z-index: -1;
-    background-repeat: no-repeat;
+.hues-x-wiresleft::before,
+.hues-x-wiresbottom::before,
+.hues-x-wiresright::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  background-repeat: no-repeat;
 }
 
 .hues-x-visualisercontainer {
-    transform: scaleY(-1);
-    position: absolute;
-    width: 100%;
-    height: 64px;
-    top: 25px;
-    left: 0;
+  transform: scaleY(-1);
+  position: absolute;
+  width: 100%;
+  height: 64px;
+  top: 25px;
+  left: 0;
 }

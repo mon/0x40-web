@@ -1,459 +1,481 @@
 /* ModernUI, heavily based on Kepstin's wonderful CSS work
     https://github.com/kepstin/0x40hues-html5/blob/master/hues-m.css */
 
-.hues-m-beatbar, .hues-m-beatcenter{
-    transform: translateY(0px);
-    transition: transform 1s ease-out;
+.hues-m-beatbar,
+.hues-m-beatcenter {
+  transform: translateY(0px);
+  transition: transform 1s ease-out;
 }
 
 .hues-m-controls {
-    transform: translateY(0px);
-    transition: transform 1s ease-out;
+  transform: translateY(0px);
+  transition: transform 1s ease-out;
 }
 
-.hues-m-beatbar.hues-ui--hidden, .hues-m-beatcenter.hues-ui--hidden{
-    transform: translateY(-40px);
+.hues-m-beatbar.hues-ui--hidden,
+.hues-m-beatcenter.hues-ui--hidden {
+  transform: translateY(-40px);
 }
 
 .hues-m-controls.hues-ui--hidden {
-    transform: translateY(108px);
+  transform: translateY(108px);
 }
 
 .hues-m-visualisercontainer {
-    position: absolute;
-    width: 100%;
-    height: 64px;
-    bottom: 108px;
-    left: -8px;
-    right: 0;
-    margin: 0 auto;
+  position: absolute;
+  width: 100%;
+  height: 64px;
+  bottom: 108px;
+  left: -8px;
+  right: 0;
+  margin: 0 auto;
 }
 
 .hues-m-beatbar {
-    position: absolute;
-    top: 0;
-    max-width: 992px;
-    height: 30px;
-    margin: 0 auto;
-    overflow: hidden;
-    left: 8px;
-    right: 8px;
-    color: white;
-    /* grey to white */
-    background: hsla(0, 0%, calc(50% + var(--invert) * 50%), 0.5);
-    border-color: rgba(0,0,0,0.5);
-    border-width: 0 4px 4px;
-    border-style: solid;
+  position: absolute;
+  top: 0;
+  max-width: 992px;
+  height: 30px;
+  margin: 0 auto;
+  overflow: hidden;
+  left: 8px;
+  right: 8px;
+  color: white;
+  /* grey to white */
+  background: hsla(0, 0%, calc(50% + var(--invert) * 50%), 0.5);
+  border-color: rgba(0, 0, 0, 0.5);
+  border-width: 0 4px 4px;
+  border-style: solid;
 }
 
-.hues-m-beatleft, .hues-m-beatright, .hues-m-songtitle, .hues-m-imagename, .hues-m-huename {
-    /* white to black */
-    color: hsl(0, 0%, calc(100% - var(--invert) * 100%));
-    /* black to white */
-    background: hsla(0, 0%, calc(var(--invert) * 100%), 0.7);
-    height: 20px;
-    line-height: 20px;
-    font-size: 12px;
-    overflow: hidden;
-    white-space: nowrap;
-    border-radius: 10px;
+.hues-m-beatleft,
+.hues-m-beatright,
+.hues-m-songtitle,
+.hues-m-imagename,
+.hues-m-huename {
+  /* white to black */
+  color: hsl(0, 0%, calc(100% - var(--invert) * 100%));
+  /* black to white */
+  background: hsla(0, 0%, calc(var(--invert) * 100%), 0.7);
+  height: 20px;
+  line-height: 20px;
+  font-size: 12px;
+  overflow: hidden;
+  white-space: nowrap;
+  border-radius: 10px;
 }
 
-.hues-m-leftinfo, .hues-m-rightinfo {
-    position: absolute;
-    font-size: 10px;
-    text-align: center;
-    /* white to black */
-    color: hsla(0, 0%, calc(100% - var(--invert) * 100%), 0.7);
-    bottom: 79px;
-    width: 100px;
+.hues-m-leftinfo,
+.hues-m-rightinfo {
+  position: absolute;
+  font-size: 10px;
+  text-align: center;
+  /* white to black */
+  color: hsla(0, 0%, calc(100% - var(--invert) * 100%), 0.7);
+  bottom: 79px;
+  width: 100px;
 }
 
 .hues-m-leftinfo {
-    left: 8px;
+  left: 8px;
 }
 
 .hues-m-rightinfo {
-    right: 8px;
+  right: 8px;
 }
 
 .hues-m-huename {
-    font-size: 8px;
-    height: 12px;
-    line-height: 12px;
-    border-radius: 10px;
+  font-size: 8px;
+  height: 12px;
+  line-height: 12px;
+  border-radius: 10px;
 }
 
-.hues-m-beatleft, .hues-m-beatright {
-    position: absolute;
-    padding: 0 0 0 20px;
-    top: 5px;
-    overflow: hidden;
-    border-radius: 0 10px 10px 0;
+.hues-m-beatleft,
+.hues-m-beatright {
+  position: absolute;
+  padding: 0 0 0 20px;
+  top: 5px;
+  overflow: hidden;
+  border-radius: 0 10px 10px 0;
 }
 .hues-m-beatleft {
-    transform: scaleX(-1);
-    left: 8px;
-    right: 50%;
+  transform: scaleX(-1);
+  left: 8px;
+  right: 50%;
 }
 .hues-m-beatright {
-    left: 50%;
-    right: 8px;
+  left: 50%;
+  right: 8px;
 }
 
 .hues-m-beatcenter {
-    position: absolute;
-    top: -6px;
-    left: 0;
-    right: 0;
-    margin: 0 auto;
-    height: 40px;
-    width: 40px;
-    /* white to black */
-    color: hsl(0, 0%, calc(100% - var(--invert) * 100%));
-    /* grey to less grey */
-    background: hsl(0, 0%, calc(31% + var(--invert) * 38%));
-    font-size: 20px;
-    line-height: 40px;
-    border-radius: 20px;
-    text-align: center;
-    /* black to white */
-    box-shadow: inset 0 0 12px hsla(0, 0%, calc(var(--invert) * 100%), 0.5);
+  position: absolute;
+  top: -6px;
+  left: 0;
+  right: 0;
+  margin: 0 auto;
+  height: 40px;
+  width: 40px;
+  /* white to black */
+  color: hsl(0, 0%, calc(100% - var(--invert) * 100%));
+  /* grey to less grey */
+  background: hsl(0, 0%, calc(31% + var(--invert) * 38%));
+  font-size: 20px;
+  line-height: 40px;
+  border-radius: 20px;
+  text-align: center;
+  /* black to white */
+  box-shadow: inset 0 0 12px hsla(0, 0%, calc(var(--invert) * 100%), 0.5);
 }
 
 .hues-m-beatcenter > span {
-    animation-duration: 150ms;
-    animation-name: hues-m-beatcenter;
-    animation-fill-mode: forwards;
+  animation-duration: 150ms;
+  animation-name: hues-m-beatcenter;
+  animation-fill-mode: forwards;
 }
 @keyframes hues-m-beatcenter {
-    from {
+  from {
     opacity: 1;
-    }
-    50% {
+  }
+  50% {
     opacity: 1;
-    }
-    to {
+  }
+  to {
     opacity: 0;
-    }
+  }
 }
 
 .hues-m-controls {
-    position: absolute;
-    bottom: 0;
-    max-width: 992px;
-    height: 104px;
-    margin: 0 auto;
-    left: 8px;
-    right: 8px;
-    /* white to black */
-    color: hsla(0, 0%, calc(100% - var(--invert) * 100%), 0.7);
-    background: rgba(127,127,127,0.5);
-    /* half grey to white */
-    border-color: hsla(0, 0%, calc(50% + var(--invert) * 50%), 0.5);
-    border-width: 4px 4px 0;
-    border-style: solid;
+  position: absolute;
+  bottom: 0;
+  max-width: 992px;
+  height: 104px;
+  margin: 0 auto;
+  left: 8px;
+  right: 8px;
+  /* white to black */
+  color: hsla(0, 0%, calc(100% - var(--invert) * 100%), 0.7);
+  background: rgba(127, 127, 127, 0.5);
+  /* half grey to white */
+  border-color: hsla(0, 0%, calc(50% + var(--invert) * 50%), 0.5);
+  border-width: 4px 4px 0;
+  border-style: solid;
 }
 
-.hues-m-songtitle, .hues-m-imagename, .hues-m-huename {
-    position: absolute;
-    text-align: center;
-    padding: 0 4px;
-    left: 8px;
-    right: 8px;
+.hues-m-songtitle,
+.hues-m-imagename,
+.hues-m-huename {
+  position: absolute;
+  text-align: center;
+  padding: 0 4px;
+  left: 8px;
+  right: 8px;
 }
 .hues-m-songtitle {
-    bottom: 55px;
+  bottom: 55px;
 }
 .hues-m-imagename {
-    bottom: 79px;
-    left: 108px;
-    right: 108px;
+  bottom: 79px;
+  left: 108px;
+  right: 108px;
 }
 
-.hues-m-songtitle > a:link, .hues-m-songtitle > a:visited, .hues-m-imagename > a:link, .hues-m-imagename > a:visited {
-    color: inherit;
-    text-decoration: none;
+.hues-m-songtitle > a:link,
+.hues-m-songtitle > a:visited,
+.hues-m-imagename > a:link,
+.hues-m-imagename > a:visited {
+  color: inherit;
+  text-decoration: none;
 }
 
-.hues-m-songtitle > a.small, .hues-m-imagename > a.small {
-    font-size: 10px;
+.hues-m-songtitle > a.small,
+.hues-m-imagename > a.small {
+  font-size: 10px;
 }
 
-.hues-m-songtitle > a.x-small, .hues-m-imagename > a.x-small {
-    font-size: 8px;
+.hues-m-songtitle > a.x-small,
+.hues-m-imagename > a.x-small {
+  font-size: 8px;
 }
 
 .hues-m-leftbox {
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    right: 50%;
-    height: 54px;
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 50%;
+  height: 54px;
 }
 
 .hues-m-rightbox {
-    position: absolute;
-    bottom: 0;
-    left: 50%;
-    right: 0;
-    height: 54px;
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  right: 0;
+  height: 54px;
 }
 
 .hues-m-controlblock {
-    /* Don't want double click to select */
-    -webkit-touch-callout: none;
-    -webkit-user-select: none;
-    -khtml-user-select: none;
-    -moz-user-select: none;
-    -ms-user-select: none;
-    user-select: none;
-    font-size: 12px;
-    width: 50%;
-    height: 100%;
-    margin: 3px auto;
-    float: left;
-    position: relative;
+  /* Don't want double click to select */
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -khtml-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+  font-size: 12px;
+  width: 50%;
+  height: 100%;
+  margin: 3px auto;
+  float: left;
+  position: relative;
 }
 
 .hues-m-controlbuttons {
-    margin: auto;
-    position: relative;
-    width: 70px;
+  margin: auto;
+  position: relative;
+  width: 70px;
 }
 
 .hues-m-songbutton {
-    cursor: pointer;
-    text-align: center;
+  cursor: pointer;
+  text-align: center;
 }
 
-.hues-m-prevbutton, .hues-m-nextbutton, .hues-m-actbutton {
-    position: absolute;
-    cursor: pointer;
+.hues-m-prevbutton,
+.hues-m-nextbutton,
+.hues-m-actbutton {
+  position: absolute;
+  cursor: pointer;
 }
 
-.hues-m-prevbutton:hover, .hues-m-nextbutton:hover, .hues-m-actbutton:hover {
-    /* grey to less grey */
-    background: hsl(0, 0%, calc(39% + var(--invert) * 30%));
+.hues-m-prevbutton:hover,
+.hues-m-nextbutton:hover,
+.hues-m-actbutton:hover {
+  /* grey to less grey */
+  background: hsl(0, 0%, calc(39% + var(--invert) * 30%));
 }
 
-.hues-m-prevbutton, .hues-m-nextbutton {
-    /* white to black */
-    color: hsl(0, 0%, calc(100% - var(--invert) * 100%));
-    /* grey to less grey */
-    background: hsl(0, 0%, calc(16% + var(--invert) * 68%));
-    height: 20px;
-    line-height: 20px;
-    font-size: 12px;
-    white-space: nowrap;
-    border-radius: 10px;
-    top: 7.5px;
+.hues-m-prevbutton,
+.hues-m-nextbutton {
+  /* white to black */
+  color: hsl(0, 0%, calc(100% - var(--invert) * 100%));
+  /* grey to less grey */
+  background: hsl(0, 0%, calc(16% + var(--invert) * 68%));
+  height: 20px;
+  line-height: 20px;
+  font-size: 12px;
+  white-space: nowrap;
+  border-radius: 10px;
+  top: 7.5px;
 }
 
 .hues-m-prevbutton {
-    padding: 0 10px 0 0;
-    left: 5px;
-    border-radius: 10px 0 0 10px;
+  padding: 0 10px 0 0;
+  left: 5px;
+  border-radius: 10px 0 0 10px;
 }
 
 .hues-m-nextbutton {
-    padding: 0 0 0 10px;
-    left: 42px;
-    border-radius: 0 10px 10px 0;
+  padding: 0 0 0 10px;
+  left: 42px;
+  border-radius: 0 10px 10px 0;
 }
 
 .hues-m-actbutton {
-    height: 35px;
-    width: 35px;
-    left: 17.5px;
-    /* white to black */
-    color: hsl(0, 0%, calc(100% - var(--invert) * 100%));
-    /* grey to less grey */
-    background: hsl(0, 0%, calc(13% + var(--invert) * 74%));
-    font-size: 20px;
-    line-height: 35px;
-    border-radius: 20px;
-    text-align: center;
-    z-index: 1;
+  height: 35px;
+  width: 35px;
+  left: 17.5px;
+  /* white to black */
+  color: hsl(0, 0%, calc(100% - var(--invert) * 100%));
+  /* grey to less grey */
+  background: hsl(0, 0%, calc(13% + var(--invert) * 74%));
+  font-size: 20px;
+  line-height: 35px;
+  border-radius: 20px;
+  text-align: center;
+  z-index: 1;
 }
 
 .hues-m-huename {
-    bottom: 5px;
+  bottom: 5px;
 }
 
-.hues-m-question, .hues-m-cog, .hues-m-hide {
-    cursor: pointer;
+.hues-m-question,
+.hues-m-cog,
+.hues-m-hide {
+  cursor: pointer;
 }
 
 .hues-m-cog {
-    position: absolute;
-    left: 14px;
-    top: 1px;
-    font-size: 20px;
+  position: absolute;
+  left: 14px;
+  top: 1px;
+  font-size: 20px;
 }
 
 .hues-m-hide {
-    position: absolute;
-    left: 15px;
-    top: 22px;
-    font-size: 15px;
+  position: absolute;
+  left: 15px;
+  top: 22px;
+  font-size: 15px;
 }
 
 .hues-m-hiderestore {
-    display: none;
-    position: absolute;
-    left: 8px;
-    right: 8px;
-    bottom: 0;
-    margin: 0 auto;
-    height: 30px;
-    max-width: 992px;
-    background: rgba(0,0,0,0);
-    border-top-left-radius: 100px;
-    border-top-right-radius: 100px;
-    cursor: pointer;
+  display: none;
+  position: absolute;
+  left: 8px;
+  right: 8px;
+  bottom: 0;
+  margin: 0 auto;
+  height: 30px;
+  max-width: 992px;
+  background: rgba(0, 0, 0, 0);
+  border-top-left-radius: 100px;
+  border-top-right-radius: 100px;
+  cursor: pointer;
 }
 
 .hues-m-hiderestore:hover {
-    background: linear-gradient(
-        hsla(0, 0%, calc(var(--invert) * 100%), 0),
-        hsla(0, 0%, calc(var(--invert) * 100%), 0.4)
-    );
+  background: linear-gradient(
+    hsla(0, 0%, calc(var(--invert) * 100%), 0),
+    hsla(0, 0%, calc(var(--invert) * 100%), 0.4)
+  );
 }
 
 .hues-m-hiderestore.hues-ui--hidden {
-    display: block;
+  display: block;
 }
 
 .hues-m-question {
-    position: absolute;
-    right: 8px;
-    top: 8px;
-    font-size: 25px;
+  position: absolute;
+  right: 8px;
+  top: 8px;
+  font-size: 25px;
 }
 
 .hues-m-vol-bar {
-    position: absolute;
-    height: 20px;
-    bottom: 21px;
-    left: 40px;
-    right: 40px;
+  position: absolute;
+  height: 20px;
+  bottom: 21px;
+  left: 40px;
+  right: 40px;
 }
 
 .hues-m-vol-label {
-    display: block;
-    position: absolute;
-    left: 0;
-    bottom: 14px;
-    right: 0;
-    height: 12px;
-    color: inherit;
-    font: inherit;
-    font-size: 12px;
-    line-height: 12px;
-    text-align: center;
-    padding: 0;
-    width: 100%;
-    background: transparent;
-    border: none;
-    cursor: pointer;
+  display: block;
+  position: absolute;
+  left: 0;
+  bottom: 14px;
+  right: 0;
+  height: 12px;
+  color: inherit;
+  font: inherit;
+  font-size: 12px;
+  line-height: 12px;
+  text-align: center;
+  padding: 0;
+  width: 100%;
+  background: transparent;
+  border: none;
+  cursor: pointer;
 }
 .hues-m-vol-bar > input {
-    display: block;
-    position: absolute;
-    left: 0;
-    bottom: 0;
-    right: 0;
-    height: 12px;
+  display: block;
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  right: 0;
+  height: 12px;
 }
 
 .hues-m-listcontainer {
-    position: absolute;
-    right: 8px;
-    left: 8px;
-    bottom: 110px;
-    z-index: 1; /* put it in front of xmas UI lights */
+  position: absolute;
+  right: 8px;
+  left: 8px;
+  bottom: 110px;
+  z-index: 1; /* put it in front of xmas UI lights */
 }
 
 /* Fun slider stuff! */
 
-input.hues-m-range[type=range] {
-    width: 100%;
-    margin: 0;
-    padding: 0;
-    height: 12px;
-    background: transparent;
-    -moz-appearance: none;
-    -webkit-appearance: none;
+input.hues-m-range[type="range"] {
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  height: 12px;
+  background: transparent;
+  -moz-appearance: none;
+  -webkit-appearance: none;
 }
 
-input.hues-m-range[type=range]::-webkit-slider-runnable-track {
-    width: 100%;
-    height: 4px;
-    /* white to black */
-    background: hsla(0, 0%, calc(100% - var(--invert) * 100%), 0.7);
-    border: none;
-    border-radius: 0;
+input.hues-m-range[type="range"]::-webkit-slider-runnable-track {
+  width: 100%;
+  height: 4px;
+  /* white to black */
+  background: hsla(0, 0%, calc(100% - var(--invert) * 100%), 0.7);
+  border: none;
+  border-radius: 0;
 }
 
-input.hues-m-range[type=range]::-webkit-slider-thumb {
-    -moz-appearance: none;
-    -webkit-appearance: none;
-    box-shadow: none;
-    border: none;
-    height: 12px;
-    width: 4px;
-    border-radius: 0;
-    background: hsla(0, 0%, calc(100% - var(--invert) * 100%), 0.7);
-    margin-top: -4px; /* You need to specify a margin in Chrome, but in Firefox and IE it is automatic */
+input.hues-m-range[type="range"]::-webkit-slider-thumb {
+  -moz-appearance: none;
+  -webkit-appearance: none;
+  box-shadow: none;
+  border: none;
+  height: 12px;
+  width: 4px;
+  border-radius: 0;
+  background: hsla(0, 0%, calc(100% - var(--invert) * 100%), 0.7);
+  margin-top: -4px; /* You need to specify a margin in Chrome, but in Firefox and IE it is automatic */
 }
 
-input.hues-m-range[type=range]::-moz-range-track {
-    width: 100%;
-    height: 4px;
-    background: hsla(0, 0%, calc(100% - var(--invert) * 100%), 0.7);
-    border: none;
-    border-radius: 0;
+input.hues-m-range[type="range"]::-moz-range-track {
+  width: 100%;
+  height: 4px;
+  background: hsla(0, 0%, calc(100% - var(--invert) * 100%), 0.7);
+  border: none;
+  border-radius: 0;
 }
 
-input.hues-m-range[type=range]::-moz-range-thumb {
-    box-shadow: none;
-    border: none;
-    height: 12px;
-    width: 4px;
-    border-radius: 0;
-    background: hsl(0, 0%, calc(100% - var(--invert) * 100%));
+input.hues-m-range[type="range"]::-moz-range-thumb {
+  box-shadow: none;
+  border: none;
+  height: 12px;
+  width: 4px;
+  border-radius: 0;
+  background: hsl(0, 0%, calc(100% - var(--invert) * 100%));
 }
 
-input.hues-m-range[type=range]::-ms-track {
-    width: 100%;
-    background: transparent; /* Hides the slider so custom styles can be added */
-    border-color: transparent;
-    color: transparent;
-    height: 4px;
-    border-width: 4px 0;
+input.hues-m-range[type="range"]::-ms-track {
+  width: 100%;
+  background: transparent; /* Hides the slider so custom styles can be added */
+  border-color: transparent;
+  color: transparent;
+  height: 4px;
+  border-width: 4px 0;
 }
 
-input.hues-m-range[type=range]::-ms-fill-lower {
-    background: hsla(0, 0%, calc(100% - var(--invert) * 100%), 0.7);
+input.hues-m-range[type="range"]::-ms-fill-lower {
+  background: hsla(0, 0%, calc(100% - var(--invert) * 100%), 0.7);
 }
-input.hues-m-range[type=range]::-ms-fill-upper {
-    background: hsla(0, 0%, calc(100% - var(--invert) * 100%), 0.7);
+input.hues-m-range[type="range"]::-ms-fill-upper {
+  background: hsla(0, 0%, calc(100% - var(--invert) * 100%), 0.7);
 }
 
-input.hues-m-range[type=range]::-ms-thumb {
-    box-shadow: none;
-    border: none;
-    height: 12px;
-    width: 4px;
-    border-radius: 0;
-    background: hsl(0, 0%, calc(100% - var(--invert) * 100%));
+input.hues-m-range[type="range"]::-ms-thumb {
+  box-shadow: none;
+  border: none;
+  height: 12px;
+  width: 4px;
+  border-radius: 0;
+  background: hsl(0, 0%, calc(100% - var(--invert) * 100%));
 }
 
 @media (min-width: 768px) {
   .hues-m-controls {
     height: 54px;
-    }
+  }
   .hues-m-controls.hues-ui--hidden {
     transform: translateY(58px);
   }
@@ -473,7 +495,8 @@ input.hues-m-range[type=range]::-ms-thumb {
   .hues-m-rightinfo {
     right: 200px;
   }
-  .hues-m-leftinfo, .hues-m-rightinfo {
+  .hues-m-leftinfo,
+  .hues-m-rightinfo {
     bottom: 29px;
   }
   .hues-m-leftbox {
@@ -481,19 +504,19 @@ input.hues-m-range[type=range]::-ms-thumb {
     right: auto;
     width: 192px;
     height: 54px;
-    }
+  }
   .hues-m-rightbox {
     left: auto;
     right: 0;
     width: 192px;
     height: 54px;
-    }
+  }
   .hues-m-listcontainer {
     bottom: 60px;
     max-width: 992px;
     margin: 0 auto;
-    }
+  }
   .hues-m-visualisercontainer {
-    bottom:58px;
+    bottom: 58px;
   }
 }

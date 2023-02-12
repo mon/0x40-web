@@ -1,82 +1,82 @@
 ﻿.hues-win-helper {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    position: absolute;
-    margin-top: -15px;
-    width: 100%;
-    height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: absolute;
+  margin-top: -15px;
+  width: 100%;
+  height: 100%;
 }
 
 .hues-win {
-    position: relative;
-    z-index: 9;
-    max-height: calc(100% - 120px);
-    margin: 10px;
-    overflow-y: auto;
-    overflow-x: hidden;
+  position: relative;
+  z-index: 9;
+  max-height: calc(100% - 120px);
+  margin: 10px;
+  overflow-y: auto;
+  overflow-x: hidden;
 
-    background: rgba(200,200,200, 0.7);
-    border-color: black;
-    border-width: 2px;
-    border-style: solid;
+  background: rgba(200, 200, 200, 0.7);
+  border-color: black;
+  border-width: 2px;
+  border-style: solid;
 }
 
 @media (max-width: 768px) {
-    .hues-win {
-        /* to account for modern UI */
-        max-height: calc(100% - 190px);
-    }
+  .hues-win {
+    /* to account for modern UI */
+    max-height: calc(100% - 190px);
+  }
 }
 
 .hues-win__closebtn {
-    height: 20px;
-    width: 20px;
-    font-size: 20px;
-    color: white;
-    position: absolute;
-    right: 0;
-    background-color: rgb(128,128,128);
-    border: 1px solid black;
-    cursor: pointer;
+  height: 20px;
+  width: 20px;
+  font-size: 20px;
+  color: white;
+  position: absolute;
+  right: 0;
+  background-color: rgb(128, 128, 128);
+  border: 1px solid black;
+  cursor: pointer;
 }
 
 .hues-win__tabs {
-    margin: -1px;
-    padding-top: 22px;
-    display: flex;
-    /* looks pretty shit when they do wrap, but the alternative is an unusable UI */
-    flex-wrap: wrap;
+  margin: -1px;
+  padding-top: 22px;
+  display: flex;
+  /* looks pretty shit when they do wrap, but the alternative is an unusable UI */
+  flex-wrap: wrap;
 }
 
-.tab-label{
-    flex-grow: 1;
-    cursor: pointer;
-    padding: 10px;
-    border: 2px solid black;
-    text-align: center;
+.tab-label {
+  flex-grow: 1;
+  cursor: pointer;
+  padding: 10px;
+  border: 2px solid black;
+  text-align: center;
 }
 
-.tab-label--active  {
-    border-bottom: 0;
+.tab-label--active {
+  border-bottom: 0;
 }
 
 l.tab-label:hover {
-    background: rgba(255,255,255,0.3);
+  background: rgba(255, 255, 255, 0.3);
 }
 
 .tab-content {
-    display: none;
+  display: none;
 }
 
 .tab-content--active {
-    display: block;
+  display: block;
 }
 
 .hues-win__closebtn:hover {
-    background-color: rgb(200,200,200);
+  background-color: rgb(200, 200, 200);
 }
 
 .hues-win__closebtn:after {
-    content : "x";
+  content: "x";
 }

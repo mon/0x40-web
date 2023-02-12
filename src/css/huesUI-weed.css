@@ -1,90 +1,98 @@
 /* WeedUI */
 
 .WeedUI {
-    /* from black to white */
-    color: hsl(0, 0%, calc(var(--invert) * 100%));
+  /* from black to white */
+  color: hsl(0, 0%, calc(var(--invert) * 100%));
 }
 
 .hues-w-controls {
-    display:flex;
-    align-items:center;
-    position: absolute;
-    right: 0;
-    bottom: 0;
-    font-size: 30px;
+  display: flex;
+  align-items: center;
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  font-size: 30px;
 }
 
 .hues-w-subcontrols {
-    position: absolute;
-    right: 0;
-    bottom: 30px;
-    font-size: 25px;
-    text-align: center;
+  position: absolute;
+  right: 0;
+  bottom: 30px;
+  font-size: 25px;
+  text-align: center;
 }
 
-.hues-w-subcontrols > div{
-    margin: 3px;
-    cursor: pointer;
-    opacity: 0.5;
+.hues-w-subcontrols > div {
+  margin: 3px;
+  cursor: pointer;
+  opacity: 0.5;
 }
 
 .hues-w-subcontrols > div:hover {
-    opacity: 1;
+  opacity: 1;
 }
 
-.hues-w-controls, .hues-w-subcontrols, .hues-w-beatbar {
-    visibility: inherit;
-    opacity: 1;
-    transition: visibility 0.5s linear, opacity 0.5s linear;
+.hues-w-controls,
+.hues-w-subcontrols,
+.hues-w-beatbar {
+  visibility: inherit;
+  opacity: 1;
+  transition: visibility 0.5s linear, opacity 0.5s linear;
 }
 
-.hues-w-controls.hues-ui--hidden, .hues-w-subcontrols.hues-ui--hidden, .hues-w-beatbar.hues-ui--hidden {
-    visibility: hidden;
-    opacity: 0;
+.hues-w-controls.hues-ui--hidden,
+.hues-w-subcontrols.hues-ui--hidden,
+.hues-w-beatbar.hues-ui--hidden {
+  visibility: hidden;
+  opacity: 0;
 }
 
-.hues-w-beatleft, .hues-w-beatright {
-    font-size: 13px;
-    position: absolute;
-    padding: 0 0 0 5px;
-    top: 5px;
-    overflow: hidden;
-    border-radius: 0 10px 10px 0;
-    white-space: nowrap;
+.hues-w-beatleft,
+.hues-w-beatright {
+  font-size: 13px;
+  position: absolute;
+  padding: 0 0 0 5px;
+  top: 5px;
+  overflow: hidden;
+  border-radius: 0 10px 10px 0;
+  white-space: nowrap;
 }
 .hues-w-beatleft {
-    transform: scaleX(-1);
-    left: 8px;
-    right: 50%;
+  transform: scaleX(-1);
+  left: 8px;
+  right: 50%;
 }
 .hues-w-beatright {
-    left: 50%;
-    right: 8px;
+  left: 50%;
+  right: 8px;
 }
 
 .hues-w-beataccent {
-    position: absolute;
-    left: 0; right: 0;
-    margin-left:auto;
-    margin-right:auto;
-    margin-top: 15px;
-    text-align:center;
-    font-size: 35px;
-    opacity: 0;
-    /* from grey to not so grey */
-    text-shadow: hsl(0, 0%, calc(40% + var(--invert) * 20%));
-    text-shadow: -2px 2px 0 #666;
+  position: absolute;
+  left: 0;
+  right: 0;
+  margin-left: auto;
+  margin-right: auto;
+  margin-top: 15px;
+  text-align: center;
+  font-size: 35px;
+  opacity: 0;
+  /* from grey to not so grey */
+  text-shadow: hsl(0, 0%, calc(40% + var(--invert) * 20%));
+  text-shadow: -2px 2px 0 #666;
 
-    animation-name: fallspin;
-    animation-timing-function: cubic-bezier(0.215, 0.61, 0.355, 1);
-    animation-duration: 0.5s;
+  animation-name: fallspin;
+  animation-timing-function: cubic-bezier(0.215, 0.61, 0.355, 1);
+  animation-duration: 0.5s;
 }
 
 @keyframes fallspin {
-    from {transform: rotate(0deg) translate(0, 0);
-          opacity: 1;}
+  from {
+    transform: rotate(0deg) translate(0, 0);
+    opacity: 1;
+  }
 }
 
 .hues-r-visualisercontainer.hues-w-visualisercontainer {
-    top: 17px;
+  top: 17px;
 }

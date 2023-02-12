@@ -1,54 +1,54 @@
 <script lang="ts">
-    import uniqueFormId from './UniqueID';
+  import uniqueFormId from "./UniqueID";
 
-    export let info: {name: string; options: readonly string[]};
-    export let value: any;
+  export let info: { name: string; options: readonly string[] };
+  export let value: any;
 
-    const setId = uniqueFormId();
+  const setId = uniqueFormId();
 </script>
 
 <div class="settings-individual">
-    {info.name}
-    <div class="buttons">
-        {#each info.options as opt}
-            {@const inputId = uniqueFormId()}
-            <input
-                type="radio"
-                value="{opt}"
-                name="{setId}"
-                id="{inputId}"
-                bind:group={value}
-            />
-            <label for="{inputId}">{opt}</label>
-        {/each}
-        <slot></slot>
-    </div>
+  {info.name}
+  <div class="buttons">
+    {#each info.options as opt}
+      {@const inputId = uniqueFormId()}
+      <input
+        type="radio"
+        value={opt}
+        name={setId}
+        id={inputId}
+        bind:group={value}
+      />
+      <label for={inputId}>{opt}</label>
+    {/each}
+    <slot />
+  </div>
 </div>
 
 <style>
-:global(.settings-individual) {
+  :global(.settings-individual) {
     font-size: 8pt;
     /* Chrome rendering fix */
     line-height: 9pt;
     padding-left: 10px;
-}
+  }
 
-.buttons {
+  .buttons {
     display: flex;
     flex-wrap: wrap;
-}
+  }
 
-input[type="radio"] {
+  input[type="radio"] {
     display: none;
-}
+  }
 
-label {
+  label {
     font-size: 7pt;
     text-transform: uppercase;
     margin: 4px 2px;
     padding: 3px;
-    background: rgba(127,127,127, 0.5);
-    border-color: rgb(0,0,0);
+    background: rgba(127, 127, 127, 0.5);
+    border-color: rgb(0, 0, 0);
     border-width: 1px;
     border-style: solid;
     cursor: pointer;
@@ -59,13 +59,13 @@ label {
     -moz-user-select: none;
     -ms-user-select: none;
     user-select: none;
-}
+  }
 
-label:hover {
-    background: rgba(200,200,200,0.5);
-}
+  label:hover {
+    background: rgba(200, 200, 200, 0.5);
+  }
 
-input[type="radio"]:checked + label {
-    background: rgba(255,255,255, 0.5);
-}
+  input[type="radio"]:checked + label {
+    background: rgba(255, 255, 255, 0.5);
+  }
 </style>

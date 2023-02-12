@@ -1,44 +1,44 @@
 interface Event {
-    [ev: string]: (...args: any[]) => any;
+  [ev: string]: (...args: any[]) => any;
 }
 
 export default class EventListener<Events extends Event> {
-    listeners: Partial<{
-        // each event gets an array of event handlers
-        [ev in keyof Events]: Set<Events[ev]>
-    }>;
+  listeners: Partial<{
+    // each event gets an array of event handlers
+    [ev in keyof Events]: Set<Events[ev]>;
+  }>;
 
-    constructor() {
-        this.listeners = {};
+  constructor() {
+    this.listeners = {};
+  }
+
+  callEventListeners<E extends keyof Events>(ev: E, ...args: any) {
+    if (!(ev in this.listeners)) {
+      return;
     }
 
-    callEventListeners<E extends keyof Events>(ev: E, ...args: any) {
-        if(!(ev in this.listeners)) {
-            return;
-        }
-
-        let ret = undefined;
-        for(const callback of this.listeners[ev]!) {
-            const callbackRet = callback(...args);
-            if(callbackRet !== undefined) {
-                ret = callbackRet;
-            }
-        }
-
-        return ret;
+    let ret = undefined;
+    for (const callback of this.listeners[ev]!) {
+      const callbackRet = callback(...args);
+      if (callbackRet !== undefined) {
+        ret = callbackRet;
+      }
     }
 
-    addEventListener<E extends keyof Events>(ev: E, callback: Events[E]) {
-        if(!(ev in this.listeners)) {
-            this.listeners[ev] = new Set();
-        }
-        this.listeners[ev]!.add(callback);
-    }
+    return ret;
+  }
 
-    removeEventListener<E extends keyof Events>(ev: E, callback: Events[E]) {
-        if(!(ev in this.listeners)) {
-            return;
-        }
-        this.listeners[ev]!.delete(callback);
+  addEventListener<E extends keyof Events>(ev: E, callback: Events[E]) {
+    if (!(ev in this.listeners)) {
+      this.listeners[ev] = new Set();
     }
+    this.listeners[ev]!.add(callback);
+  }
+
+  removeEventListener<E extends keyof Events>(ev: E, callback: Events[E]) {
+    if (!(ev in this.listeners)) {
+      return;
+    }
+    this.listeners[ev]!.delete(callback);
+  }
 }

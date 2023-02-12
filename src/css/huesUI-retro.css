@@ -1,128 +1,134 @@
 /* RetroUI */
 
 .RetroUI {
-    /* from black to white */
-    color: hsl(0, 0%, calc(var(--invert) * 100%));
+  /* from black to white */
+  color: hsl(0, 0%, calc(var(--invert) * 100%));
 }
 
 .hues-r-container {
-    position: absolute;
-    bottom: 0;
-    white-space: nowrap;
-    overflow: hidden;
-    width: 100%;
-    font-size: 10px;
+  position: absolute;
+  bottom: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  width: 100%;
+  font-size: 10px;
 }
 
-.hues-r-container a:link, .hues-r-container a:visited {
-    display: block;
-    color: inherit;
-    text-decoration: none;
-    overflow: hidden;
+.hues-r-container a:link,
+.hues-r-container a:visited {
+  display: block;
+  color: inherit;
+  text-decoration: none;
+  overflow: hidden;
 }
 
 .hues-r-controls {
-    display:flex;
-    align-items:center;
-    position: absolute;
-    right: 0;
-    bottom: 10px;
-    font-size: 30px;
+  display: flex;
+  align-items: center;
+  position: absolute;
+  right: 0;
+  bottom: 10px;
+  font-size: 30px;
 }
 
 .hues-r-button {
-    float: left;
-    cursor: pointer;
-    text-align: center;
-    opacity: 0.5;
+  float: left;
+  cursor: pointer;
+  text-align: center;
+  opacity: 0.5;
 }
 
-.hues-r-button:hover  {
-    opacity: 1;
+.hues-r-button:hover {
+  opacity: 1;
 }
 
 .hues-r-songs {
-    font-size: 13px;
-    margin: 0 -8px;
+  font-size: 13px;
+  margin: 0 -8px;
 }
 
-.hues-r-manualmode, .hues-r-automode {
-    float: none;
-    clear: both;
+.hues-r-manualmode,
+.hues-r-automode {
+  float: none;
+  clear: both;
 }
 
 .hues-r-manualmode {
-    font-size: 15px;
+  font-size: 15px;
 }
 
 .hues-r-automode {
-    font-size: 10px;
+  font-size: 10px;
 }
 
 .hues-r-subcontrols {
-    position: absolute;
-    right: 0;
-    bottom: 40px;
-    font-size: 25px;
-    text-align: center;
+  position: absolute;
+  right: 0;
+  bottom: 40px;
+  font-size: 25px;
+  text-align: center;
 }
 
-.hues-r-subcontrols > div{
-    margin: 3px;
-    cursor: pointer;
-    opacity: 0.5;
+.hues-r-subcontrols > div {
+  margin: 3px;
+  cursor: pointer;
+  opacity: 0.5;
 }
 
 .hues-r-subcontrols > div:hover {
-    opacity: 1;
+  opacity: 1;
 }
 
 .hues-r-hiderestore {
-    position: absolute;
-    bottom: 5px;
-    right: 5px;
-    display: none;
-    font-size: 25px;
-    cursor: pointer;
-    opacity: 0.3;
+  position: absolute;
+  bottom: 5px;
+  right: 5px;
+  display: none;
+  font-size: 25px;
+  cursor: pointer;
+  opacity: 0.3;
 }
 
 .hues-r-hiderestore.hues-ui--hidden {
-    display: block;
+  display: block;
 }
 
 .hues-r-hiderestore:hover {
-    opacity: 0.8;
+  opacity: 0.8;
 }
 
-.hues-r-container, .hues-r-controls, .hues-r-subcontrols {
-    visibility: inherit;
-    opacity: 1;
-    transition: visibility 0.5s linear, opacity 0.5s linear;
+.hues-r-container,
+.hues-r-controls,
+.hues-r-subcontrols {
+  visibility: inherit;
+  opacity: 1;
+  transition: visibility 0.5s linear, opacity 0.5s linear;
 }
 
-.hues-r-container.hues-ui--hidden, .hues-r-controls.hues-ui--hidden, .hues-r-subcontrols.hues-ui--hidden {
-    visibility: hidden;
-    opacity: 0;
+.hues-r-container.hues-ui--hidden,
+.hues-r-controls.hues-ui--hidden,
+.hues-r-subcontrols.hues-ui--hidden {
+  visibility: hidden;
+  opacity: 0;
 }
 
 .hues-r-listcontainer {
-    position: absolute;
-    right: 35px;
-    bottom: 45px;
+  position: absolute;
+  right: 35px;
+  bottom: 45px;
 }
 
 .hues-r-visualisercontainer {
-    transform: scaleY(-1);
-    position: absolute;
-    width: 100%;
-    height: 64px;
-    top: 0;
-    left: 0;
+  transform: scaleY(-1);
+  position: absolute;
+  width: 100%;
+  height: 64px;
+  top: 0;
+  left: 0;
 }
 
 @media (max-width: 700px) {
-    .hues-r-listcontainer {
-        left: 130px;
-    }
+  .hues-r-listcontainer {
+    left: 130px;
+  }
 }

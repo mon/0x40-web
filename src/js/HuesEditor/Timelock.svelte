@@ -1,44 +1,45 @@
 <script lang="ts">
-    import HuesButton from '../Components/HuesButton.svelte';
+  import HuesButton from "../Components/HuesButton.svelte";
 
-    import { createEventDispatcher } from 'svelte';
-import { HuesIcon } from '../HuesIcon';
+  import { createEventDispatcher } from "svelte";
+  import { HuesIcon } from "../HuesIcon";
 
-    export let unlocked = true;
-    export let disabled = false;
+  export let unlocked = true;
+  export let disabled = false;
 
-    $: realUnlocked = unlocked || disabled;
+  $: realUnlocked = unlocked || disabled;
 
-    const dispatch = createEventDispatcher();
+  const dispatch = createEventDispatcher();
 
-    let click = () => {
-        unlocked = !unlocked;
-        dispatch('click');
-    };
+  let click = () => {
+    unlocked = !unlocked;
+    dispatch("click");
+  };
 </script>
 
-<div class="timelock-border" class:unlocked="{realUnlocked}"></div>
-<div class="hues-icon timelock" class:unlocked="{realUnlocked}">
-    <!-- CHAIN-BROKEN / CHAIN -->
-    <HuesButton
-        opaque
-        {disabled}
-        on:click={click}
-        title="Lock Buildup/Rhythm beat lengths">
-            {@html realUnlocked ? HuesIcon.CHAIN_BROKEN : HuesIcon.CHAIN}
-    </HuesButton>
+<div class="timelock-border" class:unlocked={realUnlocked} />
+<div class="hues-icon timelock" class:unlocked={realUnlocked}>
+  <!-- CHAIN-BROKEN / CHAIN -->
+  <HuesButton
+    opaque
+    {disabled}
+    on:click={click}
+    title="Lock Buildup/Rhythm beat lengths"
+  >
+    {@html realUnlocked ? HuesIcon.CHAIN_BROKEN : HuesIcon.CHAIN}
+  </HuesButton>
 </div>
 
 <style>
-.timelock {
+  .timelock {
     grid-column: editor-link;
     grid-row: buildup-header / rhythm-editor;
     align-self: center;
     /* isn't quite centered with just the grid-row */
     margin-top: -6px;
-}
+  }
 
-.timelock-border {
+  .timelock-border {
     grid-column: editor-link;
     grid-row: buildup-header / rhythm-header;
 
@@ -49,9 +50,9 @@ import { HuesIcon } from '../HuesIcon';
     border-left: 3px #666 solid;
     border-top: 3px #666 solid;
     border-bottom: 3px #666 solid;
-}
+  }
 
-.timelock-border.unlocked {
+  .timelock-border.unlocked {
     border-left: 3px #666 dashed;
-}
+  }
 </style>
