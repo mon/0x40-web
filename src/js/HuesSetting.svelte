@@ -1,7 +1,7 @@
 <script lang="ts">
     import uniqueFormId from './UniqueID';
 
-    export let info: {name: string; options: string[]};
+    export let info: {name: string; options: readonly string[]};
     export let value: any;
 
     const setId = uniqueFormId();

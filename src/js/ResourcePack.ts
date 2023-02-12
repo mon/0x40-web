@@ -247,7 +247,7 @@ export class HuesSong {
         }
     }
 
-    protected async addSectionToZip(zipWriter: zip.ZipWriter, section?: HuesSongSection) {
+    protected async addSectionToZip<T>(zipWriter: zip.ZipWriter<T>, section?: HuesSongSection) {
         if(!section?.sound) {
             return;
         }
@@ -255,7 +255,7 @@ export class HuesSong {
         await zipWriter.add('Songs/' + section.filename!, new zip.Uint8ArrayReader(u8));
     }
 
-    async addZipAssets(zipWriter: zip.ZipWriter) {
+    async addZipAssets<T>(zipWriter: zip.ZipWriter<T>) {
         await this.addSectionToZip(zipWriter, this.loop);
         await this.addSectionToZip(zipWriter, this.build);
     }
@@ -331,7 +331,7 @@ export class HuesImage {
         }
     }
 
-    protected async addImagesToZip(zipWriter: zip.ZipWriter, folder: string) {
+    protected async addImagesToZip<T>(zipWriter: zip.ZipWriter<T>, folder: string) {
         // pad with 0s any animation frames
         let pad = 1 + Math.floor(Math.log10(this.bitmaps.length));
 
@@ -351,7 +351,7 @@ export class HuesImage {
         }
     }
 
-    async addZipAssets(zipWriter: zip.ZipWriter) {
+    async addZipAssets<T>(zipWriter: zip.ZipWriter<T>) {
         if(this.animated) {
             await this.addImagesToZip(zipWriter, "Animations/" + this.name);
         } else {
@@ -956,7 +956,7 @@ export class Respack {
         this.downloadBlob(zip, this.name + ".zip");
     }
 
-    protected async addXML(name: string, zipWriter: zip.ZipWriter, xml: xmlbuilder.XMLNode) {
+    protected async addXML<T>(name: string, zipWriter: zip.ZipWriter<T>, xml: xmlbuilder.XMLNode) {
         await zipWriter.add(name, new zip.TextReader(xml.end({pretty: true})));
     }
 

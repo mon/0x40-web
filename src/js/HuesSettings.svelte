@@ -35,7 +35,7 @@
     };
 
     export let settings: Partial<SettingsData> = {};
-    export let schema: { [key: string] : {name: string; options: string[]}};
+    export let schema: { [key: string] : {name: string; options: readonly string[]}};
 
     $: autoPlural = (settings.autoSongDelay || 0) > 1 ? 's' : '';
 
@@ -106,6 +106,7 @@ span {
     border-style: solid;
     width: 2em;
 
+    appearance:textfield; /* no spinbox */
     -moz-appearance:textfield; /* Firefox no spinbox */
 }
 
