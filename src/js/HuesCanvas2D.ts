@@ -465,6 +465,7 @@ export default class HuesCanvas2D implements HuesCanvas {
       this.context.globalCompositeOperation = blendMode;
 
       // create colour only where the image is
+      this.offContext2.globalAlpha = 1;
       this.offContext2.globalCompositeOperation = "copy";
       this.offContext2.drawImage(this.offCanvas, 0, 0);
       this.offContext2.globalCompositeOperation = "destination-in";
