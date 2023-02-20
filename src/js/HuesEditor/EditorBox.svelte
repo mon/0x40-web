@@ -406,12 +406,21 @@
 
 <div class="edit-box" bind:this={editBox} on:mousemove={hover}>
   {#if showHelp && !section?.sound}
+    <!-- prettier-ignore -->
     <div class="beat-hilight">
-      Click [LOAD RHYTHM] to load a loop! OGG,or LAME encoded MP3s work best.
-      You can also add a buildup with [LOAD BUILDUP], or remove it with
-      [REMOVE]. [NEW SONG] adds a totally empty song to edit. [COPY/SAVE XML]
-      allow for storing the rhythms and easy inclusion into a Resource Pack!
-      Click [HELP] for advanced techniques and more information.
+Click [LOAD RHYTHM] to load a loop!
+OGG,or LAME encoded MP3s work best.
+
+You can also add a buildup with
+[LOAD BUILDUP], or remove it with [REMOVE].
+
+[NEW SONG] adds a totally empty song to edit.
+
+[COPY/SAVE XML] allow for storing the rhythms
+and easy inclusion into a Resource Pack!
+
+Click [HELP] for advanced techniques and more
+information.
     </div>
   {:else if !section?.sound}
     <div class="beat-hilight">[none]</div>
