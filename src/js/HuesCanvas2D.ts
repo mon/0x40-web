@@ -136,11 +136,11 @@ export default class HuesCanvas2D implements HuesCanvas {
 
     // optimise the draw
     if (params.overlayPercent >= 1) {
-      this.context.fillStyle = intToHex(params.overlayColour);
-      this.context.fillRect(0, 0, width, height);
-      if (params.invert && this.invertEverything) {
-        this.drawInvert(params.invert);
-      }
+      this.drawOverlay(
+        params.overlayPercent,
+        params.overlayColour,
+        params.invert
+      );
       return;
     }
 
@@ -292,15 +292,28 @@ export default class HuesCanvas2D implements HuesCanvas {
     // all operations after this affect the entire image
     this.context.restore();
 
-    if (params.overlayPercent > 0) {
-      this.context.globalAlpha = params.overlayPercent;
-      this.context.fillStyle = intToHex(params.overlayColour);
-      this.context.fillRect(0, 0, width, height);
-    }
-
     if (params.invert && this.invertEverything) {
       this.drawInvert(params.invert);
     }
+
+    if (params.overlayPercent > 0) {
+      this.drawOverlay(
+        params.overlayPercent,
+        params.overlayColour,
+        params.invert
+      );
+    }
+  }
+
+  drawOverlay(percent: number, colour: number, invert: number) {
+    // If we draw the overlay and then invert, and the overlay and invert
+    // percent are identical, and the overlay colour is white, the invert
+    // actually cancels itself out... So we always draw this with a precomputed
+    // invert colour and do any "real" inverts beforehand
+    this.context.globalCompositeOperation = "source-over";
+    this.context.globalAlpha = percent;
+    this.context.fillStyle = intToHex(mixColours(colour, ~colour, invert));
+    this.context.fillRect(0, 0, this.canvas.width, this.canvas.height);
   }
 
   drawBitmap(
