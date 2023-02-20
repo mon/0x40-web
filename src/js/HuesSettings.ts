@@ -65,7 +65,7 @@ const defaultSettings: SettingsData = {
   currentUI: "modern",
   colourSet: "normal",
   blendMode: "hard-light",
-  bgColour: "white",
+  bgColour: "transparent",
   blackoutUI: "off",
   invertStyle: "everything",
   playBuildups: "on",
