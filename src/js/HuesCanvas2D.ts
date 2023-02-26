@@ -192,14 +192,15 @@ export default class HuesCanvas2D implements HuesCanvas {
         edge = full - edge;
       }
 
-      let region1 = new Path2D();
-      let region2 = new Path2D();
+      // we need to save these as arrays for handling the firefox bug below
+      let region1: [number, number, number, number];
+      let region2: [number, number, number, number];
       if (vertical) {
-        region1.rect(0, edge, width, full - edge);
-        region2.rect(0, 0, width, edge - this.shutterWidth);
+        region1 = [0, edge, width, full - edge];
+        region2 = [0, 0, width, edge - this.shutterWidth];
       } else {
-        region1.rect(edge, 0, full - edge, height);
-        region2.rect(0, 0, edge - this.shutterWidth, height);
+        region1 = [edge, 0, full - edge, height];
+        region2 = [0, 0, edge - this.shutterWidth, height];
       }
 
       if (reverse) {
@@ -228,7 +229,9 @@ export default class HuesCanvas2D implements HuesCanvas {
 
       // clip the underlay image and draw it
       this.context.save();
-      this.context.clip(region1);
+      const path1 = new Path2D();
+      path1.rect(...region1);
+      this.context.clip(path1);
 
       this.drawBitmap(
         params.lastBitmap,
@@ -256,8 +259,18 @@ export default class HuesCanvas2D implements HuesCanvas {
 
       this.context.restore();
 
+      // Firefox bug: somehow the white background we draw leaks outside of the
+      // first clipping region, we need to explicitly clear the pixels for
+      // transparent backgrounds to work properly
+      // TODO: report this to Mozilla
+      if (params.bgColour === "transparent") {
+        this.context.clearRect(...region2);
+      }
+
       // clip the overlay and continue
-      this.context.clip(region2);
+      const path2 = new Path2D();
+      path2.rect(...region2);
+      this.context.clip(path2);
     }
 
     this.drawBitmap(
