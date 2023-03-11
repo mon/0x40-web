@@ -22,26 +22,26 @@
   "devDependencies": {
     "@tsconfig/svelte": "^3.0.0",
     "css-loader": "^6.7.3",
-    "esbuild-loader": "^3.0.0",
-    "mini-css-extract-plugin": "^2.7.2",
+    "esbuild-loader": "^3.0.1",
+    "mini-css-extract-plugin": "^2.7.3",
     "prettier": "^2.8.4",
     "prettier-plugin-svelte": "^2.9.0",
     "source-map-loader": "^4.0.1",
     "style-loader": "^3.3.1",
-    "svelte": "^3.55.1",
-    "svelte-check": "^3.0.3",
+    "svelte": "^3.56.0",
+    "svelte-check": "^3.1.2",
     "svelte-check-plugin": "^1.0.4",
     "svelte-loader": "^3.1.5",
     "svelte-preprocess": "^5.0.1",
     "ts-loader": "^9.4.2",
     "typescript": "^4.9.5",
-    "webpack": "^5.75.0",
+    "webpack": "^5.76.1",
     "webpack-cli": "^5.0.1",
     "webpack-dev-server": "^4.11.1"
   },
   "dependencies": {
     "@types/string_score": "^0.1.28",
-    "@zip.js/zip.js": "^2.6.63",
+    "@zip.js/zip.js": "^2.6.78",
     "string_score": "^0.1.22",
     "xmlbuilder": "^15.1.1"
   }

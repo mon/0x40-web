@@ -1,6 +1,3 @@
-import "svelte"; // this is a bit of a mystery honestly, without it, none of
-// the .svelte imports can be found by the typescript compiler
-
 import HuesRender from "./HuesRender";
 import { HuesEditor } from "./HuesEditor";
 import { HuesSettings, type SettingsData } from "./HuesSettings";
