@@ -33,7 +33,8 @@ For some examples of **fast, complicated and fancy** maps, here are some of my p
 [Alex Centra - Roguebot [Inspected]](https://0x40.mon.im/custom.html?packs=roguebot.zip)  
 [Elenne - Vertical Smoke](https://0x40.mon.im/custom.html?packs=smoke.zip)  
 [Nicky Flower - Wii Shop Channel (Remix)](https://0x40.mon.im/custom.html?packs=wii_remix.zip)  
-[Nhato - Logos](https://0x40.mon.im/custom.html?packs=logos.zip)
+[Nhato - Logos](https://0x40.mon.im/custom.html?packs=logos.zip)  
+[Massive New Krew - HADES](https://0x40.mon.im/custom.html?packs=HADES.zip)
 
 Finally there's these, which hook into the Hues javascript events to do something fresh:  
 [Doors](https://0x40.mon.im/doors.html)  
