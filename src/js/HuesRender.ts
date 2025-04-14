@@ -280,6 +280,8 @@ export default class HuesRender {
   audio: SoundManager;
   core: HuesCore;
 
+  rendering: boolean;
+
   needsRedraw: boolean;
   colour: number;
   lastColour: number;
@@ -346,6 +348,10 @@ export default class HuesRender {
     core.addEventListener("settingsupdated", this.settingsUpdated.bind(this));
     core.addEventListener("frame", this.animationLoop.bind(this));
     this.core = core;
+
+    // rendering during the preloader causes slow loading on FF - keep true
+    // for stuff like the respack editor, only HuesCore sets it to false
+    this.rendering = true;
 
     this.needsRedraw = false;
     this.colour = 0xffffff;
@@ -510,6 +516,8 @@ export default class HuesRender {
   }
 
   animationLoop() {
+    if (!this.rendering) return;
+
     // some if statements rely on this not changing throughout the func
     const now = this.audio.currentTime;
 

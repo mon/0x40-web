@@ -376,6 +376,8 @@ export class HuesCore extends EventListener<CoreEvents> {
       this.clearMessage();
       setInterval(this.loopCheck.bind(this), 1000);
       this.renderer = new HuesRender(this.root, this.soundManager, this);
+      // rendering during the preloader causes slow loading on FF
+      this.renderer.rendering = false;
       // Now all our objects are instantiated, we fire the updated settings
       this.settings.addEventListener(
         "updated",
@@ -407,6 +409,7 @@ export class HuesCore extends EventListener<CoreEvents> {
         this.preloader.style.display = "none";
       }
 
+      this.renderer.rendering = true;
       this.preloader.classList.add("hues-preloader--loaded");
       this.callEventListeners("loaded");
       if (this.settings.firstImage) {
