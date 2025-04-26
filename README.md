@@ -58,19 +58,14 @@ like, please open a ticket. It was mostly made for editing centerPixel values.
 1. Start by downloading the latest [release](https://github.com/mon/0x40-web/releases)
 2. Put your respack zips somewhere they can be found by your web server. My hues have a `respacks/` folder under the main directory
 3. Edit `index.html`:
-4. If your html is in a different location to your `lib` folder:
-
-   - Edit `workersPath` to point to the correct (relative) location
-
-5. Edit the `defaults` object so the `respacks` list contains the respacks you wish to load
-6. _Optional:_ Add any extra settings to the `defaults` object
-7. Upload everything to your server!
+4. Edit the `defaults` object so the `respacks` list contains the respacks you wish to load
+5. _Optional:_ Add any extra settings to the `defaults` object
+6. Upload everything to your server!
 
 ### Example settings
 
 ```javascript
 var defaults = {
-  workersPath: "lib/workers/",
   respacks: ["./respacks/Defaults_v5.0_Opaque.zip", "./respacks/HuesMixA.zip"],
   firstSong: "Nhato - Miss You",
 };

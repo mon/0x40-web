@@ -1,6 +1,16 @@
 import type { HuesCore } from "./HuesCore";
 import type { HuesSong, HuesSongSection } from "./ResourcePack";
 import EventListener from "./EventListener";
+import CodecParser, { type CodecValue } from "codec-parser";
+import { type MPEGDecodedAudio, MPEGDecoderWebWorker } from "mpg123-decoder";
+import {
+  type OggOpusDecodedAudio,
+  OggOpusDecoderWebWorker,
+} from "ogg-opus-decoder";
+import {
+  type OggVorbisDecodedAudio,
+  OggVorbisDecoderWebWorker,
+} from "@wasm-audio-decoders/ogg-vorbis";
 
 type SoundCallbacks = {
   // Called when the audio has been seeked - reset time determined transforms
@@ -45,8 +55,6 @@ export default class SoundManager extends EventListener<SoundCallbacks> {
   // Lower level audio and timing info
   // @ts-ignore: Object is possibly 'undefined'.
   context!: AudioContext; // Audio context, Web Audio API
-  oggSupport: boolean;
-  mp3IsSane: boolean;
   build: SongBuffer;
   loop: SongBuffer;
 
@@ -81,8 +89,6 @@ export default class SoundManager extends EventListener<SoundCallbacks> {
 
     this.locked = true;
 
-    this.oggSupport = false;
-    this.mp3IsSane = false;
     this.build = { length: 0 };
     this.loop = { length: 0 };
     this.startTime = 0;
@@ -121,69 +127,10 @@ export default class SoundManager extends EventListener<SoundCallbacks> {
       throw Error("Web Audio API not supported in this browser.");
     }
 
-    // check for .ogg support - if not, we'll have to load the ogg decoder
-    try {
-      await this.context.decodeAudioData(miniOgg);
-      this.oggSupport = true;
-    } catch (e) {
-      this.oggSupport = false;
-    }
-
-    // check if MP3 decoding is sane - if not, we'll have to load the mp3 decoder
-    // Specifically: older versions of Firefox and Safari(?) don't
-    // use the LAME header to correctly strip the leadin, causing
-    // gaps in playback. Our test file is exactly 1 sample long. If
-    // the decoder is not sane, the test file will be ~3000 samples.
-    // Because decoding resamples the audio to your computer's rate,
-    // and some people use high sample rates, just check if samples
-    // < 10 - this allows up to 400KHz sample rates which should
-    // futureproof any insane audiophiles.
-    try {
-      const buffer = await this.context.decodeAudioData(miniMp3);
-      this.mp3IsSane = buffer.length < 10;
-    } catch (e) {
-      this.mp3IsSane = false;
-    }
-
-    // if both formats supported, don't even try the audio worker
-    if (!this.oggSupport || !this.mp3IsSane) {
-      await new Promise<void>((resolve, reject) => {
-        // See if our audio decoder is working
-        let audioWorker: Worker;
-        try {
-          audioWorker = this.createWorker();
-        } catch (e) {
-          console.log(e);
-          reject(
-            Error(
-              "Audio Worker cannot be started - correct path set in defaults?"
-            )
-          );
-          return;
-        }
-        let pingListener = (event: any) => {
-          audioWorker.terminate();
-          resolve();
-        };
-        audioWorker.addEventListener("message", pingListener, false);
-        audioWorker.addEventListener(
-          "error",
-          () => {
-            reject(
-              Error(
-                "Audio Worker cannot be started - correct path set in defaults?"
-              )
-            );
-          },
-          false
-        );
-        audioWorker.postMessage({
-          ping: true,
-          ogg: this.oggSupport,
-          mp3: this.mp3IsSane,
-        });
-      });
-    }
+      // ensure decoders work
+    await new MPEGDecoderWebWorker().ready;
+    await new OggOpusDecoderWebWorker().ready;
+    await new OggVorbisDecoderWebWorker().ready;
 
     this.locked = this.context.state != "running";
   }
@@ -418,18 +365,41 @@ export default class SoundManager extends EventListener<SoundCallbacks> {
       throw Error("Section has no buffer: " + section);
     }
 
+    let decoded: OggOpusDecodedAudio | OggVorbisDecodedAudio | MPEGDecodedAudio;
+
     // Is this a file supported by the browser's importer?
     let view = new Uint8Array(buffer);
-    // Signature for ogg file: OggS
     if (
-      (this.oggSupport &&
-        view[0] == 0x4f &&
-        view[1] == 0x67 &&
-        view[2] == 0x67 &&
-        view[3] == 0x53) ||
-      (this.mp3IsSane &&
-        // untagged MP3
-        view[0] == 0xff &&
+      // Signature for ogg file: OggS
+      view[0] == 0x4f &&
+      view[1] == 0x67 &&
+      view[2] == 0x67 &&
+      view[3] == 0x53
+    ) {
+      let codec: CodecValue | undefined = undefined;
+      const parser = new CodecParser("audio/ogg", {
+        onCodec: (c) => {
+          codec = c;
+        },
+        enableFrameCRC32: false,
+      });
+      parser.parseChunk(view).next();
+      if (codec === "opus") {
+        const decoder  = new OggOpusDecoderWebWorker({ forceStereo: true });
+        await decoder.ready;
+        decoded = await decoder.decodeFile(view);
+      } else if (codec === "vorbis") {
+        const decoder = new OggVorbisDecoderWebWorker();
+        await decoder.ready;
+        decoded = await decoder.decodeFile(view);
+      } else if (codec === undefined) {
+        throw Error("Cannot determine OGG codec");
+      } else {
+        throw Error(`Unsupported OGG codec ${codec}`);
+      }
+    } else if (
+      // untagged MP3
+      (view[0] == 0xff &&
         (view[1] == 0xfb ||
           view[1] == 0xfa ||
           view[1] == 0xf2 ||
@@ -437,70 +407,28 @@ export default class SoundManager extends EventListener<SoundCallbacks> {
       // ID3v2 tagged MP3 "ID3"
       (view[0] == 0x49 && view[1] == 0x44 && view[2] == 0x33)
     ) {
-      // As we don't control decodeAudioData, we cannot do fast transfers and must copy
-      let backup = buffer.slice(0);
-      let result = await this.context.decodeAudioData(buffer);
-
-      // restore copied buffer
-      section.sound = backup;
-      this.applyGain(result);
-      return result;
+      const decoder = new MPEGDecoderWebWorker({ enableGapless: true });
+      await decoder.ready;
+      decoded = await decoder.decode(view);
     } else {
-      // Use our JS decoder
-      return new Promise((resolve, reject) => {
-        let audioWorker = this.createWorker();
-
-        audioWorker.addEventListener(
-          "error",
-          () => {
-            reject(Error("Audio Worker failed to convert track"));
-          },
-          false
-        );
-
-        audioWorker.addEventListener(
-          "message",
-          (e) => {
-            let decoded = e.data;
-            audioWorker.terminate();
-
-            // restore transferred buffer
-            section.sound = decoded.arrayBuffer;
-            if (decoded.error) {
-              reject(new Error(decoded.error));
-              return;
-            }
-            // Convert to real audio buffer
-            let audio = this.audioBufFromRaw(decoded.rawAudio);
-            this.applyGain(audio);
-            resolve(audio);
-          },
-          false
-        );
-
-        // transfer the buffer to save time
-        // don't really know why TS forgets we did a null check already
-        audioWorker.postMessage(
-          { buffer: buffer!, ogg: this.oggSupport, mp3: this.mp3IsSane },
-          [buffer!]
-        );
-      });
+      throw Error("Cannot determine filetype");
     }
+
+    let audio = this.audioBufFromRaw(decoded);
+    this.applyGain(audio);
+    return audio;
   }
 
   // Converts continuous PCM array to Web Audio API friendly format
-  audioBufFromRaw(raw: {
-    array: Float32Array;
-    channels: number;
-    sampleRate: number;
-  }): AudioBuffer {
-    let buffer = raw.array;
-    let channels = raw.channels;
-    let samples = buffer.length / channels;
-    let audioBuf = this.context.createBuffer(channels, samples, raw.sampleRate);
-    for (let i = 0; i < channels; i++) {
-      // Offset is in bytes, length is in elements
-      let channel = new Float32Array(buffer.buffer, i * samples * 4, samples);
+  audioBufFromRaw(
+    raw: OggOpusDecodedAudio | OggVorbisDecodedAudio | MPEGDecodedAudio
+  ): AudioBuffer {
+    let audioBuf = this.context.createBuffer(
+      raw.channelData.length,
+      raw.samplesDecoded,
+      raw.sampleRate
+    );
+    for (const [i, channel] of raw.channelData.entries()) {
       // Most browsers
       if (typeof audioBuf.copyToChannel === "function") {
         audioBuf.copyToChannel(channel, i, 0);
@@ -544,10 +472,6 @@ export default class SoundManager extends EventListener<SoundCallbacks> {
     // Important is only that we don't output on levels
     // too different from other websites
     data.replayGain = gain / 4.0;
-  }
-
-  createWorker() {
-    return new Worker(this.core.settings.workersPath + "audio-worker.js");
   }
 
   initVisualiser(bars?: number) {
@@ -716,116 +640,4 @@ export default class SoundManager extends EventListener<SoundCallbacks> {
     }
     setTimeout(callback, 2000);
   }
-}
-
-let miniOggRaw =
-  "T2dnUwACAAAAAAAAAADFYgAAAAAAAMLKRdwBHgF2b3JiaXMAAAAAAUSsAAAA" +
-  "AAAAgLsAAAAAAAC4AU9nZ1MAAAAAAAAAAAAAxWIAAAEAAACcKCV2Dzv/////" +
-  "////////////MgN2b3JiaXMrAAAAWGlwaC5PcmcgbGliVm9yYmlzIEkgMjAx" +
-  "MjAyMDMgKE9tbmlwcmVzZW50KQAAAAABBXZvcmJpcx9CQ1YBAAABABhjVClG" +
-  "mVLSSokZc5QxRplikkqJpYQWQkidcxRTqTnXnGusubUghBAaU1ApBZlSjlJp" +
-  "GWOQKQWZUhBLSSV0EjonnWMQW0nB1phri0G2HIQNmlJMKcSUUopCCBlTjCnF" +
-  "lFJKQgcldA465hxTjkooQbicc6u1lpZji6l0kkrnJGRMQkgphZJKB6VTTkJI" +
-  "NZbWUikdc1JSakHoIIQQQrYghA2C0JBVAAABAMBAEBqyCgBQAAAQiqEYigKE" +
-  "hqwCADIAAASgKI7iKI4jOZJjSRYQGrIKAAACABAAAMBwFEmRFMmxJEvSLEvT" +
-  "RFFVfdU2VVX2dV3XdV3XdSA0ZBUAAAEAQEinmaUaIMIMZBgIDVkFACAAAABG" +
-  "KMIQA0JDVgEAAAEAAGIoOYgmtOZ8c46DZjloKsXmdHAi1eZJbirm5pxzzjkn" +
-  "m3PGOOecc4pyZjFoJrTmnHMSg2YpaCa05pxznsTmQWuqtOacc8Y5p4NxRhjn" +
-  "nHOatOZBajbW5pxzFrSmOWouxeaccyLl5kltLtXmnHPOOeecc84555xzqhen" +
-  "c3BOOOecc6L25lpuQhfnnHM+Gad7c0I455xzzjnnnHPOOeecc4LQkFUAABAA" +
-  "AEEYNoZxpyBIn6OBGEWIacikB92jwyRoDHIKqUejo5FS6iCUVMZJKZ0gNGQV" +
-  "AAAIAAAhhBRSSCGFFFJIIYUUUoghhhhiyCmnnIIKKqmkoooyyiyzzDLLLLPM" +
-  "Muuws8467DDEEEMMrbQSS0211VhjrbnnnGsO0lpprbXWSimllFJKKQgNWQUA" +
-  "gAAAEAgZZJBBRiGFFFKIIaaccsopqKACQkNWAQCAAAACAAAAPMlzREd0REd0" +
-  "REd0REd0RMdzPEeUREmUREm0TMvUTE8VVdWVXVvWZd32bWEXdt33dd/3dePX" +
-  "hWFZlmVZlmVZlmVZlmVZlmVZgtCQVQAACAAAgBBCCCGFFFJIIaUYY8wx56CT" +
-  "UEIgNGQVAAAIACAAAADAURzFcSRHciTJkixJkzRLszzN0zxN9ERRFE3TVEVX" +
-  "dEXdtEXZlE3XdE3ZdFVZtV1Ztm3Z1m1flm3f933f933f933f933f93UdCA1Z" +
-  "BQBIAADoSI6kSIqkSI7jOJIkAaEhqwAAGQAAAQAoiqM4juNIkiRJlqRJnuVZ" +
-  "omZqpmd6qqgCoSGrAABAAAABAAAAAAAomuIppuIpouI5oiNKomVaoqZqriib" +
-  "suu6ruu6ruu6ruu6ruu6ruu6ruu6ruu6ruu6ruu6ruu6ruu6LhAasgoAkAAA" +
-  "0JEcyZEcSZEUSZEcyQFCQ1YBADIAAAIAcAzHkBTJsSxL0zzN0zxN9ERP9ExP" +
-  "FV3RBUJDVgEAgAAAAgAAAAAAMCTDUixHczRJlFRLtVRNtVRLFVVPVVVVVVVV" +
-  "VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVNU3TNE0gNGQlAAAEAMBijcHl" +
-  "ICElJeXeEMIQk54xJiG1XiEEkZLeMQYVg54yogxy3kLjEIMeCA1ZEQBEAQAA" +
-  "xiDHEHPIOUepkxI556h0lBrnHKWOUmcpxZhizSiV2FKsjXOOUketo5RiLC12" +
-  "lFKNqcYCAAACHAAAAiyEQkNWBABRAACEMUgppBRijDmnnEOMKeeYc4Yx5hxz" +
-  "jjnnoHRSKuecdE5KxBhzjjmnnHNSOieVc05KJ6EAAIAABwCAAAuh0JAVAUCc" +
-  "AIBBkjxP8jRRlDRPFEVTdF1RNF3X8jzV9ExTVT3RVFVTVW3ZVFVZljzPND3T" +
-  "VFXPNFXVVFVZNlVVlkVV1W3TdXXbdFXdlm3b911bFnZRVW3dVF3bN1XX9l3Z" +
-  "9n1Z1nVj8jxV9UzTdT3TdGXVdW1bdV1d90xTlk3XlWXTdW3blWVdd2XZ9zXT" +
-  "dF3TVWXZdF3ZdmVXt11Z9n3TdYXflWVfV2VZGHZd94Vb15XldF3dV2VXN1ZZ" +
-  "9n1b14Xh1nVhmTxPVT3TdF3PNF1XdV1fV13X1jXTlGXTdW3ZVF1ZdmXZ911X" +
-  "1nXPNGXZdF3bNl1Xll1Z9n1XlnXddF1fV2VZ+FVX9nVZ15Xh1m3hN13X91VZ" +
-  "9oVXlnXh1nVhuXVdGD5V9X1TdoXhdGXf14XfWW5dOJbRdX1hlW3hWGVZOX7h" +
-  "WJbd95VldF1fWG3ZGFZZFoZf+J3l9n3jeHVdGW7d58y67wzH76T7ytPVbWOZ" +
-  "fd1ZZl93juEYOr/w46mqr5uuKwynLAu/7evGs/u+soyu6/uqLAu/KtvCseu+" +
-  "8/y+sCyj7PrCasvCsNq2Mdy+biy/cBzLa+vKMeu+UbZ1fF94CsPzdHVdeWZd" +
-  "x/Z1dONHOH7KAACAAQcAgAATykChISsCgDgBAI8kiaJkWaIoWZYoiqbouqJo" +
-  "uq6kaaapaZ5pWppnmqZpqrIpmq4saZppWp5mmpqnmaZomq5rmqasiqYpy6Zq" +
-  "yrJpmrLsurJtu65s26JpyrJpmrJsmqYsu7Kr267s6rqkWaapeZ5pap5nmqZq" +
-  "yrJpmq6reZ5qep5oqp4oqqpqqqqtqqosW55nmproqaYniqpqqqatmqoqy6aq" +
-  "2rJpqrZsqqptu6rs+rJt67ppqrJtqqYtm6pq267s6rIs27ovaZppap5nmprn" +
-  "maZpmrJsmqorW56nmp4oqqrmiaZqqqosm6aqypbnmaoniqrqiZ5rmqoqy6Zq" +
-  "2qppmrZsqqotm6Yqy65t+77ryrJuqqpsm6pq66ZqyrJsy77vyqruiqYpy6aq" +
-  "2rJpqrIt27Lvy7Ks+6JpyrJpqrJtqqouy7JtG7Ns+7pomrJtqqYtm6oq27It" +
-  "+7os27rvyq5vq6qs67It+7ru+q5w67owvLJs+6qs+ror27pv6zLb9n1E05Rl" +
-  "UzVt21RVWXZl2fZl2/Z90TRtW1VVWzZN1bZlWfZ9WbZtYTRN2TZVVdZN1bRt" +
-  "WZZtYbZl4XZl2bdlW/Z115V1X9d949dl3ea6su3Lsq37qqv6tu77wnDrrvAK" +
-  "AAAYcAAACDChDBQashIAiAIAAIxhjDEIjVLOOQehUco55yBkzkEIIZXMOQgh" +
-  "lJI5B6GUlDLnIJSSUgihlJRaCyGUlFJrBQAAFDgAAATYoCmxOEChISsBgFQA" +
-  "AIPjWJbnmaJq2rJjSZ4niqqpqrbtSJbniaJpqqptW54niqapqq7r65rniaJp" +
-  "qqrr6rpomqapqq7ruroumqKpqqrrurKum6aqqq4ru7Ls66aqqqrryq4s+8Kq" +
-  "uq4ry7Jt68Kwqq7ryrJs27Zv3Lqu677v+8KRreu6LvzCMQxHAQDgCQ4AQAU2" +
-  "rI5wUjQWWGjISgAgAwCAMAYhgxBCBiGEkFJKIaWUEgAAMOAAABBgQhkoNGRF" +
-  "ABAnAAAYQymklFJKKaWUUkoppZRSSimllFJKKaWUUkoppZRSSCmllFJKKaWU" +
-  "UkoppZRSSimllFJKKaWUUkoppZRSSimllFJKKaWUUkoppZRSSqmklFJKKaWU" +
-  "UkoppZRSSimllFJKKaWUUkoppZRSSimllFJKKaWUUkoppZRSSimllFJKKaWU" +
-  "UkoppZRSSimllFJKKaWUUkoppZRSSimllFJKKaWUUkoppZRSSimllFJKKaWU" +
-  "UkoppZRSSimllFJKKaWUUkoppZRSSimllFJKKaWUUkoppZRSSimllFJKKaWU" +
-  "UkoppZRSSimllFJKKaWUUkoppZRSSimllFJKKaWUUkoppZRSSimllFJKKaWU" +
-  "UkoppZRSSimllFJKKaWUUkoppZRSSimllFJKKaWUUkoppZRSSimVUkoppZRS" +
-  "SimllFJKKaWUUkoppZRSSimllFJKKaWUUkoppZRSSimllFJKKaWUUkoppZRS" +
-  "SimllFJKKaWUUkoppZRSSimllFJKKaWUUkoppZRSSimllFIKAJCKcACQejCh" +
-  "DBQashIASAUAAIxRSinGnIMQMeYYY9BJKClizDnGHJSSUuUchBBSaS23yjkI" +
-  "IaTUUm2Zc1JaizHmGDPnpKQUW805h1JSi7HmmmvupLRWa64151paqzXXnHPN" +
-  "ubQWa64515xzyzHXnHPOOecYc84555xzzgUA4DQ4AIAe2LA6wknRWGChISsB" +
-  "gFQAAAIZpRhzzjnoEFKMOecchBAihRhzzjkIIVSMOeccdBBCqBhzzDkIIYSQ" +
-  "OecchBBCCCFzDjroIIQQQgcdhBBCCKGUzkEIIYQQSighhBBCCCGEEDoIIYQQ" +
-  "QgghhBBCCCGEUkoIIYQQQgmhlFAAAGCBAwBAgA2rI5wUjQUWGrISAAACAIAc" +
-  "lqBSzoRBjkGPDUHKUTMNQkw50ZliTmozFVOQORCddBIZakHZXjILAACAIAAg" +
-  "wAQQGCAo+EIIiDEAAEGIzBAJhVWwwKAMGhzmAcADRIREAJCYoEi7uIAuA1zQ" +
-  "xV0HQghCEIJYHEABCTg44YYn3vCEG5ygU1TqIAAAAAAADADgAQDgoAAiIpqr" +
-  "sLjAyNDY4OjwCAAAAAAAFgD4AAA4PoCIiOYqLC4wMjQ2ODo8AgAAAAAAAAAA" +
-  "gICAAAAAAABAAAAAgIBPZ2dTAAQBAAAAAAAAAMViAAACAAAA22A/JwIBAQAK";
-
-let miniMp3Raw =
-  "//tQxAAAAAAAAAAAAAAAAAAAAAAASW5mbwAAAA8AAAACAAACcQCAgICAgICA" +
-  "gICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICA////" +
-  "////////////////////////////////////////////////////////////" +
-  "//8AAAA5TEFNRTMuMTAwAaUAAAAAAAAAABRAJAa/QgAAQAAAAnFDELIBAAAA" +
-  "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAP/7UMQAA8AAAaQAAAAgAAA0" +
-  "gAAABExBTUUzLjEwMFVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV" +
-  "VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV" +
-  "VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV" +
-  "VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV" +
-  "VVVVVVVVVVVVVVX/+1LEXYPAAAGkAAAAIAAANIAAAARVVVVVVVVVVVVVVVVV" +
-  "VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV" +
-  "VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV" +
-  "VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV" +
-  "VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVQ==";
-
-// write the bytes of the string to an ArrayBuffer
-let miniOggBin = atob(miniOggRaw);
-let miniOgg = new ArrayBuffer(miniOggBin.length);
-let view = new Uint8Array(miniOgg);
-for (let i = 0; i < miniOggBin.length; i++) {
-  view[i] = miniOggBin.charCodeAt(i);
-}
-
-let miniMp3Bin = atob(miniMp3Raw);
-let miniMp3 = new ArrayBuffer(miniMp3Bin.length);
-let viewMp3 = new Uint8Array(miniMp3);
-for (let i = 0; i < miniMp3Bin.length; i++) {
-  viewMp3[i] = miniMp3Bin.charCodeAt(i);
 }

@@ -8,9 +8,6 @@ import type HuesWindow from "./HuesWindow";
    - Go to the HTML and edit the `defaults` object instead!
  */
 const defaultSettings: SettingsData = {
-  // Location relative to root - where do the audio/zip workers live
-  // This is required because Web Workers need an absolute path
-  workersPath: "lib/workers/",
   // List of respacks to load
   respacks: [],
   // If true, the query string (?foo=bar&baz=boz) will be parsed for settings
@@ -157,7 +154,6 @@ const settingsOptions = {
 } as const; // this magic little thing lets us use "options" as a tuple type!
 
 export type SettingsData = {
-  workersPath: string;
   respacks: string[];
   parseQueryString: boolean;
   respackPath: string;
