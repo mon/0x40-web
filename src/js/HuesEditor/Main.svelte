@@ -10,7 +10,7 @@
 
   import type SoundManager from "../SoundManager";
   import type { HuesSongSection } from "../ResourcePack";
-  import type { EditorUndoRedo } from "../HuesEditor";
+  import type { EditorUndoRedo } from "../HuesEditor.svelte";
   import { HuesIcon } from "../HuesIcon";
 
   export let soundManager: SoundManager;
@@ -273,7 +273,7 @@
     for (let i = 0; i < editor.section!.banks.length; i++) {
       editor.section!.banks[i] = editor.section!.banks[i]!.replace(
         /(.)/g,
-        "$1."
+        "$1.",
       );
     }
     editor.section = editor.section; // inform of data change
@@ -404,7 +404,7 @@
   {#if totallyDisabled}
     <!-- swallow the error we deliberately make so it doesn't appear in the
          console -->
-    {#await songLoadPromise catch}<div style="display:none;" />{/await}
+    {#await songLoadPromise catch}<div style="display:none;"></div>{/await}
 
     <div class="editor-gate">
       <div>Ready to go?</div>
@@ -534,7 +534,7 @@
               >
             </HuesButton>
             {#if loop.banks.length == 1}
-              <div />
+              <div></div>
             {:else}
               <HuesButton
                 nopad
@@ -664,7 +664,7 @@
         >
 
         <!-- lazy spacer -->
-        <div />
+        <div></div>
 
         <span class="settings-individual">{playbackRate.toFixed(2)}x</span>
         <span class="settings-individual">New line at beat&nbsp;</span>

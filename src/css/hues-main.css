@@ -4,16 +4,12 @@
   font-weight: normal;
   -webkit-font-smoothing: none;
   font-smooth: never;
-  src: url("../../fonts/PetMe64.woff") format("woff");
+  src: url("../../fonts/PetMe64.woff?inline") format("woff");
 }
 
 @font-face {
   font-family: "icomoon";
-  src: url("../../fonts/HuesExtra.eot?gmxg3s");
-  src: url("../../fonts/HuesExtra.eot?gmxg3s#iefix") format("embedded-opentype"),
-    url("../../fonts/HuesExtra.ttf?gmxg3s") format("truetype"),
-    url("../../fonts/HuesExtra.woff?gmxg3s") format("woff"),
-    url("../../fonts/HuesExtra.svg?gmxg3s#icomoon") format("svg");
+  src: url("../../fonts/HuesExtra.woff?inline") format("woff");
   font-weight: normal;
   font-style: normal;
 }
@@ -105,7 +101,9 @@
   z-index: 10;
   visibility: visible;
   opacity: 1;
-  transition: visibility 1s linear, opacity 1s linear,
+  transition:
+    visibility 1s linear,
+    opacity 1s linear,
     background-position 0.5s ease;
 }
 
