@@ -1,6 +1,10 @@
-// without this file, vscode language server can't deal with ts svelte files
-const sveltePreprocess = require('svelte-preprocess');
+import { vitePreprocess } from '@sveltejs/vite-plugin-svelte'
 
-module.exports = {
-  preprocess: sveltePreprocess()
+export default {
+  preprocess: vitePreprocess(),
+  // note: keep up to date with the one in webpack.config.js
+  compilerOptions: {
+    // disable all accessibility warnings
+    warningFilter: (warning) => !warning.code.startsWith('a11y')
+  }
 };

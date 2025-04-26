@@ -1,7 +1,7 @@
 import HuesCanvas2D from "./HuesCanvas2D";
 import type { HuesColour } from "./HuesCore";
 import type { HuesCore } from "./HuesCore";
-import type { SettingsData } from "./HuesSettings";
+import type { SettingsData } from "./HuesSettings.svelte";
 import type { HuesImage } from "./ResourcePack";
 import type SoundManager from "./SoundManager";
 import { mixColours } from "./Utils";
@@ -17,7 +17,7 @@ export function calculateImageDrawCoords(
   bitmapWidth: number,
   bitmapHeight: number,
   bitmapAlign: RenderParams["bitmapAlign"],
-  bitmapCenter: RenderParams["bitmapCenter"]
+  bitmapCenter: RenderParams["bitmapCenter"],
 ): [number, number, number, number, number | undefined] {
   let offset; // for centering/right/left align
 
@@ -685,7 +685,7 @@ export default class HuesRender {
       this.lastColour = mixColours(
         this.lastColour,
         this.colour,
-        this.colourFadePercent!
+        this.colourFadePercent!,
       );
     } else {
       this.lastColour = this.colour;
@@ -703,7 +703,7 @@ export default class HuesRender {
     whiteout: boolean,
     bank?: number,
     fadeLength?: number,
-    fadeIn?: boolean
+    fadeIn?: boolean,
   ) {
     this.blackoutBank = bank;
     this.blackoutColour = whiteout ? 0xffffff : 0x000000;
@@ -832,7 +832,7 @@ export default class HuesRender {
   doShutter(
     beat: RenderParams["shutterDir"],
     beatLength: number,
-    beatCount: number
+    beatCount: number,
   ) {
     let freeTime = beatLength * beatCount * 0.8;
     // if the beats are super close together, we have to crush the speed down

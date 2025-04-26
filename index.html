@@ -1,47 +1,27 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-    <head>
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <title>0x40</title>
-        <!-- Non minified at https://github.com/mon/0x40-web/ -->
-        <link rel="stylesheet" href="css/hues-min.css">
-        <!-- Preload UI images -->
-        <link rel="preload" href="img/bones.png" as="image">
-        <link rel="preload" href="img/left-hand.png" as="image">
-        <link rel="preload" href="img/lightbase.png" as="image">
-        <link rel="preload" href="img/lightoff_inverted.png" as="image">
-        <link rel="preload" href="img/lightoff.png" as="image">
-        <link rel="preload" href="img/lighton_inverted.png" as="image">
-        <link rel="preload" href="img/lighton.png" as="image">
-        <link rel="preload" href="img/right-hand.png" as="image">
-        <link rel="preload" href="img/skull-eyes.png" as="image">
-        <link rel="preload" href="img/skull.png" as="image">
-        <link rel="preload" href="img/tombstone_invert.png" as="image">
-        <link rel="preload" href="img/tombstone.png" as="image">
-        <link rel="preload" href="img/vignette.png" as="image">
-        <link rel="preload" href="img/web-bottomright.png" as="image">
-        <link rel="preload" href="img/web-topleft.png" as="image">
-        <link rel="preload" href="img/web-topright.png" as="image">
-        <link rel="preload" href="img/wiresbottom.png" as="image">
-        <link rel="preload" href="img/wiresleft.png" as="image">
-        <link rel="preload" href="img/wiresright.png" as="image">
-        <script type="text/javascript" src="lib/hues-min.js"></script>
-        <script type="text/javascript">
-            window.addEventListener("load", function() {
-                var defaults = {
-                    respacks : ["./respacks/Defaults_v5.0_Opaque.zip",
-                                "./respacks/CharPackage v0.03 Opaque.zip",
-                                "./respacks/Huesless_v0.11.zip",
-                                "./respacks/HuesMixA.zip"
-                                ],
-                    firstSong : "Nhato - Miss You",
-                };
-                core = new HuesCore(defaults);
-            });
-        </script>
-    </head>
-    <body>
-        This page requires Javascript.
-    </body>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>0x40</title>
+    <script type="text/javascript">
+      window.addEventListener("load", function () {
+        var defaults = {
+          respacks: [
+            "./respacks/Defaults_v5.0_Opaque.zip",
+            "./respacks/CharPackage v0.03 Opaque.zip",
+            "./respacks/Huesless_v0.11.zip",
+            "./respacks/HuesMixA.zip",
+          ],
+          firstSong: "Nhato - Miss You",
+        };
+        core = new HuesCore(defaults);
+      });
+    </script>
+    <!-- Non minified at https://github.com/mon/0x40-web/ -->
+    <script type="module" src="/src/js/HuesCore.ts"></script>
+  </head>
+  <body>
+    This page requires Javascript.
+  </body>
 </html>

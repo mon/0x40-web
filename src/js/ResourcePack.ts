@@ -1,8 +1,10 @@
-import type { EditorUndoRedo } from "./HuesEditor";
+import type { EditorUndoRedo } from "./HuesEditor.svelte";
 
-import * as zip from "@zip.js/zip.js";
 import xmlbuilder from "xmlbuilder";
+import type { ZipWriter, Entry as ZipEntry } from "@zip.js/zip.js";
 import { BeatTypes, Effect, ImageColour } from "./HuesCore";
+
+const _zip = import("@zip.js/zip.js");
 
 export class HuesSongSection {
   // Any section will have at least one bank with some beats in it. If a song
@@ -248,8 +250,8 @@ export class HuesSong {
   }
 
   protected async addSectionToZip<T>(
-    zipWriter: zip.ZipWriter<T>,
-    section?: HuesSongSection
+    zipWriter: ZipWriter<T>,
+    section?: HuesSongSection,
   ) {
     if (!section?.sound) {
       return;
@@ -257,11 +259,11 @@ export class HuesSong {
     const u8 = new Uint8Array(section.sound);
     await zipWriter.add(
       "Songs/" + section.filename!,
-      new zip.Uint8ArrayReader(u8)
+      new (await _zip).Uint8ArrayReader(u8),
     );
   }
 
-  async addZipAssets<T>(zipWriter: zip.ZipWriter<T>) {
+  async addZipAssets<T>(zipWriter: ZipWriter<T>) {
     await this.addSectionToZip(zipWriter, this.loop);
     await this.addSectionToZip(zipWriter, this.build);
   }
@@ -291,7 +293,7 @@ export class HuesImage {
   constructor(
     name = "None",
     fullname = "None",
-    bitmaps: HuesImageElement[] = []
+    bitmaps: HuesImageElement[] = [],
   ) {
     this.name = name;
     this.fullname = fullname;
@@ -306,7 +308,7 @@ export class HuesImage {
     if (bitmaps.length > 1) {
       // default/unset animation speed
       this.frameDurations = Array(bitmaps.length).fill(
-        HuesImage.DEFAULT_ANIM_FRAME_TIME
+        HuesImage.DEFAULT_ANIM_FRAME_TIME,
       );
     }
   }
@@ -343,10 +345,7 @@ export class HuesImage {
     }
   }
 
-  protected async addImagesToZip<T>(
-    zipWriter: zip.ZipWriter<T>,
-    folder: string
-  ) {
+  protected async addImagesToZip<T>(zipWriter: ZipWriter<T>, folder: string) {
     // pad with 0s any animation frames
     let pad = 1 + Math.floor(Math.log10(this.bitmaps.length));
 
@@ -364,12 +363,12 @@ export class HuesImage {
 
       await zipWriter.add(
         folder + "/" + name + "." + ext,
-        new zip.BlobReader(bitmap.blob)
+        new (await _zip).BlobReader(bitmap.blob),
       );
     }
   }
 
-  async addZipAssets<T>(zipWriter: zip.ZipWriter<T>) {
+  async addZipAssets<T>(zipWriter: ZipWriter<T>) {
     if (this.animated) {
       await this.addImagesToZip(zipWriter, "Animations/" + this.name);
     } else {
@@ -449,7 +448,7 @@ function getExtensionFromMime(mime: string): string | undefined {
   return mimes[mime]?.[0];
 }
 
-function basename(entry: zip.Entry) {
+function basename(entry: ZipEntry) {
   const fullname = entry.filename;
   const parts = fullname.split("/");
   return parts.pop() || fullname;
@@ -570,6 +569,7 @@ export class Respack {
     this.updateProgress(this.loadedFromURL ? 0.5 : 0);
     this.size = blob.size;
 
+    const zip = await _zip;
     const file = new zip.ZipReader(new zip.BlobReader(blob), {
       filenameEncoding: "utf8",
     });
@@ -584,7 +584,7 @@ export class Respack {
     }
   }
 
-  async parseZip(entries: zip.Entry[]) {
+  async parseZip(entries: ZipEntry[]) {
     // just metadata, not used for anything
     this.totalFiles = 0;
     // Progress events
@@ -628,7 +628,7 @@ export class Respack {
       console.warn(
         "We have a file for",
         song.filename,
-        "but no information for it"
+        "but no information for it",
       );
     }
     // any remaining images are still valid, just have no extra info
@@ -649,15 +649,15 @@ export class Respack {
       this.songs.length,
       "songs and",
       this.images.length,
-      "images."
+      "images.",
     );
   }
 
-  async loadQueue(files: zip.Entry[]): Promise<LoadedFile[]> {
+  async loadQueue(files: ZipEntry[]): Promise<LoadedFile[]> {
     let res = [];
     for (const file of files) {
       const data = (await file.getData!(
-        new zip.Uint8ArrayWriter()
+        new (await _zip).Uint8ArrayWriter(),
       )) as Uint8Array;
       const mime = getMime(file.filename);
       const filename = basename(file);
@@ -674,7 +674,9 @@ export class Respack {
   async createImgElements(files: LoadedFile[]): Promise<LoadedImage[]> {
     let imgs = [];
     for (const file of files) {
-      const blob = new Blob([file.data.buffer], { type: file.mime });
+      const blob = new Blob([file.data.buffer as BlobPart], {
+        type: file.mime,
+      });
       const img = new Image() as HuesImageElement;
 
       const prom = new Promise((resolve, reject) => {
@@ -730,7 +732,7 @@ export class Respack {
     // this is some real PHP-tier error reporting from this API
     if (dom.querySelector("parsererror")) {
       console.log(
-        "Respack XML parse failed, attempting ampersand sanitisation"
+        "Respack XML parse failed, attempting ampersand sanitisation",
       );
       // Some respacks don't properly escape ampersands, which trips
       // up the XML parser - so just escape them all and try again.
@@ -773,7 +775,7 @@ export class Respack {
   private findFile<T extends LoadedThing>(
     fileList: T[],
     plainName: string,
-    errorMsgPrefix: string
+    errorMsgPrefix: string,
   ): T | undefined {
     const res: T[] = [];
     for (const f of fileList) {
@@ -786,7 +788,7 @@ export class Respack {
       console.warn(`${errorMsgPrefix}: respack zip has no file with that name`);
     } else if (res.length > 1) {
       console.warn(
-        `${errorMsgPrefix}: respack zip has ${res.length} files with that name. Using the first one we saw`
+        `${errorMsgPrefix}: respack zip has ${res.length} files with that name. Using the first one we saw`,
       );
     }
 
@@ -803,7 +805,7 @@ export class Respack {
     el: Element,
     section: HuesSongSection,
     tagPrefix: string,
-    expected?: number
+    expected?: number,
   ) {
     for (let i = 2; true; i++) {
       let extraChart = el.getTag(tagPrefix + i);
@@ -817,7 +819,7 @@ export class Respack {
             i +
             " is shorter than primary " +
             tagPrefix +
-            ", padding with '.'"
+            ", padding with '.'",
         );
         extraChart += ".".repeat(section.mapLen - extraChart.length);
       } else if (extraChart.length > section.mapLen) {
@@ -826,7 +828,7 @@ export class Respack {
             i +
             " is longer than primary " +
             tagPrefix +
-            ", truncating"
+            ", truncating",
         );
         extraChart = extraChart.slice(0, section.mapLen);
       }
@@ -840,7 +842,7 @@ export class Respack {
         expected,
         tagPrefix,
         "sections, but found",
-        section.banks.length
+        section.banks.length,
       );
       if (section.banks.length < expected) {
         console.warn("Adding empty banks to fit");
@@ -871,7 +873,7 @@ export class Respack {
       const plainName = el.getAttribute("name");
       if (!plainName) {
         console.warn(
-          "songs xml: <song> element has no 'name' attribute, skipping"
+          "songs xml: <song> element has no 'name' attribute, skipping",
         );
         continue;
       }
@@ -879,14 +881,14 @@ export class Respack {
       const file = this.findFile(
         songs,
         plainName,
-        `songs xml: <song> element ${plainName}`
+        `songs xml: <song> element ${plainName}`,
       );
       if (!file) {
         continue;
       }
 
       const song = new HuesSong("", file.filename);
-      song.loop.sound = file.data.buffer;
+      song.loop.sound = file.data.buffer as ArrayBuffer;
 
       song.title = el.getTag("title", "");
       if (!song.title) {
@@ -906,24 +908,24 @@ export class Respack {
       if (buildName) {
         debug(
           "  Finding a buildup '" + buildName + "' for ",
-          song.loop.basename
+          song.loop.basename,
         );
         const build = this.findFile(
           songs,
           buildName,
-          `songs xml: buildup ${buildName}`
+          `songs xml: buildup ${buildName}`,
         );
         if (build) {
           // create the build section
           song.build = new HuesSongSection(build.filename);
-          song.build.sound = build.data.buffer;
+          song.build.sound = build.data.buffer as ArrayBuffer;
 
           let buildChart = el.getTag("buildupRhythm");
           if (buildChart === null) {
             buildChart = ".";
             console.warn(
               song.loop.basename,
-              "has no buildup, despite having a buildup sound!!"
+              "has no buildup, despite having a buildup sound!!",
             );
           }
           song.build.banks = [buildChart];
@@ -931,7 +933,7 @@ export class Respack {
             el,
             song.build,
             "buildupRhythm",
-            song.loop.banks.length
+            song.loop.banks.length,
           );
         }
       }
@@ -945,7 +947,7 @@ export class Respack {
       this.songs.push(song);
       debug(
         "  [I] " + song.loop.basename,
-        ": '" + song.title + "' added to songs"
+        ": '" + song.title + "' added to songs",
       );
     }
   }
@@ -957,7 +959,7 @@ export class Respack {
       const plainName = el.getAttribute("name");
       if (!plainName) {
         console.warn(
-          "images xml: <image> element has no 'name' attribute, skipping"
+          "images xml: <image> element has no 'name' attribute, skipping",
         );
         continue;
       }
@@ -965,7 +967,7 @@ export class Respack {
       const file = this.findFile(
         images,
         plainName,
-        `images xml: <image> element ${plainName}`
+        `images xml: <image> element ${plainName}`,
       );
       if (!file) {
         continue;
@@ -996,7 +998,7 @@ export class Respack {
         }
         while (image.frameDurations.length < image.bitmaps.length) {
           image.frameDurations.push(
-            image.frameDurations[image.frameDurations.length - 1]
+            image.frameDurations[image.frameDurations.length - 1],
           );
         }
         debug("Frame durations:", image.frameDurations);
@@ -1054,13 +1056,17 @@ export class Respack {
 
   protected async addXML<T>(
     name: string,
-    zipWriter: zip.ZipWriter<T>,
-    xml: xmlbuilder.XMLNode
+    zipWriter: ZipWriter<T>,
+    xml: xmlbuilder.XMLNode,
   ) {
-    await zipWriter.add(name, new zip.TextReader(xml.end({ pretty: true })));
+    await zipWriter.add(
+      name,
+      new (await _zip).TextReader(xml.end({ pretty: true })),
+    );
   }
 
   async generateZIP() {
+    const zip = await _zip;
     const zipWriter = new zip.ZipWriter(new zip.BlobWriter("application/zip"));
 
     if (this.songs.length > 0) {

@@ -1,6 +1,6 @@
 import HuesRender from "./HuesRender";
-import { HuesEditor } from "./HuesEditor";
-import { HuesSettings, type SettingsData } from "./HuesSettings";
+import { HuesEditor } from "./HuesEditor.svelte";
+import { HuesSettings, type SettingsData } from "./HuesSettings.svelte";
 import HuesWindow from "./HuesWindow";
 import {
   HuesUI,
@@ -19,9 +19,7 @@ import HuesInfo from "./HuesInfo.svelte";
 
 import "string_score";
 
-// these aren't strictly required but it makes webpack put them in `dist`
-import "../../index.html";
-import "../../favicon.ico";
+import { mount } from "svelte";
 
 export type HuesColour = {
   c: number; // colour in hex
@@ -205,7 +203,7 @@ export class HuesCore extends EventListener<CoreEvents> {
 
     // Bunch-o-initialisers
 
-    // provided by webpack, x.y
+    // provided by vite, x.y
     this.versionStr = VERSION;
     this.version = parseInt(VERSION.replace(".", ""));
     this.versionHex = this.version.toString(16);
@@ -278,7 +276,7 @@ export class HuesCore extends EventListener<CoreEvents> {
       this.settings.initUI(this.window);
 
       let infoContents = this.window.addTab("INFO");
-      new HuesInfo({
+      mount(HuesInfo, {
         target: infoContents,
         props: {
           version: this.versionStr,
@@ -299,7 +297,7 @@ export class HuesCore extends EventListener<CoreEvents> {
       new ModernUI(ui),
       new XmasUI(ui),
       new HalloweenUI(ui),
-      new MinimalUI(ui)
+      new MinimalUI(ui),
     );
 
     this.autoSong = this.settings.autoSong;
@@ -381,7 +379,7 @@ export class HuesCore extends EventListener<CoreEvents> {
       // Now all our objects are instantiated, we fire the updated settings
       this.settings.addEventListener(
         "updated",
-        this.settingsUpdated.bind(this)
+        this.settingsUpdated.bind(this),
       );
       this.settingsUpdated();
       this.setColour(this.colourIndex);
@@ -395,7 +393,7 @@ export class HuesCore extends EventListener<CoreEvents> {
               100 - progress * 100 + "% 0%";
             let scale = Math.floor(progress * this.settings.preloadMax);
             let padding = this.settings.preloadMax.toString(
-              this.settings.preloadBase
+              this.settings.preloadBase,
             ).length;
             this.preloadMsg.textContent =
               this.settings.preloadPrefix +
@@ -403,7 +401,7 @@ export class HuesCore extends EventListener<CoreEvents> {
                 Array(padding).join("0") +
                 scale.toString(this.settings.preloadBase)
               ).slice(-padding);
-          }
+          },
         );
       } else {
         this.preloader.style.display = "none";
@@ -500,7 +498,7 @@ export class HuesCore extends EventListener<CoreEvents> {
           x,
           this.vCtx.canvas.height - barHeight,
           barWidth,
-          barHeight
+          barHeight,
         );
 
         x += barWidth;
@@ -528,7 +526,7 @@ export class HuesCore extends EventListener<CoreEvents> {
       this.callEventListeners(
         "beatstring",
         this.getBeatString(),
-        this.getBeatIndex()
+        this.getBeatIndex(),
       );
 
       for (const [bank, beat] of this.getBeats(this.beatIndex).entries()) {
@@ -543,7 +541,7 @@ export class HuesCore extends EventListener<CoreEvents> {
       typeof forcedNow === "number" ? forcedNow : this.soundManager.currentTime;
     // getBeatLength isn't updated with the right beatIndex yet
     this.beatIndex = Math.floor(
-      now / (now < 0 ? this.buildLength : this.loopLength)
+      now / (now < 0 ? this.buildLength : this.loopLength),
     );
     // beatIndex is NaN, abort
     if (this.beatIndex != this.beatIndex || !this.currentSong) {
@@ -713,7 +711,7 @@ export class HuesCore extends EventListener<CoreEvents> {
       } else {
         console.log("Flash behaviour - filling buildup");
         let buildBeats = Math.floor(
-          this.soundManager.build.length / this.loopLength
+          this.soundManager.build.length / this.loopLength,
         );
         if (buildBeats < 1) {
           buildBeats = 1;
@@ -762,7 +760,7 @@ export class HuesCore extends EventListener<CoreEvents> {
   loopCheck() {
     if (
       Math.floor(
-        this.soundManager.currentTime / this.soundManager.loop.length
+        this.soundManager.currentTime / this.soundManager.loop.length,
       ) > this.loopCount
     ) {
       this.onLoop();
@@ -997,7 +995,7 @@ export class HuesCore extends EventListener<CoreEvents> {
             false,
             bank,
             this.timeToNextBeat(bank),
-            true
+            true,
           );
           clearBlackout = false;
           break;
@@ -1031,7 +1029,7 @@ export class HuesCore extends EventListener<CoreEvents> {
             this.getBeatLength(),
             this.charsToNextBeat(bank),
             "y",
-            bank
+            bank,
           );
           break;
         case Effect.SliceY:
@@ -1039,35 +1037,35 @@ export class HuesCore extends EventListener<CoreEvents> {
             this.getBeatLength(),
             this.charsToNextBeat(bank),
             "x",
-            bank
+            bank,
           );
           break;
         case Effect.ShutterUp:
           this.renderer.doShutter(
             "↑",
             this.getBeatLength(),
-            this.charsToNextBeat(bank)
+            this.charsToNextBeat(bank),
           );
           break;
         case Effect.ShutterDown:
           this.renderer.doShutter(
             "↓",
             this.getBeatLength(),
-            this.charsToNextBeat(bank)
+            this.charsToNextBeat(bank),
           );
           break;
         case Effect.ShutterLeft:
           this.renderer.doShutter(
             "←",
             this.getBeatLength(),
-            this.charsToNextBeat(bank)
+            this.charsToNextBeat(bank),
           );
           break;
         case Effect.ShutterRight:
           this.renderer.doShutter(
             "→",
             this.getBeatLength(),
-            this.charsToNextBeat(bank)
+            this.charsToNextBeat(bank),
           );
           break;
         case Effect.InvertToggle:
@@ -1156,12 +1154,12 @@ export class HuesCore extends EventListener<CoreEvents> {
       this.callEventListeners(
         "newcolour",
         this.colours[this.colourIndex],
-        false
+        false,
       );
       this.callEventListeners(
         "beatstring",
         this.getBeatString(),
-        this.getBeatIndex()
+        this.getBeatIndex(),
       );
     }
   }
@@ -1347,9 +1345,9 @@ export class HuesCore extends EventListener<CoreEvents> {
   }
 
   warning(message: string) {
-    console.warn(message);
     this.preloadSubMsg.innerHTML = message;
     this.preloadMsg.style.color = "#F93";
+    console.warn(this.preloadSubMsg.textContent);
   }
 
   clearMessage() {

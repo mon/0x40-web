@@ -1,11 +1,13 @@
 import xmlbuilder from "xmlbuilder";
-import * as zip from "@zip.js/zip.js";
 
 import { HuesSong, Respack, type HuesSongSection } from "./ResourcePack";
 import EditorMain from "./HuesEditor/Main.svelte";
 import type { HuesCore } from "./HuesCore";
 import type HuesWindow from "./HuesWindow";
 import type EditorBoxSvelte from "./HuesEditor/EditorBox.svelte";
+import { mount, type ComponentProps } from "svelte";
+
+const _zip = import("@zip.js/zip.js");
 
 export interface EditorUndoRedo {
   builds?: string[];
@@ -20,7 +22,9 @@ type SectionName = "build" | "loop";
 export class HuesEditor {
   core: HuesCore;
   song?: HuesSong;
-  editor!: EditorMain;
+  // TODO: dynamically derive?
+  editor!: { alert: (msg: string) => void; resyncEditors: () => void };
+  editorProps = $state() as ComponentProps<EditorMain>;
 
   // for storing respacks created with "new"
   respack?: Respack;
@@ -37,15 +41,41 @@ export class HuesEditor {
     this.midUpdate = false;
 
     let container = huesWin.addTab("EDITOR");
-    this.editor = new EditorMain({
+    this.editorProps = {
+      huesRoot: this.core.root,
+      soundManager: this.core.soundManager,
+      // if the first window is the editor, the user doesn't want the extra click
+      // but eh, maybe the performance impact really isn't that bad
+      totallyDisabled: false,
+      //totallyDisabled: this.core.settings.firstWindow != 'EDITOR',
+    };
+    this.editor = mount(EditorMain, {
       target: container,
-      props: {
-        huesRoot: this.core.root,
-        soundManager: this.core.soundManager,
-        // if the first window is the editor, the user doesn't want the extra click
-        // but eh, maybe the performance impact really isn't that bad
-        totallyDisabled: false,
-        //totallyDisabled: this.core.settings.firstWindow != 'EDITOR',
+      props: this.editorProps,
+      events: {
+        loadbuildup: (event) => this.onLoadAudio("build", event.detail),
+        loadrhythm: (event) => this.onLoadAudio("loop", event.detail),
+        removebuildup: (event) => this.onRemoveAudio("build"),
+        removerhythm: (event) => this.onRemoveAudio("loop"),
+        addbank: (event) => this.addBank(),
+        removebank: (event) => this.removeBank(event.detail),
+        songnew: (event) => this.newSong(),
+        savezip: (event) => this.saveZIP(),
+        savexml: (event) => this.saveXML(),
+        copyxml: (event) => this.copyXML(),
+        // update any changed fields from the editor component
+        update: (event) => {
+          if (core.currentSong) {
+            Object.assign(core.currentSong, event.detail);
+            this.core.updateBeatLength();
+            // We may have to go backwards in time
+            this.core.recalcBeatIndex();
+
+            this.midUpdate = true;
+            this.core.callEventListeners("newsong", core.currentSong);
+            this.midUpdate = false;
+          }
+        },
       },
     });
 
@@ -55,7 +85,8 @@ export class HuesEditor {
       }
 
       this.song = song;
-      this.editor.$set({
+      this.editorProps = {
+        ...this.editorProps,
         independentBuild: song?.independentBuild,
         title: song?.title,
         source: song?.source,
@@ -65,45 +96,16 @@ export class HuesEditor {
         redoQueue: song?.redoQueue,
         hiddenBanks: song?.hiddenBanks,
         disabled: !song,
-      });
+      };
     });
 
     core.soundManager.addEventListener("songloading", (promise, song) => {
-      this.editor.$set({ songLoadPromise: promise });
+      this.editorProps = { ...this.editorProps, songLoadPromise: promise };
     });
 
     core.addEventListener("beatstring", (beatString, beatIndex) => {
-      this.editor.$set({ beatIndex: beatIndex });
+      this.editorProps = { ...this.editorProps, beatIndex: beatIndex };
     });
-
-    // update any changed fields from the editor component
-    this.editor.$on("update", (event) => {
-      if (core.currentSong) {
-        Object.assign(core.currentSong, event.detail);
-        this.core.updateBeatLength();
-        // We may have to go backwards in time
-        this.core.recalcBeatIndex();
-
-        this.midUpdate = true;
-        this.core.callEventListeners("newsong", core.currentSong);
-        this.midUpdate = false;
-      }
-    });
-
-    this.editor.$on("loadbuildup", (event) =>
-      this.onLoadAudio("build", event.detail)
-    );
-    this.editor.$on("loadrhythm", (event) =>
-      this.onLoadAudio("loop", event.detail)
-    );
-    this.editor.$on("removebuildup", (event) => this.onRemoveAudio("build"));
-    this.editor.$on("removerhythm", (event) => this.onRemoveAudio("loop"));
-    this.editor.$on("addbank", (event) => this.addBank());
-    this.editor.$on("removebank", (event) => this.removeBank(event.detail));
-    this.editor.$on("songnew", (event) => this.newSong());
-    this.editor.$on("savezip", (event) => this.saveZIP());
-    this.editor.$on("savexml", (event) => this.saveXML());
-    this.editor.$on("copyxml", (event) => this.copyXML());
   }
 
   other(section: SectionName): SectionName {
@@ -115,7 +117,7 @@ export class HuesEditor {
     this.newSong(this.song);
 
     // brand new section may be added (eg: new build, fresh loop)
-    this.editor.$set({ [section]: sectionData });
+    this.editorProps = { ...this.editorProps, [section]: sectionData };
 
     // Have we just added a build to a song with a rhythm, or vice versa?
     // If so, link their lengths
@@ -145,7 +147,7 @@ export class HuesEditor {
     }
 
     if (section == "build") {
-      this.editor.$set({ build: undefined });
+      this.editorProps = { ...this.editorProps, build: undefined };
     }
   }
 
@@ -153,11 +155,12 @@ export class HuesEditor {
     if (this.song) {
       this.song.addBank();
       // resync UI
-      this.editor.$set({
+      this.editorProps = {
+        ...this.editorProps,
         loop: this.song.loop,
         build: this.song.build,
         hiddenBanks: this.song.hiddenBanks,
-      });
+      };
     }
   }
 
@@ -165,11 +168,12 @@ export class HuesEditor {
     if (this.song) {
       this.song.removeBank(index);
       // resync UI
-      this.editor.$set({
+      this.editorProps = {
+        ...this.editorProps,
         loop: this.song.loop,
         build: this.song.build,
         hiddenBanks: this.song.hiddenBanks,
-      });
+      };
     }
   }
 
@@ -196,7 +200,7 @@ export class HuesEditor {
     this.updateIndependentBuild();
 
     // Unlock beatmap lengths
-    this.editor.$set({ locked: false });
+    this.editorProps = { ...this.editorProps, locked: false };
 
     // You probably don't want to lose it
     window.onbeforeunload = () => "Unsaved beatmap - leave anyway?";
@@ -214,7 +218,7 @@ export class HuesEditor {
   }
 
   setIndependentBuild(indep: boolean) {
-    this.editor.$set({ independentBuild: indep });
+    this.editorProps = { ...this.editorProps, independentBuild: indep };
   }
 
   generateXML(root?: xmlbuilder.XMLNode) {
@@ -251,8 +255,10 @@ export class HuesEditor {
       return;
     }
 
+    const zip = await _zip;
+
     const zipWriter = new zip.ZipWriter(
-      new zip.Data64URIWriter("application/zip")
+      new zip.Data64URIWriter("application/zip"),
     );
     await zipWriter.add("songs.xml", new zip.TextReader(result));
     await this.song!.addZipAssets(zipWriter);
@@ -261,7 +267,7 @@ export class HuesEditor {
 
     this.downloadURI(
       dataURI,
-      "0x40Hues - " + this.song!.loop.basename + ".zip"
+      "0x40Hues - " + this.song!.loop.basename + ".zip",
     );
 
     window.onbeforeunload = null;
@@ -275,7 +281,7 @@ export class HuesEditor {
 
     this.downloadURI(
       "data:text/plain;charset=utf-8," + encodeURIComponent(result),
-      "0x40Hues - " + this.song!.loop.basename + ".xml"
+      "0x40Hues - " + this.song!.loop.basename + ".xml",
     );
 
     window.onbeforeunload = null;

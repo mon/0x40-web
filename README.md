@@ -98,8 +98,8 @@ Install the required packages for the build:
 npm install
 ```
 
-Build with `npx webpack`. It will create a `dist` folder. For seamless
-development with auto-reload, `npx webpack serve` - if you do this, put any
+Build with `npm run build`. It will create a `dist` folder. For seamless
+development with auto-reload, `npm run dev` - if you do this, put any
 respacks in `public/respacks` so they're found by the local server.
 
 ## Adding a new beat character

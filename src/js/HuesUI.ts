@@ -81,14 +81,6 @@ export class HuesUI {
 
     this.hidden = false;
 
-    this.initUI();
-  }
-
-  addCoreCallback(name: string, func: (...args: any) => void) {
-    this.callbacks.push({ name: name, func: func });
-  }
-
-  initUI() {
     // Major info, image, song names
     let imageName = document.createElement("div");
     this.imageName = imageName;
@@ -185,6 +177,10 @@ export class HuesUI {
     this.resizeHandler = this.resize.bind(this);
   }
 
+  addCoreCallback(name: string, func: (...args: any) => void) {
+    this.callbacks.push({ name: name, func: func });
+  }
+
   connectCore(core: HuesCore) {
     this.core = core;
     this.root.classList.remove("hidden");
@@ -211,7 +207,7 @@ export class HuesUI {
     }
     while (this.visualiserContainer.firstElementChild) {
       this.visualiserContainer.removeChild(
-        this.visualiserContainer.firstElementChild
+        this.visualiserContainer.firstElementChild,
       );
     }
     window.removeEventListener("resize", this.resizeHandler);
@@ -313,10 +309,6 @@ export class RetroUI extends HuesUI {
 
   constructor(parent: HTMLElement, name?: string) {
     super(parent, name ? name : "RetroUI");
-  }
-
-  initUI() {
-    super.initUI();
 
     let container = document.createElement("div");
     container.className = "hues-r-container";
@@ -462,10 +454,6 @@ export class RetroUI extends HuesUI {
 export class MinimalUI extends RetroUI {
   constructor(parent: HTMLElement, name?: string) {
     super(parent, name ? name : "MinimalUI");
-  }
-
-  initUI() {
-    super.initUI();
 
     this.root.removeChild(this.controls);
     this.root.removeChild(this.subControls);
@@ -486,10 +474,6 @@ export class WeedUI extends RetroUI {
 
     this.xVariance = 10;
     this.yVariance = 20;
-  }
-
-  initUI() {
-    super.initUI();
 
     this.container.removeChild(this.beatBar);
 
@@ -539,10 +523,10 @@ export class WeedUI extends RetroUI {
       beatCenter.className = "hues-w-beataccent";
       let rot = this.round10(15 - Math.random() * 30);
       let x = this.round10(
-        -this.xVariance / 2 + Math.random() * this.xVariance
+        -this.xVariance / 2 + Math.random() * this.xVariance,
       );
       let y = this.round10(
-        30 - this.yVariance / 2 + Math.random() * this.yVariance
+        30 - this.yVariance / 2 + Math.random() * this.yVariance,
       );
       let transform =
         "rotate(" + rot + "deg) translate(" + x + "px, " + y + "px)";
@@ -600,10 +584,6 @@ export class ModernUI extends HuesUI {
     this.currentBeat = ".";
 
     this.hidden = 0;
-  }
-
-  initUI() {
-    super.initUI();
 
     this.imageName.className = "hues-m-imagename";
     this.songName.className = "hues-m-songtitle";
@@ -1110,7 +1090,7 @@ export class XmasUI extends ModernUI {
 
   drawSnow() {
     const snowColour = intToHex(
-      mixColours(0xffffff, 0, this.core!.renderer.invert)
+      mixColours(0xffffff, 0, this.core!.renderer.invert),
     );
     // 80% alpha
     this.snowContext.fillStyle = snowColour + "cc";
@@ -1191,10 +1171,6 @@ export class HalloweenUI extends ModernUI {
 
   constructor(parent: HTMLElement, name?: string) {
     super(parent, name ? name : "HalloweenUI");
-  }
-
-  initUI() {
-    super.initUI();
 
     this.controls.className += " hues-h-controls";
     this.beatBar.className += " hues-h-beatbar";
@@ -1232,27 +1208,27 @@ export class HalloweenUI extends ModernUI {
 
     this.songBlock.insertBefore(
       makeDiv("hues-h-tombstone"),
-      this.songBlock.firstChild
+      this.songBlock.firstChild,
     );
     this.songBlock.insertBefore(
       makeDiv("hues-h-tombstone inverted"),
-      this.songBlock.firstChild
+      this.songBlock.firstChild,
     );
 
     this.imageBlock.insertBefore(
       makeDiv("hues-h-tombstone"),
-      this.imageBlock.firstChild
+      this.imageBlock.firstChild,
     );
     this.imageBlock.insertBefore(
       makeDiv("hues-h-tombstone inverted"),
-      this.imageBlock.firstChild
+      this.imageBlock.firstChild,
     );
 
     this.root.appendChild(
-      makeDiv("hues-m-beatcenter hues-h-text hues-h-skull")
+      makeDiv("hues-m-beatcenter hues-h-text hues-h-skull"),
     );
     this.root.appendChild(
-      makeDiv("hues-m-beatcenter hues-h-text hues-h-skull inverted")
+      makeDiv("hues-m-beatcenter hues-h-text hues-h-skull inverted"),
     );
 
     this.root.appendChild(makeDiv("hues-h-topleft"));

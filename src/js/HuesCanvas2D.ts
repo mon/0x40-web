@@ -5,7 +5,7 @@ import {
   type HuesCanvas,
   calculateImageDrawCoords,
 } from "./HuesRender";
-import type { SettingsData } from "./HuesSettings";
+import type { SettingsData } from "./HuesSettings.svelte";
 import { mixColours, intToHex } from "./Utils";
 
 // can't just use CanvasImageSource since some of the options (SVG stuff) don't
@@ -139,7 +139,7 @@ export default class HuesCanvas2D implements HuesCanvas {
       this.drawOverlay(
         params.overlayPercent,
         params.overlayColour,
-        params.invert
+        params.invert,
       );
       return;
     }
@@ -216,14 +216,14 @@ export default class HuesCanvas2D implements HuesCanvas {
           0,
           edge - this.shutterWidth,
           width,
-          this.shutterWidth
+          this.shutterWidth,
         );
       } else {
         this.context.fillRect(
           edge - this.shutterWidth,
           0,
           this.shutterWidth,
-          height
+          height,
         );
       }
 
@@ -244,7 +244,7 @@ export default class HuesCanvas2D implements HuesCanvas {
         params.invert,
         params.lastBitmapCenter,
         params.border,
-        params.centerLine
+        params.centerLine,
       );
 
       this.drawColour(
@@ -254,7 +254,7 @@ export default class HuesCanvas2D implements HuesCanvas {
         params.outTrippy,
         params.inTrippy,
         width,
-        height
+        height,
       );
 
       this.context.restore();
@@ -284,7 +284,7 @@ export default class HuesCanvas2D implements HuesCanvas {
       params.invert,
       params.bitmapCenter,
       params.border,
-      params.centerLine
+      params.centerLine,
     );
 
     const colour =
@@ -299,7 +299,7 @@ export default class HuesCanvas2D implements HuesCanvas {
       params.outTrippy,
       params.inTrippy,
       width,
-      height
+      height,
     );
 
     // all operations after this affect the entire image
@@ -313,7 +313,7 @@ export default class HuesCanvas2D implements HuesCanvas {
       this.drawOverlay(
         params.overlayPercent,
         params.overlayColour,
-        params.invert
+        params.invert,
       );
     }
   }
@@ -340,7 +340,7 @@ export default class HuesCanvas2D implements HuesCanvas {
     invert: number,
     bitmapCenter?: number,
     borders?: boolean,
-    centerLine?: boolean
+    centerLine?: boolean,
   ) {
     if (!bitmap) {
       return;
@@ -353,7 +353,7 @@ export default class HuesCanvas2D implements HuesCanvas {
         bitmap.width,
         bitmap.height,
         bitmapAlign,
-        bitmapCenter
+        bitmapCenter,
       );
 
     // the debugging draws have to happen last, but these are modified in between
@@ -392,7 +392,7 @@ export default class HuesCanvas2D implements HuesCanvas {
         drawWidth,
         drawHeight,
         width,
-        height
+        height,
       );
       // since the bitmap is replaced with a correctly offset and scaled version
       drawWidth = width;
@@ -433,7 +433,7 @@ export default class HuesCanvas2D implements HuesCanvas {
     outTrippy: number | undefined,
     inTrippy: number | undefined,
     width: number,
-    height: number
+    height: number,
   ) {
     if (outTrippy !== undefined || inTrippy !== undefined) {
       this.drawTrippy(outTrippy, inTrippy, colour, width, height);
@@ -512,7 +512,7 @@ export default class HuesCanvas2D implements HuesCanvas {
     drawWidth: number,
     drawHeight: number,
     width: number,
-    height: number
+    height: number,
   ) {
     this.offContext.clearRect(0, 0, width, height);
     if (!bitmap) {
@@ -549,7 +549,7 @@ export default class HuesCanvas2D implements HuesCanvas {
           drawXOffset + sliceYDistance,
           drawYOffset + sliceXDistance, // drawn x, y
           segmentDrawWidth,
-          segmentDrawHeight
+          segmentDrawHeight,
         ); // drawn w, h
 
         bitmapYOffset += segmentBitmapHeight;
@@ -569,7 +569,7 @@ export default class HuesCanvas2D implements HuesCanvas {
     drawWidth: number,
     drawHeight: number,
     xBlur: number,
-    yBlur: number
+    yBlur: number,
   ) {
     let bitmap = _bitmap!; // only ever called with valid data
     if (this.blurIterations < 0) {
@@ -584,7 +584,7 @@ export default class HuesCanvas2D implements HuesCanvas {
         Math.round(offset - xDist / 2),
         Math.round(-yDist / 2),
         drawWidth + xDist,
-        drawHeight + yDist
+        drawHeight + yDist,
       );
     } else {
       this.context.globalAlpha = this.blurAlpha;
@@ -602,7 +602,7 @@ export default class HuesCanvas2D implements HuesCanvas {
             0,
             0,
             this.canvas.width,
-            this.canvas.height
+            this.canvas.height,
           );
           xContext = this.offContext2;
         }
@@ -615,7 +615,7 @@ export default class HuesCanvas2D implements HuesCanvas {
             Math.round(dist * i) + offset,
             0,
             drawWidth,
-            drawHeight
+            drawHeight,
           );
         }
 
@@ -634,7 +634,7 @@ export default class HuesCanvas2D implements HuesCanvas {
             offset,
             Math.round(dist * i),
             drawWidth,
-            drawHeight
+            drawHeight,
           );
         }
       }
@@ -647,7 +647,7 @@ export default class HuesCanvas2D implements HuesCanvas {
     inTrippy: number | undefined,
     colour: number,
     width: number,
-    height: number
+    height: number,
   ) {
     outTrippy = outTrippy === undefined ? 1 : outTrippy;
     inTrippy = inTrippy === undefined ? 0 : inTrippy;
@@ -675,7 +675,7 @@ export default class HuesCanvas2D implements HuesCanvas {
         Math.floor(trippyRadii[i]! * this.trippyRadius),
         0,
         2 * Math.PI,
-        false
+        false,
       );
       this.offContext.fill();
       this.offContext.closePath();

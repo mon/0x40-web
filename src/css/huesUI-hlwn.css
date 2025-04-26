@@ -40,7 +40,7 @@
   z-index: 1;
 }
 .hues-m-beatcenter.hues-h-skull {
-  background-image: url("../../img/skull.png");
+  background-image: url("../../img/skull.png?inline");
   z-index: 0;
   opacity: calc(1 - var(--invert));
 }
@@ -59,7 +59,7 @@
 
 .hues-h-eyes {
   background: none;
-  background-image: url("../../img/skull-eyes.png");
+  background-image: url("../../img/skull-eyes.png?inline");
   top: 0;
   width: 42px;
   height: 64px;
@@ -72,7 +72,7 @@
 .inverted.hues-h-eyes {
   /* Set again to override the other .inverted selector from modern */
   background: none;
-  background-image: url("../../img/skull-eyes.png");
+  background-image: url("../../img/skull-eyes.png?inline");
   box-shadow: none;
   background-position: -42px 0;
   animation-name: hues-h-beatcenter-invert;
@@ -102,12 +102,12 @@
 }
 
 .hues-h-left-hand {
-  background: url("../../img/left-hand.png");
+  background: url("../../img/left-hand.png?inline");
   left: -15px;
 }
 
 .hues-h-right-hand {
-  background: url("../../img/right-hand.png");
+  background: url("../../img/right-hand.png?inline");
   right: -15px;
 }
 
@@ -144,7 +144,7 @@
   background: none;
   /* border-style: solid;
     border-width: 0 19px 0 18px;
-    border-image: url(../../img/bones.png) 29 19 0 18 fill repeat stretch; */
+    border-image: url(../../img/bones.png?inline) 29 19 0 18 fill repeat stretch; */
 }
 /* cheeky hacks to fade over invert */
 .hues-m-songtitle.hues-h-text::before,
@@ -161,7 +161,7 @@
   opacity: calc(1 - var(--invert));
   border-style: solid;
   border-width: 0 19px 0 18px;
-  border-image: url(../../img/bones.png) 29 19 0 18 fill repeat stretch;
+  border-image: url(../../img/bones.png?inline) 29 19 0 18 fill repeat stretch;
 }
 .hues-m-songtitle.hues-h-text::after,
 .hues-m-imagename.hues-h-text::after {
@@ -228,11 +228,11 @@
 
   border-style: solid;
   border-width: 22px 40px 0 42px;
-  border-image: url(../../img/tombstone.png) 22 42 0 fill stretch;
+  border-image: url(../../img/tombstone.png?inline) 22 42 0 fill stretch;
   opacity: calc(1 - var(--invert));
 }
 .inverted.hues-h-tombstone {
-  border-image: url(../../img/tombstone_invert.png) 22 42 0 fill stretch;
+  border-image: url(../../img/tombstone_invert.png?inline) 22 42 0 fill stretch;
   opacity: var(--invert);
 }
 
@@ -298,7 +298,7 @@
 }
 
 .hues-h-topleft {
-  background-image: url("../../img/web-topleft.png");
+  background-image: url("../../img/web-topleft.png?inline");
   width: 269px;
   height: 237px;
   opacity: calc(1 - var(--invert));
@@ -309,7 +309,7 @@
 }
 
 .hues-h-topright {
-  background-image: url("../../img/web-topright.png");
+  background-image: url("../../img/web-topright.png?inline");
   width: 215px;
   height: 220px;
   opacity: calc(1 - var(--invert));
@@ -320,7 +320,7 @@
 }
 
 .hues-h-bottomright {
-  background-image: url("../../img/web-bottomright.png");
+  background-image: url("../../img/web-bottomright.png?inline");
   bottom: 0;
   width: 358px;
   height: 284px;
@@ -332,7 +332,7 @@
 }
 
 .hues-h-vignette {
-  background-image: url("../../img/vignette.png");
+  background-image: url("../../img/vignette.png?inline");
   background-size: 100% 100%;
   width: 100%;
   height: 100%;

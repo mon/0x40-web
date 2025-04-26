@@ -141,7 +141,7 @@ export default class Resources {
       this.progressCallback = progressCallback;
       this.progressState = Array.apply(null, Array(urls.length)).map(
         Number.prototype.valueOf,
-        0
+        0,
       );
     }
 
@@ -198,7 +198,7 @@ export default class Resources {
           pack.enabled = checked;
           this.rebuildEnabled();
         },
-        () => this.selectPack(id)
+        () => this.selectPack(id),
       );
     }
   }
@@ -259,7 +259,7 @@ export default class Resources {
           () => {
             this.core.setImage(i);
             this.core.setIsFullAuto(false);
-          }
+          },
         );
       }
     }
@@ -372,7 +372,7 @@ export default class Resources {
       this.appendSimpleListItem(
         "Click to load the list",
         remoteList,
-        this.loadRemotes.bind(this)
+        this.loadRemotes.bind(this),
       );
       this.packsView.remoteList = remoteList;
     }
@@ -662,7 +662,7 @@ export default class Resources {
         songList,
         (checked) => this.selectResourceCallback(song, checked),
         () => this.clickResourceCallback(song, true),
-        song.enabled
+        song.enabled,
       );
     }
 
@@ -674,7 +674,7 @@ export default class Resources {
         imageList,
         (checked) => this.selectResourceCallback(image, checked),
         () => this.clickResourceCallback(image, false),
-        image.enabled
+        image.enabled,
       );
     }
   }
@@ -718,7 +718,7 @@ export default class Resources {
       const newVal = valCallback(entry.enabled);
       entry.enabled = newVal;
       let checkbox = document.getElementById(
-        tab.elName + i + "-" + this.unique
+        tab.elName + i + "-" + this.unique,
       );
       (<HTMLInputElement>checkbox).checked = newVal;
     }
@@ -744,7 +744,7 @@ export default class Resources {
     root: HTMLElement,
     oncheck: (checked: boolean) => any,
     onclick: GlobalEventHandlers["onclick"],
-    checked: boolean = true
+    checked: boolean = true,
   ) {
     if (!this.hasUI) {
       return;
@@ -872,7 +872,7 @@ export default class Resources {
       this.appendSimpleListItem(text + ".", imageList);
       this.appendSimpleListItem(
         "Load the respack to show the rest!",
-        imageList
+        imageList,
       );
     }
   }
@@ -936,7 +936,7 @@ export default class Resources {
   appendSimpleListItem(
     value: string,
     root: HTMLElement,
-    onclick?: GlobalEventHandlers["onclick"]
+    onclick?: GlobalEventHandlers["onclick"],
   ) {
     let div = document.createElement("div");
     div.className = "respacks-listitem";
