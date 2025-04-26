@@ -71,7 +71,7 @@
     let sel = window.getSelection();
     // need to get the text out of the div
     const text = [...el.childNodes].find(
-      (child) => child.nodeType === Node.TEXT_NODE
+      (child) => child.nodeType === Node.TEXT_NODE,
     );
     // I mean this shouldn't ever fail, right?
     if (text && sel) {
@@ -170,7 +170,7 @@
   };
 
   const getCaretFromMouseEvent = (
-    event: MouseEvent
+    event: MouseEvent,
   ): [number, HTMLDivElement?] => {
     // We cannot just get the caret on the right click event, because in
     // Firefox, the first right click just focuses the textbox without
@@ -374,7 +374,7 @@
   >
 
   <!-- spacer -->
-  <div />
+  <div></div>
 
   <HuesButton
     on:click={() => dispatch("halve")}
@@ -461,7 +461,7 @@ information.
         on:mousedown={click}
         on:click={click}
         on:focus={() => dispatch("focus")}
-      />
+      ></div>
     {/each}
   {/if}
 </div>

@@ -26,7 +26,7 @@
     wave.width = Math.floor(WAVE_PIXELS_PER_SECOND * length);
 
     let samplesPerPixel = Math.floor(
-      buffer.sampleRate / WAVE_PIXELS_PER_SECOND
+      buffer.sampleRate / WAVE_PIXELS_PER_SECOND,
     );
     let waveData = [];
     for (let i = 0; i < buffer.numberOfChannels; i++) {
@@ -86,7 +86,7 @@
     wave: HTMLCanvasElement,
     waveOffset: number,
     drawOffset: number,
-    width: number
+    width: number,
   ) => {
     let drawWidth = Math.min(width - drawOffset, wave.width - waveOffset);
     waveContext!.drawImage(
@@ -98,7 +98,7 @@
       drawOffset,
       0, // dest x/y
       drawWidth,
-      WAVE_HEIGHT_PIXELS
+      WAVE_HEIGHT_PIXELS,
     ); // dest width/height
     return drawOffset + drawWidth;
   };
@@ -138,7 +138,7 @@
     if (buildWave && bLen && minTime < 0) {
       // Bit of legwork to convert negative to positive
       let waveOffset = Math.floor(
-        (1 - drawTime / -bLen) * (buildWave.width - 1)
+        (1 - drawTime / -bLen) * (buildWave.width - 1),
       );
       try {
         drawOffset = drawOneWave(buildWave, waveOffset, drawOffset, width);
@@ -157,7 +157,7 @@
         }
 
         let waveOffset = Math.floor(
-          (drawTime / loopLen) * (loopWave.width - 1)
+          (drawTime / loopLen) * (loopWave.width - 1),
         );
         drawOffset = drawOneWave(loopWave, waveOffset, drawOffset, width);
         // If we're drawing more than 1 loop it's starting at 0
@@ -176,7 +176,7 @@
   $: if (soundManager) {
     buildWave = renderWave(
       soundManager.build.buffer,
-      soundManager.build.length
+      soundManager.build.length,
     );
     loopWave = renderWave(soundManager.loop.buffer, soundManager.loop.length);
   }
@@ -218,7 +218,7 @@
   bind:this={canvas}
   height={WAVE_HEIGHT_PIXELS}
   style="height:{WAVE_HEIGHT_PIXELS}px"
-/>
+></canvas>
 
 <style>
   canvas {

@@ -1,5 +1,5 @@
 import EventListener from "./EventListener";
-import type { HuesSettings } from "./HuesSettings";
+import type { HuesSettings } from "./HuesSettings.svelte";
 
 type WindowEvents = {
   // When the window is shown, hidden or toggled this fires.

@@ -2,7 +2,7 @@
 export function mixColours(
   oldColour: number,
   newColour: number,
-  percent: number
+  percent: number,
 ) {
   percent = Math.min(1, percent);
   let oldR = (oldColour >> 16) & 0xff;

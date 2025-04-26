@@ -1,11 +1,15 @@
 <script lang="ts">
   import HuesSetting from "./HuesSetting.svelte";
-  import { afterUpdate, createEventDispatcher } from "svelte";
 
-  import type { SettingsData } from "./HuesSettings";
+  import type {
+    SettingsData,
+    uiSettingsOptions,
+  } from "./HuesSettings.svelte.js";
 
   // To dynamically build the UI like the cool guy I am
-  const settingsCategories: { [key: string]: (keyof SettingsData)[] } = {
+  const settingsCategories: {
+    [key: string]: (keyof typeof uiSettingsOptions)[];
+  } = {
     Functionality: [
       "autoSong",
       "autoSongShuffle",
@@ -25,19 +29,16 @@
     Interface: ["currentUI", "blackoutUI", "skipPreloader"],
   };
 
-  export let settings: Partial<SettingsData> = {};
-  export let schema: {
-    [key: string]: { name: string; options: readonly string[] };
-  };
+  interface Props {
+    settings?: Partial<SettingsData>;
+    schema: {
+      [key: string]: { name: string; options: readonly string[] };
+    };
+  }
 
-  $: autoPlural = (settings.autoSongDelay || 0) > 1 ? "s" : "";
+  let { settings = $bindable({}), schema }: Props = $props();
 
-  // until we convert the rest of the app to svelte, this lets consumers
-  // update their own state more simply
-  const dispatch = createEventDispatcher();
-  afterUpdate(() => {
-    dispatch("update");
-  });
+  let autoPlural = $derived((settings.autoSongDelay || 0) > 1 ? "s" : "");
 </script>
 
 <div class="options">
@@ -48,17 +49,17 @@
         <HuesSetting bind:value={settings[setName]} info={schema[setName]}>
           <!-- This is the only setting that has custom logic so just put
                      it here instead of the schema -->
-          {#if setName == "autoSong" && settings["autoSong"] != "off"}
+          {#if setName == "autoSong" && settings.autoSong != "off"}
             <span>after</span>
             <input
               class="settings-input"
               type="number"
               min="1"
-              bind:value={settings["autoSongDelay"]}
+              bind:value={settings.autoSongDelay}
             />
-            {#if settings["autoSong"] == "loop"}
+            {#if settings.autoSong == "loop"}
               <span>loop{autoPlural}</span>
-            {:else if settings["autoSong"] == "time"}
+            {:else if settings.autoSong == "time"}
               <span>min{autoPlural}</span>
             {/if}
           {/if}

@@ -17,7 +17,7 @@
   };
 </script>
 
-<div class="timelock-border" class:unlocked={realUnlocked} />
+<div class="timelock-border" class:unlocked={realUnlocked}></div>
 <div class="hues-icon timelock" class:unlocked={realUnlocked}>
   <!-- CHAIN-BROKEN / CHAIN -->
   <HuesButton

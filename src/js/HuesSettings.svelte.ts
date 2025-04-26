@@ -1,7 +1,8 @@
+import { mount, type ComponentProps } from "svelte";
 import "../css/hues-settings.css";
 import EventListener from "./EventListener";
 
-import SettingsUI from "./HuesSettings.svelte";
+import SettingsUI from "./HuesSettingsUI.svelte";
 import type HuesWindow from "./HuesWindow";
 
 /* If you're modifying settings for your hues, DON'T EDIT THIS
@@ -78,7 +79,7 @@ const defaultSettings: SettingsData = {
 };
 
 // for the UI accessible config only
-const settingsOptions = {
+export const uiSettingsOptions = {
   smartAlign: {
     name: "Smart Align images",
     options: ["off", "on"],
@@ -178,24 +179,24 @@ export type SettingsData = {
   disableKeyboard: boolean;
 
   // UI accessible config
-  smartAlign: (typeof settingsOptions.smartAlign.options)[number];
-  blurAmount: (typeof settingsOptions.blurAmount.options)[number];
-  blurDecay: (typeof settingsOptions.blurDecay.options)[number];
-  blurQuality: (typeof settingsOptions.blurQuality.options)[number];
-  currentUI: (typeof settingsOptions.currentUI.options)[number];
-  colourSet: (typeof settingsOptions.colourSet.options)[number];
-  blendMode: (typeof settingsOptions.blendMode.options)[number];
-  bgColour: (typeof settingsOptions.bgColour.options)[number];
-  blackoutUI: (typeof settingsOptions.blackoutUI.options)[number];
-  invertStyle: (typeof settingsOptions.invertStyle.options)[number];
-  playBuildups: (typeof settingsOptions.playBuildups.options)[number];
-  visualiser: (typeof settingsOptions.visualiser.options)[number];
-  shuffleImages: (typeof settingsOptions.shuffleImages.options)[number];
-  autoSong: (typeof settingsOptions.autoSong.options)[number];
-  autoSongShuffle: (typeof settingsOptions.autoSongShuffle.options)[number];
-  autoSongFadeout: (typeof settingsOptions.autoSongFadeout.options)[number];
-  trippyMode: (typeof settingsOptions.trippyMode.options)[number];
-  skipPreloader: (typeof settingsOptions.skipPreloader.options)[number];
+  smartAlign: (typeof uiSettingsOptions.smartAlign.options)[number];
+  blurAmount: (typeof uiSettingsOptions.blurAmount.options)[number];
+  blurDecay: (typeof uiSettingsOptions.blurDecay.options)[number];
+  blurQuality: (typeof uiSettingsOptions.blurQuality.options)[number];
+  currentUI: (typeof uiSettingsOptions.currentUI.options)[number];
+  colourSet: (typeof uiSettingsOptions.colourSet.options)[number];
+  blendMode: (typeof uiSettingsOptions.blendMode.options)[number];
+  bgColour: (typeof uiSettingsOptions.bgColour.options)[number];
+  blackoutUI: (typeof uiSettingsOptions.blackoutUI.options)[number];
+  invertStyle: (typeof uiSettingsOptions.invertStyle.options)[number];
+  playBuildups: (typeof uiSettingsOptions.playBuildups.options)[number];
+  visualiser: (typeof uiSettingsOptions.visualiser.options)[number];
+  shuffleImages: (typeof uiSettingsOptions.shuffleImages.options)[number];
+  autoSong: (typeof uiSettingsOptions.autoSong.options)[number];
+  autoSongShuffle: (typeof uiSettingsOptions.autoSongShuffle.options)[number];
+  autoSongFadeout: (typeof uiSettingsOptions.autoSongFadeout.options)[number];
+  trippyMode: (typeof uiSettingsOptions.trippyMode.options)[number];
+  skipPreloader: (typeof uiSettingsOptions.skipPreloader.options)[number];
   autoSongDelay: number;
   volume: number;
 };
@@ -204,11 +205,59 @@ type SettingsEvents = {
   // Called when settings are updated
   updated: () => void;
 };
+export class HuesSettings
+  extends EventListener<SettingsEvents>
+  implements SettingsData
+{
+  respacks = $state() as SettingsData["respacks"];
+  parseQueryString = $state() as SettingsData["parseQueryString"];
+  respackPath = $state() as SettingsData["respackPath"];
+  load = $state() as SettingsData["load"];
+  autoplay = $state() as SettingsData["autoplay"];
+  overwriteLocal = $state() as SettingsData["overwriteLocal"];
+  firstSong = $state() as SettingsData["firstSong"];
+  firstImage = $state() as SettingsData["firstImage"];
+  fullAuto = $state() as SettingsData["fullAuto"];
+  packsURL = $state() as SettingsData["packsURL"];
+  disableRemoteResources = $state() as SettingsData["disableRemoteResources"];
+  enableWindow = $state() as SettingsData["enableWindow"];
+  showWindow = $state() as SettingsData["showWindow"];
+  firstWindow = $state() as SettingsData["firstWindow"];
+  preloadPrefix = $state() as SettingsData["preloadPrefix"];
+  preloadBase = $state() as SettingsData["preloadBase"];
+  preloadMax = $state() as SettingsData["preloadMax"];
+  preloadTitle = $state() as SettingsData["preloadTitle"];
+  huesName = $state() as SettingsData["huesName"];
+  huesDesc = $state() as SettingsData["huesDesc"];
+  root = $state() as SettingsData["root"];
+  disableKeyboard = $state() as SettingsData["disableKeyboard"];
 
-export interface HuesSettings extends SettingsData {}
-export class HuesSettings extends EventListener<SettingsEvents> {
-  ephemerals: Partial<SettingsData>;
-  ui?: SettingsUI;
+  // UI accessible
+  smartAlign = $state() as SettingsData["smartAlign"];
+  blurAmount = $state() as SettingsData["blurAmount"];
+  blurDecay = $state() as SettingsData["blurDecay"];
+  blurQuality = $state() as SettingsData["blurQuality"];
+  currentUI = $state() as SettingsData["currentUI"];
+  colourSet = $state() as SettingsData["colourSet"];
+  blendMode = $state() as SettingsData["blendMode"];
+  bgColour = $state() as SettingsData["bgColour"];
+  blackoutUI = $state() as SettingsData["blackoutUI"];
+  invertStyle = $state() as SettingsData["invertStyle"];
+  playBuildups = $state() as SettingsData["playBuildups"];
+  visualiser = $state() as SettingsData["visualiser"];
+  shuffleImages = $state() as SettingsData["shuffleImages"];
+  autoSong = $state() as SettingsData["autoSong"];
+  autoSongDelay = $state() as SettingsData["autoSongDelay"];
+  autoSongShuffle = $state() as SettingsData["autoSongShuffle"];
+  autoSongFadeout = $state() as SettingsData["autoSongFadeout"];
+  trippyMode = $state() as SettingsData["trippyMode"];
+  volume = $state() as SettingsData["volume"];
+  skipPreloader = $state() as SettingsData["skipPreloader"];
+
+  uiProps: ComponentProps<typeof SettingsUI> = $state({
+    settings: this,
+    schema: uiSettingsOptions,
+  });
 
   constructor(defaults: Partial<SettingsData>) {
     super();
@@ -219,44 +268,58 @@ export class HuesSettings extends EventListener<SettingsEvents> {
       localStorage.settingsVersion = settingsVersion;
     }
 
-    this.ephemerals = {};
+    const settingsKeys = Object.keys(defaultSettings) as (keyof SettingsData)[];
 
-    for (let _attr in defaultSettings) {
-      let attr = _attr as keyof SettingsData;
-      Object.defineProperty(this, attr, {
-        set: this.makeSetter(attr as keyof SettingsData),
-        get: this.makeGetter(attr as keyof SettingsData),
-      });
-
+    for (const attr of settingsKeys) {
       // this is too tricky for typescript and/or my brain, so just be
       // lazy with the <any>
-      if (defaults[attr] !== undefined) {
-        if (defaults.overwriteLocal) {
-          (<any>this)[attr] = defaults[attr];
-        } else {
-          (<any>this.ephemerals)[attr] = defaults[attr];
-        }
+      if (defaults.overwriteLocal) {
+        (<any>this)[attr] =
+          localStorage[attr] ?? defaults[attr] ?? defaultSettings[attr];
+      } else {
+        (<any>this)[attr] =
+          defaults[attr] ?? localStorage[attr] ?? defaultSettings[attr];
       }
     }
 
     if (this.parseQueryString) {
       let querySettings = this.getQuerySettings();
 
-      for (let _attr in defaultSettings) {
-        let attr = _attr as keyof SettingsData;
+      for (const attr of settingsKeys) {
         // query string overrides, finally
         if (querySettings[attr] !== undefined && attr != "respacks") {
-          (<any>this.ephemerals)[attr] = querySettings[attr];
+          (<any>this)[attr] = querySettings[attr];
         }
       }
 
-      this.respacks = this.respacks.concat(querySettings.respacks!);
+      this.respacks = this.respacks.concat(querySettings.respacks);
+    }
+
+    // attach our event listeners
+    for (const attr of settingsKeys) {
+      $effect.root(() => {
+        let first = true;
+        $effect(() => {
+          this[attr]; // ensure deps are caught
+          if (first) {
+            first = false;
+            return;
+          }
+
+          console.debug(`Setting updated ${attr} -> ${this[attr]}`);
+
+          if (!this.isEphemeral(attr)) localStorage[attr] = this[attr];
+
+          this.callEventListeners("updated");
+        });
+      });
     }
   }
 
   getQuerySettings() {
-    let results: Partial<SettingsData> = {};
-    results.respacks = [];
+    let results: Partial<SettingsData> & { respacks: string[] } = {
+      respacks: [],
+    };
     let query = window.location.search.substring(1);
     let vars = query.split("&");
     for (let i = 0; i < vars.length; i++) {
@@ -281,57 +344,13 @@ export class HuesSettings extends EventListener<SettingsEvents> {
 
   initUI(huesWin: HuesWindow) {
     let uiTab = huesWin.addTab("OPTIONS");
-    this.ui = new SettingsUI({
+    mount(SettingsUI, {
       target: uiTab,
-      props: {
-        settings: this,
-        schema: settingsOptions,
-      },
+      props: this.uiProps,
     });
-
-    this.ui.$on("update", () => {
-      this.callEventListeners("updated");
-    });
-  }
-
-  makeGetter(setting: keyof SettingsData) {
-    return () => {
-      if (defaultSettings.hasOwnProperty(setting)) {
-        if (this.ephemerals[setting] !== undefined)
-          return this.ephemerals[setting];
-        else if (localStorage[setting] !== undefined)
-          return localStorage[setting];
-        else return defaultSettings[setting];
-      } else {
-        console.log("WARNING: Attempted to fetch invalid setting:", setting);
-        return null;
-      }
-    };
-  }
-
-  // Set a named index to its named value, returns false if name doesn't exist
-  makeSetter<S extends keyof SettingsData>(setting: S) {
-    return (value: SettingsData[S]) => {
-      if (this.isEphemeral(setting)) {
-        this.ephemerals[setting] = value;
-      } else {
-        let opt = (<any>settingsOptions)[setting];
-        if (!opt || opt.options.indexOf(value) == -1) {
-          console.error(value, "is not a valid value for", setting);
-          return false;
-        }
-        localStorage[setting] = value;
-        this.ephemerals[setting] = undefined;
-      }
-
-      if (this.ui) {
-        this.ui.$set({ settings: this });
-      }
-      return true;
-    };
   }
 
   isEphemeral(setting: keyof SettingsData) {
-    return !settingsOptions.hasOwnProperty(setting);
+    return !uiSettingsOptions.hasOwnProperty(setting);
   }
 }

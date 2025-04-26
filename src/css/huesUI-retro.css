@@ -102,7 +102,9 @@
 .hues-r-subcontrols {
   visibility: inherit;
   opacity: 1;
-  transition: visibility 0.5s linear, opacity 0.5s linear;
+  transition:
+    visibility 0.5s linear,
+    opacity 0.5s linear;
 }
 
 .hues-r-container.hues-ui--hidden,

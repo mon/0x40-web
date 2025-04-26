@@ -1,22 +1,20 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-    <head>
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <title>0x40 Respack Editor</title>
-        <!-- Non minified at https://github.com/mon/0x40-web/ -->
-        <link rel="stylesheet" href="css/respack-editor-min.css">
-        <script defer type="text/javascript" src="lib/respack-editor-min.js"></script>
-        <script type="text/javascript">
-            window.addEventListener("load", async function() {
-                // debugging/development
-                // let r = new Respack();
-                // await r.loadFromURL("./respacks/Defaults_v5.0_Opaque.zip");
-                // window.respackEditor.$set({pack: r});
-                // window.respack = r;
-            });
-        </script>
-    </head>
-    <body>
-    </body>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>0x40 Respack Editor</title>
+    <script type="text/javascript">
+      window.addEventListener("load", async function () {
+        // debugging/development
+        // let r = new Respack();
+        // await r.loadFromURL("./respacks/Defaults_v5.0_Opaque.zip");
+        // window.respackEditor.$set({pack: r});
+        // window.respack = r;
+      });
+    </script>
+    <!-- Non minified at https://github.com/mon/0x40-web/ -->
+    <script type="module" src="/src/js/RespackEditor/main.ts"></script>
+  </head>
+  <body></body>
 </html>
