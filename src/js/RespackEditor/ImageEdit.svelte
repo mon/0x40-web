@@ -76,13 +76,12 @@
     });
   }
 
-  onMount(async () => {
-    await tick();
-
+  onMount(() => {
     canvas = new HuesCanvas2D(imboxEl);
 
     window.addEventListener("resize", resizeCanvas);
-    await resizeCanvas();
+    // async, no problem, happens later
+    resizeCanvas();
 
     let raf: number;
     let cb = () => {
@@ -193,7 +192,8 @@
           <option value={col["c"]}>{col["n"]}</option>
         {/each}
       </select>
-      <span class="colourbox" style="background-color: {intToHex(colour)}" />
+      <span class="colourbox" style="background-color: {intToHex(colour)}"
+      ></span>
 
       <label for="blendMode">Blend mode</label>
       <select id="blendMode" bind:value={blendMode}>
@@ -230,7 +230,11 @@
     </div>
 
     <!-- Make a super-wide preview box to demonstrate image alignment -->
-    <div class="imbox" bind:this={imboxEl} style="aspect-ratio:{phoneRatio}" />
+    <div
+      class="imbox"
+      bind:this={imboxEl}
+      style="aspect-ratio:{phoneRatio}"
+    ></div>
   </div>
 {/if}
 

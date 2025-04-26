@@ -2,15 +2,12 @@ import type { HuesCore } from "./HuesCore";
 import type { HuesSong, HuesSongSection } from "./ResourcePack";
 import EventListener from "./EventListener";
 import CodecParser, { type CodecValue } from "codec-parser";
-import { type MPEGDecodedAudio, MPEGDecoderWebWorker } from "mpg123-decoder";
-import {
-  type OggOpusDecodedAudio,
-  OggOpusDecoderWebWorker,
-} from "ogg-opus-decoder";
-import {
-  type OggVorbisDecodedAudio,
-  OggVorbisDecoderWebWorker,
-} from "@wasm-audio-decoders/ogg-vorbis";
+import type { MPEGDecodedAudio } from "mpg123-decoder";
+import type { OggOpusDecodedAudio } from "ogg-opus-decoder";
+import type { OggVorbisDecodedAudio } from "@wasm-audio-decoders/ogg-vorbis";
+const mp3_decoder = import("mpg123-decoder");
+const opus_decoder = import("ogg-opus-decoder");
+const vorbis_decoder = import("@wasm-audio-decoders/ogg-vorbis");
 
 type SoundCallbacks = {
   // Called when the audio has been seeked - reset time determined transforms
@@ -127,11 +124,6 @@ export default class SoundManager extends EventListener<SoundCallbacks> {
       throw Error("Web Audio API not supported in this browser.");
     }
 
-      // ensure decoders work
-    await new MPEGDecoderWebWorker().ready;
-    await new OggOpusDecoderWebWorker().ready;
-    await new OggVorbisDecoderWebWorker().ready;
-
     this.locked = this.context.state != "running";
   }
 
@@ -168,7 +160,7 @@ export default class SoundManager extends EventListener<SoundCallbacks> {
   playSong(
     song: HuesSong,
     playBuild: boolean,
-    forcePlay: boolean = false
+    forcePlay: boolean = false,
   ): Promise<void> {
     let promise = this._playSong(song, playBuild, forcePlay);
     this.callEventListeners("songloading", promise, song);
@@ -178,7 +170,7 @@ export default class SoundManager extends EventListener<SoundCallbacks> {
   private async _playSong(
     song: HuesSong,
     playBuild: boolean,
-    forcePlay: boolean
+    forcePlay: boolean,
   ) {
     // Editor forces play on audio updates
     if (this.song == song && !forcePlay) {
@@ -203,7 +195,7 @@ export default class SoundManager extends EventListener<SoundCallbacks> {
     // To prevent race condition if you press "next" twice fast
     if (song != this.song) {
       throw Error(
-        "Song changed between load and play - this message can be ignored"
+        "Song changed between load and play - this message can be ignored",
       );
     }
 
@@ -287,7 +279,7 @@ export default class SoundManager extends EventListener<SoundCallbacks> {
       this.build.source.connect(this.replayGainNode!);
       this.build.source.start(0, this.build.length + time);
       this.loop.source.start(
-        this.context.currentTime - time / this.playbackRate
+        this.context.currentTime - time / this.playbackRate,
       );
     } else {
       this.loop.source.start(0, time);
@@ -331,7 +323,7 @@ export default class SoundManager extends EventListener<SoundCallbacks> {
                running decode will finish and resolve instead.
                NOTE: If anything but playSong calls loadSong, this idea is broken. */
       return Promise.reject(
-        "Song changed between load and play - this message can be ignored"
+        "Song changed between load and play - this message can be ignored",
       );
     }
 
@@ -346,7 +338,7 @@ export default class SoundManager extends EventListener<SoundCallbacks> {
       promises.push(
         this.loadBuffer(song.build).then((buffer) => {
           buffers.buildup = buffer;
-        })
+        }),
       );
     } else {
       this.build.length = 0;
@@ -385,11 +377,13 @@ export default class SoundManager extends EventListener<SoundCallbacks> {
       });
       parser.parseChunk(view).next();
       if (codec === "opus") {
-        const decoder  = new OggOpusDecoderWebWorker({ forceStereo: true });
+        const decoder = new (await opus_decoder).OggOpusDecoderWebWorker({
+          forceStereo: true,
+        });
         await decoder.ready;
         decoded = await decoder.decodeFile(view);
       } else if (codec === "vorbis") {
-        const decoder = new OggVorbisDecoderWebWorker();
+        const decoder = new (await vorbis_decoder).OggVorbisDecoderWebWorker();
         await decoder.ready;
         decoded = await decoder.decodeFile(view);
       } else if (codec === undefined) {
@@ -407,7 +401,9 @@ export default class SoundManager extends EventListener<SoundCallbacks> {
       // ID3v2 tagged MP3 "ID3"
       (view[0] == 0x49 && view[1] == 0x44 && view[2] == 0x33)
     ) {
-      const decoder = new MPEGDecoderWebWorker({ enableGapless: true });
+      const decoder = new (await mp3_decoder).MPEGDecoderWebWorker({
+        enableGapless: true,
+      });
       await decoder.ready;
       decoded = await decoder.decode(view);
     } else {
@@ -421,12 +417,12 @@ export default class SoundManager extends EventListener<SoundCallbacks> {
 
   // Converts continuous PCM array to Web Audio API friendly format
   audioBufFromRaw(
-    raw: OggOpusDecodedAudio | OggVorbisDecodedAudio | MPEGDecodedAudio
+    raw: OggOpusDecodedAudio | OggVorbisDecodedAudio | MPEGDecodedAudio,
   ): AudioBuffer {
     let audioBuf = this.context.createBuffer(
       raw.channelData.length,
       raw.samplesDecoded,
-      raw.sampleRate
+      raw.sampleRate,
     );
     for (const [i, channel] of raw.channelData.entries()) {
       // Most browsers
@@ -583,7 +579,7 @@ export default class SoundManager extends EventListener<SoundCallbacks> {
         result[i] = this.sumArray(
           data,
           this.binCutoffs[cutoff - 1],
-          this.binCutoffs[cutoff]
+          this.binCutoffs[cutoff],
         );
       }
     }
@@ -635,7 +631,7 @@ export default class SoundManager extends EventListener<SoundCallbacks> {
       this.gainNode.gain.setValueAtTime(this.lastVol, this.context.currentTime);
       this.gainNode.gain.exponentialRampToValueAtTime(
         0.01,
-        this.context.currentTime + 2
+        this.context.currentTime + 2,
       );
     }
     setTimeout(callback, 2000);

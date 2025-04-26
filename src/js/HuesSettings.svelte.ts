@@ -1,7 +1,8 @@
+import { mount, type ComponentProps } from "svelte";
 import "../css/hues-settings.css";
 import EventListener from "./EventListener";
 
-import SettingsUI from "./HuesSettings.svelte";
+import SettingsUI from "./HuesSettingsUI.svelte";
 import type HuesWindow from "./HuesWindow";
 
 /* If you're modifying settings for your hues, DON'T EDIT THIS
@@ -208,7 +209,10 @@ type SettingsEvents = {
 export interface HuesSettings extends SettingsData {}
 export class HuesSettings extends EventListener<SettingsEvents> {
   ephemerals: Partial<SettingsData>;
-  ui?: SettingsUI;
+  uiProps: ComponentProps<SettingsUI> = $state({
+    settings: this,
+    schema: settingsOptions,
+  });
 
   constructor(defaults: Partial<SettingsData>) {
     super();
@@ -281,16 +285,15 @@ export class HuesSettings extends EventListener<SettingsEvents> {
 
   initUI(huesWin: HuesWindow) {
     let uiTab = huesWin.addTab("OPTIONS");
-    this.ui = new SettingsUI({
+    mount(SettingsUI, {
       target: uiTab,
-      props: {
-        settings: this,
-        schema: settingsOptions,
+      props: this.uiProps,
+      events: {
+        update: () => {
+          console.log("setting update");
+          this.callEventListeners("updated");
+        },
       },
-    });
-
-    this.ui.$on("update", () => {
-      this.callEventListeners("updated");
     });
   }
 
@@ -324,8 +327,8 @@ export class HuesSettings extends EventListener<SettingsEvents> {
         this.ephemerals[setting] = undefined;
       }
 
-      if (this.ui) {
-        this.ui.$set({ settings: this });
+      if (this.uiProps) {
+        this.uiProps.settings = this;
       }
       return true;
     };

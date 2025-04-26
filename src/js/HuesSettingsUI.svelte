@@ -1,8 +1,8 @@
 <script lang="ts">
   import HuesSetting from "./HuesSetting.svelte";
-  import { afterUpdate, createEventDispatcher } from "svelte";
+  import { createEventDispatcher } from "svelte";
 
-  import type { SettingsData } from "./HuesSettings";
+  import type { SettingsData } from "./HuesSettings.svelte.js";
 
   // To dynamically build the UI like the cool guy I am
   const settingsCategories: { [key: string]: (keyof SettingsData)[] } = {
@@ -25,17 +25,21 @@
     Interface: ["currentUI", "blackoutUI", "skipPreloader"],
   };
 
-  export let settings: Partial<SettingsData> = {};
-  export let schema: {
-    [key: string]: { name: string; options: readonly string[] };
-  };
+  interface Props {
+    settings?: Partial<SettingsData>;
+    schema: {
+      [key: string]: { name: string; options: readonly string[] };
+    };
+  }
 
-  $: autoPlural = (settings.autoSongDelay || 0) > 1 ? "s" : "";
+  let { settings = $bindable({}), schema }: Props = $props();
+
+  let autoPlural = $derived((settings.autoSongDelay || 0) > 1 ? "s" : "");
 
   // until we convert the rest of the app to svelte, this lets consumers
   // update their own state more simply
   const dispatch = createEventDispatcher();
-  afterUpdate(() => {
+  $effect(() => {
     dispatch("update");
   });
 </script>

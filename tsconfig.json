@@ -1,12 +1,7 @@
 {
-    "extends": "@tsconfig/svelte/tsconfig.json",
-    "compilerOptions": {
-        "allowJs": false,
-        "target": "es2020",
-        "sourceMap": true,
-        "strict": true,
-        // Don't clobber the src dir if accidentally running tsc
-        "outDir": "dist_tsc"
-    },
-    "include": ["./src/**/*"]
+  "files": [],
+  "references": [
+    { "path": "./tsconfig.app.json" },
+    { "path": "./tsconfig.node.json" }
+  ]
 }

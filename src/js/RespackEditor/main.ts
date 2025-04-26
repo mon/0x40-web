@@ -1,9 +1,7 @@
 import App from "./App.svelte";
+import { mount } from "svelte";
 
-// not strictly required but it makes webpack put it in `dist`
-import "../../../respack_edit.html";
-
-const app = new App({ target: document.body });
+const app = mount(App, { target: document.body, props: { pack: undefined } });
 
 export default app;
 

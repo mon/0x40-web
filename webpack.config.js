@@ -10,7 +10,7 @@ const isDevServer = process.env.WEBPACK_SERVE;
 
 let optimization;
 let svelteCheck;
-if(isDevServer) {
+if (isDevServer) {
     optimization = {
         minimize: false
     };
@@ -19,7 +19,7 @@ if(isDevServer) {
     optimization = {
         minimizer: [
             new EsbuildPlugin({
-                target: 'es2020',  // Syntax to compile to (see options below for possible values)
+                target: 'es2022',  // Syntax to compile to (see options below for possible values)
                 css: true  // Apply minification to CSS assets
             }),
         ],
@@ -34,7 +34,10 @@ const commonSettings = {
         hints: false,
     },
     resolve: {
+        // alias: { svelte: path.resolve('node_modules', 'svelte/src/runtime') },
         extensions: ['.tsx', '.ts', '.js'],
+        mainFields: ['svelte', 'browser', '...'],
+        conditionNames: ['svelte', 'browser', '...'],
     },
     optimization: optimization,
 };
@@ -45,17 +48,27 @@ const commonRules = [
         use: {
             loader: 'svelte-loader',
             options: {
-                preprocess: SveltePreprocess()
+                preprocess: SveltePreprocess(),
+                emitCss: true,
+                // note: keep up to date with the one in svelte.config.js
+                compilerOptions: {
+                    // disable all accessibility warnings
+                    warningFilter: (warning) => !warning.code.startsWith('a11y')
+                }
             }
         }
     },
     {
-        test: /\.tsx?$/,
-        loader: "esbuild-loader",
-        exclude: /node_modules/,
+        test: /\.svelte\.ts$/,
+        use: [
+            "svelte-loader",
+            { loader: "ts-loader", options: { transpileOnly: true } }],
+    },
+    {
+        test: /(?<!\.svelte)\.ts$/,
+        loader: "ts-loader",
         options: {
-            loader: 'ts',
-            target: 'es2020'
+            transpileOnly: true,
         }
     },
     {
