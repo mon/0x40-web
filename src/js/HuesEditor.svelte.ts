@@ -22,9 +22,8 @@ type SectionName = "build" | "loop";
 export class HuesEditor {
   core: HuesCore;
   song?: HuesSong;
-  // TODO: dynamically derive?
-  editor!: { alert: (msg: string) => void; resyncEditors: () => void };
-  editorProps = $state() as ComponentProps<EditorMain>;
+  editorProps = $state({}) as ComponentProps<EditorMain>;
+  editor!: ReturnType<typeof EditorMain>;
 
   // for storing respacks created with "new"
   respack?: Respack;
@@ -41,14 +40,12 @@ export class HuesEditor {
     this.midUpdate = false;
 
     let container = huesWin.addTab("EDITOR");
-    this.editorProps = {
-      huesRoot: this.core.root,
-      soundManager: this.core.soundManager,
-      // if the first window is the editor, the user doesn't want the extra click
-      // but eh, maybe the performance impact really isn't that bad
-      totallyDisabled: false,
-      //totallyDisabled: this.core.settings.firstWindow != 'EDITOR',
-    };
+    this.editorProps.huesRoot = this.core.root;
+    this.editorProps.soundManager = this.core.soundManager;
+    // if the first window is the editor, the user doesn't want the extra click
+    // but eh, maybe the performance impact really isn't that bad
+    this.editorProps.totallyDisabled = false;
+    //this.editor.totallyDisabled = this.core.settings.firstWindow != 'EDITOR',
     this.editor = mount(EditorMain, {
       target: container,
       props: this.editorProps,
@@ -85,26 +82,23 @@ export class HuesEditor {
       }
 
       this.song = song;
-      this.editorProps = {
-        ...this.editorProps,
-        independentBuild: song?.independentBuild,
-        title: song?.title,
-        source: song?.source,
-        loop: song?.loop,
-        build: song?.build,
-        undoQueue: song?.undoQueue,
-        redoQueue: song?.redoQueue,
-        hiddenBanks: song?.hiddenBanks,
-        disabled: !song,
-      };
+      this.editorProps.independentBuild = song?.independentBuild;
+      this.editorProps.title = song?.title;
+      this.editorProps.source = song?.source;
+      this.editorProps.loop = song?.loop;
+      this.editorProps.build = song?.build;
+      this.editorProps.undoQueue = song?.undoQueue;
+      this.editorProps.redoQueue = song?.redoQueue;
+      this.editorProps.hiddenBanks = song?.hiddenBanks;
+      this.editorProps.disabled = !song;
     });
 
     core.soundManager.addEventListener("songloading", (promise, song) => {
-      this.editorProps = { ...this.editorProps, songLoadPromise: promise };
+      this.editorProps.songLoadPromise = promise;
     });
 
     core.addEventListener("beatstring", (beatString, beatIndex) => {
-      this.editorProps = { ...this.editorProps, beatIndex: beatIndex };
+      this.editorProps.beatIndex = beatIndex;
     });
   }
 
@@ -117,7 +111,7 @@ export class HuesEditor {
     this.newSong(this.song);
 
     // brand new section may be added (eg: new build, fresh loop)
-    this.editorProps = { ...this.editorProps, [section]: sectionData };
+    this.editorProps[section] = sectionData;
 
     // Have we just added a build to a song with a rhythm, or vice versa?
     // If so, link their lengths
@@ -147,33 +141,33 @@ export class HuesEditor {
     }
 
     if (section == "build") {
-      this.editorProps = { ...this.editorProps, build: undefined };
+      this.editorProps.build = undefined;
     }
   }
 
   addBank() {
     if (this.song) {
       this.song.addBank();
-      // resync UI
-      this.editorProps = {
-        ...this.editorProps,
-        loop: this.song.loop,
-        build: this.song.build,
-        hiddenBanks: this.song.hiddenBanks,
-      };
+      // resync UI, TODO: jank hackfix for svelte 5
+      this.editorProps.loop = undefined;
+      this.editorProps.loop = this.song.loop;
+      this.editorProps.build = undefined;
+      this.editorProps.build = this.song.build;
+      this.editorProps.hiddenBanks = undefined;
+      this.editorProps.hiddenBanks = this.song.hiddenBanks;
     }
   }
 
   removeBank(index: number) {
     if (this.song) {
       this.song.removeBank(index);
-      // resync UI
-      this.editorProps = {
-        ...this.editorProps,
-        loop: this.song.loop,
-        build: this.song.build,
-        hiddenBanks: this.song.hiddenBanks,
-      };
+      // resync UI, TODO: jank hackfix for svelte 5
+      this.editorProps.loop = undefined;
+      this.editorProps.loop = this.song.loop;
+      this.editorProps.build = undefined;
+      this.editorProps.build = this.song.build;
+      this.editorProps.hiddenBanks = undefined;
+      this.editorProps.hiddenBanks = this.song.hiddenBanks;
     }
   }
 
@@ -200,7 +194,7 @@ export class HuesEditor {
     this.updateIndependentBuild();
 
     // Unlock beatmap lengths
-    this.editorProps = { ...this.editorProps, locked: false };
+    this.editorProps.locked = false;
 
     // You probably don't want to lose it
     window.onbeforeunload = () => "Unsaved beatmap - leave anyway?";
@@ -218,7 +212,7 @@ export class HuesEditor {
   }
 
   setIndependentBuild(indep: boolean) {
-    this.editorProps = { ...this.editorProps, independentBuild: indep };
+    this.editorProps.independentBuild = indep;
   }
 
   generateXML(root?: xmlbuilder.XMLNode) {

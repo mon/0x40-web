@@ -30,13 +30,13 @@
   };
 
   interface Props {
-    settings?: Partial<SettingsData>;
+    settings: Partial<SettingsData>;
     schema: {
       [key: string]: { name: string; options: readonly string[] };
     };
   }
 
-  let { settings = $bindable({}), schema }: Props = $props();
+  let { settings, schema }: Props = $props();
 
   let autoPlural = $derived((settings.autoSongDelay || 0) > 1 ? "s" : "");
 </script>
