@@ -85,10 +85,15 @@ export class HuesEditor {
       this.editorProps.independentBuild = song?.independentBuild;
       this.editorProps.title = song?.title;
       this.editorProps.source = song?.source;
+      this.editorProps.loop = undefined; // TODO: hackfix for svelte 5 port
       this.editorProps.loop = song?.loop;
+      this.editorProps.build = undefined;
       this.editorProps.build = song?.build;
+      this.editorProps.undoQueue = undefined;
       this.editorProps.undoQueue = song?.undoQueue;
+      this.editorProps.redoQueue = undefined;
       this.editorProps.redoQueue = song?.redoQueue;
+      this.editorProps.hiddenBanks = undefined;
       this.editorProps.hiddenBanks = song?.hiddenBanks;
       this.editorProps.disabled = !song;
     });

@@ -31,8 +31,8 @@
   let bankHover = 0;
 
   $: activeBanks = section?.banks
-    .map((bank, i): [HTMLDivElement, number] => [editBanks[i], i])
-    .filter((bankI, i) => !hiddenBanks[i]);
+    .map((_, i) => i)
+    .filter((i) => !hiddenBanks[i]);
 
   let toggleLock = () => {
     locked = !locked;
@@ -203,15 +203,20 @@
     x = event.clientX - x;
     y = event.clientY - y;
 
-    const fontWidth = activeBanks![0][0].clientWidth / newLineAtBeat;
+    const firstBank = editBanks[activeBanks[0]];
+    // svelte 5 shenanigans
+    if (firstBank === null) {
+      return [0, undefined];
+    }
+    const fontWidth = firstBank.clientWidth / newLineAtBeat;
     const bankCount = activeBanks!.length;
     const lines = Math.ceil(section!.mapLen / newLineAtBeat) * bankCount;
-    const fontHeight = activeBanks![0][0].clientHeight / lines;
+    const fontHeight = firstBank.clientHeight / lines;
 
     x = Math.floor(x / fontWidth);
     y = Math.floor(y / fontHeight);
 
-    let targetEl = activeBanks![y % bankCount][0];
+    let targetEl = editBanks[activeBanks[y % bankCount]];
     y = Math.floor(y / bankCount);
 
     return [x + y * newLineAtBeat, targetEl];
@@ -442,7 +447,7 @@ information.
       </div>
     {/if}
     <!-- Note the order of saveLen/bind/handleInput - it matters -->
-    {#each activeBanks as [_, bankI], i}
+    {#each activeBanks as bankI, i}
       <div
         bind:this={editBanks[bankI]}
         class:underline={activeBanks.length > 1 && i == activeBanks.length - 1}
