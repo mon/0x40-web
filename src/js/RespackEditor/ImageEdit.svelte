@@ -11,8 +11,11 @@
   let animI = 0;
   let animTimeout: NodeJS.Timeout | undefined;
 
-  let canvas: HuesCanvas2D;
   let imboxEl: HTMLDivElement;
+  $: canvas =
+    imboxEl !== undefined
+      ? (resizeCanvas(), new HuesCanvas2D(imboxEl))
+      : undefined;
 
   let centerLine = false;
   let phoneRatio: number = 22 / 9;
@@ -26,7 +29,7 @@
 
   async function resizeCanvas() {
     await tick();
-    canvas.resize();
+    canvas?.resize();
   }
 
   function toggleCenter(e: Event) {
@@ -53,7 +56,7 @@
   }
 
   function onFrame() {
-    canvas.draw({
+    canvas?.draw({
       colour,
       lastColour: 0xffffff,
       blendMode,
@@ -77,11 +80,7 @@
   }
 
   onMount(() => {
-    canvas = new HuesCanvas2D(imboxEl);
-
     window.addEventListener("resize", resizeCanvas);
-    // async, no problem, happens later
-    resizeCanvas();
 
     let raf: number;
     let cb = () => {
