@@ -93,7 +93,7 @@
             <td>{song.charsPerBeat}</td>
             <td>
               {#if song.build}
-                <input type="checkbox" bind:value={song.independentBuild} />
+                <input type="checkbox" bind:checked={song.independentBuild} />
               {:else}
                 n/a
               {/if}
