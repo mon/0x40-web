@@ -429,6 +429,7 @@ export default class HuesRender {
     this.resetSliceSegments("y");
     this.blurStart = [undefined, undefined];
     this.clearBlackout();
+    this.core.blurUpdated(0, 0);
   }
 
   stopEffects(bank: number) {
@@ -577,10 +578,15 @@ export default class HuesRender {
     }
     for (const [axis, blur] of this.blurStart.entries()) {
       if (blur !== undefined) {
-        // flash offsets blur gen by a frame
-        let delta = now - blur + 1 / 30;
-        this.blurDistance[axis] =
-          this.blurAmount * Math.exp(-this.blurDecay * delta);
+        if (now >= blur) {
+          // flash offsets blur gen by a frame
+          let delta = now - blur + 1 / 30;
+          this.blurDistance[axis] =
+            this.blurAmount * Math.exp(-this.blurDecay * delta);
+        } else {
+          // rare race when song loading is slow
+          this.blurDistance[axis] = 0;
+        }
 
         // Update UI
         this.updateCoreBlur();
