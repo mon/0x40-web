@@ -1,6 +1,11 @@
 import HuesRender from "./HuesRender";
 import { HuesEditor } from "./HuesEditor.svelte";
-import { HuesSettings, type SettingsData } from "./HuesSettings.svelte";
+import {
+  makeSettings,
+  type SettingsData,
+  initUI as initSettingsUI,
+  type SettingsDataWithUpdate,
+} from "./HuesSettings.svelte";
 import HuesWindow from "./HuesWindow";
 import {
   HuesUI,
@@ -182,7 +187,7 @@ export class HuesCore extends EventListener<CoreEvents> {
   uiArray: HuesUI[];
   userInterface?: HuesUI; // the current UI
 
-  settings: HuesSettings;
+  settings: SettingsDataWithUpdate;
   root: HTMLElement;
 
   window: HuesWindow;
@@ -232,7 +237,7 @@ export class HuesCore extends EventListener<CoreEvents> {
     this.doBuildup = true;
     this.uiArray = [];
 
-    this.settings = new HuesSettings(defaults);
+    this.settings = makeSettings(defaults);
 
     // What's our root element?
     if (!this.settings.root) {
@@ -273,7 +278,7 @@ export class HuesCore extends EventListener<CoreEvents> {
     this.editor = new HuesEditor(this, this.window);
 
     if (this.settings.enableWindow) {
-      this.settings.initUI(this.window);
+      initSettingsUI(this.window, this.settings);
 
       let infoContents = this.window.addTab("INFO");
       mount(HuesInfo, {
@@ -377,10 +382,9 @@ export class HuesCore extends EventListener<CoreEvents> {
       // rendering during the preloader causes slow loading on FF
       this.renderer.rendering = false;
       // Now all our objects are instantiated, we fire the updated settings
-      this.settings.addEventListener(
-        "updated",
-        this.settingsUpdated.bind(this),
-      );
+      this.settings.onupdate = () => {
+        this.settingsUpdated();
+      };
       this.settingsUpdated();
       this.setColour(this.colourIndex);
       this.animationLoop();

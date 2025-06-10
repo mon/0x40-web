@@ -2,7 +2,7 @@
   import { onMount, tick } from "svelte";
   import HuesCanvas2D from "../HuesCanvas2D";
   import type { HuesImage } from "../ResourcePack";
-  import { oldColours } from "../HuesCore";
+  import { oldColours } from "../HuesCore.svelte";
   import { intToHex } from "../Utils";
 
   export let images: HuesImage[];

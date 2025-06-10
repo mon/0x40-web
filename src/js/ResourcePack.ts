@@ -2,7 +2,7 @@ import type { EditorUndoRedo } from "./HuesEditor.svelte";
 
 import xmlbuilder from "xmlbuilder";
 import type { ZipWriter, Entry as ZipEntry } from "@zip.js/zip.js";
-import { BeatTypes, Effect, ImageColour } from "./HuesCore";
+import { BeatTypes, Effect, ImageColour } from "./HuesCore.svelte";
 
 const _zip = import("@zip.js/zip.js");
 

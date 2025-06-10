@@ -1,4 +1,4 @@
-import { mount, type ComponentProps } from "svelte";
+import { mount, untrack } from "svelte";
 import "../css/hues-settings.css";
 import EventListener from "./EventListener";
 
@@ -201,156 +201,104 @@ export type SettingsData = {
   volume: number;
 };
 
-type SettingsEvents = {
-  // Called when settings are updated
-  updated: () => void;
-};
-export class HuesSettings
-  extends EventListener<SettingsEvents>
-  implements SettingsData
-{
-  respacks = $state() as SettingsData["respacks"];
-  parseQueryString = $state() as SettingsData["parseQueryString"];
-  respackPath = $state() as SettingsData["respackPath"];
-  load = $state() as SettingsData["load"];
-  autoplay = $state() as SettingsData["autoplay"];
-  overwriteLocal = $state() as SettingsData["overwriteLocal"];
-  firstSong = $state() as SettingsData["firstSong"];
-  firstImage = $state() as SettingsData["firstImage"];
-  fullAuto = $state() as SettingsData["fullAuto"];
-  packsURL = $state() as SettingsData["packsURL"];
-  disableRemoteResources = $state() as SettingsData["disableRemoteResources"];
-  enableWindow = $state() as SettingsData["enableWindow"];
-  showWindow = $state() as SettingsData["showWindow"];
-  firstWindow = $state() as SettingsData["firstWindow"];
-  preloadPrefix = $state() as SettingsData["preloadPrefix"];
-  preloadBase = $state() as SettingsData["preloadBase"];
-  preloadMax = $state() as SettingsData["preloadMax"];
-  preloadTitle = $state() as SettingsData["preloadTitle"];
-  huesName = $state() as SettingsData["huesName"];
-  huesDesc = $state() as SettingsData["huesDesc"];
-  root = $state() as SettingsData["root"];
-  disableKeyboard = $state() as SettingsData["disableKeyboard"];
+function isEphemeral(setting: keyof SettingsData) {
+  return !uiSettingsOptions.hasOwnProperty(setting);
+}
 
-  // UI accessible
-  smartAlign = $state() as SettingsData["smartAlign"];
-  blurAmount = $state() as SettingsData["blurAmount"];
-  blurDecay = $state() as SettingsData["blurDecay"];
-  blurQuality = $state() as SettingsData["blurQuality"];
-  currentUI = $state() as SettingsData["currentUI"];
-  colourSet = $state() as SettingsData["colourSet"];
-  blendMode = $state() as SettingsData["blendMode"];
-  bgColour = $state() as SettingsData["bgColour"];
-  blackoutUI = $state() as SettingsData["blackoutUI"];
-  invertStyle = $state() as SettingsData["invertStyle"];
-  playBuildups = $state() as SettingsData["playBuildups"];
-  visualiser = $state() as SettingsData["visualiser"];
-  shuffleImages = $state() as SettingsData["shuffleImages"];
-  autoSong = $state() as SettingsData["autoSong"];
-  autoSongDelay = $state() as SettingsData["autoSongDelay"];
-  autoSongShuffle = $state() as SettingsData["autoSongShuffle"];
-  autoSongFadeout = $state() as SettingsData["autoSongFadeout"];
-  trippyMode = $state() as SettingsData["trippyMode"];
-  volume = $state() as SettingsData["volume"];
-  skipPreloader = $state() as SettingsData["skipPreloader"];
-
-  uiProps: ComponentProps<typeof SettingsUI> = $state({
-    settings: this,
-    schema: uiSettingsOptions,
-  });
-
-  constructor(defaults: Partial<SettingsData>) {
-    super();
-
-    let settingsVersion = "1";
-    if (localStorage.settingsVersion != settingsVersion) {
-      localStorage.clear();
-      localStorage.settingsVersion = settingsVersion;
+function getQuerySettings(settings: SettingsData) {
+  let results: Partial<SettingsData> & { respacks: string[] } = {
+    respacks: [],
+  };
+  let query = window.location.search.substring(1);
+  let vars = query.split("&");
+  for (let i = 0; i < vars.length; i++) {
+    let pair = vars[i].split("=");
+    let val: string | boolean = decodeURIComponent(pair[1]);
+    if (pair[0] == "packs" || pair[0] == "respacks") {
+      let packs = val.split(",");
+      for (let j = 0; j < packs.length; j++) {
+        results.respacks.push(settings.respackPath + packs[j]);
+      }
+    } else if (pair[0] == "song") {
+      // alias for firstSong
+      results.firstSong = val;
+    } else {
+      // since we can set ephemeral variables this way
+      if (val === "true" || val === "false") val = val == "true";
+      (<any>results)[pair[0]] = val;
     }
+  }
+  return results;
+}
 
-    const settingsKeys = Object.keys(defaultSettings) as (keyof SettingsData)[];
+export type SettingsDataWithUpdate = SettingsData & { onupdate?: () => void };
+
+export function makeSettings(defaults: Partial<SettingsData>) {
+  const settings: SettingsDataWithUpdate = $state({ ...defaultSettings });
+
+  let settingsVersion = "1";
+  if (localStorage.settingsVersion != settingsVersion) {
+    localStorage.clear();
+    localStorage.settingsVersion = settingsVersion;
+  }
+
+  const settingsKeys = Object.keys(defaultSettings) as (keyof SettingsData)[];
+
+  for (const attr of settingsKeys) {
+    // this is too tricky for typescript and/or my brain, so just be
+    // lazy with the <any>
+    if (defaults.overwriteLocal) {
+      (<any>settings)[attr] =
+        localStorage[attr] ?? defaults[attr] ?? defaultSettings[attr];
+    } else {
+      (<any>settings)[attr] =
+        defaults[attr] ?? localStorage[attr] ?? defaultSettings[attr];
+    }
+  }
+
+  if (settings.parseQueryString) {
+    let querySettings = getQuerySettings(settings);
 
     for (const attr of settingsKeys) {
-      // this is too tricky for typescript and/or my brain, so just be
-      // lazy with the <any>
-      if (defaults.overwriteLocal) {
-        (<any>this)[attr] =
-          localStorage[attr] ?? defaults[attr] ?? defaultSettings[attr];
-      } else {
-        (<any>this)[attr] =
-          defaults[attr] ?? localStorage[attr] ?? defaultSettings[attr];
+      // query string overrides, finally
+      if (querySettings[attr] !== undefined && attr != "respacks") {
+        (<any>settings)[attr] = querySettings[attr];
       }
     }
 
-    if (this.parseQueryString) {
-      let querySettings = this.getQuerySettings();
+    settings.respacks = settings.respacks.concat(querySettings.respacks);
+  }
 
-      for (const attr of settingsKeys) {
-        // query string overrides, finally
-        if (querySettings[attr] !== undefined && attr != "respacks") {
-          (<any>this)[attr] = querySettings[attr];
+  // attach our event listeners
+  $effect.root(() => {
+    for (const attr of settingsKeys) {
+      let first = true;
+      $effect(() => {
+        settings[attr]; // ensure deps are caught
+        if (first) {
+          first = false;
+          return;
         }
-      }
 
-      this.respacks = this.respacks.concat(querySettings.respacks);
-    }
+        console.debug(`Setting updated ${attr} -> ${settings[attr]}`);
 
-    // attach our event listeners
-    for (const attr of settingsKeys) {
-      $effect.root(() => {
-        let first = true;
-        $effect(() => {
-          this[attr]; // ensure deps are caught
-          if (first) {
-            first = false;
-            return;
-          }
+        if (!isEphemeral(attr)) localStorage[attr] = settings[attr];
 
-          console.debug(`Setting updated ${attr} -> ${this[attr]}`);
-
-          if (!this.isEphemeral(attr)) localStorage[attr] = this[attr];
-
-          this.callEventListeners("updated");
-        });
+        untrack(() => settings.onupdate?.());
       });
     }
-  }
+  });
 
-  getQuerySettings() {
-    let results: Partial<SettingsData> & { respacks: string[] } = {
-      respacks: [],
-    };
-    let query = window.location.search.substring(1);
-    let vars = query.split("&");
-    for (let i = 0; i < vars.length; i++) {
-      let pair = vars[i].split("=");
-      let val: string | boolean = decodeURIComponent(pair[1]);
-      if (pair[0] == "packs" || pair[0] == "respacks") {
-        let packs = val.split(",");
-        for (let j = 0; j < packs.length; j++) {
-          results.respacks.push(this.respackPath + packs[j]);
-        }
-      } else if (pair[0] == "song") {
-        // alias for firstSong
-        results.firstSong = val;
-      } else {
-        // since we can set ephemeral variables this way
-        if (val === "true" || val === "false") val = val == "true";
-        (<any>results)[pair[0]] = val;
-      }
-    }
-    return results;
-  }
+  return settings;
+}
 
-  initUI(huesWin: HuesWindow) {
-    let uiTab = huesWin.addTab("OPTIONS");
-    mount(SettingsUI, {
-      target: uiTab,
-      props: this.uiProps,
-    });
-  }
-
-  isEphemeral(setting: keyof SettingsData) {
-    return !uiSettingsOptions.hasOwnProperty(setting);
-  }
+export function initUI(window: HuesWindow, settings: SettingsData) {
+  const settingsTab = window.addTab("OPTIONS");
+  mount(SettingsUI, {
+    target: settingsTab,
+    props: {
+      schema: uiSettingsOptions,
+      settings,
+    },
+  });
 }

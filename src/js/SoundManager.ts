@@ -1,4 +1,4 @@
-import type { HuesCore } from "./HuesCore";
+import type { HuesCore } from "./HuesCore.svelte";
 import type { HuesSong, HuesSongSection } from "./ResourcePack";
 import EventListener from "./EventListener";
 import CodecParser, { type CodecValue } from "codec-parser";

@@ -108,7 +108,7 @@ There's a few places to change, here's a list:
 
 - The documentation in the INFO tab. Found in `HuesInfo.svelte`
 - The mouseover documentation & button for the beat in EDITOR. Found in `HuesEditor/Main.svelte`
-- The list of beats in `HuesCore.ts`
+- The list of beats in `HuesCore.svelte.ts`
 - If you've added some new display behaviour:
   - A new beat type in the `Effect` enum
   - A handler in the `beater` function

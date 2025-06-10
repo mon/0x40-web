@@ -1,6 +1,6 @@
 import HuesCanvas2D from "./HuesCanvas2D";
-import type { HuesColour } from "./HuesCore";
-import type { HuesCore } from "./HuesCore";
+import type { HuesColour } from "./HuesCore.svelte";
+import type { HuesCore } from "./HuesCore.svelte";
 import type { SettingsData } from "./HuesSettings.svelte";
 import type { HuesImage } from "./ResourcePack";
 import type SoundManager from "./SoundManager";

@@ -1,8 +1,14 @@
 <script lang="ts">
+  import type { Snippet } from "svelte";
   import uniqueFormId from "./UniqueID";
 
-  export let info: { name: string; options: readonly string[] };
-  export let value: any;
+  interface Props {
+    info: { name: string; options: readonly string[] };
+    value: any;
+    children?: Snippet;
+  }
+
+  let { info, value = $bindable(), children }: Props = $props();
 
   const setId = uniqueFormId();
 </script>
@@ -21,7 +27,7 @@
       />
       <label for={inputId}>{opt}</label>
     {/each}
-    <slot />
+    {@render children?.()}
   </div>
 </div>
 
