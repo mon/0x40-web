@@ -9,19 +9,16 @@ const _zip = import("@zip.js/zip.js");
 export class HuesSongSection {
   // Any section will have at least one bank with some beats in it. If a song
   // is lacking a section, its HuesSongSection should instead be undefined.
-  banks: string[];
+  banks: string[] = $state(["."]);
   // a single string containing the best-effort flattened banks to their
   // closest characters
-  beatString: string;
+  beatString: string = $state(".");
   // The raw soundfile contents
   sound?: ArrayBuffer;
   // The raw filename of the audio - eg: finale_loop.mp3
   protected fname?: string;
 
   constructor(absPath?: string, sound?: ArrayBuffer) {
-    this.banks = ["."];
-    this.beatString = ".";
-
     this.sound = sound;
     if (absPath) {
       this.filename = absPath;
@@ -161,35 +158,27 @@ export class HuesSongSection {
 }
 
 export class HuesSong {
-  title: string;
+  title: string = $state("");
   // loop/build should have identical # of banks, and each bank should be the
   // same length. Not enforcing this programmatically is probably going to
   // blow up in my face later
-  loop: HuesSongSection;
-  build?: HuesSongSection;
-  source: string;
-  charsPerBeat: number | null;
-  independentBuild: boolean;
+  loop: HuesSongSection = $state() as HuesSongSection; // assigned in constructor;
+  build?: HuesSongSection = $state();
+  source: string = $state("");
+  charsPerBeat: number | null = $state(null);
+  independentBuild: boolean = $state(false);
   // runtime
-  enabled: boolean;
-  buildupPlayed: boolean;
+  enabled: boolean = $state(true);
+  buildupPlayed: boolean = $state(false);
   // editor
-  undoQueue?: EditorUndoRedo[];
-  redoQueue?: EditorUndoRedo[];
+  undoQueue?: EditorUndoRedo[] = $state();
+  redoQueue?: EditorUndoRedo[] = $state();
   // putting this here lets it persist across song change, which is neat
-  hiddenBanks: boolean[];
+  hiddenBanks: boolean[] = $state([]);
 
   constructor(title?: string, loopFilename?: string) {
     this.title = title || "";
     this.loop = new HuesSongSection(loopFilename);
-    this.source = "";
-    this.charsPerBeat = null;
-    this.independentBuild = false;
-
-    this.enabled = true;
-    this.buildupPlayed = false;
-    // exploit default-undefined being false
-    this.hiddenBanks = [];
   }
 
   get bankCount() {

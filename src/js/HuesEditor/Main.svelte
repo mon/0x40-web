@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { run } from "svelte/legacy";
+
   import HuesButton from "../Components/HuesButton.svelte";
   import EditorBox from "./EditorBox.svelte";
   import InputBox from "./InputBox.svelte";
@@ -9,46 +11,47 @@
   import { tick, onMount, createEventDispatcher } from "svelte";
 
   import type SoundManager from "../SoundManager";
-  import type { HuesSongSection } from "../ResourcePack";
+  import type { HuesSong } from "../ResourcePack.svelte";
   import type { EditorUndoRedo } from "../HuesEditor.svelte";
   import { HuesIcon } from "../HuesIcon";
 
-  export let soundManager: SoundManager;
-  export let huesRoot: HTMLElement; // required for size calculations
+  interface Props {
+    soundManager: SoundManager;
+    huesRoot: HTMLElement; // required for size calculations
+    beatIndex?: number;
+    // because the editor takes a little CPU time, block it off til the user
+    // clicks a "hey let's try this" button
+    totallyDisabled?: boolean;
+    // mirrored props from the song object, to make binding/events work nicely
+    song?: HuesSong | undefined;
+    songLoadPromise?: Promise<void>;
+    locked?: boolean; // link these together
+  }
 
-  export let beatIndex = 0;
-
-  // because the editor takes a little CPU time, block it off til the user
-  // clicks a "hey let's try this" button
-  export let totallyDisabled = true;
-  // if song is null
-  export let disabled = true;
-
-  // mirrored props from the song object, to make binding/events work nicely
-  export let independentBuild: boolean = false;
-  export let title: string = "";
-  export let source: string = "";
-  export let loop: HuesSongSection | undefined = undefined;
-  export let build: HuesSongSection | undefined = undefined;
-  export let undoQueue: EditorUndoRedo[] = [];
-  export let redoQueue: EditorUndoRedo[] = [];
-  export let hiddenBanks: boolean[] = [];
-  export let songLoadPromise: Promise<void> = Promise.reject();
-  export let locked: boolean = false; // link these together
+  let {
+    soundManager,
+    huesRoot,
+    beatIndex = 0,
+    totallyDisabled = $bindable(true),
+    song = $bindable(undefined),
+    songLoadPromise = Promise.reject(),
+    locked = $bindable(false),
+  }: Props = $props();
 
   // and until we convert the rest of the app to svelte, this lets consumers
   // update their own state more simply
   const dispatch = createEventDispatcher();
-  $: {
-    dispatch("update", {
-      independentBuild: independentBuild,
-      title: title,
-      source: source,
-      loop: loop,
-      build: build,
-      hiddenBanks: hiddenBanks,
-    });
-  }
+  run(() => {
+    song?.independentBuild;
+    song?.title;
+    song?.source;
+    song?.loop;
+    song?.build;
+    song?.hiddenBanks;
+    song?.undoQueue;
+    song?.redoQueue;
+    dispatch("update");
+  });
 
   const MAX_UNDO = 200;
 
@@ -108,30 +111,33 @@
     ],
   };
 
-  let editor: HTMLDivElement;
-  let editArea: HTMLDivElement;
-  let buildupEditBox: HTMLDivElement;
-  let loopEditBox: HTMLDivElement;
-  let loopHeader: HTMLDivElement;
-  let resizeHandle: HTMLDivElement;
+  let editor: HTMLDivElement = $state() as HTMLDivElement;
+  let editArea: HTMLDivElement = $state() as HTMLDivElement;
+  let buildupEditBox: HTMLDivElement = $state() as HTMLDivElement;
+  let loopEditBox: HTMLDivElement = $state() as HTMLDivElement;
+  let loopHeader: HTMLDivElement = $state() as HTMLDivElement;
+  let resizeHandle: HTMLDivElement = $state() as HTMLDivElement;
 
-  let buildEditorComponent: EditorBox;
-  let loopEditorComponent: EditorBox;
-  let editorFocus: EditorBox | null = null;
+  let buildEditorComponent: EditorBox = $state() as EditorBox;
+  let loopEditorComponent: EditorBox = $state() as EditorBox;
+  let editorFocus: EditorBox | null = $state(null);
 
-  let helpGlow = true;
+  let helpGlow = $state(true);
 
-  let statusMsg = "";
-  let statusAnim = false;
+  let statusMsg = $state("");
+  let statusAnim = $state(false);
 
-  $: buildIndex = beatIndex < 0 && build ? build.mapLen + beatIndex : null;
-  $: loopIndex = beatIndex >= 0 ? beatIndex : null;
-  $: loopLen = loop ? loop.mapLen : NaN;
-  $: hasBoth = build && loop;
-  $: editorFocussed = editorFocus !== null;
+  let disabled = $derived(!song);
+  let buildIndex = $derived(
+    beatIndex < 0 && song?.build ? song.build.mapLen + beatIndex : null,
+  );
+  let loopIndex = $derived(beatIndex >= 0 ? beatIndex : null);
+  let loopLen = $derived(song?.loop ? song.loop.mapLen : NaN);
+  let hasBoth = $derived(song?.build && song?.loop);
+  let editorFocussed = $derived(editorFocus !== null);
 
-  let newLineAtBeat = 32;
-  let playbackRate = 1.0;
+  let newLineAtBeat = $state(32);
+  let playbackRate = $state(1.0);
 
   export const alert = (msg: string) => {
     statusMsg = msg;
@@ -143,19 +149,19 @@
   // if the queue is even defined yet
   const applyUndoRedo = async (props: EditorUndoRedo | undefined) => {
     // shouldn't happen but anyway...
-    if (props === undefined) {
+    if (props === undefined || song === undefined) {
       return;
     }
 
     // if you start saving more props, add them here
-    if (build && props.builds) {
-      build.banks = props.builds;
+    if (song.build && props.builds) {
+      song.build.banks = props.builds;
     }
-    if (loop && props.loops) {
-      loop.banks = props.loops;
+    if (props.loops) {
+      song.loop.banks = props.loops;
     }
 
-    independentBuild = props.independentBuild;
+    song.independentBuild = props.independentBuild;
     if (props.caret !== undefined) {
       await tick();
       props.editor?.setCaret(props.caret);
@@ -164,61 +170,63 @@
 
   const undoRedoSnapshot = (): EditorUndoRedo => {
     let ret: EditorUndoRedo = {
-      independentBuild: independentBuild,
+      independentBuild: song!.independentBuild,
     };
 
-    if (build) {
-      ret.builds = [...build.banks];
+    if (song!.build) {
+      ret.builds = [...song!.build.banks];
     }
-    if (loop) {
-      ret.loops = [...loop.banks];
+    if (song!.loop) {
+      ret.loops = [...song!.loop.banks];
     }
 
     return ret;
   };
 
   const undo = () => {
-    if (!undoQueue) {
+    if (!song?.undoQueue) {
       return;
     }
-    if (!redoQueue) {
-      redoQueue = [];
+    if (!song.redoQueue) {
+      song.redoQueue = [];
     }
 
-    redoQueue.push(undoRedoSnapshot());
+    song.redoQueue.push(undoRedoSnapshot());
 
-    applyUndoRedo(undoQueue.pop());
-
-    undoQueue = undoQueue;
-    redoQueue = redoQueue;
+    applyUndoRedo(song.undoQueue.pop());
   };
 
   const redo = () => {
-    undoQueue.push(undoRedoSnapshot());
+    if (!song?.redoQueue) {
+      return;
+    }
+    if (!song.undoQueue) {
+      song.undoQueue = [];
+    }
+    song.undoQueue.push(undoRedoSnapshot());
 
-    applyUndoRedo(redoQueue.pop());
-
-    undoQueue = undoQueue;
-    redoQueue = redoQueue;
+    applyUndoRedo(song.redoQueue.pop());
   };
 
   const pushUndo = (extraProps?: Partial<EditorUndoRedo>) => {
-    if (!undoQueue) {
-      undoQueue = [];
+    if (!song) return;
+
+    if (!song.undoQueue) {
+      song.undoQueue = [];
     }
-    redoQueue = [];
+    song.redoQueue = [];
 
     let props = undoRedoSnapshot();
     if (extraProps) {
       Object.assign(props, extraProps);
     }
 
-    undoQueue.push(props);
-    while (undoQueue.length > MAX_UNDO) {
-      undoQueue.shift();
+    song.undoQueue.push(props);
+    while (song.undoQueue.length > MAX_UNDO) {
+      song.undoQueue.shift();
     }
 
-    undoQueue = undoQueue;
+    song.undoQueue = song.undoQueue;
   };
 
   const soundLen = (editor: EditorBox) => {
@@ -239,7 +247,7 @@
   const resyncEditorLengths = (parent: EditorBox) => {
     parent.section?.recalcBeatString();
 
-    if (independentBuild || !hasBoth) {
+    if (song?.independentBuild || !hasBoth) {
       return;
     }
 
@@ -294,7 +302,7 @@
     pushUndo();
 
     apply(parent);
-    if (!independentBuild && hasBoth) {
+    if (!song?.independentBuild && hasBoth) {
       apply(otherEditor(parent));
       resyncEditorLengths(parent);
     } else {
@@ -398,7 +406,7 @@
   };
 </script>
 
-<svelte:window on:resize={resize} on:keydown={keydown} />
+<svelte:window onresize={resize} onkeydown={keydown} />
 
 <div class="editor" bind:this={editor}>
   {#if totallyDisabled}
@@ -431,11 +439,11 @@
       >
       <HuesButton
         on:click={() => undo()}
-        disabled={!undoQueue || !undoQueue.length}>Undo</HuesButton
+        disabled={!song?.undoQueue || !song.undoQueue.length}>Undo</HuesButton
       >
       <HuesButton
         on:click={() => redo()}
-        disabled={!redoQueue || !redoQueue.length}>Redo</HuesButton
+        disabled={!song?.redoQueue || !song.redoQueue.length}>Redo</HuesButton
       >
       <HuesButton glow={helpGlow} on:click={() => (helpGlow = false)}>
         <a
@@ -453,13 +461,23 @@
       <!-- Metadata -->
       <div class="info">
         <InputBox
-          bind:value={title}
+          bind:value={
+            () => song?.title ?? "",
+            (v) => {
+              if (song) song.title = v;
+            }
+          }
           label="Title:"
           placeholder="Song name"
           {disabled}
         />
         <InputBox
-          bind:value={source}
+          bind:value={
+            () => song?.source ?? "",
+            (v) => {
+              if (song) song.source = v;
+            }
+          }
           label="Link:"
           placeholder="Source link (YouTube, Soundcloud, etc)"
           {disabled}
@@ -509,7 +527,12 @@
     <!-- Editor zone -->
     <div class="edit-area" bind:this={editArea}>
       <Timelock
-        bind:unlocked={independentBuild}
+        bind:unlocked={
+          () => song?.independentBuild,
+          (v) => {
+            if (song) song.independentBuild = v ?? false;
+          }
+        }
         on:click={() => {
           pushUndo();
           resyncEditorLengths(loopEditorComponent);
@@ -519,21 +542,23 @@
 
       <div class="banks">
         <div class="banks-span-both">BANKS</div>
-        {#if loop}
-          {#each loop.banks as bank, i}
+        {#if song?.loop}
+          {#each song.loop.banks as bank, i}
             <HuesButton
               nopad
               title="Toggle bank visibility"
               on:click={() => {
-                hiddenBanks[i] = !hiddenBanks[i];
+                song.hiddenBanks[i] = !song.hiddenBanks[i];
               }}
             >
               {i + 1}
               <span class="hues-icon"
-                >{@html hiddenBanks[i] ? HuesIcon.EYE_CLOSED : "&emsp;"}</span
+                >{@html song.hiddenBanks[i]
+                  ? HuesIcon.EYE_CLOSED
+                  : "&emsp;"}</span
               >
             </HuesButton>
-            {#if loop.banks.length == 1}
+            {#if song.loop.banks.length == 1}
               <div></div>
             {:else}
               <HuesButton
@@ -542,20 +567,20 @@
                 title="Remove bank"
                 on:click={() => {
                   pushUndo();
-                  dispatch("removebank", i);
+                  song.removeBank(i);
                 }}
               >
                 x
               </HuesButton>
             {/if}
           {/each}
-          {#if loop.banks.length < 16}
+          {#if song.loop.banks.length < 16}
             <div class="banks-span-both">
               <HuesButton
                 title="Add bank"
                 on:click={() => {
                   pushUndo();
-                  dispatch("addbank");
+                  song.addBank();
                 }}
               >
                 +
@@ -568,7 +593,12 @@
       <EditorBox
         title="Buildup"
         bind:this={buildEditorComponent}
-        bind:section={build}
+        bind:section={
+          () => song?.build,
+          (v) => {
+            if (song) song.build = v;
+          }
+        }
         bind:editBox={buildupEditBox}
         bind:locked
         on:rewind={() => soundManager.seek(-soundManager.build.length)}
@@ -586,13 +616,13 @@
         beatIndex={buildIndex}
         {newLineAtBeat}
         {soundManager}
-        {hiddenBanks}
+        hiddenBanks={song?.hiddenBanks}
       />
 
       <div
         title="Resize"
         class="resize-handle"
-        on:mousedown={resizeMousedown}
+        onmousedown={resizeMousedown}
         bind:this={resizeHandle}
       >
         <!-- MENU looks like a drag handle when wide enough -->
@@ -603,7 +633,12 @@
         title="Rhythm"
         showHelp
         bind:this={loopEditorComponent}
-        bind:section={loop}
+        bind:section={
+          () => song?.loop,
+          (v) => {
+            if (song) song.loop = v!;
+          }
+        }
         bind:header={loopHeader}
         bind:editBox={loopEditBox}
         bind:locked
@@ -622,7 +657,7 @@
         beatIndex={loopIndex}
         {newLineAtBeat}
         {soundManager}
-        {hiddenBanks}
+        hiddenBanks={song?.hiddenBanks}
       />
 
       <!-- Beat inserter buttons -->
