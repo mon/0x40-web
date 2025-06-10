@@ -153,6 +153,7 @@ export class HuesEditor {
       this.core.resourceManager.rebuildArrays();
       this.core.resourceManager.rebuildEnabled();
       this.core.setSongOject(song);
+      this.editorProps.songLoadPromise = undefined;
     }
 
     // Force independent build if only 1 source is present
