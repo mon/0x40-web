@@ -2,7 +2,7 @@ import xmlbuilder from "xmlbuilder";
 
 import { HuesSong, Respack, type HuesSongSection } from "./ResourcePack";
 import EditorMain from "./HuesEditor/Main.svelte";
-import type { HuesCore } from "./HuesCore";
+import type { HuesCore } from "./HuesCore.svelte";
 import type HuesWindow from "./HuesWindow";
 import type EditorBoxSvelte from "./HuesEditor/EditorBox.svelte";
 import { mount, type ComponentProps } from "svelte";

@@ -6,7 +6,7 @@ import "../css/huesUI-hlwn.css";
 import "../css/huesUI-retro.css";
 import "../css/huesUI-weed.css";
 import "../css/huesUI-xmas.css";
-import type { HuesColour, HuesCore } from "./HuesCore";
+import type { HuesColour, HuesCore } from "./HuesCore.svelte";
 import type { HuesImage, HuesSong } from "./ResourcePack";
 import { HuesIcon } from "./HuesIcon";
 import { mixColours, intToHex } from "./Utils";
