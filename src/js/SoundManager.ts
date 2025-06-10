@@ -1,5 +1,5 @@
 import type { HuesCore } from "./HuesCore.svelte";
-import type { HuesSong, HuesSongSection } from "./ResourcePack";
+import type { HuesSong, HuesSongSection } from "./ResourcePack.svelte";
 import EventListener from "./EventListener";
 import CodecParser, { type CodecValue } from "codec-parser";
 import type { MPEGDecodedAudio, MPEGDecoderWebWorker } from "mpg123-decoder";

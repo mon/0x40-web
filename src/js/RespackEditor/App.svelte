@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { Respack } from "../ResourcePack";
+  import { Respack } from "../ResourcePack.svelte";
   import ImageEdit from "./ImageEdit.svelte";
 
   export let pack: Respack | undefined;

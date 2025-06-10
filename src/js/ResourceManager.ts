@@ -4,7 +4,7 @@ import {
   type HuesImage,
   type HuesSong,
   type ProgressCallback,
-} from "./ResourcePack";
+} from "./ResourcePack.svelte";
 import type { HuesCore } from "./HuesCore.svelte";
 import type HuesWindow from "./HuesWindow";
 
