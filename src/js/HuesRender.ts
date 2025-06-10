@@ -2,7 +2,7 @@ import HuesCanvas2D from "./HuesCanvas2D";
 import type { HuesColour } from "./HuesCore.svelte";
 import type { HuesCore } from "./HuesCore.svelte";
 import type { SettingsData } from "./HuesSettings.svelte";
-import type { HuesImage } from "./ResourcePack";
+import type { HuesImage } from "./ResourcePack.svelte";
 import type SoundManager from "./SoundManager";
 import { mixColours } from "./Utils";
 // import './HuesPixi'; // new WebGL renderer, maybe later

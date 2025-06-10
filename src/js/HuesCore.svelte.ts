@@ -18,7 +18,7 @@ import {
 } from "./HuesUI";
 import Resources from "./ResourceManager";
 import SoundManager from "./SoundManager";
-import { HuesImage, HuesSong } from "./ResourcePack";
+import { HuesImage, HuesSong } from "./ResourcePack.svelte";
 import EventListener from "./EventListener";
 import HuesInfo from "./HuesInfo.svelte";
 

@@ -1,6 +1,6 @@
 import xmlbuilder from "xmlbuilder";
 
-import { HuesSong, Respack, type HuesSongSection } from "./ResourcePack";
+import { HuesSong, Respack, type HuesSongSection } from "./ResourcePack.svelte";
 import EditorMain from "./HuesEditor/Main.svelte";
 import type { HuesCore } from "./HuesCore.svelte";
 import type HuesWindow from "./HuesWindow";
@@ -21,8 +21,7 @@ type SectionName = "build" | "loop";
 
 export class HuesEditor {
   core: HuesCore;
-  song?: HuesSong;
-  editorProps = $state({}) as ComponentProps<EditorMain>;
+  editorProps!: ComponentProps<EditorMain>;
   editor!: ReturnType<typeof EditorMain>;
 
   // for storing respacks created with "new"
@@ -40,12 +39,15 @@ export class HuesEditor {
     this.midUpdate = false;
 
     let container = huesWin.addTab("EDITOR");
-    this.editorProps.huesRoot = this.core.root;
-    this.editorProps.soundManager = this.core.soundManager;
-    // if the first window is the editor, the user doesn't want the extra click
-    // but eh, maybe the performance impact really isn't that bad
-    this.editorProps.totallyDisabled = false;
-    //this.editor.totallyDisabled = this.core.settings.firstWindow != 'EDITOR',
+    const editorProps = $state({
+      huesRoot: this.core.root,
+      soundManager: this.core.soundManager,
+      // if the first window is the editor, the user doesn't want the extra click
+      // but eh, maybe the performance impact really isn't that bad
+      totallyDisabled: false,
+      // totallyDisabled: this.core.settings.firstWindow != 'EDITOR',
+    });
+    this.editorProps = editorProps;
     this.editor = mount(EditorMain, {
       target: container,
       props: this.editorProps,
@@ -54,8 +56,6 @@ export class HuesEditor {
         loadrhythm: (event) => this.onLoadAudio("loop", event.detail),
         removebuildup: (event) => this.onRemoveAudio("build"),
         removerhythm: (event) => this.onRemoveAudio("loop"),
-        addbank: (event) => this.addBank(),
-        removebank: (event) => this.removeBank(event.detail),
         songnew: (event) => this.newSong(),
         savezip: (event) => this.saveZIP(),
         savexml: (event) => this.saveXML(),
@@ -63,7 +63,6 @@ export class HuesEditor {
         // update any changed fields from the editor component
         update: (event) => {
           if (core.currentSong) {
-            Object.assign(core.currentSong, event.detail);
             this.core.updateBeatLength();
             // We may have to go backwards in time
             this.core.recalcBeatIndex();
@@ -81,21 +80,7 @@ export class HuesEditor {
         return;
       }
 
-      this.song = song;
-      this.editorProps.independentBuild = song?.independentBuild;
-      this.editorProps.title = song?.title;
-      this.editorProps.source = song?.source;
-      this.editorProps.loop = undefined; // TODO: hackfix for svelte 5 port
-      this.editorProps.loop = song?.loop;
-      this.editorProps.build = undefined;
-      this.editorProps.build = song?.build;
-      this.editorProps.undoQueue = undefined;
-      this.editorProps.undoQueue = song?.undoQueue;
-      this.editorProps.redoQueue = undefined;
-      this.editorProps.redoQueue = song?.redoQueue;
-      this.editorProps.hiddenBanks = undefined;
-      this.editorProps.hiddenBanks = song?.hiddenBanks;
-      this.editorProps.disabled = !song;
+      this.editorProps.song = song;
     });
 
     core.soundManager.addEventListener("songloading", (promise, song) => {
@@ -113,20 +98,21 @@ export class HuesEditor {
 
   async onLoadAudio(section: SectionName, sectionData: HuesSongSection) {
     // If first load, this makes fresh, gets the core synced up
-    this.newSong(this.song);
+    this.newSong(this.editorProps.song);
 
     // brand new section may be added (eg: new build, fresh loop)
-    this.editorProps[section] = sectionData;
+    this.editorProps.song![section] = sectionData;
 
     // Have we just added a build to a song with a rhythm, or vice versa?
     // If so, link their lengths
     let newlyLinked =
-      !this.song![section]?.sound && !!this.song![this.other(section)]?.sound;
+      !this.editorProps.song![section]?.sound &&
+      !!this.editorProps.song![this.other(section)]?.sound;
 
     // Do we have a loop to play?
-    if (this.song!.loop.sound) {
+    if (this.editorProps.song!.loop.sound) {
       // Force refresh
-      await this.core.soundManager.playSong(this.song!, true, true);
+      await this.core.soundManager.playSong(this.editorProps.song!, true, true);
       if (newlyLinked) {
         this.setIndependentBuild(false);
       }
@@ -139,40 +125,14 @@ export class HuesEditor {
 
   onRemoveAudio(section: SectionName) {
     // Is the loop playable?
-    if (this.song!.loop.sound) {
-      this.core.soundManager.playSong(this.song!, true, true);
+    if (this.editorProps.song!.loop.sound) {
+      this.core.soundManager.playSong(this.editorProps.song!, true, true);
     } else {
       this.core.soundManager.stop();
     }
 
     if (section == "build") {
-      this.editorProps.build = undefined;
-    }
-  }
-
-  addBank() {
-    if (this.song) {
-      this.song.addBank();
-      // resync UI, TODO: jank hackfix for svelte 5
-      this.editorProps.loop = undefined;
-      this.editorProps.loop = this.song.loop;
-      this.editorProps.build = undefined;
-      this.editorProps.build = this.song.build;
-      this.editorProps.hiddenBanks = undefined;
-      this.editorProps.hiddenBanks = this.song.hiddenBanks;
-    }
-  }
-
-  removeBank(index: number) {
-    if (this.song) {
-      this.song.removeBank(index);
-      // resync UI, TODO: jank hackfix for svelte 5
-      this.editorProps.loop = undefined;
-      this.editorProps.loop = this.song.loop;
-      this.editorProps.build = undefined;
-      this.editorProps.build = this.song.build;
-      this.editorProps.hiddenBanks = undefined;
-      this.editorProps.hiddenBanks = this.song.hiddenBanks;
+      this.editorProps.song!.build = undefined;
     }
   }
 
@@ -209,19 +169,19 @@ export class HuesEditor {
     // Force independent build if only 1 source is present
 
     // Effectively `buildup ^ loop` - does only 1 exist?
-    let hasBuild = !!this.song?.build?.sound;
-    let hasLoop = !!this.song?.loop.sound;
+    let hasBuild = !!this.editorProps.song?.build?.sound;
+    let hasLoop = !!this.editorProps.song?.loop.sound;
     if (hasBuild != hasLoop) {
       this.setIndependentBuild(true);
     }
   }
 
   setIndependentBuild(indep: boolean) {
-    this.editorProps.independentBuild = indep;
+    this.editorProps.song!.independentBuild = indep;
   }
 
   generateXML(root?: xmlbuilder.XMLNode) {
-    if (!this.song) {
+    if (!this.editorProps.song) {
       return null;
     }
 
@@ -229,7 +189,7 @@ export class HuesEditor {
       root = xmlbuilder.begin();
     }
 
-    this.song.generateXML(root);
+    this.editorProps.song.generateXML(root);
 
     return root.end({ pretty: true });
   }
@@ -260,13 +220,13 @@ export class HuesEditor {
       new zip.Data64URIWriter("application/zip"),
     );
     await zipWriter.add("songs.xml", new zip.TextReader(result));
-    await this.song!.addZipAssets(zipWriter);
+    await this.editorProps.song!.addZipAssets(zipWriter);
 
     const dataURI = await zipWriter.close();
 
     this.downloadURI(
       dataURI,
-      "0x40Hues - " + this.song!.loop.basename + ".zip",
+      "0x40Hues - " + this.editorProps.song!.loop.basename + ".zip",
     );
 
     window.onbeforeunload = null;
@@ -280,7 +240,7 @@ export class HuesEditor {
 
     this.downloadURI(
       "data:text/plain;charset=utf-8," + encodeURIComponent(result),
-      "0x40Hues - " + this.song!.loop.basename + ".xml",
+      "0x40Hues - " + this.editorProps.song!.loop.basename + ".xml",
     );
 
     window.onbeforeunload = null;

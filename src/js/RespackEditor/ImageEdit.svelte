@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount, tick } from "svelte";
   import HuesCanvas2D from "../HuesCanvas2D";
-  import type { HuesImage } from "../ResourcePack";
+  import type { HuesImage } from "../ResourcePack.svelte";
   import { oldColours } from "../HuesCore.svelte";
   import { intToHex } from "../Utils";
 

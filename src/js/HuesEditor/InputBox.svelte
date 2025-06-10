@@ -1,10 +1,19 @@
 <script lang="ts">
   import uniqueFormId from "../UniqueID";
 
-  export let label = "";
-  export let value = "";
-  export let placeholder = "";
-  export let disabled = false;
+  interface Props {
+    label?: string;
+    value: string;
+    placeholder?: string;
+    disabled?: boolean;
+  }
+
+  let {
+    label = "",
+    value = $bindable(),
+    placeholder = "",
+    disabled = false,
+  }: Props = $props();
 
   let id = uniqueFormId();
 </script>

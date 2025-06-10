@@ -3,7 +3,7 @@
 
 <script lang="ts">
   import HuesButton from "../Components/HuesButton.svelte";
-  import { HuesSongSection } from "../ResourcePack";
+  import { HuesSongSection } from "../ResourcePack.svelte";
   import { HuesIcon } from "../HuesIcon";
   import type SoundManager from "../SoundManager";
 
