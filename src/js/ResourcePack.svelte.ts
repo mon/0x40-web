@@ -14,9 +14,9 @@ export class HuesSongSection {
   // closest characters
   beatString: string = $state(".");
   // The raw soundfile contents
-  sound?: ArrayBuffer;
+  sound?: ArrayBuffer = $state();
   // The raw filename of the audio - eg: finale_loop.mp3
-  protected fname?: string;
+  #fname?: string = $state();
 
   constructor(absPath?: string, sound?: ArrayBuffer) {
     this.sound = sound;
@@ -27,16 +27,16 @@ export class HuesSongSection {
 
   set filename(path: string | undefined) {
     if (!path) {
-      this.fname = path;
+      this.#fname = path;
       return;
     }
 
     const parts = path.split("/");
-    this.fname = parts.pop() || path;
+    this.#fname = parts.pop() || path;
   }
 
   get filename() {
-    return this.fname;
+    return this.#fname;
   }
 
   // the name of the audio file, with no extension - eg: finale_loop
