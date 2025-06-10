@@ -1,5 +1,5 @@
 import EventListener from "./EventListener";
-import type { HuesSettings } from "./HuesSettings.svelte";
+import type { SettingsData } from "./HuesSettings.svelte";
 
 type WindowEvents = {
   // When the window is shown, hidden or toggled this fires.
@@ -20,7 +20,7 @@ export default class HuesWindow extends EventListener<WindowEvents> {
   tabNames: string[];
   tabSelected?: string;
 
-  constructor(root: Element, settings: HuesSettings) {
+  constructor(root: Element, settings: SettingsData) {
     super();
 
     this.hasUI = settings.enableWindow;

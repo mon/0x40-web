@@ -5,7 +5,7 @@ import {
   type HuesSong,
   type ProgressCallback,
 } from "./ResourcePack";
-import type { HuesCore } from "./HuesCore";
+import type { HuesCore } from "./HuesCore.svelte";
 import type HuesWindow from "./HuesWindow";
 
 let TAB_SONGS = 0;
