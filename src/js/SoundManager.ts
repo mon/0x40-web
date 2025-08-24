@@ -187,7 +187,7 @@ export default class SoundManager extends EventListener<SoundCallbacks> {
     }
 
     console.log(
-      `Native audio decoder support: vorbis:${this.oggVorbisSupport} opus:${this.oggOpusSupport} mp3:${this.mp3IsSane}`
+      `Native audio decoder support: vorbis:${this.oggVorbisSupport} opus:${this.oggOpusSupport} mp3:${this.mp3IsSane}`,
     );
 
     this.locked = this.context.state != "running";
@@ -226,7 +226,7 @@ export default class SoundManager extends EventListener<SoundCallbacks> {
   playSong(
     song: HuesSong,
     playBuild: boolean,
-    forcePlay: boolean = false
+    forcePlay: boolean = false,
   ): Promise<void> {
     let promise = this._playSong(song, playBuild, forcePlay);
     this.callEventListeners("songloading", promise, song);
@@ -236,7 +236,7 @@ export default class SoundManager extends EventListener<SoundCallbacks> {
   private async _playSong(
     song: HuesSong,
     playBuild: boolean,
-    forcePlay: boolean
+    forcePlay: boolean,
   ) {
     // Editor forces play on audio updates
     if (this.song == song && !forcePlay) {
@@ -261,7 +261,7 @@ export default class SoundManager extends EventListener<SoundCallbacks> {
     // To prevent race condition if you press "next" twice fast
     if (song != this.song) {
       throw Error(
-        "Song changed between load and play - this message can be ignored"
+        "Song changed between load and play - this message can be ignored",
       );
     }
 
@@ -345,7 +345,7 @@ export default class SoundManager extends EventListener<SoundCallbacks> {
       this.build.source.connect(this.replayGainNode!);
       this.build.source.start(0, this.build.length + time);
       this.loop.source.start(
-        this.context.currentTime - time / this.playbackRate
+        this.context.currentTime - time / this.playbackRate,
       );
     } else {
       this.loop.source.start(0, time);
@@ -389,7 +389,7 @@ export default class SoundManager extends EventListener<SoundCallbacks> {
                running decode will finish and resolve instead.
                NOTE: If anything but playSong calls loadSong, this idea is broken. */
       return Promise.reject(
-        "Song changed between load and play - this message can be ignored"
+        "Song changed between load and play - this message can be ignored",
       );
     }
 
@@ -404,7 +404,7 @@ export default class SoundManager extends EventListener<SoundCallbacks> {
       promises.push(
         this.loadBuffer(song.build).then((buffer) => {
           buffers.buildup = buffer;
-        })
+        }),
       );
     } else {
       this.build.length = 0;
@@ -518,12 +518,12 @@ export default class SoundManager extends EventListener<SoundCallbacks> {
 
   // Converts continuous PCM array to Web Audio API friendly format
   audioBufFromRaw(
-    raw: OggOpusDecodedAudio | OggVorbisDecodedAudio | MPEGDecodedAudio
+    raw: OggOpusDecodedAudio | OggVorbisDecodedAudio | MPEGDecodedAudio,
   ): AudioBuffer {
     let audioBuf = this.context.createBuffer(
       raw.channelData.length,
       raw.samplesDecoded,
-      raw.sampleRate
+      raw.sampleRate,
     );
     for (const [i, channel] of raw.channelData.entries()) {
       // Most browsers
@@ -680,7 +680,7 @@ export default class SoundManager extends EventListener<SoundCallbacks> {
         result[i] = this.sumArray(
           data,
           this.binCutoffs[cutoff - 1],
-          this.binCutoffs[cutoff]
+          this.binCutoffs[cutoff],
         );
       }
     }
@@ -732,7 +732,7 @@ export default class SoundManager extends EventListener<SoundCallbacks> {
       this.gainNode.gain.setValueAtTime(this.lastVol, this.context.currentTime);
       this.gainNode.gain.exponentialRampToValueAtTime(
         0.01,
-        this.context.currentTime + 2
+        this.context.currentTime + 2,
       );
     }
     setTimeout(callback, 2000);
@@ -798,13 +798,13 @@ const miniOggVorbis = decode(
     "IYQQSimllFJKKSWEEEIopZRSSimlhBBCKKWUUkoppZQQQiillFJKKaWUEkIIoZRSSimllFJCCKWUUkop" +
     "pZRSSighhFJKKaWUUkoJJZRSSimllFJKKSGUUkoppZRSSimlAACAAwcAgAAj6CSjyiJsNOHCAxAAAAAC" +
     "AAJMAIEBgoJRCAKEEQgAAAAAAAgA+AAASAqAiIho5gwOEBIUFhgaHB4gIiQAAAAAAAAAAAAAAAAET2dn" +
-    "UwAEAQAAAAAAAABMYRrMAgAAAH5MZkgCAQEAAA=="
+    "UwAEAQAAAAAAAABMYRrMAgAAAH5MZkgCAQEAAA==",
 );
 
 const miniOggOpus = decode(
   "T2dnUwACAAAAAAAAAABVV2vLAAAAANdbyfEBE09wdXNIZWFkAQE4AYC7AAAAAABPZ2dTAAAAAAAAAAAA" +
     "AFVXa8sBAAAAvO1WzAE/T3B1c1RhZ3MNAAAATGF2ZjU4Ljc2LjEwMAEAAAAeAAAAZW5jb2Rlcj1MYXZj" +
-    "NTguMTM0LjEwMCBsaWJvcHVzT2dnUwAEOQEAAAAAAABVV2vLAgAAAP8Zh7EBBwgL5jsjq2A="
+    "NTguMTM0LjEwMCBsaWJvcHVzT2dnUwAEOQEAAAAAAABVV2vLAgAAAP8Zh7EBBwgL5jsjq2A=",
 );
 
 const miniMp3 = decode(
@@ -821,5 +821,5 @@ const miniMp3 = decode(
     "VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV" +
     "VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV" +
     "VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV" +
-    "VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVQ=="
+    "VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVQ==",
 );

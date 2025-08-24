@@ -1,15 +1,11 @@
-// main, modern and hlwn must be kept in that order
-import "../css/hues-main.css";
-import "../css/huesUI-modern.css";
-import "../css/huesUI-hlwn.css";
-// the rest can be any order
-import "../css/huesUI-retro.css";
-import "../css/huesUI-weed.css";
-import "../css/huesUI-xmas.css";
+import "../css/hues-main.css"; // important for faster loading of preloader styles/font
 import type { HuesColour, HuesCore } from "./HuesCore.svelte";
 import type { HuesImage, HuesSong } from "./ResourcePack.svelte";
 import { HuesIcon } from "./HuesIcon";
 import { mixColours, intToHex } from "./Utils";
+
+// code split this so the embedded HuesUI images don't slow down the preloader CSS
+import("./HuesUICSS");
 
 // useful utility
 function makeDiv(cls: string) {
