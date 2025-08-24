@@ -11,6 +11,7 @@ export default defineConfig({
         respack_edit: resolve(__dirname, "respack_edit.html"),
       },
     },
+    sourcemap: true,
   },
   define: {
     VERSION: JSON.stringify(require("./package.json").version),

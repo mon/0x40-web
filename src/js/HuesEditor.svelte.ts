@@ -1,4 +1,4 @@
-import xmlbuilder from "xmlbuilder";
+import type xmlbuilder from "xmlbuilder";
 
 import { HuesSong, Respack, type HuesSongSection } from "./ResourcePack.svelte";
 import EditorMain from "./HuesEditor/Main.svelte";
@@ -7,6 +7,7 @@ import type HuesWindow from "./HuesWindow";
 import type EditorBoxSvelte from "./HuesEditor/EditorBox.svelte";
 import { mount, type ComponentProps } from "svelte";
 
+const _xmlbuilder = import("xmlbuilder");
 const _zip = import("@zip.js/zip.js");
 
 export interface EditorUndoRedo {
@@ -181,13 +182,13 @@ export class HuesEditor {
     this.editorProps.song!.independentBuild = indep;
   }
 
-  generateXML(root?: xmlbuilder.XMLNode) {
+  async generateXML(root?: xmlbuilder.XMLNode) {
     if (!this.editorProps.song) {
       return null;
     }
 
     if (!root) {
-      root = xmlbuilder.begin();
+      root = (await _xmlbuilder).begin();
     }
 
     this.editorProps.song.generateXML(root);
@@ -210,7 +211,7 @@ export class HuesEditor {
   }
 
   async saveZIP() {
-    let result = this.generateXML(xmlbuilder.create("songs"));
+    let result = await this.generateXML((await _xmlbuilder).create("songs"));
     if (!result) {
       return;
     }
@@ -233,8 +234,8 @@ export class HuesEditor {
     window.onbeforeunload = null;
   }
 
-  saveXML() {
-    let result = this.generateXML(xmlbuilder.create("songs"));
+  async saveXML() {
+    let result = await this.generateXML((await _xmlbuilder).create("songs"));
     if (!result) {
       return;
     }
@@ -248,8 +249,8 @@ export class HuesEditor {
   }
 
   // http://stackoverflow.com/a/30810322
-  copyXML() {
-    let text = this.generateXML();
+  async copyXML() {
+    let text = await this.generateXML();
 
     // Clicking when disabled
     if (!text) {
