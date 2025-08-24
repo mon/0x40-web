@@ -1,7 +1,8 @@
 import type { HuesCore } from "./HuesCore.svelte";
 import type { HuesSong, HuesSongSection } from "./ResourcePack.svelte";
 import EventListener from "./EventListener";
-import CodecParser, { type CodecValue } from "codec-parser";
+import type { CodecValue } from "codec-parser";
+import type CodecParser from "codec-parser";
 import type { MPEGDecodedAudio, MPEGDecoderWebWorker } from "mpg123-decoder";
 import type {
   OggOpusDecodedAudio,
@@ -12,9 +13,10 @@ import type {
   OggVorbisDecoderWebWorker,
 } from "@wasm-audio-decoders/ogg-vorbis";
 
-let MP3Decoder: typeof MPEGDecoderWebWorker | undefined;
-let OggVorbisDecoder: typeof OggVorbisDecoderWebWorker | undefined;
-let OggOpusDecoder: typeof OggOpusDecoderWebWorker | undefined;
+let MPEGDecoderWebWorker_: typeof MPEGDecoderWebWorker | undefined;
+let OggVorbisDecoderWebWorker_: typeof OggVorbisDecoderWebWorker | undefined;
+let OggOpusDecoderWebWorker_: typeof OggOpusDecoderWebWorker | undefined;
+let CodecParser_: typeof CodecParser | undefined;
 
 type SoundCallbacks = {
   // Called when the audio has been seeked - reset time determined transforms
@@ -143,18 +145,23 @@ export default class SoundManager extends EventListener<SoundCallbacks> {
       this.oggVorbisSupport = true;
     } catch (e) {
       this.oggVorbisSupport = false;
-      OggVorbisDecoder = (await import("@wasm-audio-decoders/ogg-vorbis"))
-        .OggVorbisDecoderWebWorker;
-      await new OggVorbisDecoder().ready;
+      OggVorbisDecoderWebWorker_ = (
+        await import("@wasm-audio-decoders/ogg-vorbis")
+      ).OggVorbisDecoderWebWorker;
+      await new OggVorbisDecoderWebWorker_().ready;
     }
     try {
       await this.context.decodeAudioData(miniOggOpus);
       this.oggOpusSupport = true;
     } catch (e) {
       this.oggOpusSupport = false;
-      OggOpusDecoder = (await import("ogg-opus-decoder"))
+      OggOpusDecoderWebWorker_ = (await import("ogg-opus-decoder"))
         .OggOpusDecoderWebWorker;
-      await new OggOpusDecoder().ready;
+      await new OggOpusDecoderWebWorker_().ready;
+    }
+
+    if (!this.oggVorbisSupport || !this.oggOpusSupport) {
+      CodecParser_ = (await import("codec-parser")).default;
     }
 
     // check if MP3 decoding is sane - if not, we'll have to load the mp3 decoder
@@ -174,8 +181,9 @@ export default class SoundManager extends EventListener<SoundCallbacks> {
     }
 
     if (!this.mp3IsSane) {
-      MP3Decoder = (await import("mpg123-decoder")).MPEGDecoderWebWorker;
-      await new MP3Decoder().ready;
+      MPEGDecoderWebWorker_ = (await import("mpg123-decoder"))
+        .MPEGDecoderWebWorker;
+      await new MPEGDecoderWebWorker_().ready;
     }
 
     console.log(
@@ -467,7 +475,7 @@ export default class SoundManager extends EventListener<SoundCallbacks> {
     switch (format) {
       case "ogg":
         let codec: CodecValue | undefined = undefined;
-        const parser = new CodecParser("audio/ogg", {
+        const parser = new CodecParser_!("audio/ogg", {
           onCodec: (c) => {
             codec = c;
           },
@@ -479,7 +487,7 @@ export default class SoundManager extends EventListener<SoundCallbacks> {
             return await decodeNative();
           }
 
-          const decoder = new OggOpusDecoder({ forceStereo: true });
+          const decoder = new OggOpusDecoderWebWorker_!({ forceStereo: true });
           await decoder.ready;
           decoded = await decoder.decodeFile(view);
         } else if (codec === "vorbis") {
@@ -487,7 +495,7 @@ export default class SoundManager extends EventListener<SoundCallbacks> {
             return await decodeNative();
           }
 
-          const decoder = new OggVorbisDecoder();
+          const decoder = new OggVorbisDecoderWebWorker_!();
           await decoder.ready;
           decoded = await decoder.decodeFile(view);
         } else if (codec === undefined) {
@@ -497,7 +505,7 @@ export default class SoundManager extends EventListener<SoundCallbacks> {
         }
         break;
       case "mp3":
-        const decoder = new MP3Decoder({ enableGapless: true });
+        const decoder = new MPEGDecoderWebWorker_!({ enableGapless: true });
         await decoder.ready;
         decoded = await decoder.decode(view);
         break;
