@@ -4,5 +4,8 @@
   "gitlens.advanced.blame.customArguments": [
     "--ignore-revs-file",
     ".git-blame-ignore-revs"
-  ]
+  ],
+  "[glsl]": {
+    "editor.defaultFormatter": "xaver.clang-format"
+  }
 }

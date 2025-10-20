@@ -9,6 +9,7 @@ export default defineConfig({
       input: {
         index: resolve(__dirname, "index.html"),
         respack_edit: resolve(__dirname, "respack_edit.html"),
+        canvas_compare: resolve(__dirname, "canvas_compare.html"),
       },
     },
     sourcemap: true,
