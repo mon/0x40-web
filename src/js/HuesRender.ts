@@ -102,7 +102,7 @@ export type RenderParams = {
   colour: number; // base colour
   lastColour: number; // previous colour
   colourFade?: number; // optional mix between lastColour and colour, from 0.0 to 1.0
-  blendMode: GlobalCompositeOperation;
+  blendMode: "hard-light" | "screen" | "multiply";
   bgColour: number | "transparent"; // base/backdrop colour for render stack
 
   overlayColour: number; // blackout/whiteout, hex string
@@ -110,12 +110,12 @@ export type RenderParams = {
 
   invert: number; // 0.0: normal, 1.0: fully inverted
 
-  bitmap?: HTMLImageElement;
+  bitmap?: ImageBitmap;
   bitmapAlign?: HuesImage["align"];
   bitmapCenter?: number; // optional point to center on for slim displays
 
   // same as bitmap, just the previous image
-  lastBitmap?: HTMLImageElement;
+  lastBitmap?: ImageBitmap;
   lastBitmapAlign?: HuesImage["align"];
   lastBitmapCenter?: number;
 
@@ -366,8 +366,8 @@ export default class HuesRender {
     this.blurDistance = [0, 0];
 
     this.slices = {
-      x: this.makeSliceObj(25),
-      y: this.makeSliceObj(15),
+      x: HuesRender.makeSliceObj(25),
+      y: HuesRender.makeSliceObj(15),
     };
 
     this.shutterDuration = 0;
@@ -401,7 +401,7 @@ export default class HuesRender {
     this.resize();
   }
 
-  makeSliceObj(avgSegments: number): SliceParams {
+  static makeSliceObj(avgSegments: number): SliceParams {
     return {
       count: 0,
       percent: 0,
@@ -862,31 +862,32 @@ export default class HuesRender {
     info.rampDown = info.start + beatLength * beatCount - transitionTime;
     info.transitionTime = transitionTime;
 
-    this.generateSliceSegments(dir);
+    HuesRender.generateSliceSegments(this.slices[dir], this.blurAmount);
 
     this.needsRedraw = true;
   }
 
-  generateSliceSegments(direction: "x" | "y") {
-    let even = 1.0 / this.slices[direction].avgSegments;
+  static generateSliceSegments(sliceParams: SliceParams, blurAmount: number) {
+    let even = 1.0 / sliceParams.avgSegments;
     let spread = even / 2;
     let total = 0;
     let i;
     for (i = 0; ; i++) {
       let rando = even + Math.random() * spread * 2 - spread;
-      this.slices[direction].segments[i] = rando;
+      sliceParams.segments[i] = rando;
       total += rando;
 
-      this.slices[direction].distances[i] =
-        Math.random() * this.blurAmount - this.blurAmount / 2;
+      sliceParams.distances[i] = Math.random() * blurAmount - blurAmount / 2;
 
       if (total > 1.0) {
-        this.slices[direction].segments[i] -= total - 1.0;
+        sliceParams.segments[i] -= total - 1.0;
         break;
       }
     }
 
-    this.slices[direction].count = i + 1;
+    sliceParams.count = i + 1;
+
+    return sliceParams;
   }
 
   resetSliceSegments(direction: "x" | "y") {

@@ -10,7 +10,7 @@ import { mixColours, intToHex } from "./Utils";
 
 // can't just use CanvasImageSource since some of the options (SVG stuff) don't
 // have width/height
-type Drawable = HTMLImageElement | HTMLCanvasElement | undefined;
+type Drawable = ImageBitmap | HTMLCanvasElement | undefined;
 
 /*  Takes root DOM element to attach to */
 export default class HuesCanvas2D implements HuesCanvas {

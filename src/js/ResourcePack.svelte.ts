@@ -259,7 +259,7 @@ export class HuesSong {
   }
 }
 
-interface HuesImageElement extends HTMLImageElement {
+interface HuesImageBitmap extends ImageBitmap {
   // we need to keep the blob around to save a modified respack
   blob: Blob;
 }
@@ -269,7 +269,7 @@ export class HuesImage {
   name: string;
   fullname: string;
   align: "center" | "left" | "right";
-  bitmaps: HuesImageElement[];
+  bitmaps: HuesImageBitmap[];
   frameDurations: number[];
   // straight from the XML
   rawFrameDurations?: string;
@@ -283,7 +283,7 @@ export class HuesImage {
   constructor(
     name = "None",
     fullname = "None",
-    bitmaps: HuesImageElement[] = [],
+    bitmaps: HuesImageBitmap[] = [],
   ) {
     this.name = name;
     this.fullname = fullname;
@@ -393,7 +393,7 @@ interface LoadedFile {
 
 interface LoadedImage {
   plainName: string;
-  imgs: HuesImageElement[];
+  imgs: HuesImageBitmap[];
 }
 
 // used for lookups in the file lists
@@ -667,21 +667,17 @@ export class Respack {
       const blob = new Blob([file.data.buffer as BlobPart], {
         type: file.mime,
       });
-      const img = new Image() as HuesImageElement;
 
-      const prom = new Promise((resolve, reject) => {
-        img.onload = resolve;
-        img.onerror = reject;
-        img.src = URL.createObjectURL(blob);
-        img.blob = blob;
-      });
-      await prom;
+      const img = (await createImageBitmap(blob, {
+        premultiplyAlpha: "none",
+      })) as HuesImageBitmap;
+      img.blob = blob;
       imgs.push({ filename: file.filename, plainName: file.plainName, img });
     }
 
     // group animations
     const res = []; // duplicate image names are acceptable, so this is a list
-    const animations = new Map<string, HuesImageElement[]>();
+    const animations = new Map<string, HuesImageBitmap[]>();
     for (const img of imgs) {
       let plain = img.plainName;
       const match = plain.match(new RegExp("^(.*)_(\\d+)$"));
