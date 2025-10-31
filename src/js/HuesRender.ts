@@ -88,6 +88,10 @@ export interface HuesCanvas {
 }
 
 type SliceParams = {
+  // consistent between canvas/webgl to easily compare renderers
+  blurAmount: number;
+  seed: number;
+
   count: number; // 1 for no slice, >1 for slices
   percent: number; // ignored if count == 1,
   // randomised "percent of image to create subsequent slice from"
@@ -403,6 +407,8 @@ export default class HuesRender {
 
   static makeSliceObj(avgSegments: number): SliceParams {
     return {
+      seed: 0,
+      blurAmount: 0,
       count: 0,
       percent: 0,
       avgSegments: avgSegments,
@@ -867,17 +873,24 @@ export default class HuesRender {
     this.needsRedraw = true;
   }
 
+  static hash(n: number) {
+    return (Math.sin(n) * 43758.5453123) % 1;
+  }
+
   static generateSliceSegments(sliceParams: SliceParams, blurAmount: number) {
+    let seed = Math.random();
     let even = 1.0 / sliceParams.avgSegments;
     let spread = even / 2;
     let total = 0;
     let i;
     for (i = 0; ; i++) {
-      let rando = even + Math.random() * spread * 2 - spread;
+      let rando = even + HuesRender.hash(seed + i) * spread * 2 - spread;
       sliceParams.segments[i] = rando;
       total += rando;
 
-      sliceParams.distances[i] = Math.random() * blurAmount - blurAmount / 2;
+      sliceParams.distances[i] =
+        HuesRender.hash(seed + i + sliceParams.avgSegments) * blurAmount -
+        blurAmount / 2;
 
       if (total > 1.0) {
         sliceParams.segments[i] -= total - 1.0;
@@ -885,6 +898,8 @@ export default class HuesRender {
       }
     }
 
+    sliceParams.blurAmount = blurAmount;
+    sliceParams.seed = seed;
     sliceParams.count = i + 1;
 
     return sliceParams;

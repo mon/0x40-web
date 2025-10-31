@@ -1,7 +1,8 @@
+#version 300 es
+precision highp float;
+
 // todo
 // https://github.com/amilajack/gaussian-blur/tree/master
-
-precision mediump float;
 
 uniform sampler2D u_image;
 uniform sampler2D u_lastImage;
@@ -12,7 +13,10 @@ uniform float u_colourFade;
 uniform vec4 u_bgColour;
 uniform vec4 u_overlayColour;
 
+uniform float u_xBlur;
+
 uniform float u_blurAmount;
+
 uniform float u_invert;
 uniform bool u_invertEverything;
 
@@ -22,6 +26,11 @@ uniform vec2 u_shutterWidth;
 
 uniform float u_outTrippy;
 uniform float u_inTrippy;
+
+uniform float u_xSlice;
+uniform float u_xSliceSeed;
+uniform float u_ySlice;
+uniform float u_ySliceSeed;
 
 uniform int u_blendMode;
 
@@ -33,8 +42,13 @@ uniform int u_blendMode;
 
 #define BLUR_ITERATIONS 35.0
 
-// the texCoords passed in from the vertex shader.
-varying vec2 v_texCoord;
+#define SLICE_X_SEGMENTS 25.0
+#define SLICE_Y_SEGMENTS 15.0
+// worst case 2x the larger of the two average segments
+#define SLICE_LOOP_ITERS 50.0
+
+in vec2 v_texCoord;
+out vec4 fragColor;
 
 vec4 blendMultiply(vec4 px, vec4 colour) {
   return px * colour;
@@ -49,7 +63,28 @@ vec4 blendHardLight(vec4 px, vec4 colour) {
              step(0.5, colour));
 }
 
-// void main() { gl_FragColor = vec4(1, 0, 0, 1); }
+float hash(float n) {
+  return fract(sin(n) * 43758.5453123);
+}
+
+float sliceOffset(float offset, float avgSegments, float percent, float seed) {
+  float even = 1.0 / avgSegments;
+  float spread = even / 2.0;
+  float total = 0.0;
+  for (float i = 0.0; i < SLICE_LOOP_ITERS; i++) {
+    float rando = even + hash(seed + i) * spread * 2.0 - spread;
+    float distance =
+        hash(seed + i + avgSegments) * u_blurAmount - u_blurAmount / 2.0;
+
+    total += rando;
+    if (offset < total) {
+      return distance * percent;
+    }
+  }
+  return 0.0;
+}
+
+// void main() { fragColor = vec4(1, 0, 0, 1); }
 void main() {
   float shutterProgress;
   float shutterWidth;
@@ -67,19 +102,24 @@ void main() {
     shutterWidth = u_shutterWidth.x;
   }
   if (shutterProgress <= 0.0 && shutterProgress > -shutterWidth) {
-    gl_FragColor = vec4(vec3(u_invert), 1.0);
+    fragColor = vec4(vec3(u_invert), 1.0);
     return;
   }
   bool useLastImage = shutterProgress < 0.0;
 
+  vec2 baseUv = v_texCoord;
+  baseUv.y += sliceOffset(baseUv.x, SLICE_X_SEGMENTS, u_xSlice, u_xSliceSeed);
+  baseUv.x += sliceOffset(baseUv.y, SLICE_Y_SEGMENTS, u_ySlice, u_ySliceSeed);
   vec4 px = vec4(0.0);
   for (float index = 0.0; index < BLUR_ITERATIONS; index++) {
-    vec2 uv = v_texCoord +
-              vec2((index / (BLUR_ITERATIONS - 1.0) - 0.5) * u_blurAmount, 0.0);
+    vec2 uv =
+        baseUv + vec2((index / (BLUR_ITERATIONS - 1.0) - 0.5) * u_xBlur, 0.0);
+    if (uv.x > 1.0 || uv.y > 1.0)
+      continue;
     if (useLastImage)
-      px += texture2D(u_lastImage, uv);
+      px += texture(u_lastImage, uv);
     else
-      px += texture2D(u_image, uv);
+      px += texture(u_image, uv);
   }
   px = px / BLUR_ITERATIONS;
   if (!u_invertEverything) {
@@ -113,14 +153,13 @@ void main() {
   // gl_FragColor = blended;
   vec4 overlaid = mix(withBg, blended, 0.7);
   if (u_bgColour.a == 0.0)
-    gl_FragColor = mix(mix(vec4(1.0), colour, 0.7), overlaid, withBg.a);
+    fragColor = mix(mix(vec4(1.0), colour, 0.7), overlaid, withBg.a);
   else
-    gl_FragColor = overlaid;
+    fragColor = overlaid;
 
   if (u_invertEverything) {
-    gl_FragColor.rgb = abs(u_invert - gl_FragColor.rgb);
+    fragColor.rgb = abs(u_invert - fragColor.rgb);
     vec3 invertedOverlay = abs(u_invert - u_overlayColour.rgb);
-    gl_FragColor.rgb =
-        mix(gl_FragColor.rgb, invertedOverlay, u_overlayColour.a);
+    fragColor.rgb = mix(fragColor.rgb, invertedOverlay, u_overlayColour.a);
   }
 }

@@ -57,7 +57,7 @@
     lastBitmapAlign: "left",
     lastBitmapCenter: 401,
 
-    shutter: 0.5,
+    shutter: undefined,
     shutterDir: "←",
 
     xBlur: 0,
@@ -68,10 +68,13 @@
 
     slices: {
       // TODO
-      x: HuesRender.generateSliceSegments(
-        HuesRender.makeSliceObj(25),
-        blurAmount,
-      ),
+      x: {
+        ...HuesRender.generateSliceSegments(
+          HuesRender.makeSliceObj(25),
+          blurAmount,
+        ),
+        percent: 1.0,
+      },
       y: HuesRender.generateSliceSegments(
         HuesRender.makeSliceObj(15),
         blurAmount,
