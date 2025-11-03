@@ -1,4 +1,5 @@
 import HuesCanvas2D from "./HuesCanvas2D";
+import HuesCanvasWebGL from "./HuesCanvasWebGL";
 import type { HuesColour } from "./HuesCore.svelte";
 import type { HuesCore } from "./HuesCore.svelte";
 import type { SettingsData } from "./HuesSettings.svelte";
@@ -280,7 +281,7 @@ class RenderImage {
 /*  Takes root element to attach to, and an audio context element for
     getting the current time with reasonable accuracy */
 export default class HuesRender {
-  render: HuesCanvas2D;
+  render: HuesCanvas;
   audio: SoundManager;
   core: HuesCore;
 
@@ -343,7 +344,8 @@ export default class HuesRender {
   constructor(root: HTMLElement, soundManager: SoundManager, core: HuesCore) {
     // 720p has great performance and our images are matched to it.
     // Higher resolutions don't get us many benefits
-    this.render = new HuesCanvas2D(root, 720);
+    // this.render = new HuesCanvas2D(root, 720);
+    this.render = new HuesCanvasWebGL(root, 720);
     this.audio = soundManager;
     soundManager.addEventListener("seek", this.resetEffects.bind(this));
     core.addEventListener("newsong", this.resetEffects.bind(this));
@@ -877,6 +879,7 @@ export default class HuesRender {
     return (Math.sin(n) * 43758.5453123) % 1;
   }
 
+  // static for CanvasCompare to work without needing a HuesRender
   static generateSliceSegments(sliceParams: SliceParams, blurAmount: number) {
     let seed = Math.random();
     let even = 1.0 / sliceParams.avgSegments;

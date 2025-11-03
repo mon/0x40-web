@@ -1,9 +1,9 @@
 import { type RenderParams, type HuesCanvas } from "./HuesRender";
 import type { SettingsData } from "./HuesSettings.svelte";
 import vertShaderSrc from "../shaders/vertex.glsl?raw";
-import fragXBlurShaderSrc from "../shaders/frag_xblur.glsl?raw";
 import fragSliceShaderSrc from "../shaders/frag_slice.glsl?raw";
 import fragMainShaderSrc from "../shaders/frag_main.glsl?raw";
+import fragSharedSrc from "../shaders/shared.glsl?raw";
 
 function colourIntToFloats(int: number): [number, number, number] {
   const r = (int & 0xff0000) / 0xff0000;
@@ -11,6 +11,21 @@ function colourIntToFloats(int: number): [number, number, number] {
   const b = (int & 0x0000ff) / 0x0000ff;
   return [r, g, b];
 }
+
+type SharedUniforms = {
+  u_xBlur: WebGLUniformLocation | null;
+  u_yBlur: WebGLUniformLocation | null;
+  u_blurAmount: WebGLUniformLocation | null;
+
+  u_xSlice: WebGLUniformLocation | null;
+  u_xSliceSeed: WebGLUniformLocation | null;
+  u_ySlice: WebGLUniformLocation | null;
+  u_ySliceSeed: WebGLUniformLocation | null;
+
+  u_shutter: WebGLUniformLocation | null;
+  u_shutterDir: WebGLUniformLocation | null;
+  u_shutterWidth: WebGLUniformLocation | null;
+};
 
 export default class HuesCanvasWebGL implements HuesCanvas {
   static PREMULTIPLIED = true;
@@ -21,46 +36,40 @@ export default class HuesCanvasWebGL implements HuesCanvas {
   canvas: HTMLCanvasElement;
   gl: WebGL2RenderingContext;
   a_position: number;
-  u_matrixLoc: WebGLUniformLocation | null;
 
-  // Multi-pass rendering programs
-  sliceProgram: WebGLProgram;
-  xblurProgram: WebGLProgram;
-  mainProgram: WebGLProgram;
+  // Multi-pass rendering
+  programs: WebGLProgram[];
 
   // Framebuffers and their textures
-  fbo1: WebGLFramebuffer;
-  fbo2: WebGLFramebuffer;
-  fboTexture1: WebGLTexture;
-  fboTexture2: WebGLTexture;
+  fbo: WebGLFramebuffer;
+  fboTex: WebGLTexture;
 
   shutterWidth: number;
 
   textures: WebGLTexture[];
   bitmaps: (ImageBitmap | undefined)[];
-  u_images: (WebGLUniformLocation | null)[];
 
-  u_colour: WebGLUniformLocation | null;
-  u_bgColour: WebGLUniformLocation | null;
+  uniforms: [
+    SharedUniforms & {
+      u_images: (WebGLUniformLocation | null)[];
+    },
+    SharedUniforms & {
+      u_image: WebGLUniformLocation | null;
 
-  u_xBlur: WebGLUniformLocation | null;
-  u_blurAmount: WebGLUniformLocation | null;
-  u_invert: WebGLUniformLocation | null;
-  u_invertEverything: WebGLUniformLocation | null;
-  u_blendMode: WebGLUniformLocation | null;
-  u_overlayColour: WebGLUniformLocation | null;
+      u_colour: WebGLUniformLocation | null;
+      u_bgColour: WebGLUniformLocation | null;
 
-  u_outTrippy: WebGLUniformLocation | null;
-  u_inTrippy: WebGLUniformLocation | null;
-  u_lastColour: WebGLUniformLocation | null;
-  u_colourFade: WebGLUniformLocation | null;
-  u_shutter: WebGLUniformLocation | null;
-  u_shutterDir: WebGLUniformLocation | null;
-  u_shutterWidth: WebGLUniformLocation | null;
-  u_xSlice: WebGLUniformLocation | null;
-  u_xSliceSeed: WebGLUniformLocation | null;
-  u_ySlice: WebGLUniformLocation | null;
-  u_ySliceSeed: WebGLUniformLocation | null;
+      u_invert: WebGLUniformLocation | null;
+      u_invertEverything: WebGLUniformLocation | null;
+      u_blendMode: WebGLUniformLocation | null;
+      u_overlayColour: WebGLUniformLocation | null;
+
+      u_outTrippy: WebGLUniformLocation | null;
+      u_inTrippy: WebGLUniformLocation | null;
+      u_lastColour: WebGLUniformLocation | null;
+      u_colourFade: WebGLUniformLocation | null;
+    },
+  ];
 
   constructor(root: HTMLElement, height = 720) {
     this.root = root;
@@ -80,61 +89,77 @@ export default class HuesCanvasWebGL implements HuesCanvas {
     root.appendChild(this.canvas);
 
     // Initialize all three shader programs
-    this.sliceProgram = this.initShaderProgram(
-      vertShaderSrc,
-      fragSliceShaderSrc,
-    );
-    this.xblurProgram = this.initShaderProgram(
-      vertShaderSrc,
-      fragXBlurShaderSrc,
-    );
-    this.mainProgram = this.initShaderProgram(vertShaderSrc, fragMainShaderSrc);
-    this.gl.useProgram(this.mainProgram);
+    this.programs = [
+      this.initShaderProgram(vertShaderSrc, fragSliceShaderSrc),
+      this.initShaderProgram(vertShaderSrc, fragMainShaderSrc),
+    ];
 
     // look up where the vertex data needs to go.
     this.a_position = 0; // per MDN: always enable vertex attrib 0 as an array
-    this.gl.bindAttribLocation(this.mainProgram, 0, "a_position");
+    this.gl.bindAttribLocation(this.programs[0], 0, "a_position");
+    this.gl.bindAttribLocation(this.programs[1], 0, "a_position");
 
     // look up uniform locations
-    const getLoc = (name: string) =>
-      this.gl.getUniformLocation(this.mainProgram, name);
-    this.u_matrixLoc = getLoc("u_matrix");
-    this.u_images = [getLoc("u_image"), getLoc("u_lastImage")];
-    this.u_colour = getLoc("u_colour");
-    this.u_lastColour = getLoc("u_lastColour");
-    this.u_colourFade = getLoc("u_colourFade");
-    this.u_overlayColour = getLoc("u_overlayColour");
-    this.u_bgColour = getLoc("u_bgColour");
-    this.u_xBlur = getLoc("u_xBlur");
-    this.u_blurAmount = getLoc("u_blurAmount");
-    this.u_invert = getLoc("u_invert");
-    this.u_invertEverything = getLoc("u_invertEverything");
-    this.u_blendMode = getLoc("u_blendMode");
-    this.u_outTrippy = getLoc("u_outTrippy");
-    this.u_inTrippy = getLoc("u_inTrippy");
-    this.u_shutter = getLoc("u_shutter");
-    this.u_shutterDir = getLoc("u_shutterDir");
-    this.u_shutterWidth = getLoc("u_shutterWidth");
-    this.u_xSlice = getLoc("u_xSlice");
-    this.u_xSliceSeed = getLoc("u_xSliceSeed");
-    this.u_ySlice = getLoc("u_ySlice");
-    this.u_ySliceSeed = getLoc("u_ySliceSeed");
+    const getLoc = (program: number, name: string) =>
+      this.gl.getUniformLocation(this.programs[program], name);
+    this.uniforms = [
+      {
+        u_images: [getLoc(0, "u_image"), getLoc(0, "u_lastImage")],
+        u_xBlur: getLoc(0, "u_xBlur"),
+        u_yBlur: getLoc(0, "u_yBlur"),
+        u_blurAmount: getLoc(0, "u_blurAmount"),
+        u_shutter: getLoc(0, "u_shutter"),
+        u_shutterDir: getLoc(0, "u_shutterDir"),
+        u_shutterWidth: getLoc(0, "u_shutterWidth"),
+        u_xSlice: getLoc(0, "u_xSlice"),
+        u_xSliceSeed: getLoc(0, "u_xSliceSeed"),
+        u_ySlice: getLoc(0, "u_ySlice"),
+        u_ySliceSeed: getLoc(0, "u_ySliceSeed"),
+      },
+      {
+        u_image: getLoc(1, "u_image"),
+        u_colour: getLoc(1, "u_colour"),
+        u_lastColour: getLoc(1, "u_lastColour"),
+        u_colourFade: getLoc(1, "u_colourFade"),
+        u_overlayColour: getLoc(1, "u_overlayColour"),
+        u_bgColour: getLoc(1, "u_bgColour"),
+        u_xBlur: getLoc(1, "u_xBlur"),
+        u_yBlur: getLoc(1, "u_yBlur"),
+        u_blurAmount: getLoc(1, "u_blurAmount"),
+        u_invert: getLoc(1, "u_invert"),
+        u_invertEverything: getLoc(1, "u_invertEverything"),
+        u_blendMode: getLoc(1, "u_blendMode"),
+        u_outTrippy: getLoc(1, "u_outTrippy"),
+        u_inTrippy: getLoc(1, "u_inTrippy"),
+        u_shutter: getLoc(1, "u_shutter"),
+        u_shutterDir: getLoc(1, "u_shutterDir"),
+        u_shutterWidth: getLoc(1, "u_shutterWidth"),
+        u_xSlice: getLoc(1, "u_xSlice"),
+        u_xSliceSeed: getLoc(1, "u_xSliceSeed"),
+        u_ySlice: getLoc(1, "u_ySlice"),
+        u_ySliceSeed: getLoc(1, "u_ySliceSeed"),
+      },
+    ];
+
+    this.gl.useProgram(this.programs[0]);
+    this.gl.uniform1i(this.uniforms[0].u_images[0], 0);
+    this.gl.uniform1i(this.uniforms[0].u_images[1], 1);
+    this.gl.useProgram(this.programs[1]);
+    this.gl.uniform1i(this.uniforms[1].u_image, 3); // TODO make this 2 lol
 
     // provide texture coordinates for the rectangle.
     const positionBuffer = this.gl.createBuffer();
     this.gl.bindBuffer(this.gl.ARRAY_BUFFER, positionBuffer);
+    // https://stackoverflow.com/a/59739538/7972801
+    // ^ I'm convinced, one bigass triangle it is
     this.gl.bufferData(
       this.gl.ARRAY_BUFFER,
-      new Float32Array([
-        0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 1.0, 1.0, 0.0, 1.0, 1.0,
-      ]),
+      new Float32Array([-1, -1, 3, -1, -1, 3]),
       this.gl.STATIC_DRAW,
     );
     this.gl.enableVertexAttribArray(this.a_position);
     this.gl.vertexAttribPointer(this.a_position, 2, this.gl.FLOAT, false, 0, 0);
 
-    this.gl.uniform1i(this.u_images[0], 0);
-    this.gl.uniform1i(this.u_images[1], 1);
     this.textures = [this.gl.createTexture(), this.gl.createTexture()];
     this.bitmaps = [];
 
@@ -167,48 +192,44 @@ export default class HuesCanvasWebGL implements HuesCanvas {
     }
 
     // Initialize framebuffers and their textures
-    this.fbo1 = this.gl.createFramebuffer()!;
-    this.fbo2 = this.gl.createFramebuffer()!;
-    this.fboTexture1 = this.gl.createTexture()!;
-    this.fboTexture2 = this.gl.createTexture()!;
+    this.fbo = this.gl.createFramebuffer();
+    this.fboTex = this.gl.createTexture();
 
     // Set up FBO textures (will be resized in resize())
-    for (const [fbo, tex] of [
-      [this.fbo1, this.fboTexture1],
-      [this.fbo2, this.fboTexture2],
-    ]) {
-      this.gl.bindTexture(this.gl.TEXTURE_2D, tex);
-      this.gl.texParameteri(
-        this.gl.TEXTURE_2D,
-        this.gl.TEXTURE_WRAP_S,
-        this.gl.CLAMP_TO_EDGE,
-      );
-      this.gl.texParameteri(
-        this.gl.TEXTURE_2D,
-        this.gl.TEXTURE_WRAP_T,
-        this.gl.CLAMP_TO_EDGE,
-      );
-      this.gl.texParameteri(
-        this.gl.TEXTURE_2D,
-        this.gl.TEXTURE_MIN_FILTER,
-        this.gl.LINEAR,
-      );
-      this.gl.texParameteri(
-        this.gl.TEXTURE_2D,
-        this.gl.TEXTURE_MAG_FILTER,
-        this.gl.LINEAR,
-      );
+    this.gl.activeTexture(this.gl.TEXTURE3);
+    this.gl.bindTexture(this.gl.TEXTURE_2D, this.fboTex);
+    this.gl.texParameteri(
+      this.gl.TEXTURE_2D,
+      this.gl.TEXTURE_WRAP_S,
+      this.gl.CLAMP_TO_EDGE,
+    );
+    this.gl.texParameteri(
+      this.gl.TEXTURE_2D,
+      this.gl.TEXTURE_WRAP_T,
+      this.gl.CLAMP_TO_EDGE,
+    );
+    this.gl.texParameteri(
+      this.gl.TEXTURE_2D,
+      this.gl.TEXTURE_MIN_FILTER,
+      this.gl.LINEAR,
+    );
+    this.gl.texParameteri(
+      this.gl.TEXTURE_2D,
+      this.gl.TEXTURE_MAG_FILTER,
+      this.gl.LINEAR,
+    );
 
-      this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, fbo);
-      this.gl.framebufferTexture2D(
-        this.gl.FRAMEBUFFER,
-        this.gl.COLOR_ATTACHMENT0,
-        this.gl.TEXTURE_2D,
-        tex,
-        0,
-      );
-    }
+    this.gl.useProgram(this.programs[0]);
+    this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, this.fbo);
+    this.gl.framebufferTexture2D(
+      this.gl.FRAMEBUFFER,
+      this.gl.COLOR_ATTACHMENT0,
+      this.gl.TEXTURE_2D,
+      this.fboTex,
+      0,
+    );
 
+    this.gl.useProgram(this.programs[1]);
     this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, null);
     this.gl.clearColor(0, 0, 0, 0);
   }
@@ -222,7 +243,10 @@ export default class HuesCanvasWebGL implements HuesCanvas {
   }
 
   setInvertStyle(style: SettingsData["invertStyle"]) {
-    this.gl.uniform1i(this.u_invertEverything, style === "everything" ? 1 : 0);
+    this.gl.uniform1i(
+      this.uniforms[1].u_invertEverything,
+      style === "everything" ? 1 : 0,
+    );
   }
 
   setBlurQuality(_quality: SettingsData["blurQuality"]) {}
@@ -233,25 +257,27 @@ export default class HuesCanvasWebGL implements HuesCanvas {
     this.canvas.height = Math.min(height, this.baseHeight);
     this.canvas.width = Math.ceil(this.canvas.height * ratio);
     this.gl.viewport(0, 0, this.canvas.width, this.canvas.height);
-    this.gl.uniform2f(
-      this.u_shutterWidth,
-      this.shutterWidth / this.canvas.width,
-      this.shutterWidth / this.canvas.height,
-    );
 
     // Resize FBO textures to match canvas size
-    for (const tex of [this.fboTexture1, this.fboTexture2]) {
-      this.gl.bindTexture(this.gl.TEXTURE_2D, tex);
-      this.gl.texImage2D(
-        this.gl.TEXTURE_2D,
-        0,
-        this.gl.RGBA,
-        this.canvas.width,
-        this.canvas.height,
-        0,
-        this.gl.RGBA,
-        this.gl.UNSIGNED_BYTE,
-        null,
+    this.gl.activeTexture(this.gl.TEXTURE3);
+    this.gl.texImage2D(
+      this.gl.TEXTURE_2D,
+      0,
+      this.gl.RGBA,
+      this.canvas.width,
+      this.canvas.height,
+      0,
+      this.gl.RGBA,
+      this.gl.UNSIGNED_BYTE,
+      null,
+    );
+
+    for (const [i, uniform] of this.uniforms.entries()) {
+      this.gl.useProgram(this.programs[i]);
+      this.gl.uniform2f(
+        uniform.u_shutterWidth,
+        this.shutterWidth / this.canvas.width,
+        this.shutterWidth / this.canvas.height,
       );
     }
   }
@@ -262,134 +288,82 @@ export default class HuesCanvasWebGL implements HuesCanvas {
     this.setTexture(0, params.bitmap);
     this.setTexture(1, params.lastBitmap);
 
-    const dstX = 0;
-    const dstY = 0;
-    const dstWidth = this.gl.canvas.width;
-    const dstHeight = this.gl.canvas.height;
+    const sharedUniforms = (program: number) => {
+      const u = this.uniforms[program];
+      this.gl.uniform1f(u.u_shutter, params.shutter ?? 1.0);
+      this.gl.uniform1i(
+        u.u_shutterDir,
+        { "←": 0, "↓": 1, "↑": 2, "→": 3 }[params.shutterDir ?? "←"],
+      );
 
-    // convert dst pixel coords to clipspace coords
-    const clipX = (dstX / this.gl.canvas.width) * 2 - 1;
-    const clipY = (dstY / this.gl.canvas.height) * -2 + 1;
-    const clipWidth = (dstWidth / this.gl.canvas.width) * 2;
-    const clipHeight = (dstHeight / this.gl.canvas.height) * -2;
+      this.gl.uniform1f(u.u_xBlur, params.xBlur);
+      this.gl.uniform1f(u.u_yBlur, params.yBlur);
 
-    // build a matrix that will stretch our unit quad to our desired size and location
-    const matrix = [clipWidth, 0, 0, 0, clipHeight, 0, clipX, clipY, 1];
+      this.gl.uniform1f(
+        u.u_blurAmount,
+        params.slices?.x.blurAmount ?? params.slices?.y.blurAmount ?? 0.0,
+      );
+
+      this.gl.uniform1f(u.u_xSlice, params.slices?.x.percent ?? 0.0);
+      this.gl.uniform1f(u.u_xSliceSeed, params.slices?.x.seed ?? 0.0);
+      this.gl.uniform1f(u.u_ySlice, params.slices?.y.percent ?? 0.0);
+      this.gl.uniform1f(u.u_ySliceSeed, params.slices?.y.seed ?? 0.0);
+
+      // rest done in resize() or ctor
+    };
 
     // ========== PASS 1: Slice (render to FBO1) ==========
-    this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, this.fbo1);
-    this.gl.useProgram(this.sliceProgram);
+    this.gl.useProgram(this.programs[0]);
+    this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, this.fbo);
 
-    // Set vertex attributes for slice program
-    this.gl.bindAttribLocation(this.sliceProgram, 0, "a_position");
-
-    // Set uniforms for slice pass
-    const sliceMatrixLoc = this.gl.getUniformLocation(
-      this.sliceProgram,
-      "u_matrix",
-    );
-    this.gl.uniformMatrix3fv(sliceMatrixLoc, false, matrix);
-
-    const sliceImageLoc = this.gl.getUniformLocation(
-      this.sliceProgram,
-      "u_image",
-    );
-    this.gl.uniform1i(sliceImageLoc, 0);
+    sharedUniforms(0);
 
     this.gl.clear(this.gl.COLOR_BUFFER_BIT);
-    this.gl.drawArrays(this.gl.TRIANGLES, 0, 6);
+    this.gl.drawArrays(this.gl.TRIANGLES, 0, 3);
 
-    // ========== PASS 2: X-Blur (render to FBO2) ==========
-    this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, this.fbo2);
-    this.gl.useProgram(this.xblurProgram);
-
-    // Set vertex attributes for xblur program
-    this.gl.bindAttribLocation(this.xblurProgram, 0, "a_position");
-
-    // Bind FBO1 texture as input
-    this.gl.activeTexture(this.gl.TEXTURE2);
-    this.gl.bindTexture(this.gl.TEXTURE_2D, this.fboTexture1);
-
-    // Set uniforms for xblur pass
-    const xblurMatrixLoc = this.gl.getUniformLocation(
-      this.xblurProgram,
-      "u_matrix",
-    );
-    this.gl.uniformMatrix3fv(xblurMatrixLoc, false, matrix);
-
-    const xblurImageLoc = this.gl.getUniformLocation(
-      this.xblurProgram,
-      "u_image",
-    );
-    this.gl.uniform1i(xblurImageLoc, 2);
-
-    this.gl.clear(this.gl.COLOR_BUFFER_BIT);
-    this.gl.drawArrays(this.gl.TRIANGLES, 0, 6);
-
-    // ========== PASS 3: Main composite (render to canvas) ==========
+    // ========== PASS 2: Main composite (render to canvas) ==========
+    this.gl.useProgram(this.programs[1]);
     this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, null);
-    this.gl.useProgram(this.mainProgram);
 
-    // Set vertex attributes for main program
-    this.gl.bindAttribLocation(this.mainProgram, 0, "a_position");
-
-    // Bind FBO2 texture as input
-    this.gl.activeTexture(this.gl.TEXTURE3);
-    this.gl.bindTexture(this.gl.TEXTURE_2D, this.fboTexture2);
+    sharedUniforms(1);
 
     // Set all uniforms for main pass
     if (params.bgColour === "transparent") {
-      this.gl.uniform4f(this.u_bgColour, 1.0, 1.0, 1.0, 0.0);
+      this.gl.uniform4f(this.uniforms[1].u_bgColour, 1.0, 1.0, 1.0, 0.0);
     } else {
       this.gl.uniform4f(
-        this.u_bgColour,
+        this.uniforms[1].u_bgColour,
         ...colourIntToFloats(params.bgColour),
         1.0,
       );
     }
 
-    this.gl.uniform4f(this.u_colour, ...colourIntToFloats(params.colour), 1.0);
     this.gl.uniform4f(
-      this.u_lastColour,
+      this.uniforms[1].u_colour,
+      ...colourIntToFloats(params.colour),
+      1.0,
+    );
+    this.gl.uniform4f(
+      this.uniforms[1].u_lastColour,
       ...colourIntToFloats(params.lastColour),
       1.0,
     );
-    this.gl.uniform1f(this.u_colourFade, params.colourFade ?? 1.0);
+    this.gl.uniform1f(this.uniforms[1].u_colourFade, params.colourFade ?? 1.0);
     this.gl.uniform4f(
-      this.u_overlayColour,
+      this.uniforms[1].u_overlayColour,
       ...colourIntToFloats(params.overlayColour),
       params.overlayPercent,
     );
-    this.gl.uniform1f(this.u_xBlur, params.xBlur);
-    this.gl.uniform1f(this.u_invert, params.invert);
+    this.gl.uniform1f(this.uniforms[1].u_invert, params.invert);
     this.gl.uniform1i(
-      this.u_blendMode,
+      this.uniforms[1].u_blendMode,
       { "hard-light": 0, screen: 1, multiply: 2 }[params.blendMode],
     );
-    this.gl.uniform1f(this.u_outTrippy, params.outTrippy ?? 1.0);
-    this.gl.uniform1f(this.u_inTrippy, params.inTrippy ?? 0.0);
-    this.gl.uniform1f(this.u_shutter, params.shutter ?? 1.0);
-    this.gl.uniform1i(
-      this.u_shutterDir,
-      { "←": 0, "↓": 1, "↑": 2, "→": 3 }[params.shutterDir ?? "←"],
-    );
-    this.gl.uniform1f(this.u_xSlice, params.slices?.x.percent ?? 0.0);
-    this.gl.uniform1f(this.u_xSliceSeed, params.slices?.x.seed ?? 0.0);
-    this.gl.uniform1f(this.u_ySlice, params.slices?.y.percent ?? 0.0);
-    this.gl.uniform1f(this.u_ySliceSeed, params.slices?.y.seed ?? 0.0);
-    this.gl.uniform1f(
-      this.u_blurAmount,
-      params.slices?.x.blurAmount ?? params.slices?.y.blurAmount ?? 0.0,
-    );
-
-    this.gl.uniformMatrix3fv(this.u_matrixLoc, false, matrix);
-
-    // Update u_image to use FBO2 texture (texture unit 3)
-    this.gl.uniform1i(this.u_images[0], 3);
-    this.gl.uniform1i(this.u_images[1], 1);
+    this.gl.uniform1f(this.uniforms[1].u_outTrippy, params.outTrippy ?? 1.0);
+    this.gl.uniform1f(this.uniforms[1].u_inTrippy, params.inTrippy ?? 0.0);
 
     this.gl.clear(this.gl.COLOR_BUFFER_BIT);
-    this.gl.drawArrays(this.gl.TRIANGLES, 0, 6);
+    this.gl.drawArrays(this.gl.TRIANGLES, 0, 3);
 
     this.gl.finish();
   }
@@ -415,7 +389,10 @@ export default class HuesCanvasWebGL implements HuesCanvas {
 
   initShaderProgram(vertSrc: string, fragSrc: string) {
     const vertShader = this.compileShader(this.gl.VERTEX_SHADER, vertSrc);
-    const fragShader = this.compileShader(this.gl.FRAGMENT_SHADER, fragSrc);
+    const fragShader = this.compileShader(
+      this.gl.FRAGMENT_SHADER,
+      fragSharedSrc + fragSrc,
+    );
     const shaderProgram = this.gl.createProgram();
     this.gl.attachShader(shaderProgram, vertShader);
     this.gl.attachShader(shaderProgram, fragShader);

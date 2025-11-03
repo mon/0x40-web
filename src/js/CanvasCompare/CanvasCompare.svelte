@@ -53,32 +53,40 @@
     bitmapAlign: "center", //  TODO
     bitmapCenter: 605, // TODO
 
+    // misaka
+    // lastBitmap: undefined,
+    // lastBitmapAlign: "left",
+    // lastBitmapCenter: 401,
+
+    // hyatt
     lastBitmap: undefined,
-    lastBitmapAlign: "left",
-    lastBitmapCenter: 401,
+    lastBitmapAlign: "right",
+    lastBitmapCenter: undefined,
 
     shutter: undefined,
     shutterDir: "←",
 
     xBlur: 0,
-    yBlur: 0, // TODO
+    yBlur: 0,
 
     outTrippy: undefined, // TODO: aspect ratio
     inTrippy: undefined,
 
     slices: {
-      // TODO
       x: {
         ...HuesRender.generateSliceSegments(
           HuesRender.makeSliceObj(25),
           blurAmount,
         ),
-        percent: 1.0,
+        // percent: 1.0,
       },
-      y: HuesRender.generateSliceSegments(
-        HuesRender.makeSliceObj(15),
-        blurAmount,
-      ),
+      y: {
+        ...HuesRender.generateSliceSegments(
+          HuesRender.makeSliceObj(15),
+          blurAmount,
+        ),
+        // percent: 1.0,
+      },
     },
 
     border: false, // TODO
@@ -117,7 +125,8 @@
   };
 
   loadImage("../respacks/Yuki.png", (img) => (params.bitmap = img));
-  loadImage("../respacks/Misaka.png", (img) => (params.lastBitmap = img));
+  // loadImage("../respacks/Misaka.png", (img) => (params.lastBitmap = img));
+  loadImage("../respacks/Hyatt.png", (img) => (params.lastBitmap = img));
 
   function hexToInt(hex: string): number {
     return parseInt(hex.replace("#", ""), 16);
@@ -328,7 +337,6 @@
 
 <style>
   .container {
-    max-width: 1400px;
     margin: 0 auto;
     padding: 20px;
   }
