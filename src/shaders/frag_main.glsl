@@ -17,6 +17,10 @@ uniform float u_inTrippy;
 
 uniform int u_blendMode;
 
+uniform float u_pixelWidth;
+uniform bool u_border;
+uniform float u_centerLine;
+
 vec4 blendMultiply(vec4 px, vec4 colour) {
   return px * colour;
 }
@@ -90,5 +94,13 @@ void main() {
     fragColor.rgb = abs(u_invert - fragColor.rgb);
     vec3 invertedOverlay = abs(u_invert - u_overlayColour.rgb);
     fragColor.rgb = mix(fragColor.rgb, invertedOverlay, u_overlayColour.a);
+  }
+
+  if (u_border && any(lessThanEqual(v_texCoord, vec2(u_pixelWidth)))) {
+    fragColor = mix(fragColor, vec4(1, 0, 0, 1), 0.5);
+  }
+  if (v_texCoord.x >= u_centerLine &&
+      v_texCoord.x < (u_centerLine + u_pixelWidth)) {
+    fragColor = mix(fragColor, vec4(0, 1, 0, 1), 0.5);
   }
 }

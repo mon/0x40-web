@@ -6,6 +6,7 @@ import type { SettingsData } from "./HuesSettings.svelte";
 import type { HuesImage } from "./ResourcePack.svelte";
 import type SoundManager from "./SoundManager";
 import { mixColours } from "./Utils";
+import Stats from "stats.js";
 // import './HuesPixi'; // new WebGL renderer, maybe later
 
 // Given the dimensions of the drawing surface, the dimensions of the image, and
@@ -340,12 +341,13 @@ export default class HuesRender {
   colourFadeStart?: number;
   colourFadeLength?: number;
   colourFadePercent?: number;
+  stats: Stats;
 
   constructor(root: HTMLElement, soundManager: SoundManager, core: HuesCore) {
     // 720p has great performance and our images are matched to it.
     // Higher resolutions don't get us many benefits
-    // this.render = new HuesCanvas2D(root, 720);
-    this.render = new HuesCanvasWebGL(root, 720);
+    this.render = new HuesCanvas2D(root, 720);
+    // this.render = new HuesCanvasWebGL(root, 720);
     this.audio = soundManager;
     soundManager.addEventListener("seek", this.resetEffects.bind(this));
     core.addEventListener("newsong", this.resetEffects.bind(this));
@@ -405,6 +407,10 @@ export default class HuesRender {
 
     window.addEventListener("resize", this.resize.bind(this));
     this.resize();
+
+    this.stats = new Stats();
+    this.stats.showPanel(1);
+    document.body.appendChild(this.stats.dom);
   }
 
   static makeSliceObj(avgSegments: number): SliceParams {
@@ -675,7 +681,9 @@ export default class HuesRender {
     }
 
     if (this.needsRedraw) {
+      this.stats.begin();
       this.redraw();
+      this.stats.end();
     }
   }
 

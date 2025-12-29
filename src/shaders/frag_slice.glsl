@@ -8,13 +8,20 @@
 uniform sampler2D u_image;
 uniform sampler2D u_lastImage;
 
+uniform float u_aspect;
+uniform float u_lastAspect;
+
 void main() {
   int shutter = shutterStatus();
   if (shutter == 2)
     return;
 
-  // want to maintain compat for Canvas2D, not Y-flipping input textures yet
-  vec2 baseUv = vec2(v_texCoord.x, 1.0 - v_texCoord.y);
+  float aspect = shutter == 1 ? u_lastAspect : u_aspect;
+  vec2 baseUv = vec2(
+      // aspect correct
+      v_texCoord.x * aspect,
+      // want to maintain compat for Canvas2D, not Y-flipping input textures yet
+      1.0 - v_texCoord.y);
 
   // First pass: we want to sample textures that "collide" through the shutter,
   // so blur/slice can sample pixels that aren't directly being displayed. The

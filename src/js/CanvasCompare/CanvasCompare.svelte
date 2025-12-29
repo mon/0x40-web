@@ -49,9 +49,9 @@
 
     invert: 0,
 
-    bitmap: undefined, // TODO: aspect ratio
-    bitmapAlign: "center", //  TODO
-    bitmapCenter: 605, // TODO
+    bitmap: undefined,
+    bitmapAlign: "center",
+    bitmapCenter: 605,
 
     // misaka
     // lastBitmap: undefined,
@@ -89,8 +89,8 @@
       },
     },
 
-    border: false, // TODO
-    centerLine: false, // TODO
+    border: true,
+    centerLine: true,
   });
 
   function updateSlices() {

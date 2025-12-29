@@ -1,4 +1,8 @@
-import { type RenderParams, type HuesCanvas } from "./HuesRender";
+import {
+  type RenderParams,
+  type HuesCanvas,
+  calculateImageDrawCoords,
+} from "./HuesRender";
 import type { SettingsData } from "./HuesSettings.svelte";
 import vertShaderSrc from "../shaders/vertex.glsl?raw";
 import fragSliceShaderSrc from "../shaders/frag_slice.glsl?raw";
@@ -13,18 +17,18 @@ function colourIntToFloats(int: number): [number, number, number] {
 }
 
 type SharedUniforms = {
-  u_xBlur: WebGLUniformLocation | null;
-  u_yBlur: WebGLUniformLocation | null;
-  u_blurAmount: WebGLUniformLocation | null;
+  u_xBlur: WebGLUniformLocation;
+  u_yBlur: WebGLUniformLocation;
+  u_blurAmount: WebGLUniformLocation;
 
-  u_xSlice: WebGLUniformLocation | null;
-  u_xSliceSeed: WebGLUniformLocation | null;
-  u_ySlice: WebGLUniformLocation | null;
-  u_ySliceSeed: WebGLUniformLocation | null;
+  u_xSlice: WebGLUniformLocation;
+  u_xSliceSeed: WebGLUniformLocation;
+  u_ySlice: WebGLUniformLocation;
+  u_ySliceSeed: WebGLUniformLocation;
 
-  u_shutter: WebGLUniformLocation | null;
-  u_shutterDir: WebGLUniformLocation | null;
-  u_shutterWidth: WebGLUniformLocation | null;
+  u_shutter: WebGLUniformLocation;
+  u_shutterDir: WebGLUniformLocation;
+  u_shutterWidth: WebGLUniformLocation;
 };
 
 export default class HuesCanvasWebGL implements HuesCanvas {
@@ -51,25 +55,32 @@ export default class HuesCanvasWebGL implements HuesCanvas {
 
   uniforms: [
     SharedUniforms & {
-      u_images: (WebGLUniformLocation | null)[];
+      u_image: WebGLUniformLocation;
+      u_lastImage: WebGLUniformLocation;
+      u_aspect: [WebGLUniformLocation, WebGLUniformLocation];
     },
     SharedUniforms & {
-      u_image: WebGLUniformLocation | null;
+      u_image: WebGLUniformLocation;
 
-      u_colour: WebGLUniformLocation | null;
-      u_bgColour: WebGLUniformLocation | null;
+      u_colour: WebGLUniformLocation;
+      u_bgColour: WebGLUniformLocation;
 
-      u_invert: WebGLUniformLocation | null;
-      u_invertEverything: WebGLUniformLocation | null;
-      u_blendMode: WebGLUniformLocation | null;
-      u_overlayColour: WebGLUniformLocation | null;
+      u_invert: WebGLUniformLocation;
+      u_invertEverything: WebGLUniformLocation;
+      u_blendMode: WebGLUniformLocation;
+      u_overlayColour: WebGLUniformLocation;
 
-      u_outTrippy: WebGLUniformLocation | null;
-      u_inTrippy: WebGLUniformLocation | null;
-      u_lastColour: WebGLUniformLocation | null;
-      u_colourFade: WebGLUniformLocation | null;
+      u_outTrippy: WebGLUniformLocation;
+      u_inTrippy: WebGLUniformLocation;
+      u_lastColour: WebGLUniformLocation;
+      u_colourFade: WebGLUniformLocation;
+
+      u_border: WebGLUniformLocation;
+      u_centerLine: WebGLUniformLocation;
+      u_pixelWidth: WebGLUniformLocation;
     },
   ];
+  canvasRatio: number = 1.0;
 
   constructor(root: HTMLElement, height = 720) {
     this.root = root;
@@ -100,21 +111,31 @@ export default class HuesCanvasWebGL implements HuesCanvas {
     this.gl.bindAttribLocation(this.programs[1], 0, "a_position");
 
     // look up uniform locations
-    const getLoc = (program: number, name: string) =>
-      this.gl.getUniformLocation(this.programs[program], name);
+    const getLoc = (program: number, name: string) => {
+      const loc = this.gl.getUniformLocation(this.programs[program], name);
+      if (loc === null) throw new Error(`No uniform ${name}`);
+      return loc;
+    };
+    const commonUniforms = (program: number) => ({
+      u_xBlur: getLoc(program, "u_xBlur"),
+      u_yBlur: getLoc(program, "u_yBlur"),
+      u_blurAmount: getLoc(program, "u_blurAmount"),
+
+      u_xSlice: getLoc(program, "u_xSlice"),
+      u_xSliceSeed: getLoc(program, "u_xSliceSeed"),
+      u_ySlice: getLoc(program, "u_ySlice"),
+      u_ySliceSeed: getLoc(program, "u_ySliceSeed"),
+
+      u_shutter: getLoc(program, "u_shutter"),
+      u_shutterDir: getLoc(program, "u_shutterDir"),
+      u_shutterWidth: getLoc(program, "u_shutterWidth"),
+    });
     this.uniforms = [
       {
-        u_images: [getLoc(0, "u_image"), getLoc(0, "u_lastImage")],
-        u_xBlur: getLoc(0, "u_xBlur"),
-        u_yBlur: getLoc(0, "u_yBlur"),
-        u_blurAmount: getLoc(0, "u_blurAmount"),
-        u_shutter: getLoc(0, "u_shutter"),
-        u_shutterDir: getLoc(0, "u_shutterDir"),
-        u_shutterWidth: getLoc(0, "u_shutterWidth"),
-        u_xSlice: getLoc(0, "u_xSlice"),
-        u_xSliceSeed: getLoc(0, "u_xSliceSeed"),
-        u_ySlice: getLoc(0, "u_ySlice"),
-        u_ySliceSeed: getLoc(0, "u_ySliceSeed"),
+        u_image: getLoc(0, "u_image"),
+        u_lastImage: getLoc(0, "u_lastImage"),
+        u_aspect: [getLoc(0, "u_aspect"), getLoc(0, "u_lastAspect")],
+        ...commonUniforms(0),
       },
       {
         u_image: getLoc(1, "u_image"),
@@ -123,27 +144,21 @@ export default class HuesCanvasWebGL implements HuesCanvas {
         u_colourFade: getLoc(1, "u_colourFade"),
         u_overlayColour: getLoc(1, "u_overlayColour"),
         u_bgColour: getLoc(1, "u_bgColour"),
-        u_xBlur: getLoc(1, "u_xBlur"),
-        u_yBlur: getLoc(1, "u_yBlur"),
-        u_blurAmount: getLoc(1, "u_blurAmount"),
         u_invert: getLoc(1, "u_invert"),
         u_invertEverything: getLoc(1, "u_invertEverything"),
         u_blendMode: getLoc(1, "u_blendMode"),
         u_outTrippy: getLoc(1, "u_outTrippy"),
         u_inTrippy: getLoc(1, "u_inTrippy"),
-        u_shutter: getLoc(1, "u_shutter"),
-        u_shutterDir: getLoc(1, "u_shutterDir"),
-        u_shutterWidth: getLoc(1, "u_shutterWidth"),
-        u_xSlice: getLoc(1, "u_xSlice"),
-        u_xSliceSeed: getLoc(1, "u_xSliceSeed"),
-        u_ySlice: getLoc(1, "u_ySlice"),
-        u_ySliceSeed: getLoc(1, "u_ySliceSeed"),
+        u_pixelWidth: getLoc(1, "u_pixelWidth"),
+        u_border: getLoc(1, "u_border"),
+        u_centerLine: getLoc(1, "u_centerLine"),
+        ...commonUniforms(1),
       },
     ];
 
     this.gl.useProgram(this.programs[0]);
-    this.gl.uniform1i(this.uniforms[0].u_images[0], 0);
-    this.gl.uniform1i(this.uniforms[0].u_images[1], 1);
+    this.gl.uniform1i(this.uniforms[0].u_image, 0);
+    this.gl.uniform1i(this.uniforms[0].u_lastImage, 1);
     this.gl.useProgram(this.programs[1]);
     this.gl.uniform1i(this.uniforms[1].u_image, 3); // TODO make this 2 lol
 
@@ -253,9 +268,9 @@ export default class HuesCanvasWebGL implements HuesCanvas {
 
   resize() {
     let height = this.root.clientHeight;
-    let ratio = this.root.clientWidth / height;
+    this.canvasRatio = this.root.clientWidth / height;
     this.canvas.height = Math.min(height, this.baseHeight);
-    this.canvas.width = Math.ceil(this.canvas.height * ratio);
+    this.canvas.width = Math.ceil(this.canvas.height * this.canvasRatio);
     this.gl.viewport(0, 0, this.canvas.width, this.canvas.height);
 
     // Resize FBO textures to match canvas size
@@ -280,13 +295,13 @@ export default class HuesCanvasWebGL implements HuesCanvas {
         this.shutterWidth / this.canvas.height,
       );
     }
+
+    this.gl.useProgram(this.programs[1]);
+    this.gl.uniform1f(this.uniforms[1].u_pixelWidth, 1 / this.canvas.width);
   }
 
   draw(params: RenderParams) {
     if (!params.bitmap) return;
-
-    this.setTexture(0, params.bitmap);
-    this.setTexture(1, params.lastBitmap);
 
     const sharedUniforms = (program: number) => {
       const u = this.uniforms[program];
@@ -311,6 +326,21 @@ export default class HuesCanvasWebGL implements HuesCanvas {
 
       // rest done in resize() or ctor
     };
+
+    this.setTexture(
+      0,
+      params.bitmap,
+      params.bitmapAlign,
+      params.bitmapCenter,
+      params.centerLine ?? false,
+    );
+    this.setTexture(
+      1,
+      params.lastBitmap,
+      params.bitmapAlign,
+      params.bitmapCenter,
+      false,
+    );
 
     // ========== PASS 1: Slice (render to FBO1) ==========
     this.gl.useProgram(this.programs[0]);
@@ -361,6 +391,7 @@ export default class HuesCanvasWebGL implements HuesCanvas {
     );
     this.gl.uniform1f(this.uniforms[1].u_outTrippy, params.outTrippy ?? 1.0);
     this.gl.uniform1f(this.uniforms[1].u_inTrippy, params.inTrippy ?? 0.0);
+    this.gl.uniform1i(this.uniforms[1].u_border, params.border ? 1 : 0);
 
     this.gl.clear(this.gl.COLOR_BUFFER_BIT);
     this.gl.drawArrays(this.gl.TRIANGLES, 0, 3);
@@ -368,15 +399,46 @@ export default class HuesCanvasWebGL implements HuesCanvas {
     this.gl.finish();
   }
 
-  setTexture(i: number, tex?: ImageBitmap) {
-    if (tex == this.bitmaps[i] || tex === undefined) return;
+  setTexture(
+    i: number,
+    tex: ImageBitmap | undefined,
+    bitmapAlign: RenderParams["bitmapAlign"],
+    bitmapCenter: RenderParams["bitmapCenter"],
+    centerLine: boolean,
+  ) {
+    if (tex === undefined) return;
+
+    let [x, _y, drawWidth, _drawHeight, scaledBitmapCenter] =
+      calculateImageDrawCoords(
+        this.canvas.width,
+        this.canvas.height,
+        tex.width,
+        tex.height,
+        bitmapAlign,
+        bitmapCenter,
+      );
+
+    x /= this.canvas.width;
+    drawWidth /= this.canvas.width;
+    console.log(scaledBitmapCenter, centerLine);
+    if (scaledBitmapCenter === undefined || !centerLine)
+      scaledBitmapCenter = -1.0;
+    else scaledBitmapCenter /= this.canvas.width;
+
+    if (i == 0) {
+      this.gl.useProgram(this.programs[1]);
+      this.gl.uniform1f(this.uniforms[1].u_centerLine, scaledBitmapCenter);
+    }
+
+    const ratio = this.canvasRatio / (tex.width / tex.height);
+    this.gl.useProgram(this.programs[0]);
+    this.gl.uniform1f(this.uniforms[0].u_aspect[i], ratio);
+
+    if (tex == this.bitmaps[i]) return;
 
     this.bitmaps[i] = tex;
 
-    // Bind texture to texture unit 0
     this.gl.activeTexture(this.gl.TEXTURE0 + i);
-
-    // Upload the image into the texture.
     this.gl.texImage2D(
       this.gl.TEXTURE_2D,
       0,
