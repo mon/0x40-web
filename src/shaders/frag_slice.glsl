@@ -5,6 +5,8 @@
 // x blur (if no shutter or shutter is vertical)
 // y blur (if shutter is horizontal)
 
+#pragma vscode_glsllint_stage : frag
+
 uniform sampler2D u_image;
 uniform sampler2D u_lastImage;
 

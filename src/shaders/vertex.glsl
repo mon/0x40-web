@@ -1,6 +1,8 @@
 #version 300 es
 precision highp float;
 
+#pragma vscode_glsllint_stage : vert
+
 in vec2 a_position;
 
 out vec2 v_texCoord;

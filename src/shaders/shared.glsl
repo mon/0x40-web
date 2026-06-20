@@ -1,6 +1,8 @@
 #version 300 es
 precision highp float;
 
+#pragma vscode_glsllint_stage : frag
+
 // GPU is quick, we can get away with a lot more. Timings on Firefox for Android
 // on my Z Flip 7:
 #define BLUR_ITERATIONS_MEDIUM 64.0   // 3ms

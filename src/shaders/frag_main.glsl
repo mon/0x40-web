@@ -1,6 +1,8 @@
 // todo
 // https://github.com/amilajack/gaussian-blur/tree/master
 
+#pragma vscode_glsllint_stage : frag
+
 uniform sampler2D u_image;
 
 uniform vec4 u_colour;
